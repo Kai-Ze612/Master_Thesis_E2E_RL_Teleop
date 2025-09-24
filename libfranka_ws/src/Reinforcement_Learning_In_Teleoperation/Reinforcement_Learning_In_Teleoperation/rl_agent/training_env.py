@@ -10,7 +10,7 @@ import os
 # Custom modules
 from local_robot_simulator import LocalRobotSimulator
 from remote_robot_simulator import RemoteRobotSimulator
-from Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays.utils.delay_simulator import DelaySimulator
+from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator
 
 
 class TeleoperationEnvWithDelay(gym.Env):
