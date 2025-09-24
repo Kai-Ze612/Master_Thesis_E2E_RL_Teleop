@@ -1,0 +1,50 @@
+[33mCMake Warning (dev) at /usr/local/share/cmake-3.28/Modules/FindOpenGL.cmake:381 (message):
+  Policy CMP0072 is not set: FindOpenGL prefers GLVND by default when
+  available.  Run "cmake --help-policy CMP0072" for policy details.  Use the
+  cmake_policy command to set the policy and suppress this warning.
+
+  FindOpenGL found both a legacy GL library:
+
+    OPENGL_gl_LIBRARY: /usr/lib/x86_64-linux-gnu/libGL.so
+
+  and GLVND libraries for OpenGL and GLX:
+
+    OPENGL_opengl_LIBRARY: /usr/lib/x86_64-linux-gnu/libOpenGL.so
+    OPENGL_glx_LIBRARY: /usr/lib/x86_64-linux-gnu/libGLX.so
+
+  OpenGL_GL_PREFERENCE has not been set to "GLVND" or "LEGACY", so for
+  compatibility with CMake 3.10 and below the legacy GL library will be used.
+Call Stack (most recent call first):
+  /usr/local/share/cmake-3.28/Modules/CMakeFindDependencyMacro.cmake:76 (find_package)
+  /home/kai/Libraries/mujoco/mujoco_install/lib/cmake/mujoco/mujocoConfig.cmake:42 (find_dependency)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/mujoco_rosConfig.cmake:41 (include)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake/mujoco_ros2_controlConfig.cmake:41 (include)
+  CMakeLists.txt:33 (find_package)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+[0m
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware/src/common/identification/Dynamics.cpp:[m[K In member function ‘[01m[KEigen::MatrixXd panda_identification::Dynamics::get_M(Eigen::VectorXd)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware/src/common/identification/Dynamics.cpp:106:12:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Ksq11[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+  106 |     double [01;35m[Ksq11[m[K = sin(q[0]), sq12 = sin(q[1]), sq13 = sin(q[2]), sq14 = sin(q[3]), sq15 = sin(q[4]), sq16 = sin(q[5]), sq17 = sin(q[6]);
+      |            [01;35m[K^~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware/src/common/identification/Dynamics.cpp:107:12:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Kcq11[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+  107 |     double [01;35m[Kcq11[m[K = cos(q[0]), cq12 = cos(q[1]), cq13 = cos(q[2]), cq14 = cos(q[3]), cq15 = cos(q[4]), cq16 = cos(q[5]), cq17 = cos(q[6]);
+      |            [01;35m[K^~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware/src/common/identification/Dynamics.cpp:[m[K In member function ‘[01m[KEigen::MatrixXd panda_identification::Dynamics::get_C(Eigen::VectorXd, Eigen::VectorXd)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware/src/common/identification/Dynamics.cpp:164:12:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Ksq11[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+  164 |     double [01;35m[Ksq11[m[K = sin(q[0]), sq12 = sin(q[1]), sq13 = sin(q[2]), sq14 = sin(q[3]), sq15 = sin(q[4]), sq16 = sin(q[5]), sq17 = sin(q[6]);
+      |            [01;35m[K^~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware/src/common/identification/Dynamics.cpp:165:12:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Kcq11[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+  165 |     double [01;35m[Kcq11[m[K = cos(q[0]), cq12 = cos(q[1]), cq13 = cos(q[2]), cq14 = cos(q[3]), cq15 = cos(q[4]), cq16 = cos(q[5]), cq17 = cos(q[6]);
+      |            [01;35m[K^~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware/src/common/identification/Dynamics.cpp:[m[K In member function ‘[01m[KEigen::MatrixXd panda_identification::Dynamics::get_dM(Eigen::VectorXd, Eigen::VectorXd)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware/src/common/identification/Dynamics.cpp:225:12:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Ksq11[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+  225 |     double [01;35m[Ksq11[m[K = sin(q[0]), sq12 = sin(q[1]), sq13 = sin(q[2]), sq14 = sin(q[3]), sq15 = sin(q[4]), sq16 = sin(q[5]), sq17 = sin(q[6]);
+      |            [01;35m[K^~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware/src/common/identification/Dynamics.cpp:226:12:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Kcq11[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+  226 |     double [01;35m[Kcq11[m[K = cos(q[0]), cq12 = cos(q[1]), cq13 = cos(q[2]), cq14 = cos(q[3]), cq15 = cos(q[4]), cq16 = cos(q[5]), cq17 = cos(q[6]);
+      |            [01;35m[K^~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware/src/common/identification/Dynamics.cpp:227:12:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Kdq11[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+  227 |     double [01;35m[Kdq11[m[K = qd[0], dq12 = qd[1], dq13 = qd[2], dq14 = qd[3], dq15 = qd[4], dq16 = qd[5], dq17 = qd[6];
+      |            [01;35m[K^~~~[m[K

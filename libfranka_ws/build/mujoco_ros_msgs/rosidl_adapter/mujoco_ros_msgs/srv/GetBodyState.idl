@@ -1,0 +1,22 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from mujoco_ros_msgs/srv/GetBodyState.srv
+// generated code does not contain a copyright notice
+
+#include "mujoco_ros_msgs/msg/BodyState.idl"
+
+module mujoco_ros_msgs {
+  module srv {
+    struct GetBodyState_Request {
+      string name;
+
+      string admin_hash;
+    };
+    struct GetBodyState_Response {
+      mujoco_ros_msgs::msg::BodyState state;
+
+      boolean success;
+
+      string status_message;
+    };
+  };
+};

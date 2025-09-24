@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="garmi_base_real_ros2_control">
+    <ros2_control name="garmi_base" type="system">
+      <hardware>
+        <plugin>garmi_hardware/GarmiBaseHardwareInterface</plugin>
+      </hardware>
+      <xacro:macro name="configure_wheel" params="joint_name">
+        <joint name="${joint_name}">
+          <command_interface name="velocity"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+        </joint>
+      </xacro:macro>
+
+      <xacro:configure_wheel joint_name="garmi_base_joint_left"/>
+      <xacro:configure_wheel joint_name="garmi_base_joint_right"/>
+
+    </ros2_control>
+  </xacro:macro>
+</robot>

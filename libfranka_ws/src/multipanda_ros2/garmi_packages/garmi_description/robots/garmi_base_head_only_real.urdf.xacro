@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="garmi_base_head">
+  <xacro:include filename="$(find garmi_description)/robots/base.xacro" />
+  <xacro:include filename="$(find garmi_description)/robots/head.xacro" />
+  <xacro:include filename="$(find garmi_description)/robots/garmi_wheel.xacro" />
+  <xacro:include filename="$(find garmi_description)/robots/mobile_platform.xacro" />
+  <xacro:include filename="$(find garmi_description)/robots/lidar_with_wheel_mount.xacro" />
+
+  <link name="base_link" />
+   
+  <xacro:mobile_platform connected_to="base_link" />
+  <xacro:base connected_to="base_link" />
+  <xacro:head connected_to="base_link" xyz="8.59e-3 6.21e-3 1042e-3" />
+
+  <xacro:garmi_wheel wheel_id="left" connected_to="base_link" rpy="${-90 * pi/180} 0 0" xyz="0 0.375 -0.125" />
+  <xacro:garmi_wheel wheel_id="right" connected_to="base_link" rpy="${90 * pi/180} 0 0" xyz="0 -0.375 -0.125" />
+
+  <xacro:lidar connected_to="base_link" xyz="0.42 0 0.01" rpy="0 0 ${pi}" ns="lidar_front" />
+  <xacro:lidar connected_to="base_link" xyz="-0.42 0 0.01" rpy="0 0 0.05" ns="lidar_back" />
+
+  <xacro:include filename="$(find garmi_description)/robots/garmi_base_real.ros2_control.xacro"/>
+  <xacro:garmi_base_real_ros2_control />
+  <xacro:include filename="$(find garmi_description)/robots/garmi_head_real.ros2_control.xacro"/>
+  <xacro:garmi_head_real_ros2_control />
+
+</robot>

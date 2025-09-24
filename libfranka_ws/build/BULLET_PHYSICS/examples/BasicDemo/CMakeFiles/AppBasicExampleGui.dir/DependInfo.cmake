@@ -1,0 +1,28 @@
+
+# Consider dependencies only in project.
+set(CMAKE_DEPENDS_IN_PROJECT_ONLY OFF)
+
+# The set of languages for which implicit dependencies are needed:
+set(CMAKE_DEPENDS_LANGUAGES
+  )
+
+# The set of dependency files which are needed:
+set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/examples/BasicDemo/BasicExample.cpp" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/BasicExample.cpp.o" "gcc" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/BasicExample.cpp.o.d"
+  "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/examples/ExampleBrowser/CollisionShape2TriangleMesh.cpp" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/__/ExampleBrowser/CollisionShape2TriangleMesh.cpp.o" "gcc" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/__/ExampleBrowser/CollisionShape2TriangleMesh.cpp.o.d"
+  "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/examples/ExampleBrowser/GL_ShapeDrawer.cpp" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/__/ExampleBrowser/GL_ShapeDrawer.cpp.o" "gcc" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/__/ExampleBrowser/GL_ShapeDrawer.cpp.o.d"
+  "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/examples/ExampleBrowser/OpenGLGuiHelper.cpp" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/__/ExampleBrowser/OpenGLGuiHelper.cpp.o" "gcc" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/__/ExampleBrowser/OpenGLGuiHelper.cpp.o.d"
+  "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/examples/StandaloneMain/main_opengl_single_example.cpp" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/__/StandaloneMain/main_opengl_single_example.cpp.o" "gcc" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/__/StandaloneMain/main_opengl_single_example.cpp.o.d"
+  "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/examples/Utils/b3Clock.cpp" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/__/Utils/b3Clock.cpp.o" "gcc" "examples/BasicDemo/CMakeFiles/AppBasicExampleGui.dir/__/Utils/b3Clock.cpp.o.d"
+  )
+
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
+  )
+
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_FORWARD_LINKED_INFO_FILES
+  )
+
+# Fortran module output directory.
+set(CMAKE_Fortran_TARGET_MODULE_DIR "")

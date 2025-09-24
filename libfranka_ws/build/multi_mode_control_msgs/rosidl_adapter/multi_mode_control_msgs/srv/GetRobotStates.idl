@@ -1,0 +1,16 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from multi_mode_control_msgs/srv/GetRobotStates.srv
+// generated code does not contain a copyright notice
+
+#include "franka_msgs/msg/FrankaState.idl"
+
+module multi_mode_control_msgs {
+  module srv {
+    struct GetRobotStates_Request {
+      uint8 structure_needs_at_least_one_member;
+    };
+    struct GetRobotStates_Response {
+      sequence<franka_msgs::msg::FrankaState> states;
+    };
+  };
+};

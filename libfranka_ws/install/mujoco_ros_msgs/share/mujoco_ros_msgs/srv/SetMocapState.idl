@@ -1,0 +1,16 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from mujoco_ros_msgs/srv/SetMocapState.srv
+// generated code does not contain a copyright notice
+
+#include "mujoco_ros_msgs/msg/MocapState.idl"
+
+module mujoco_ros_msgs {
+  module srv {
+    struct SetMocapState_Request {
+      mujoco_ros_msgs::msg::MocapState mocap_state;
+    };
+    struct SetMocapState_Response {
+      boolean success;
+    };
+  };
+};

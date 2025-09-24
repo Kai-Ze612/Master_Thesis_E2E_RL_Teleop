@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="dual_panda_mjros_ros2_control" params="ns_1 ns_2 hand_1 hand_2 initial_positions_1 initial_positions_2">
+    <ros2_control name="FrankaMjHardwareSystem" type="system">
+      <hardware>
+        <param name="robot_count">2</param>
+        <plugin>franka_hardware/FrankaMjHardwareSystem</plugin>
+        <param name="ns_1">${ns_1}</param>
+        <param name="ns_2">${ns_2}</param>
+        <param name="hand_1">${hand_1}</param>
+        <param name="hand_2">${hand_2}</param>
+        <!-- <param name="id_params_1">3.142,0,9.882664601944602875e-03,0.0,0.0,1.015965243006081486e+00,9.920505925946163529e-04,1.257203989758551733e-03,-8.602725873912586696e-03,1.016294931382810462e+00,1.325320396124884600e-02,-3.147515214196539901e+00,-9.325720092715364049e-03,1.433496581854265539e-03,3.043585082915040846e-03,-1.298835248997083636e-02,1.203120368905399168e-01,7.054985518159334612e-01,1.721156620317773611e-02,5.585859552566067032e-01,1.538424146925577995e-01,1.315144872613379853e-03,1.456904097582756470e-02,6.511039455061580217e-01,-5.118201835988471782e-01,1.764319404454050444e+00,1.591239406369119799e-02,1.809552944921168137e-04,-2.642722907786435125e-03,1.057744009811024087e-02,2.123338223396988370e-02,-8.335994616721520423e-03,9.042367296676118160e-02,-9.787846891742042407e-03,6.351129574313446255e-03,7.383905200584971445e-04,-1.055111393775631746e-03,2.354072567756407969e-02,1.730112502639507277e-01,-7.690607680037840621e-02,-3.700278384830953197e-05,-1.110835569201483919e-04,5.695332646879543853e-04,5.603873362228987791e-04,2.469890483724256156e-04,3.246848614436025592e-03,6.228008023990473391e-04,7.130144876028474306e-03,1.967748265287915660e-02,7.820253298015630503e-03,9.831298385307288279e-03,8.650812661373639967e-02,2.466547866616910101e-03,6.859311682756010463e-03,2.215511679127058764e-01,2.827649924996489261e-01,2.648928395663840418e-01,4.420570862578181992e-01,2.559254424165887665e-01,2.371439848810709405e-01,2.070632849812909237e-01,-8.732886023979924417e-02,-1.132899534263628535e-02,1.762605944314437900e-01,3.686245854261683413e-02,-1.279174715744085811e-01,-1.014289978918425789e-01,-2.626911511650541556e-02</param> -->
+      </hardware>
+
+      <xacro:macro name="configure_joint" params="joint_name initial_position">
+        <joint name="${joint_name}">
+          <param name="initial_position">${initial_position}</param>
+          <command_interface name="effort"/>
+          <command_interface name="position"/>
+          <command_interface name="velocity"/>
+          <state_interface name="position"/>
+          <state_interface name="velocity"/>
+          <state_interface name="effort"/>
+        </joint>
+      </xacro:macro>
+
+      <xacro:property name="initial_positions_list_1" value="${initial_positions_1.split(' ')}"/>
+      <xacro:property name="initial_positions_list_2" value="${initial_positions_2.split(' ')}"/>
+
+      <xacro:configure_joint joint_name="${ns_1}_joint1" initial_position="${initial_positions_list_1[0]}"/>
+      <xacro:configure_joint joint_name="${ns_1}_joint2" initial_position="${initial_positions_list_1[1]}"/>
+      <xacro:configure_joint joint_name="${ns_1}_joint3" initial_position="${initial_positions_list_1[2]}"/>
+      <xacro:configure_joint joint_name="${ns_1}_joint4" initial_position="${initial_positions_list_1[3]}"/>
+      <xacro:configure_joint joint_name="${ns_1}_joint5" initial_position="${initial_positions_list_1[4]}"/>
+      <xacro:configure_joint joint_name="${ns_1}_joint6" initial_position="${initial_positions_list_1[5]}"/>
+      <xacro:configure_joint joint_name="${ns_1}_joint7" initial_position="${initial_positions_list_1[6]}"/>
+
+      <xacro:configure_joint joint_name="${ns_2}_joint1" initial_position="${initial_positions_list_2[0]}"/>
+      <xacro:configure_joint joint_name="${ns_2}_joint2" initial_position="${initial_positions_list_2[1]}"/>
+      <xacro:configure_joint joint_name="${ns_2}_joint3" initial_position="${initial_positions_list_2[2]}"/>
+      <xacro:configure_joint joint_name="${ns_2}_joint4" initial_position="${initial_positions_list_2[3]}"/>
+      <xacro:configure_joint joint_name="${ns_2}_joint5" initial_position="${initial_positions_list_2[4]}"/>
+      <xacro:configure_joint joint_name="${ns_2}_joint6" initial_position="${initial_positions_list_2[5]}"/>
+      <xacro:configure_joint joint_name="${ns_2}_joint7" initial_position="${initial_positions_list_2[6]}"/>
+      
+    </ros2_control>
+  </xacro:macro>
+</robot>

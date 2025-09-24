@@ -1,0 +1,4 @@
+source;share/garmi_bringup/local_setup.bash
+source;share/garmi_bringup/local_setup.dsv
+source;share/garmi_bringup/local_setup.sh
+source;share/garmi_bringup/local_setup.zsh

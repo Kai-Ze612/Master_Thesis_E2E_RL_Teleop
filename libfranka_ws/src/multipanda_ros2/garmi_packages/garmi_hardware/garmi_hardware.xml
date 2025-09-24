@@ -1,0 +1,17 @@
+<library path="garmi_hardware">
+    <class name="garmi_hardware/GarmiHeadHardwareInterface"
+           type="garmi_hardware::GarmiHeadHardwareInterface"
+           base_class_type="hardware_interface::SystemInterface">
+        <description>
+            Hardware interface for interfacing with Garmi head's virtual machine
+        </description>
+    </class>
+
+    <class name="garmi_hardware/GarmiBaseHardwareInterface"
+           type="garmi_hardware::GarmiBaseHardwareInterface"
+           base_class_type="hardware_interface::SystemInterface">
+        <description>
+            Hardware interface for interfacing with Garmi base's virtual machine
+        </description>
+    </class>
+</library>

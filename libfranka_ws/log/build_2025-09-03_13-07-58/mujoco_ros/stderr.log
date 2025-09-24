@@ -1,0 +1,18 @@
+[33mCMake Warning at cmake/CompilerCache.cmake:33 (message):
+  ccache is enabled but was not found.  Not using it
+Call Stack (most recent call first):
+  cmake/CompilerCache.cmake:44 (_configure_ccache)
+  cmake/CompilerCache.cmake:44 (cmake_language)
+  cmake/ProjectOption.cmake:61 (configure_compiler_cache)
+  CMakeLists.txt:70 (configure_project_option)
+
+[0m
+[33mCMake Warning at /opt/ros/humble/share/ament_cmake_export_include_directories/cmake/ament_export_include_directories.cmake:44 (message):
+  ament_export_include_directories() package 'mujoco_ros' exports the include
+  directory
+  '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/include'
+  which doesn't exist
+Call Stack (most recent call first):
+  CMakeLists.txt:267 (ament_export_include_directories)
+
+[0m

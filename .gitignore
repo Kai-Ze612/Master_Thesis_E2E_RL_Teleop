@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Machine Learning / AI
+*.pkl
+*.h5
+*.pth
+*.bin
+*.model
+*.weights
+*.ckpt
+checkpoints/
+logs/
+runs/
+wandb/
+
+# Data files
+*.csv
+*.json
+*.npy
+*.npz
+data/
+datasets/
+raw_data/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+# ROS bag files (large data files)
+*.db3
+*.bag
+
+# Large visualization data
+visualization/*/rosbag2_*
+visualization/*/*.db3
+
+# Other large file patterns
+*.bin
+*.dat

@@ -1,0 +1,22 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from multi_mode_control_msgs/srv/SetRecoveryMode.srv
+// generated code does not contain a copyright notice
+
+
+module multi_mode_control_msgs {
+  module srv {
+    module SetRecoveryMode_Request_Constants {
+      const int32 AUTO = 0;
+      const int32 MANUAL = 1;
+      const int32 PROGRAM = 2;
+    };
+    struct SetRecoveryMode_Request {
+      int32 mode;
+
+      double timeout;
+    };
+    struct SetRecoveryMode_Response {
+      uint8 structure_needs_at_least_one_member;
+    };
+  };
+};
