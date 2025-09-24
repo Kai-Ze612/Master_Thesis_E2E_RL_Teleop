@@ -58,3 +58,23 @@ visualization/*/*.db3
 # Other large file patterns
 *.bin
 *.dat
+
+# ROS bag files (large data files)
+*.db3
+*.bag
+
+# Large visualization data
+visualization/*/rosbag2_*
+visualization/*/*.db3
+
+# Other large file patterns
+*.bin
+*.dat
+
+# Ignore specific folders
+ROS2_Instruction/
+Visualization/
+
+# Alternative: ignore any folder with these names anywhere
+**/ROS2_Instruction/
+**/Visualization/
