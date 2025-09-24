@@ -3,7 +3,7 @@
 <package format="3">
   <name>Reinforcement_Learning_In_Teleoperation</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Tau controller + Interpolation functions + RL for Delay compensation Task</description>
   <maintainer email="ge62meq@mytum.de">kai</maintainer>
   <license>TODO: License declaration</license>
 
