@@ -1,3 +1,7 @@
+"""
+The main RL training environment with delay simulation.
+"""
+
 # RL library imports
 import gymnasium as gym
 from gymnasium import spaces
@@ -8,7 +12,7 @@ from collections import deque
 import os
 
 # Custom modules
-from local_robot_simulator import LocalRobotSimulator
+from local_robot_simulator import LocalRobotSimulator, TrajectoryType
 from remote_robot_simulator import RemoteRobotSimulator
 from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator
 
@@ -19,55 +23,33 @@ class TeleoperationEnvWithDelay(gym.Env):
     def __init__(
         self,
         model_path: str,
-        experiment_config: int = 1,
+        experiment_config: int = 4,
         max_episode_steps: int = 500,
         control_freq: int = 500,
         robot_config: dict = None,
         max_cartesian_error: float = 0.3,
-        prediction_method: str = "linear_extrapolation"
         ):
         
-        self.episode_count = 0
-
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"Model path {model_path} does not exist.")
-
-        if experiment_config not in [1, 2, 3]:
-            raise ValueError(f"Invalid experiment_config: {experiment_config}. Must be 1, 2, or 3.")
-
-        if not (hasattr(LocalRobotSimulator, 'reset') and hasattr(LocalRobotSimulator, 'step')):
-            raise ImportError("LocalRobotSimulator must implement reset and step methods.")
-        if not (hasattr(RemoteRobotSimulator, 'reset') and hasattr(RemoteRobotSimulator, 'step')):
-            raise ImportError("RemoteRobotSimulator must implement reset and step methods.")
-
+        # Training Configurations
         self.max_episode_steps = max_episode_steps
         self.control_freq = control_freq
         self.current_step = 0
-        self.n_joints = 7
-        self.max_cartesian_error = max_cartesian_error
-        self.joint_limit_margin = 0.05
-        self.prediction_method = prediction_method
-
-        robot_config = {
-            "initial_qpos": np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785]),
-            "joint_limits_lower": np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973]),
-            "joint_limits_upper": np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973]),
-            "torque_limit": np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0]),
-            "default_kp": np.array([10, 10, 10, 10, 10, 10, 10]),
-            "default_kd": np.array([2, 2, 2, 2, 2, 2, 2]),
-            "tcp_offset": np.array([0.0, 0.0, 0.1034])
-        }
         
-        self.initial_qpos = robot_config["initial_qpos"]
-        self.joint_limits_lower = robot_config["joint_limits_lower"]
-        self.joint_limits_upper = robot_config["joint_limits_upper"]
-        self.torque_limit = robot_config["torque_limit"]
-        self.default_kp = robot_config["default_kp"]
-        self.default_kd = robot_config["default_kd"]
-        self.tcp_offset = robot_config["tcp_offset"]
+        self.max_cartesian_error = max_cartesian_error
+        self.joint_limit_margin = 0.05 # Margin to avoid touching joint limits, safety margin = joint_limit - limit_margin
 
-        print(f"Using prediction method: {self.prediction_method}")
+        # Fixed trajectory configuration - NO randomization
+        self.trajectory_type = "figure_8"
+        self.trajectory_scale = (0.1, 0.3)  # Fixed scale
 
+        # Robot configurations
+        self.initial_qpos = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785])
+        self.joint_limits_lower = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973])
+        self.joint_limits_upper = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973])
+        self.torque_limit = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0])
+        self.tcp_offset = np.array([0.0, 0.0, 0.1034])
+        self.n_joints = 7
+        
         # Initialize delay simulator
         self.delay_simulator = DelaySimulator(control_freq=control_freq, experiment_config=experiment_config)
 
@@ -88,7 +70,21 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.joint_pos_history = deque(maxlen=self.joint_history_len)
         self.joint_vel_history = deque(maxlen=self.joint_history_len)
 
-        self.leader = LocalRobotSimulator(control_freq=control_freq)
+        # Initialize leader with FIXED figure-8 trajectory - NO randomization
+        self.leader = LocalRobotSimulator(
+            control_freq=control_freq,
+            trajectory_type=TrajectoryType.FIGURE_8,  # Always figure-8
+            randomize_params=False                     # NO randomization
+        )
+        
+        # Set FIXED trajectory parameters
+        self.leader.set_trajectory_params(
+            scale=np.array(self.trajectory_scale),  # Fixed [0.1, 0.3]
+            frequency=0.1,                          # Fixed frequency
+            center=np.array([0.4, 0.0, 0.6]),      # Fixed center
+            initial_phase=0.0                       # Fixed phase
+        )
+        
         self.remote_robot = RemoteRobotSimulator(
             model_path=model_path,
             control_freq=control_freq,
@@ -121,12 +117,46 @@ class TeleoperationEnvWithDelay(gym.Env):
         
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
 
+    def _get_trajectory_enum(self, trajectory_str: str) -> TrajectoryType:
+        """Convert trajectory string to TrajectoryType enum"""
+        trajectory_map = {
+            "figure_8": TrajectoryType.FIGURE_8,
+            "square": TrajectoryType.SQUARE,
+            "star": TrajectoryType.STAR
+        }
+        if trajectory_str not in trajectory_map:
+            raise ValueError(f"Unknown trajectory type: {trajectory_str}. Must be one of {list(trajectory_map.keys())}")
+        return trajectory_map[trajectory_str]
+
+    def set_trajectory_type(self, trajectory_type: str, scale: tuple = None):
+        """Change trajectory type during training"""
+        trajectory_enum = self._get_trajectory_enum(trajectory_type)
+        self.trajectory_type = trajectory_type
+        
+        if scale is None:
+            scale = self.trajectory_scale
+        else:
+            self.trajectory_scale = scale
+            
+        self.leader.change_trajectory(
+            trajectory_enum, 
+            scale=np.array(scale),
+            frequency=0.1
+        )
+        print(f"Changed trajectory to {trajectory_type} with scale {scale}")
+
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self.current_step = 0
         self.episode_count += 1
         
-        leader_start_pos, _ = self.leader.reset()
+        # Simple reset - always use the same figure-8 trajectory
+        leader_start_pos, leader_info = self.leader.reset()
+        
+        # Confirm we're using figure-8 (for debugging)
+        if self.episode_count % 100 == 1:  # Print every 100 episodes
+            print(f"Episode {self.episode_count}: Using fixed figure-8 trajectory")
+        
         self.remote_robot.reset(self.initial_qpos)
         self.position_history.clear()
         self.action_history.clear()
@@ -229,10 +259,12 @@ class TeleoperationEnvWithDelay(gym.Env):
     def step(self, action: np.ndarray):
         self.current_step += 1
     
+        # Get new leader position from trajectory
         leader_output = self.leader.step()
         new_leader_position = leader_output[0] if isinstance(leader_output, tuple) else leader_output
         self.position_history.append(new_leader_position.copy())
         self.action_history.append(action.copy())
+        
         delayed_position = self._get_delayed_position()
         delayed_action = self._get_delayed_action()
         target_tcp_pos = delayed_position
@@ -351,8 +383,51 @@ class TeleoperationEnvWithDelay(gym.Env):
             'real_time_cartesian_error': real_time_error,
             'delay_magnitude': delay_magnitude,
             'config_name': f"{self.delay_simulator.delay_config_name if hasattr(self.delay_simulator, 'delay_config_name') else f'Config {self.experiment_config}'} ({self.prediction_method})",
-            'prediction_method': self.prediction_method
+            'prediction_method': self.prediction_method,
+            'trajectory_type': 'figure_8',  # Always figure-8
+            'trajectory_scale': self.trajectory_scale
         }
 
     def close(self):
         pass
+
+
+# Simplified example usage for training with FIXED figure-8 trajectory
+if __name__ == "__main__":
+    # Create environment with FIXED figure-8 trajectory - NO randomization
+    env = TeleoperationEnvWithDelay(
+        model_path="path/to/your/model.xml",
+        experiment_config=1,
+        max_episode_steps=1000,
+        control_freq=200,
+        prediction_method="linear_extrapolation"
+    )
+    
+    # Test the environment
+    obs, info = env.reset()
+    print("=== SIMPLE TRAINING SETUP ===")
+    print(f"Trajectory: FIXED figure-8")
+    print(f"Scale: {env.trajectory_scale}")
+    print(f"No randomization - consistent training")
+    print(f"Observation shape: {obs.shape}")
+    
+    # Run training loop
+    for episode in range(5):
+        obs, info = env.reset()
+        episode_reward = 0
+        
+        for step in range(100):
+            action = env.action_space.sample()  # Replace with your RL policy
+            obs, reward, terminated, truncated, info = env.step(action)
+            episode_reward += reward
+            
+            if step % 25 == 0:
+                print(f"Ep {episode+1}, Step {step}: Error = {info['real_time_cartesian_error']:.4f}")
+            
+            if terminated or truncated:
+                break
+        
+        print(f"Episode {episode+1} finished. Total reward: {episode_reward:.2f}")
+    
+    print("=== Training setup verified! ===")
+    env.close()
