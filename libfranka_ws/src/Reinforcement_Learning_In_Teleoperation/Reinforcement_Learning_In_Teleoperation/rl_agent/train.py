@@ -133,11 +133,11 @@ def main():
                        help="Control frequency in Hz.")
     parser.add_argument("--max_steps", type=int, default=1000, 
                        help="Maximum steps per episode.")
-    parser.add_argument("--max_cartesian_error", type=float, default=0.3, 
+    parser.add_argument("--max_cartesian_error", type=float, default=1.0, 
                        help="Maximum cartesian error before episode termination (meters).")
     
     # Training parameters
-    parser.add_argument("--timesteps", type=int, default=500000, 
+    parser.add_argument("--timesteps", type=int, default=1000000, 
                        help="Total number of training timesteps.")
     parser.add_argument("--save_freq", type=int, default=25000, 
                        help="Frequency to save model checkpoints.")

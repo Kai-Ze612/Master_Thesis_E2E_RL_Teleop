@@ -23,6 +23,9 @@ class RemoteRobotSimulator:
         self.data = mujoco.MjData(self.model)
         self.n_joints = 7
         self.ee_body_name = 'panda_hand'
+
+        # Initialize IK solver
+        self.ik_solver = InverseKinematicsSolver(self.model, joint_limits_lower, joint_limits_upper)
         
         # Time step for velocity calculations
         self.dt = 1.0 / control_freq
@@ -38,9 +41,6 @@ class RemoteRobotSimulator:
         self.joint_limits_lower = joint_limits_lower
         self.joint_limits_upper = joint_limits_upper
 
-        # Initialize IK solver
-        self.ik_solver = InverseKinematicsSolver(self.model, joint_limits_lower, joint_limits_upper)
-    
         # TCP offset from flange to end-effector (in meters
         self.tcp_offset = np.array([0.0, 0.0, 0.1034])
         
