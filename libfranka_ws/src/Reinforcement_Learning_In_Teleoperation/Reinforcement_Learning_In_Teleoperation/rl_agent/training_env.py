@@ -24,7 +24,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         self,
         model_path: str,
         experiment_config: int = 4,
-        max_episode_steps: int = 500,
+        max_episode_steps: int = 1000,  # Changed from 500 to 1000
         control_freq: int = 500,
         max_cartesian_error: float = 1.0,
         ):
@@ -35,20 +35,20 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.current_step = 0
         
         self.max_cartesian_error = max_cartesian_error
-        self.joint_limit_margin = 0.05 # Margin to avoid touching joint limits, safety margin = joint_limit - limit_margin
+        self.joint_limit_margin = 0.05
 
         # Robot configurations
         self.initial_qpos = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785])
         self.joint_limits_lower = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973])
         self.joint_limits_upper = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973])
         self.torque_limit = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0])
-        self.tcp_offset = np.array([0.0, 0.0, 0.1034])
         self.n_joints = 7
         
         # Initialize delay simulator
         self.experiment_config = experiment_config
         self.delay_simulator = DelaySimulator(control_freq=control_freq, experiment_config=experiment_config)
-        self.characteristic_torque = np.array([30.0, 30.0, 20.0, 20.0, 10.0, 5.0, 5.0])
+        
+        # REMOVED: self.characteristic_torque (computed adaptively now!)
 
         self.joint_history_len = 1
         self.action_history_len = 5
@@ -65,17 +65,17 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.leader = LocalRobotSimulator(
             control_freq=control_freq,
             trajectory_type=TrajectoryType.FIGURE_8,
-            randomize_params=False                     # randomization
+            randomize_params=False
         )
 
         # Trajectory configuration
         self.trajectory_type = "figure_8"
-        self.trajectory_scale = (0.1, 0.3)  # Fixed scale
+        self.trajectory_scale = (0.1, 0.3)
         self.leader.set_trajectory_params(
-            scale=np.array(self.trajectory_scale),  # Fixed [0.1, 0.3]
-            frequency=0.1,                          # Fixed frequency
-            center=np.array([0.4, 0.0, 0.6]),      # Fixed center
-            initial_phase=0.0                       # Fixed phase
+            scale=np.array(self.trajectory_scale),
+            frequency=0.1,
+            center=np.array([0.4, 0.0, 0.6]),
+            initial_phase=0.0
         )
         
         # Initialize remote robot (follower)
@@ -87,18 +87,31 @@ class TeleoperationEnvWithDelay(gym.Env):
             joint_limits_upper=self.joint_limits_upper
         )
 
-        # Action space - normalized torques
+        # Action space - normalized percentage corrections (±50%)
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(self.n_joints,), dtype=np.float32)
         
-        # Observation space
+        # UPDATED: Observation space with gravity torque
         obs_dim = (
             (self.n_joints * self.joint_history_len) +  # joint positions
             (self.n_joints * self.joint_history_len) +  # joint velocities
-            (3) +                                       # delayed positions
+            self.n_joints +                             # gravity torques (NEW!)
+            3 +                                         # target position
             (self.n_joints * self.action_history_len)  # action history
         )
         
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
+        # UPDATED: Bounded observation space
+        self.observation_space = spaces.Box(
+            low=-1.0, 
+            high=1.0, 
+            shape=(obs_dim,), 
+            dtype=np.float32
+        )
+        
+        # Normalization constants
+        self.max_joint_vel = 2.0  # rad/s
+        self.max_gravity_torque = np.array([40.0, 40.0, 30.0, 30.0, 10.0, 5.0, 5.0])
+        self.workspace_center = np.array([0.4, 0.0, 0.6])
+        self.workspace_size = np.array([0.4, 0.4, 0.3])
 
         # Episode tracking
         self.episode_count = 0
@@ -108,7 +121,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.current_step = 0
         self.episode_count += 1
         
-        # Rest Trajectory generator
+        # Reset Trajectory generator
         leader_start_pos, leader_info = self.leader.reset()
         
         # Reset remote robot
@@ -133,10 +146,10 @@ class TeleoperationEnvWithDelay(gym.Env):
             self.joint_pos_history.append(initial_remote_state["joint_pos"].copy())
             self.joint_vel_history.append(initial_remote_state["joint_vel"].copy())
             
-        # Initialize action history
+        # Initialize action history with zeros (not random!)
         max_action_history = max(self.action_history_len, self.delay_simulator.constant_action_delay + 1)
         for _ in range(max_action_history):
-            self.action_history.append(np.random.uniform(-0.5, 0.5, self.n_joints))
+            self.action_history.append(np.zeros(self.n_joints))  # Changed from random
 
         return self._get_observation(), self._get_info()
 
@@ -180,17 +193,14 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.position_history.append(new_leader_position.copy())
         self.action_history.append(action.copy())
         
-        # Get delayed signals (for config=4, these will have no delay)
+        # Get delayed signals
         delayed_position = self._get_delayed_position()
         delayed_action = self._get_delayed_action()
-        target_tcp_pos = delayed_position
         
-        # Send action to remote robot (FULL TAU CONTROL)
+        # UPDATED: Call remote_robot.step() without characteristic_torque
         self.remote_robot.step(
-            target_pos=target_tcp_pos,
-            normalized_action=delayed_action,
-            characteristic_torque=self.characteristic_torque,
-            action_delay_steps=self.delay_simulator.get_action_delay_steps(len(self.action_history))
+            target_pos=delayed_position,
+            normalized_action=delayed_action
         )
         
         # Get remote robot state after step
@@ -201,50 +211,102 @@ class TeleoperationEnvWithDelay(gym.Env):
         real_time_error = np.linalg.norm(new_leader_position - follower_tcp_pos)
         
         # Calculate reward and termination
-        reward = self._calculate_reward(real_time_error, action)
+        reward = self._calculate_reward(real_time_error, action, remote_state)
         terminated, term_penalty = self._check_termination(real_time_error)
         reward += term_penalty
         truncated = self.current_step >= self.max_episode_steps
         
         return self._get_observation(), reward, terminated, truncated, self._get_info()
 
-    def _get_observation(self) -> np.ndarray:
-        """Get simplified observation for no-delay testing."""
-        joint_pos_hist_flat = np.array(list(self.joint_pos_history)).flatten()
-        joint_vel_hist_flat = np.array(list(self.joint_vel_history)).flatten()
-        recent_actions = list(self.action_history)[-self.action_history_len:]
-        action_history_flat = np.array(recent_actions).flatten()
-
-        # Get current target position (no delay for config 4)
-        current_target_pos = self._get_delayed_position()
+    def _normalize_observation(self, obs_dict: dict) -> np.ndarray:
+        """Normalize all observation components to [-1, 1]"""
         
-        # Simple observation: joint state + target + action history
+        # Joint positions: normalize by limits
+        joint_pos_norm = 2 * (obs_dict['joint_pos'] - self.joint_limits_lower) / \
+                         (self.joint_limits_upper - self.joint_limits_lower) - 1
+        
+        # Joint velocities: clip and normalize
+        joint_vel_norm = np.clip(obs_dict['joint_vel'] / self.max_joint_vel, -1, 1)
+        
+        # Gravity torques: normalize by maximum expected values
+        gravity_norm = np.clip(obs_dict['gravity_torque'] / self.max_gravity_torque, -1, 1)
+        
+        # Target position: normalize by workspace
+        target_pos_norm = (obs_dict['target_pos'] - self.workspace_center) / self.workspace_size
+        target_pos_norm = np.clip(target_pos_norm, -1, 1)
+        
+        # Action history: already normalized
+        action_history_norm = obs_dict['action_history']
+        
+        # Concatenate
         observation = np.concatenate([
-            joint_pos_hist_flat,
-            joint_vel_hist_flat,
-            current_target_pos,
-            action_history_flat
+            joint_pos_norm,
+            joint_vel_norm,
+            gravity_norm,
+            target_pos_norm,
+            action_history_norm
         ]).astype(np.float32)
-
+        
         return observation
 
-    def _calculate_reward(self, cartesian_error: float, action: np.ndarray) -> float:
-        """Calculate reward based on tracking error and action penalties"""
+    def _get_observation(self) -> np.ndarray:
+        """Get normalized observation with gravity torque"""
+        remote_state = self.remote_robot.get_state()
+        
+        # Current state
+        joint_pos = remote_state['joint_pos']
+        joint_vel = remote_state['joint_vel']
+        gravity_torque = remote_state['gravity_torque']  # NEW!
+        
+        # Target position
+        current_target_pos = self._get_delayed_position()
+        
+        # Action history
+        recent_actions = list(self.action_history)[-self.action_history_len:]
+        action_history_flat = np.array(recent_actions).flatten()
+        
+        # Build observation dictionary
+        obs_dict = {
+            'joint_pos': joint_pos,
+            'joint_vel': joint_vel,
+            'gravity_torque': gravity_torque,  # NEW!
+            'target_pos': current_target_pos,
+            'action_history': action_history_flat
+        }
+        
+        return self._normalize_observation(obs_dict)
+
+    def _calculate_reward(self, cartesian_error: float, action: np.ndarray, remote_state: dict) -> float:
+        """
+        UPDATED: Reward for multiplicative residual learning
+        """
         cartesian_error = np.clip(cartesian_error, 0.0, 10.0)
         
-        # Tracking reward
-        if cartesian_error < 0.05:
-            tracking_reward = 2.0 - 20 * cartesian_error
-        elif cartesian_error < 0.1:
-            tracking_reward = 1.0 - 10 * cartesian_error
-        else:
-            tracking_reward = np.exp(-2.0 * cartesian_error**2)
+        # Tracking reward (smooth exponential)
+        tracking_reward = 10.0 * np.exp(-100.0 * cartesian_error**2)
         
-        # Action penalty (encourage smooth actions)
-        action_penalty = -0.01 * np.sum(np.square(np.clip(action, -1.0, 1.0)))
+        # Residual percentage penalty
+        # Since action represents percentage correction, penalize large percentages
+        residual_percentage = np.mean(np.abs(action))
+        residual_penalty = -0.1 * residual_percentage
+        
+        # Action smoothness penalty
+        if len(self.action_history) >= 2:
+            action_change = action - self.action_history[-1]
+            smoothness_penalty = -0.5 * np.sum(action_change**2)
+        else:
+            smoothness_penalty = 0.0
+        
+        # Velocity penalty
+        velocity_penalty = -0.01 * np.sum(remote_state['joint_vel']**2)
         
         # Total reward
-        total_reward = tracking_reward + action_penalty
+        total_reward = (
+            tracking_reward +
+            residual_penalty +
+            smoothness_penalty +
+            velocity_penalty
+        )
         
         return total_reward
 
@@ -280,15 +342,27 @@ class TeleoperationEnvWithDelay(gym.Env):
         real_time_error = np.linalg.norm(current_pos - follower_pos)
         delay_magnitude = np.linalg.norm(current_pos - delayed_pos)
         
-        return {
+        # Get debug info from robot
+        debug_info = self.remote_robot.get_debug_info()
+        
+        info = {
             'real_time_cartesian_error': real_time_error,
             'delay_magnitude': delay_magnitude,
-            'config_name': f"Config {self.experiment_config} (4=no_delay)",
+            'config_name': f"Config {self.experiment_config}",
             'experiment_config': self.experiment_config,
-            'control_mode': 'full_tau',
-            'trajectory_type': 'figure_8',
+            'control_mode': 'inverse_dynamics_multiplicative',
+            'trajectory_type': self.trajectory_type,
             'trajectory_scale': self.trajectory_scale
         }
+        
+        # Add torque decomposition info if available
+        if debug_info:
+            info['tau_baseline_norm'] = np.linalg.norm(debug_info.get('tau_baseline', 0))
+            info['tau_total_norm'] = np.linalg.norm(debug_info.get('tau_total', 0))
+            if 'action_clipped' in debug_info:
+                info['mean_correction_percentage'] = np.mean(np.abs(debug_info['action_clipped'])) * 100
+        
+        return info
 
     def close(self):
         pass
