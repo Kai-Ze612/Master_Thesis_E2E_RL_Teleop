@@ -13,14 +13,15 @@ from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback, BaseCallback
 
+# Custom imports
 from training_env import TeleoperationEnvWithDelay
+from custom_policy import create_predictor_policy  # ← NEW: Import custom policy
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class EarlyStoppingCallback(BaseCallback):
-    """Stop training if no improvement for N evaluations."""
     def __init__(self, eval_freq: int, patience: int = 10, min_improvement: float = 1.0, verbose: int = 1):
         super().__init__(verbose)
         self.eval_freq = eval_freq
@@ -56,7 +57,6 @@ class EarlyStoppingCallback(BaseCallback):
         
         return True
 
-
 class TrackingErrorLoggingCallback(BaseCallback):
     """Log tracking errors to tensorboard."""
     def __init__(self, verbose: int = 1):
@@ -75,143 +75,152 @@ class TrackingErrorLoggingCallback(BaseCallback):
                         self.logger.record('custom/correction_pct', info['mean_correction_percentage'])
         return True
 
-
-def test_baseline_vs_rl(env, model, n_episodes=10):
-    """Compare baseline (action=0) vs RL policy."""
-    print(f"\n{'='*70}\nBASELINE EVALUATION (No RL)\n{'='*70}")
-    
-    baseline_errors, baseline_rewards = [], []
-    
-    for ep in range(n_episodes):
-        obs, _ = env.reset()
-        done, step_count = False, 0
-        ep_errors, ep_rewards = [], []
-        
-        while not done and step_count < env.max_episode_steps:
-            obs, reward, terminated, truncated, info = env.step(np.zeros(env.n_joints))
-            done = terminated or truncated
-            ep_errors.append(info['real_time_cartesian_error'])
-            ep_rewards.append(reward)
-            step_count += 1
-        
-        baseline_errors.append(np.mean(ep_errors))
-        baseline_rewards.append(np.sum(ep_rewards))
-        print(f"  Ep {ep+1}: Error={np.mean(ep_errors):.4f}m, Reward={np.sum(ep_rewards):.0f}, Steps={step_count}")
-    
-    print(f"\nBaseline: Error={np.mean(baseline_errors):.4f}±{np.std(baseline_errors):.4f}m, Reward={np.mean(baseline_rewards):.0f}±{np.std(baseline_rewards):.0f}")
-    
-    print(f"\n{'='*70}\nRL POLICY EVALUATION\n{'='*70}")
-    
-    rl_errors, rl_rewards, rl_actions = [], [], []
-    
-    for ep in range(n_episodes):
-        obs, _ = env.reset()
-        done, step_count = False, 0
-        ep_errors, ep_rewards, ep_actions = [], [], []
-        
-        while not done and step_count < env.max_episode_steps:
-            action, _ = model.predict(obs, deterministic=True)
-            obs, reward, terminated, truncated, info = env.step(action)
-            done = terminated or truncated
-            ep_errors.append(info['real_time_cartesian_error'])
-            ep_rewards.append(reward)
-            ep_actions.append(np.abs(action))
-            step_count += 1
-        
-        rl_errors.append(np.mean(ep_errors))
-        rl_rewards.append(np.sum(ep_rewards))
-        rl_actions.extend(ep_actions)
-        print(f"  Ep {ep+1}: Error={np.mean(ep_errors):.4f}m, Reward={np.sum(ep_rewards):.0f}, Steps={step_count}")
-    
-    print(f"\nRL Policy: Error={np.mean(rl_errors):.4f}±{np.std(rl_errors):.4f}m, Reward={np.mean(rl_rewards):.0f}±{np.std(rl_rewards):.0f}, |Action|={np.mean(rl_actions):.3f}")
-    
-    error_improvement = (np.mean(baseline_errors) - np.mean(rl_errors)) / np.mean(baseline_errors) * 100
-    
-    print(f"\n{'='*70}\nCOMPARISON\n{'='*70}")
-    print(f"Error improvement: {error_improvement:+.1f}%")
-    
-    if error_improvement > 10:
-        print("VERDICT: ✓ RL helps significantly")
-    elif error_improvement > 0:
-        print("VERDICT: ~ RL helps slightly")
-    else:
-        print("VERDICT: ✗ RL not helping")
-    print(f"{'='*70}\n")
-    
-    return {
-        'baseline_error': np.mean(baseline_errors),
-        'rl_error': np.mean(rl_errors),
-        'error_improvement': error_improvement,
-        'mean_action': np.mean(rl_actions)
-    }
-
-
-## Training starts
 def train_agent(args):
+    """Train SAC agent with learned NN predictor."""
+    
+    # Create run name
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_name = f"SAC_InvDyn_Config{args.config}_{timestamp}"
+    run_name = f"Config{args.config}_NNPredictor_{timestamp}"
+    
+    # Setup directories
     output_dir = os.path.join(args.output_path, run_name)
     log_dir = os.path.join(output_dir, "logs")
     model_dir = os.path.join(output_dir, "models")
-    
     os.makedirs(log_dir, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
     
-    print(f"{'='*70}\nINVERSE DYNAMICS + RL TRAINING\nConfig {args.config}, {args.freq}Hz, {args.max_steps} steps/ep\nEarly stopping: {args.early_stopping} (patience={args.patience if args.early_stopping else 'N/A'})\n{'='*70}")
+    # Print training configuration
+    print(f"\n{'='*70}")
+    print(f"TRAINING WITH LEARNED NN PREDICTOR")
+    print(f"{'='*70}")
+    print(f"Config: {args.config}")
+    print(f"Prediction: Learned Neural Network (not manual interpolation)")
+    print(f"Timesteps: {args.timesteps:,}")
+    print(f"Seed: {args.seed if args.seed else 'Random'}")
+    print(f"Learning rate: {args.learning_rate}")
+    print(f"Network: {args.net_arch}")
+    print(f"Output: {output_dir}")
+    print(f"{'='*70}\n")
 
+    # Environment configuration
     env_kwargs = {
         'model_path': args.model_path,
         'experiment_config': args.config,
         'control_freq': args.freq,
         'max_episode_steps': args.max_steps,
         'max_cartesian_error': args.max_cartesian_error,
+        'use_interpolation': False,  # Not used anymore
     }
 
+    # Create environments
     env = make_vec_env(lambda: Monitor(TeleoperationEnvWithDelay(**env_kwargs)), n_envs=1)
     eval_env = Monitor(TeleoperationEnvWithDelay(**env_kwargs))
 
+    # Setup callbacks
     callbacks = [
-        EvalCallback(eval_env, best_model_save_path=model_dir, log_path=log_dir, 
-                    eval_freq=args.eval_freq, n_eval_episodes=args.eval_episodes, 
-                    deterministic=False, verbose=1),
-        CheckpointCallback(save_freq=args.save_freq, save_path=model_dir, name_prefix="sac_invdyn"),
+        EvalCallback(
+            eval_env, 
+            best_model_save_path=model_dir, 
+            log_path=log_dir, 
+            eval_freq=args.eval_freq, 
+            n_eval_episodes=args.eval_episodes, 
+            deterministic=False, 
+            verbose=1
+        ),
+        CheckpointCallback(
+            save_freq=args.save_freq, 
+            save_path=model_dir, 
+            name_prefix="sac_nnpredictor"
+        ),
         TrackingErrorLoggingCallback(verbose=1)
     ]
     
     if args.early_stopping:
-        callbacks.append(EarlyStoppingCallback(args.eval_freq, args.patience, args.min_improvement, verbose=1))
+        callbacks.append(
+            EarlyStoppingCallback(
+                args.eval_freq, 
+                args.patience, 
+                args.min_improvement, 
+                verbose=1
+            )
+        )
 
+    # ═══════════════════════════════════════════════════════════
+    # CREATE CUSTOM POLICY WITH NN PREDICTOR
+    # ═══════════════════════════════════════════════════════════
+    policy_kwargs = create_predictor_policy()
+    
+    print(f"\n{'='*70}")
+    print(f"CREATING SAC WITH CUSTOM POLICY")
+    print(f"{'='*70}")
+    print(f"Policy: Custom (Predictor + Controller)")
+    print(f"Features dim: 256")
+    print(f"Actor/Critic nets: [256, 256]")
+    print(f"{'='*70}\n")
+
+    # Create SAC model with custom policy
     model = SAC(
-        'MlpPolicy', env,
-        learning_rate=args.learning_rate, buffer_size=args.buffer_size, batch_size=args.batch_size,
-        ent_coef=args.ent_coef, gamma=args.gamma, tau=args.tau,
-        learning_starts=args.learning_starts, train_freq=(args.train_freq, "step"),
-        gradient_steps=args.gradient_steps, target_update_interval=args.target_update_interval,
-        seed=args.seed, verbose=1, tensorboard_log=log_dir,
-        policy_kwargs=dict(net_arch=args.net_arch, activation_fn=args.activation_fn, optimizer_kwargs=dict(eps=1e-5))
+        'MlpPolicy', 
+        env,
+        learning_rate=args.learning_rate, 
+        buffer_size=args.buffer_size, 
+        batch_size=args.batch_size,
+        ent_coef=args.ent_coef, 
+        gamma=args.gamma, 
+        tau=args.tau,
+        learning_starts=args.learning_starts, 
+        train_freq=(args.train_freq, "step"),
+        gradient_steps=args.gradient_steps, 
+        target_update_interval=args.target_update_interval,
+        seed=args.seed, 
+        verbose=1, 
+        tensorboard_log=log_dir,
+        policy_kwargs=policy_kwargs  # ← CUSTOM POLICY HERE!
     )
 
+    # Train model
     try:
-        model.learn(total_timesteps=args.timesteps, callback=callbacks, progress_bar=True, tb_log_name="SAC_InvDyn")
-        model.save(os.path.join(model_dir, "final_model.zip"))
+        print(f"\n{'='*70}")
+        print(f"STARTING TRAINING")
+        print(f"{'='*70}\n")
         
-        print(f"\n{'='*70}\nPOST-TRAINING EVALUATION\n{'='*70}")
-        results = test_baseline_vs_rl(eval_env, model, n_episodes=20)
+        model.learn(
+            total_timesteps=args.timesteps, 
+            callback=callbacks, 
+            progress_bar=True, 
+            tb_log_name="SAC_NNPredictor"
+        )
         
-        import json
-        with open(os.path.join(output_dir, "results.json"), 'w') as f:
-            json.dump(results, f, indent=2)
+        # Save final model
+        final_model_path = os.path.join(model_dir, "final_model.zip")
+        model.save(final_model_path)
+        
+        print(f"\n{'='*70}")
+        print(f"TRAINING COMPLETE")
+        print(f"{'='*70}")
+        print(f"Final model saved to: {final_model_path}")
+        print(f"Best model saved to: {os.path.join(model_dir, 'best_model.zip')}")
+        print(f"Tensorboard logs: {log_dir}")
+        print(f"{'='*70}\n")
             
     except Exception as e:
-        print(f"\nError: {e}")
-        model.save(os.path.join(model_dir, "error_model.zip"))
+        print(f"\n{'='*70}")
+        print(f"ERROR DURING TRAINING")
+        print(f"{'='*70}")
+        print(f"Error: {e}")
+        
+        # Save error model for debugging
+        error_model_path = os.path.join(model_dir, "error_model.zip")
+        model.save(error_model_path)
+        print(f"Error model saved to: {error_model_path}")
+        print(f"{'='*70}\n")
         raise
+        
     finally:
         env.close()
         eval_env.close()
     
     return output_dir
-
 
 def main():
     parser = argparse.ArgumentParser(description="Train inverse dynamics + RL controller")
@@ -220,11 +229,19 @@ def main():
     parser.add_argument("--output_path", type=str, default="./rl_training_output")
     parser.add_argument("--freq", type=int, default=500)
     parser.add_argument("--max_steps", type=int, default=1000)
-    parser.add_argument("--max_cartesian_error", type=float, default=1.0)
+    parser.add_argument("--max_cartesian_error", type=float, default=0.3)
     parser.add_argument("--timesteps", type=int, default=1000000)
     parser.add_argument("--save_freq", type=int, default=25000)
     parser.add_argument("--eval_freq", type=int, default=2500)
-    parser.add_argument("--eval_episodes", type=int, default=10)
+    parser.add_argument("--eval_episodes", type=int, default=30)
+    
+    # Interpolation arguments
+    parser.add_argument("--use_interpolation", action="store_true",
+                       help="Enable linear interpolation for trajectory prediction")
+    parser.add_argument("--no_interpolation", dest="use_interpolation", action="store_false",
+                       help="Disable interpolation (baseline)")
+    parser.set_defaults(use_interpolation=True)
+    
     parser.add_argument("--early_stopping", action="store_true")
     parser.add_argument("--patience", type=int, default=10)
     parser.add_argument("--min_improvement", type=float, default=1.0)
@@ -238,7 +255,7 @@ def main():
     parser.add_argument("--train_freq", type=int, default=1)
     parser.add_argument("--gradient_steps", type=int, default=1)
     parser.add_argument("--target_update_interval", type=int, default=1)
-    parser.add_argument("--net_arch", type=int, nargs='+', default=[512, 256])
+    parser.add_argument("--net_arch", type=int, nargs='+', default=[1024, 512, 256])
     parser.add_argument("--activation_fn", type=str, default="relu", choices=["relu","tanh","elu","silu"])
     parser.add_argument("--seed", type=int, default=None)
     

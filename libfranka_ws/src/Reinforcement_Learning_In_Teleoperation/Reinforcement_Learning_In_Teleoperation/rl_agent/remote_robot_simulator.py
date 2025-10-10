@@ -1,9 +1,20 @@
 """
-This script serves as a mujoco simulator for remote robot (follower).
+MuJoCo-based simulator for the remote robot (follower).
+
+This module implements:
+- Inverse kinematics to convert target end-effector positions to joint angles.
+- Adaptive PD control, when delay is high, PD gains are decreased, when delay is low, PD gains are increased.
+- Inverse dynamics controller to compute baseline torques.
+- RL agent learns torque compensation
+- Interpolation using NN predictor to predict missing trajectory points due to delay. 
 """
+
+from __future__ import annotations
+from typing import Optional, Any
 
 import mujoco
 import numpy as np
+from numpy.typing import NDArray
 
 from Reinforcement_Learning_In_Teleoperation.controllers.inverse_kinematics import InverseKinematicsSolver
 
@@ -13,9 +24,13 @@ class RemoteRobotSimulator:
                  control_freq: int,
                  torque_limits: np.ndarray, 
                  joint_limits_lower: np.ndarray,
-                 joint_limits_upper: np.ndarray):
+                 joint_limits_upper: np.ndarray,
+                 use_interpolation: bool = True):
         """
         Initializes the remote robot simulator.
+        
+        Args:
+            use_interpolation: If True, use linear interpolation to predict current target
         """
 
         # Initialize MuJoCo model and data
@@ -29,6 +44,7 @@ class RemoteRobotSimulator:
         
         # Time step for velocity calculations
         self.dt = 1.0 / control_freq
+        self.control_freq = control_freq
 
         # Simulation frequency and substeps
         sim_freq = int(1.0 / self.model.opt.timestep)
@@ -48,6 +64,15 @@ class RemoteRobotSimulator:
         self.alpha_p = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0])
         self.alpha_d = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0])
         
+        # Interpolation settings
+        self.use_interpolation = use_interpolation
+        self.min_delay_for_interp = 0.01  # Only interpolate if delay > 10ms
+        
+        # For velocity estimation
+        self.last_target_pos = None
+        self.last_target_time = 0.0
+        self.current_time = 0.0
+        
         # State variables
         self.current_q_target = np.zeros(self.n_joints)
         self.last_q_target = np.zeros(self.n_joints)
@@ -65,6 +90,11 @@ class RemoteRobotSimulator:
         
         self.current_q_target = initial_qpos.copy()
         self.last_q_target = initial_qpos.copy()
+        
+        # Reset interpolation state
+        self.last_target_pos = None
+        self.current_time = 0.0
+        self.last_target_time = 0.0
 
     def compute_dynamics_terms(self, q: np.ndarray, qd: np.ndarray):
         """
@@ -111,6 +141,50 @@ class RemoteRobotSimulator:
         
         return M, C_qd, G
     
+    def interpolate_target_position(self, 
+                                    delayed_target_pos: np.ndarray,
+                                    estimated_delay: float) -> np.ndarray:
+        """
+        Linear interpolation to predict current target position.
+        
+        Formula: 
+            predicted_pos = delayed_pos + velocity * delay
+        
+        Args:
+            delayed_target_pos: Target position from delayed observation (3,)
+            estimated_delay: Estimated delay in seconds
+            
+        Returns:
+            predicted_target_pos: Predicted current position (3,)
+        """
+        
+        # If no delay or interpolation disabled, return as-is
+        if not self.use_interpolation or estimated_delay < self.min_delay_for_interp:
+            return delayed_target_pos
+        
+        # If this is first call, can't estimate velocity
+        if self.last_target_pos is None:
+            self.last_target_pos = delayed_target_pos.copy()
+            self.last_target_time = self.current_time
+            return delayed_target_pos
+        
+        # Estimate velocity from recent history
+        dt = self.current_time - self.last_target_time
+        
+        if dt < 1e-6:  # Avoid division by zero
+            target_velocity = np.zeros(3)
+        else:
+            target_velocity = (delayed_target_pos - self.last_target_pos) / dt
+        
+        # Linear extrapolation: predict current position
+        predicted_target_pos = delayed_target_pos + target_velocity * estimated_delay
+        
+        # Update history
+        self.last_target_pos = delayed_target_pos.copy()
+        self.last_target_time = self.current_time
+        
+        return predicted_target_pos
+    
     def compute_inverse_dynamics_torque(self, 
                                        q: np.ndarray, 
                                        qd: np.ndarray,
@@ -133,15 +207,24 @@ class RemoteRobotSimulator:
         
         return tau_required
     
-    def step(self, target_pos: np.ndarray, normalized_action: np.ndarray):
+    def step(self, target_pos: np.ndarray, normalized_action: np.ndarray, estimated_delay: float = 0.0):
+        """
+        Execute one control step.
+        NOTE: No manual interpolation! NN predictor in policy handles prediction.
+        """
+        
+        # Update time
+        self.current_time += self.dt
         
         # Get current robot state
         q_current = self.data.qpos[:self.n_joints].copy()
         qd_current = self.data.qvel[:self.n_joints].copy()
         
-        # Convert target position to joint space using IK       
+        # NO INTERPOLATION HERE! 
+        # NN predictor in the policy network learns to predict current position
+        # We just use the delayed target directly for IK
         q_target, ik_success = self.ik_solver.solver(
-            target_pos,
+            target_pos,  # ← Use delayed position directly!
             q_current,
             self.ee_body_name
         )
@@ -166,7 +249,8 @@ class RemoteRobotSimulator:
         )
         
         # Multiplicative correction
-        tau_total = tau_baseline * (1.0 + normalized_action)
+        action_clipped = np.clip(normalized_action, -0.5, 0.5)
+        tau_total = tau_baseline * (1.0 + action_clipped)
         
         # Clip to actuator limits
         tau_clipped = np.clip(tau_total, -self.torque_limits, self.torque_limits)
@@ -181,7 +265,7 @@ class RemoteRobotSimulator:
         # Store debug information
         self.debug_info = {
             'tau_baseline': tau_baseline,
-            'normalized action': normalized_action,
+            'action_clipped': action_clipped,
             'tau_total': tau_total,
             'tau_clipped': tau_clipped,
         }

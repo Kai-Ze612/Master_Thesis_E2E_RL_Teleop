@@ -1,7 +1,5 @@
 """
 The main RL training environment with delay simulation.
-
-We are going to train a full tau controller, using RL
 """
 
 # RL library imports
@@ -24,9 +22,10 @@ class TeleoperationEnvWithDelay(gym.Env):
         self,
         model_path: str,
         experiment_config: int = 4,
-        max_episode_steps: int = 1000,  # Changed from 500 to 1000
+        max_episode_steps: int = 1000,
         control_freq: int = 500,
         max_cartesian_error: float = 1.0,
+        use_interpolation: bool = True,  # Not used anymore, kept for compatibility
         ):
         
         # Training Configurations
@@ -48,18 +47,33 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.experiment_config = experiment_config
         self.delay_simulator = DelaySimulator(control_freq=control_freq, experiment_config=experiment_config)
         
-        # REMOVED: self.characteristic_torque (computed adaptively now!)
+        # Print delay configuration
+        print(f"\n{'='*70}")
+        print(f"DELAY CONFIGURATION: {self.delay_simulator.delay_config_name}")
+        print(f"Action delay: {self.delay_simulator.constant_action_delay} steps "
+              f"({self.delay_simulator.constant_action_delay * 1000 / control_freq:.1f}ms)")
+        print(f"Obs delay range: {self.delay_simulator.stochastic_obs_delay_min}-"
+              f"{self.delay_simulator.stochastic_obs_delay_max} steps "
+              f"({self.delay_simulator.stochastic_obs_delay_min * 1000 / control_freq:.1f}-"
+              f"{self.delay_simulator.stochastic_obs_delay_max * 1000 / control_freq:.1f}ms)")
+        print(f"Prediction: LEARNED NN PREDICTOR (not manual interpolation)")
+        print(f"{'='*70}\n")
 
+        # History lengths
         self.joint_history_len = 1
         self.action_history_len = 5
+        self.target_history_len = 10  # NEW: For NN predictor
         
         # Get delay parameters from simulator
         max_obs_delay = max(self.delay_simulator.stochastic_obs_delay_max, 10)
         max_buffer_size = max(100, max_obs_delay + 20)
+        
+        # Buffers
         self.position_history = deque(maxlen=max_buffer_size)
         self.action_history = deque(maxlen=max_buffer_size)
         self.joint_pos_history = deque(maxlen=self.joint_history_len)
         self.joint_vel_history = deque(maxlen=self.joint_history_len)
+        self.target_position_history = deque(maxlen=self.target_history_len)  # NEW
 
         # Initialize leader (local, perfect trajectory)
         self.leader = LocalRobotSimulator(
@@ -79,27 +93,38 @@ class TeleoperationEnvWithDelay(gym.Env):
         )
         
         # Initialize remote robot (follower)
+        # NOTE: use_interpolation parameter kept for compatibility but not used
         self.remote_robot = RemoteRobotSimulator(
             model_path=model_path,
             control_freq=control_freq,
             torque_limits=self.torque_limit,
             joint_limits_lower=self.joint_limits_lower,
-            joint_limits_upper=self.joint_limits_upper
+            joint_limits_upper=self.joint_limits_upper,
+            use_interpolation=False  # Disabled - NN does prediction!
         )
 
         # Action space - normalized percentage corrections (±50%)
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(self.n_joints,), dtype=np.float32)
         
-        # UPDATED: Observation space with gravity torque
+        # NEW OBSERVATION SPACE with target history and delay
         obs_dim = (
-            (self.n_joints * self.joint_history_len) +  # joint positions
-            (self.n_joints * self.joint_history_len) +  # joint velocities
-            self.n_joints +                             # gravity torques (NEW!)
-            3 +                                         # target position
-            (self.n_joints * self.action_history_len)  # action history
-        )
+            7 +      # joint_pos
+            7 +      # joint_vel
+            7 +      # gravity_torque
+            3 +      # delayed_target
+            30 +     # target_history (10 × 3) ← NEW
+            1 +      # delay_magnitude ← NEW
+            35       # action_history (7 × 5)
+        )  # Total: 90 dimensions
         
-        # UPDATED: Bounded observation space
+        print(f"Observation space dimension: {obs_dim}")
+        print(f"  - Joint state: 21 (pos + vel + gravity)")
+        print(f"  - Delayed target: 3")
+        print(f"  - Target history: 30 (10 positions × 3D)")
+        print(f"  - Delay magnitude: 1")
+        print(f"  - Action history: 35")
+        print()
+        
         self.observation_space = spaces.Box(
             low=-1.0, 
             high=1.0, 
@@ -132,6 +157,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.action_history.clear()
         self.joint_pos_history.clear()
         self.joint_vel_history.clear()
+        self.target_position_history.clear()  # NEW
 
         # Get initial remote robot state
         initial_remote_state = self.remote_robot.get_state()
@@ -140,16 +166,20 @@ class TeleoperationEnvWithDelay(gym.Env):
         max_history_needed = max(20, self.delay_simulator.stochastic_obs_delay_max)
         for _ in range(max_history_needed):
             self.position_history.append(leader_start_pos.copy())
+        
+        # NEW: Initialize target position history
+        for _ in range(self.target_history_len):
+            self.target_position_history.append(leader_start_pos.copy())
             
         # Initialize joint histories
         for _ in range(self.joint_history_len):
             self.joint_pos_history.append(initial_remote_state["joint_pos"].copy())
             self.joint_vel_history.append(initial_remote_state["joint_vel"].copy())
             
-        # Initialize action history with zeros (not random!)
+        # Initialize action history with zeros
         max_action_history = max(self.action_history_len, self.delay_simulator.constant_action_delay + 1)
         for _ in range(max_action_history):
-            self.action_history.append(np.zeros(self.n_joints))  # Changed from random
+            self.action_history.append(np.zeros(self.n_joints))
 
         return self._get_observation(), self._get_info()
 
@@ -190,23 +220,38 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Get new leader position from trajectory
         leader_output = self.leader.step()
         new_leader_position = leader_output[0] if isinstance(leader_output, tuple) else leader_output
+        
+        # Update position history
         self.position_history.append(new_leader_position.copy())
+        self.target_position_history.append(new_leader_position.copy())  # NEW
+        
+        # Update action history
         self.action_history.append(action.copy())
         
         # Get delayed signals
         delayed_position = self._get_delayed_position()
         delayed_action = self._get_delayed_action()
         
-        # UPDATED: Call remote_robot.step() without characteristic_torque
+        # Calculate delay for logging
+        obs_delay_steps = self.delay_simulator.get_observation_delay_steps(len(self.position_history))
+        action_delay_steps = self.delay_simulator.get_action_delay_steps(len(self.action_history))
+        total_delay_steps = obs_delay_steps + action_delay_steps
+        estimated_delay_seconds = total_delay_steps / self.control_freq
+        
+        # Call remote_robot.step() with delayed target
+        # NOTE: No manual interpolation! NN predictor in policy does this
         self.remote_robot.step(
             target_pos=delayed_position,
-            normalized_action=delayed_action
+            normalized_action=delayed_action,
+            estimated_delay=estimated_delay_seconds
         )
         
         # Get remote robot state after step
         remote_state = self.remote_robot.get_state()
         self.joint_pos_history.append(remote_state["joint_pos"].copy())
         self.joint_vel_history.append(remote_state["joint_vel"].copy())
+        
+        # Calculate real-time error
         follower_tcp_pos = self.remote_robot.get_ee_position()
         real_time_error = np.linalg.norm(new_leader_position - follower_tcp_pos)
         
@@ -215,6 +260,13 @@ class TeleoperationEnvWithDelay(gym.Env):
         terminated, term_penalty = self._check_termination(real_time_error)
         reward += term_penalty
         truncated = self.current_step >= self.max_episode_steps
+        
+        # Debug print every 200 steps
+        if self.current_step % 200 == 0:
+            print(f"Step {self.current_step}: "
+                  f"Delay={estimated_delay_seconds*1000:.1f}ms, "
+                  f"Error={real_time_error*1000:.1f}mm, "
+                  f"Reward={reward:.1f}")
         
         return self._get_observation(), reward, terminated, truncated, self._get_info()
 
@@ -231,35 +283,55 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Gravity torques: normalize by maximum expected values
         gravity_norm = np.clip(obs_dict['gravity_torque'] / self.max_gravity_torque, -1, 1)
         
-        # Target position: normalize by workspace
-        target_pos_norm = (obs_dict['target_pos'] - self.workspace_center) / self.workspace_size
-        target_pos_norm = np.clip(target_pos_norm, -1, 1)
+        # Delayed target: normalize by workspace
+        delayed_target_norm = (obs_dict['delayed_target'] - self.workspace_center) / self.workspace_size
+        delayed_target_norm = np.clip(delayed_target_norm, -1, 1)
         
-        # Action history: already normalized
+        # NEW: Target history: normalize by workspace
+        target_history_array = obs_dict['target_history'].reshape(-1, 3)
+        target_history_norm = (target_history_array - self.workspace_center) / self.workspace_size
+        target_history_norm = np.clip(target_history_norm, -1, 1).flatten()
+        
+        # NEW: Delay magnitude (already normalized to [0, 1])
+        delay_norm = obs_dict['delay_magnitude']
+        
+        # Action history: already normalized to [-1, 1]
         action_history_norm = obs_dict['action_history']
         
-        # Concatenate
+        # Concatenate in correct order matching policy expectations
         observation = np.concatenate([
-            joint_pos_norm,
-            joint_vel_norm,
-            gravity_norm,
-            target_pos_norm,
-            action_history_norm
+            joint_pos_norm,           # [0:7]
+            joint_vel_norm,           # [7:14]
+            gravity_norm,             # [14:21]
+            delayed_target_norm,      # [21:24]
+            target_history_norm,      # [24:54] ← NEW
+            delay_norm,               # [54:55] ← NEW
+            action_history_norm       # [55:90]
         ]).astype(np.float32)
         
         return observation
 
     def _get_observation(self) -> np.ndarray:
-        """Get normalized observation with gravity torque"""
+        """Get normalized observation with target history and delay"""
         remote_state = self.remote_robot.get_state()
         
-        # Current state
+        # Current robot state
         joint_pos = remote_state['joint_pos']
         joint_vel = remote_state['joint_vel']
-        gravity_torque = remote_state['gravity_torque']  # NEW!
+        gravity_torque = remote_state['gravity_torque']
         
-        # Target position
-        current_target_pos = self._get_delayed_position()
+        # Delayed target position
+        delayed_target = self._get_delayed_position()
+        
+        # NEW: Target position history (last 10 positions)
+        target_history = list(self.target_position_history)
+        target_history_flat = np.array(target_history).flatten()
+        
+        # NEW: Delay magnitude (normalized to ~[0, 1])
+        obs_delay_steps = self.delay_simulator.get_observation_delay_steps(
+            len(self.position_history)
+        )
+        delay_normalized = np.array([obs_delay_steps / 100.0])
         
         # Action history
         recent_actions = list(self.action_history)[-self.action_history_len:]
@@ -269,24 +341,23 @@ class TeleoperationEnvWithDelay(gym.Env):
         obs_dict = {
             'joint_pos': joint_pos,
             'joint_vel': joint_vel,
-            'gravity_torque': gravity_torque,  # NEW!
-            'target_pos': current_target_pos,
+            'gravity_torque': gravity_torque,
+            'delayed_target': delayed_target,
+            'target_history': target_history_flat,
+            'delay_magnitude': delay_normalized,
             'action_history': action_history_flat
         }
         
         return self._normalize_observation(obs_dict)
 
     def _calculate_reward(self, cartesian_error: float, action: np.ndarray, remote_state: dict) -> float:
-        """
-        UPDATED: Reward for multiplicative residual learning
-        """
+        """Reward for multiplicative residual learning"""
         cartesian_error = np.clip(cartesian_error, 0.0, 10.0)
         
         # Tracking reward (smooth exponential)
         tracking_reward = 10.0 * np.exp(-100.0 * cartesian_error**2)
         
         # Residual percentage penalty
-        # Since action represents percentage correction, penalize large percentages
         residual_percentage = np.mean(np.abs(action))
         residual_penalty = -0.1 * residual_percentage
         
