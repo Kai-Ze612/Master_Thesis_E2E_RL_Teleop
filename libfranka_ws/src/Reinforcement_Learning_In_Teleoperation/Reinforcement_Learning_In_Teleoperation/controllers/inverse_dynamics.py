@@ -4,6 +4,15 @@ Inverse dynamics computation
 The inverse dynamics computes required joint torques by:
 tau = M(q)*q_dd + C(q, q_d)*q_d + G(q)
 
+dimensions:
+- tau: n * 1 
+- M: n * n
+- C: n * n
+- G: n * 1
+- q: n * 1
+- q_d: n * 1
+- q_dd: n * 1
+
 where:
 - M(q) is the mass/inertia matrix
 - C(q, q_d) is the Coriolis/centrifugal forces
@@ -11,21 +20,18 @@ where:
 """
 
 from __future__ import annotations
-
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Protocol
-
+from abc import ABC, abstractmethod
 import numpy as np
 from numpy.typing import NDArray
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True)  # Once the class is created, the data will be forzen because the M, C, G should not be changed
 class DynamicsTerms:
     """ Define Dimensions of dynamics terms."""
     
     M: NDArray[np.float64]      # Mass matrix
-    C_qd: NDArray[np.float64]   # Coriolis forces C(q,q̇)q̇
+    C: NDArray[np.float64]      # Coriolis forces
     G: NDArray[np.float64]      # Gravity forces
     
     def __post_init__(self) -> None:
@@ -33,8 +39,8 @@ class DynamicsTerms:
         n = self.M.shape[0]
         if self.M.shape != (n, n):
             raise ValueError(f"M must be square, got {self.M.shape}")
-        if self.C_qd.shape != (n,):
-            raise ValueError(f"C_qd must be 1D with length {n}, got {self.C_qd.shape}")
+        if self.C.shape != (n, n):
+            raise ValueError(f"C_qd must be square, got {self.C.shape}")
         if self.G.shape != (n,):
             raise ValueError(f"G must be 1D with length {n}, got {self.G.shape}")
     
@@ -47,11 +53,9 @@ class DynamicsComputer(ABC):
     """Interface for computing robot dynamics."""
     
     @abstractmethod
-    def compute_dynamics(
-        self,
-        q: NDArray[np.float64],
-        qd: NDArray[np.float64]
-    ) -> DynamicsTerms:
+    def compute_dynamics(self,
+                         q: NDArray[np.float64],
+                         qd: NDArray[np.float64]) -> DynamicsTerms:
         """Compute M, C_qd, G at given state."""
         pass
     
@@ -74,17 +78,23 @@ class InverseDynamics:
         """Number of robot joints."""
         return self._dynamics.n_joints
     
-    def compute_torque(
-        self,
-        q: NDArray[np.float64],
-        qd: NDArray[np.float64],
-        qdd: NDArray[np.float64]
-    ) -> NDArray[np.float64]:
+    def compute_torque(self,
+                       q: NDArray[np.float64],
+                       qd: NDArray[np.float64],
+                       qdd: NDArray[np.float64]) -> NDArray[np.float64]:
+        
+        # Input validation
+        n = self.n_joints
+        if q.shape != (n,) or qd.shape != (n,) or qdd.shape != (n,):
+            raise ValueError(
+                f"All inputs must be ({n},), "
+                f"got q={q.shape}, qd={qd.shape}, qdd={qdd.shape}"
+            )
         
         # Get dynamics terms
         dynamics = self._dynamics.compute_dynamics(q, qd)
         
         # Inverse dynamics: τ = M(q)q̈ + C(q,q̇)q̇ + G(q)
-        tau = dynamics.M @ qdd + dynamics.C_qd + dynamics.G
+        tau = dynamics.M @ qdd + dynamics.C @ qd + dynamics.G
         
         return tau
