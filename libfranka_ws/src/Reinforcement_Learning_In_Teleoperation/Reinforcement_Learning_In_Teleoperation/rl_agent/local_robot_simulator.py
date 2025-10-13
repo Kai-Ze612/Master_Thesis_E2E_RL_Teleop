@@ -13,7 +13,7 @@ The trajectory parameters can be randomized within reasonable bounds to enhance 
 
 # Python imports
 from __future__ import annotations
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Optional
 import numpy as np
@@ -56,20 +56,6 @@ class TrajectoryGenerator:
 
     def compute_position(self, t_sec: float) -> NDArray[np.float64]:
         raise NotImplementedError("This method should be overridden by subclasses.")
-    
-    def compute_velocity(self, t: float, epsilon: float = 1e-6) -> NDArray[np.float64]:
-        """Compute velocity via numerical differentiation.
-        
-        Args:
-            t: Time in seconds from trajectory start
-            epsilon: Finite difference step size
-            
-        Returns:
-            3D velocity vector [vx, vy, vz] in meters/second
-        """
-        pos_current = self.compute_position(t)
-        pos_next = self.compute_position(t + epsilon)
-        return (pos_next - pos_current) / epsilon
     
     def _compute_phase(self, t: float) -> float:
         """Convert time to phase angle including frequency and initial offset.
@@ -121,6 +107,43 @@ class SquareTrajectoryGenerator(TrajectoryGenerator):
         dy = self._params.scale[1] * position_2d[1]
         return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
     
+    def compute_velocity(self, t: float) -> NDArray[np.float64]:
+        """Compute velocity for smooth square trajectory.
+        
+        Args:
+            t: Time in seconds
+            
+        Returns:
+            3D velocity vector
+        """
+        phase = self._compute_phase(t)
+        t_norm = (phase % (2 * np.pi)) / (2 * np.pi)
+        omega = self._params.frequency * 2 * np.pi
+        
+        corners = np.array([
+            [1, 1],    # Top-right
+            [-1, 1],   # Top-left
+            [-1, -1],  # Bottom-left
+            [1, -1],   # Bottom-right
+        ])
+        
+        segment = int(t_norm * 4) % 4
+        segment_progress = (t_norm * 4) % 1
+        
+        current_corner = corners[segment]
+        next_corner = corners[(segment + 1) % 4]
+        
+        # Derivative of smooth interpolation
+        direction = next_corner - current_corner
+        d_smooth_progress = 0.5 * np.pi * np.sin(segment_progress * np.pi)
+        dt_norm_dt = omega / (2 * np.pi)
+        velocity_2d = direction * d_smooth_progress * 4 * dt_norm_dt
+        
+        vx = self._params.scale[0] * velocity_2d[0]
+        vy = self._params.scale[1] * velocity_2d[1]
+        
+        return np.array([vx, vy, 0.0], dtype=np.float64)
+    
 class LissajousComplexGenerator(TrajectoryGenerator):
     """Complex Lissajous curve with 3:4 frequency ratio and phase shift."""
     
@@ -143,6 +166,26 @@ class LissajousComplexGenerator(TrajectoryGenerator):
         dx = self._params.scale[0] * np.sin(self._FREQ_RATIO_X * phase + self._PHASE_SHIFT)
         dy = self._params.scale[1] * np.sin(self._FREQ_RATIO_Y * phase)
         return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
+    
+    def compute_velocity(self, t: float) -> NDArray[np.float64]:
+        """Compute velocity analytically for complex Lissajous trajectory.
+        
+        Args:
+            t: Time in seconds
+            
+        Returns:
+            3D velocity vector
+        """
+        phase = self._compute_phase(t)
+        omega = self._params.frequency * 2 * np.pi
+        
+        vx = (self._params.scale[0] * self._FREQ_RATIO_X * omega * 
+              np.cos(self._FREQ_RATIO_X * phase + self._PHASE_SHIFT))
+        vy = (self._params.scale[1] * self._FREQ_RATIO_Y * omega * 
+              np.cos(self._FREQ_RATIO_Y * phase))
+        vz = 0.0
+        
+        return np.array([vx, vy, vz], dtype=np.float64)
 
 class Figure8TrajectoryGenerator(TrajectoryGenerator):
     """Figure-8 trajectory using Lissajous curve with 1:2 frequency ratio."""
@@ -162,6 +205,24 @@ class Figure8TrajectoryGenerator(TrajectoryGenerator):
         dy = self._params.scale[1] * np.sin(phase / 2)
         return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
 
+    def compute_velocity(self, t: float) -> NDArray[np.float64]:
+        """Compute velocity analytically for figure-8 trajectory.
+        
+        Args:
+            t: Time in seconds
+            
+        Returns:
+            3D velocity vector
+        """
+        phase = self._compute_phase(t)
+        omega = self._params.frequency * 2 * np.pi
+        
+        vx = self._params.scale[0] * omega * np.cos(phase)
+        vy = self._params.scale[1] * (omega / 2) * np.cos(phase / 2)
+        vz = 0.0
+        
+        return np.array([vx, vy, vz], dtype=np.float64)
+
 class LocalRobotSimulator(gym.Env):
     """Gymnasium environment for trajectory-following robot simulation."""
     def __init__(self,
@@ -173,6 +234,15 @@ class LocalRobotSimulator(gym.Env):
         self._dt = 1.0 / control_freq
         self._randomize_params = randomize_params
         self._trajectory_time = 0.0
+
+        self.observation_space = gym.spaces.Box(
+            low=np.array([0.0, -0.5, 0.0], dtype=np.float32),
+            high=np.array([1.0, 0.5, 1.0], dtype=np.float32),
+            shape=(3,),
+            dtype=np.float32
+        )
+        
+        self.action_space = gym.spaces.Discrete(1)
         
         # Initialize with default parameters
         self._params = TrajectoryParams()
@@ -251,7 +321,7 @@ class LocalRobotSimulator(gym.Env):
             "initial_phase": self._params.initial_phase,
         }
         
-        return initial_position, info
+        return initial_position.astype(np.float32), info
         
     def step(
         self,
@@ -273,7 +343,7 @@ class LocalRobotSimulator(gym.Env):
         terminated = False
         truncated = False
         
-        return position, reward, terminated, truncated, info
+        return position.astype(np.float32), reward, terminated, truncated, info
 
     def get_position_at_time(self, t: float) -> NDArray[np.float64]:
         """Query position at arbitrary time point."""

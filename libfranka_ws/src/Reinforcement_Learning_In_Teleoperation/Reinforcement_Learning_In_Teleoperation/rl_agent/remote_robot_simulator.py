@@ -4,19 +4,19 @@ MuJoCo-based simulator for the remote robot (follower).
 This module implements:
 - Inverse kinematics to convert target end-effector positions to joint angles.
 - Adaptive PD control, when delay is high, PD gains are decreased, when delay is low, PD gains are increased.
-- Inverse dynamics controller to compute baseline torques.
+- We use MuJoco's built-in inverse dynamics function to compute the baseline torque.
 - RL agent learns torque compensation
 - Interpolation using NN predictor to predict missing trajectory points due to delay. 
 """
 
 from __future__ import annotations
-from typing import Optional, Any
+from typing import Optional
 
 import mujoco
 import numpy as np
 from numpy.typing import NDArray
 
-from Reinforcement_Learning_In_Teleoperation.controllers.inverse_kinematics import InverseKinematicsSolver
+from Reinforcement_Learning_In_Teleoperation.controllers.inverse_kinematics import IKSolver
 
 class RemoteRobotSimulator:
     def __init__(self, 
@@ -24,13 +24,16 @@ class RemoteRobotSimulator:
                  control_freq: int,
                  torque_limits: np.ndarray, 
                  joint_limits_lower: np.ndarray,
-                 joint_limits_upper: np.ndarray,
-                 use_interpolation: bool = True):
+                 joint_limits_upper: np.ndarray):
         """
         Initializes the remote robot simulator.
         
         Args:
-            use_interpolation: If True, use linear interpolation to predict current target
+            model_path: Path to MuJoCo XML model file
+            control_freq: Control frequency in Hz
+            torque_limits: Joint torque limits (N⋅m)
+            joint_limits_lower: Lower joint position limits (rad)
+            joint_limits_upper: Upper joint position limits (rad)
         """
 
         # Initialize MuJoCo model and data
@@ -40,19 +43,26 @@ class RemoteRobotSimulator:
         self.ee_body_name = 'panda_hand'
 
         # Initialize IK solver
-        self.ik_solver = InverseKinematicsSolver(self.model, joint_limits_lower, joint_limits_upper)
+        self.ik_solver = IKSolver(
+            model=self.model,
+            joint_limits_lower=joint_limits_lower,
+            joint_limits_upper=joint_limits_upper
+        )
         
-        # Time step for velocity calculations
+        # Time step
         self.dt = 1.0 / control_freq
         self.control_freq = control_freq
 
         # Simulation frequency and substeps
         sim_freq = int(1.0 / self.model.opt.timestep)
         if sim_freq % control_freq != 0:
-            raise ValueError("Simulation frequency must be a multiple of control frequency.")
+            raise ValueError(
+                f"Simulation frequency ({sim_freq} Hz) must be a multiple "
+                f"of control frequency ({control_freq} Hz)."
+            )
         self.n_substeps = sim_freq // control_freq
 
-        # Initialize controllers
+        # Controller parameters
         self.torque_limits = torque_limits
         self.joint_limits_lower = joint_limits_lower
         self.joint_limits_upper = joint_limits_upper
@@ -60,195 +70,133 @@ class RemoteRobotSimulator:
         # TCP offset from flange to end-effector (in meters)
         self.tcp_offset = np.array([0.0, 0.0, 0.1034])
         
-        # Inverse dynamics parameters 
-        self.alpha_p = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0])
-        self.alpha_d = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0])
-        
-        # Interpolation settings
-        self.use_interpolation = use_interpolation
-        self.min_delay_for_interp = 0.01  # Only interpolate if delay > 10ms
-        
-        # For velocity estimation
-        self.last_target_pos = None
-        self.last_target_time = 0.0
-        self.current_time = 0.0
+        # PD gains for computing desired acceleration
+        self.kp = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0])
+        self.kd = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0])
         
         # State variables
-        self.current_q_target = np.zeros(self.n_joints)
         self.last_q_target = np.zeros(self.n_joints)
 
-    def reset(self, initial_qpos: np.ndarray):
-        """Resets the robot to an initial joint configuration."""
+    def reset(self, initial_qpos: np.ndarray) -> None:
+        """
+        Resets the robot to an initial joint configuration.
+        
+        Args:
+            initial_qpos: Initial joint positions (7,)
+        """
+        if initial_qpos.shape != (self.n_joints,):
+            raise ValueError(
+                f"initial_qpos must have shape ({self.n_joints},), "
+                f"got {initial_qpos.shape}"
+            )
+        
         mujoco.mj_resetData(self.model, self.data)
         
-        # Set initial joint positions and velocities
         self.data.qpos[:self.n_joints] = initial_qpos
         self.data.qvel[:self.n_joints] = np.zeros(self.n_joints)
         
-        # Send the simulation forward to update derived quantities
         mujoco.mj_forward(self.model, self.data)
         
-        self.current_q_target = initial_qpos.copy()
         self.last_q_target = initial_qpos.copy()
-        
-        # Reset interpolation state
-        self.last_target_pos = None
-        self.current_time = 0.0
-        self.last_target_time = 0.0
 
-    def compute_dynamics_terms(self, q: np.ndarray, qd: np.ndarray):
+    def compute_inverse_dynamics_torque(self,
+                                       q: np.ndarray,
+                                       qd: np.ndarray,
+                                       qdd: np.ndarray) -> np.ndarray:
         """
-        Compute dynamics terms: M(q), C(q,q̇)q̇, G(q)
+        Compute inverse dynamics torque using MuJoCo's built-in function.
+        
+        Uses mj_inverse() which computes: τ = M(q)q̈ + C(q,q̇)q̇ + G(q)
+        
+        Args:
+            q: Joint positions (7,)
+            qd: Joint velocities (7,)
+            qdd: Desired joint accelerations (7,)
+            
+        Returns:
+            tau: Required joint torques (7,)
         """
         # Save current state
         qpos_save = self.data.qpos.copy()
         qvel_save = self.data.qvel.copy()
+        qacc_save = self.data.qacc.copy()
         
-        # Set state to query point
+        # Set desired state
         self.data.qpos[:self.n_joints] = q
         self.data.qvel[:self.n_joints] = qd
+        self.data.qacc[:self.n_joints] = qdd
         
-        # Forward kinematics to update derived quantities
-        mujoco.mj_forward(self.model, self.data)
+        # Compute inverse dynamics using MuJoCo's built-in function
+        mujoco.mj_inverse(self.model, self.data)
         
-        # Compute M(q)
-        M_full = np.zeros((self.model.nv, self.model.nv))
-        mujoco.mj_fullM(self.model, M_full, self.data.qM)
-        M = M_full[:self.n_joints, :self.n_joints].copy()
-        
-        # Compute G(q)
-        qvel_temp = self.data.qvel.copy()
-        qacc_temp = self.data.qacc.copy()
-        
-        self.data.qvel[:] = 0
-        self.data.qacc[:] = 0
-        mujoco.mj_forward(self.model, self.data)
-        
-        G = -self.data.qfrc_bias[:self.n_joints].copy()
-        
-        # Restore velocity and acceleration
-        self.data.qvel[:] = qvel_temp
-        self.data.qacc[:] = qacc_temp
-        mujoco.mj_forward(self.model, self.data)
-        
-        # Compute C(q,q̇)q̇
-        C_qd = self.data.qfrc_bias[:self.n_joints].copy() - G
+        # Get computed torques
+        tau = self.data.qfrc_inverse[:self.n_joints].copy()
         
         # Restore original state
         self.data.qpos[:] = qpos_save
         self.data.qvel[:] = qvel_save
+        self.data.qacc[:] = qacc_save
         mujoco.mj_forward(self.model, self.data)
         
-        return M, C_qd, G
+        return tau
     
-    def interpolate_target_position(self, 
-                                    delayed_target_pos: np.ndarray,
-                                    estimated_delay: float) -> np.ndarray:
-        """
-        Linear interpolation to predict current target position.
-        
-        Formula: 
-            predicted_pos = delayed_pos + velocity * delay
-        
-        Args:
-            delayed_target_pos: Target position from delayed observation (3,)
-            estimated_delay: Estimated delay in seconds
-            
-        Returns:
-            predicted_target_pos: Predicted current position (3,)
-        """
-        
-        # If no delay or interpolation disabled, return as-is
-        if not self.use_interpolation or estimated_delay < self.min_delay_for_interp:
-            return delayed_target_pos
-        
-        # If this is first call, can't estimate velocity
-        if self.last_target_pos is None:
-            self.last_target_pos = delayed_target_pos.copy()
-            self.last_target_time = self.current_time
-            return delayed_target_pos
-        
-        # Estimate velocity from recent history
-        dt = self.current_time - self.last_target_time
-        
-        if dt < 1e-6:  # Avoid division by zero
-            target_velocity = np.zeros(3)
-        else:
-            target_velocity = (delayed_target_pos - self.last_target_pos) / dt
-        
-        # Linear extrapolation: predict current position
-        predicted_target_pos = delayed_target_pos + target_velocity * estimated_delay
-        
-        # Update history
-        self.last_target_pos = delayed_target_pos.copy()
-        self.last_target_time = self.current_time
-        
-        return predicted_target_pos
-    
-    def compute_inverse_dynamics_torque(self, 
-                                       q: np.ndarray, 
-                                       qd: np.ndarray,
-                                       q_target: np.ndarray,
-                                       qd_target: np.ndarray = None):
-        if qd_target is None:
-            qd_target = np.zeros(self.n_joints)
-        
-        M, C_qd, G = self.compute_dynamics_terms(q, qd)
-        
-        # Compute position and velocity errors
-        e_pos = q_target - q
-        e_vel = qd_target - qd
-        
-        # Desired acceleration
-        qdd_desired = self.alpha_p * e_pos + self.alpha_d * e_vel
-        
-        # Inverse dynamics
-        tau_required = M @ qdd_desired + C_qd + G
-        
-        return tau_required
-    
-    def step(self, target_pos: np.ndarray, normalized_action: np.ndarray, estimated_delay: float = 0.0):
+    def step(self, target_pos: np.ndarray, normalized_action: np.ndarray) -> None:
         """
         Execute one control step.
-        NOTE: No manual interpolation! NN predictor in policy handles prediction.
-        """
         
-        # Update time
-        self.current_time += self.dt
+        Args:
+            target_pos: Target end-effector position (3,) - potentially delayed or NN-predicted
+            normalized_action: RL agent's torque correction in range [-0.5, 0.5] (7,)
+        
+        Note: This method expects target_pos to already be compensated for delay
+              (either by NN predictor or left as delayed observation for RL to handle).
+        """
+        # Validate inputs
+        if target_pos.shape != (3,):
+            raise ValueError(f"target_pos must have shape (3,), got {target_pos.shape}")
+        if normalized_action.shape != (self.n_joints,):
+            raise ValueError(
+                f"normalized_action must have shape ({self.n_joints},), "
+                f"got {normalized_action.shape}"
+            )
         
         # Get current robot state
         q_current = self.data.qpos[:self.n_joints].copy()
         qd_current = self.data.qvel[:self.n_joints].copy()
         
-        # NO INTERPOLATION HERE! 
-        # NN predictor in the policy network learns to predict current position
-        # We just use the delayed target directly for IK
-        q_target, ik_success = self.ik_solver.solver(
-            target_pos,  # ← Use delayed position directly!
-            q_current,
-            self.ee_body_name
+        # Save old target for velocity computation
+        q_target_old = self.last_q_target.copy()
+        
+        # Solve inverse kinematics
+        q_target, ik_success, ik_error = self.ik_solver.solve(
+            target_pos=target_pos,
+            q_init=q_current,
+            body_name=self.ee_body_name,
+            tcp_offset=self.tcp_offset
         )
 
-        # Handle IK failure
+        # Handle IK failure - use previous target
         if q_target is None or not ik_success:
-            q_target = self.last_q_target
-        else:
-            self.current_q_target = q_target.copy()
+            q_target = self.last_q_target.copy()
             
         self.last_q_target = q_target.copy()
         
-        # Estimate target velocities (finite difference)
-        qd_target = (q_target - self.last_q_target) / self.dt
+        # Estimate target velocity using finite differences
+        qd_target = (q_target - q_target_old) / self.dt
         
-        # Using inverse dynamics to compute baseline torque
+        # Compute desired acceleration using PD control law
+        e_pos = q_target - q_current
+        e_vel = qd_target - qd_current
+        qdd_desired = self.kp * e_pos + self.kd * e_vel
+        
+        # Compute baseline torque using inverse dynamics
         tau_baseline = self.compute_inverse_dynamics_torque(
             q=q_current,
             qd=qd_current,
-            q_target=q_target,
-            qd_target=qd_target
+            qdd=qdd_desired
         )
         
-        # Multiplicative correction
+        # Apply RL multiplicative correction
         action_clipped = np.clip(normalized_action, -0.5, 0.5)
         tau_total = tau_baseline * (1.0 + action_clipped)
         
@@ -258,7 +206,7 @@ class RemoteRobotSimulator:
         # Apply torque command
         self.data.ctrl[:self.n_joints] = tau_clipped
         
-        # Simulate forward
+        # Simulate forward for one control step
         for _ in range(self.n_substeps):
             mujoco.mj_step(self.model, self.data)
         
@@ -268,17 +216,30 @@ class RemoteRobotSimulator:
             'action_clipped': action_clipped,
             'tau_total': tau_total,
             'tau_clipped': tau_clipped,
+            'ik_success': ik_success,
+            'ik_error': ik_error,
         }
             
     def get_state(self) -> dict:
         """
-        Returns the current state of the follower robot with dynamics info.
+        Returns the current state of the follower robot.
+        
+        Returns:
+            dict with keys:
+                - joint_pos: Current joint positions (7,)
+                - joint_vel: Current joint velocities (7,)
+                - gravity_torque: Gravity compensation torques (7,)
         """
         q = self.data.qpos[:self.n_joints].copy()
         qd = self.data.qvel[:self.n_joints].copy()
         
-        # Compute dynamics for observation
-        M, C_qd, G = self.compute_dynamics_terms(q, qd)
+        # Compute gravity torque by setting velocities to zero
+        qvel_save = self.data.qvel.copy()
+        self.data.qvel[:] = 0
+        mujoco.mj_forward(self.model, self.data)
+        G = -self.data.qfrc_bias[:self.n_joints].copy()
+        self.data.qvel[:] = qvel_save
+        mujoco.mj_forward(self.model, self.data)
         
         return {
             "joint_pos": q,
@@ -289,22 +250,32 @@ class RemoteRobotSimulator:
     def get_ee_position(self) -> np.ndarray:
         """
         Return the current end-effector (TCP) position in world coordinates.
+        
+        Returns:
+            tcp_position: 3D position of TCP in world frame (3,)
         """
         # Get the position of the flange from MuJoCo
         ee_id = self.model.body(self.ee_body_name).id
         flange_position = self.data.xpos[ee_id].copy()
         
-        # Get rotation matrix for proper TCP offset
+        # Get rotation matrix for proper TCP offset transformation
         flange_rotation = self.data.xmat[ee_id].reshape(3, 3)
         
-        # Add the offset to get the true TCP position
+        # Transform TCP offset from flange frame to world frame
         tcp_position = flange_position + flange_rotation @ self.tcp_offset
         return tcp_position
 
     def get_debug_info(self) -> dict:
         """
         Get debug information about torque decomposition.
+        
+        Returns:
+            dict with keys:
+                - tau_baseline: Baseline inverse dynamics torque
+                - action_clipped: Clipped RL action
+                - tau_total: Total torque before actuator limits
+                - tau_clipped: Final applied torque
+                - ik_success: Whether IK succeeded
+                - ik_error: IK position error
         """
-        if hasattr(self, 'debug_info'):
-            return self.debug_info
-        return {}
+        return getattr(self, 'debug_info', {})
