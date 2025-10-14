@@ -7,6 +7,7 @@ Uses a hybrid approach:
     - Use damped least squares to compute pseudo-inverse.
     - Use null-space projection to enforce trajectory continuity.
 - If it fails, apply optimization based IK solver. (non-linear least squares)
+
 """
 
 from __future__ import annotations
