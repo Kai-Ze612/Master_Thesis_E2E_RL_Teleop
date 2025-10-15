@@ -1,0 +1,20 @@
+[35m[1mConsolidate compiler generated dependencies of target garmi_controllers[0m
+[ 33%] [32mBuilding CXX object CMakeFiles/garmi_controllers.dir/src/head_controller.cpp.o[0m
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/head_controller.cpp:[m[K In member function ‘[01m[Kvirtual controller_interface::return_type garmi_controllers::HeadController::update(const rclcpp::Time&, const rclcpp::Duration&)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/head_controller.cpp:32:78:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Ktime[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+   32 | controller_interface::return_type HeadController::update([01;35m[Kconst rclcpp::Time& time[m[K,
+      |                                                          [01;35m[K~~~~~~~~~~~~~~~~~~~~^~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/head_controller.cpp:[m[K In member function ‘[01m[Kvirtual CallbackReturn garmi_controllers::HeadController::on_configure(const rclcpp_lifecycle::State&)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/head_controller.cpp:78:76:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kprevious_state[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+   78 | CallbackReturn HeadController::on_configure([01;35m[Kconst rclcpp_lifecycle::State& previous_state[m[K){
+      |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/head_controller.cpp:[m[K In member function ‘[01m[Kvirtual CallbackReturn garmi_controllers::HeadController::on_activate(const rclcpp_lifecycle::State&)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/head_controller.cpp:86:75:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kprevious_state[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+   86 | CallbackReturn HeadController::on_activate([01;35m[Kconst rclcpp_lifecycle::State& previous_state[m[K){
+      |                                            [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/head_controller.cpp:[m[K In member function ‘[01m[Kvirtual CallbackReturn garmi_controllers::HeadController::on_deactivate(const rclcpp_lifecycle::State&)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/head_controller.cpp:93:77:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kprevious_state[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+   93 | CallbackReturn HeadController::on_deactivate([01;35m[Kconst rclcpp_lifecycle::State& previous_state[m[K){
+      |                                              [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~[m[K
+[ 66%] [32m[1mLinking CXX shared library libgarmi_controllers.so[0m
+[100%] Built target garmi_controllers

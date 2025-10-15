@@ -1,0 +1,40 @@
+[0.159s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/multi_mode_control_msgs': AMENT_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake:/opt/ros/humble LD_LIBRARY_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/mujoco/lib PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_multi_mode_controller/multi_mode_control_msgs -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/multi_mode_control_msgs
+[0.440s] -- The C compiler identification is GNU 11.4.0
+[0.680s] -- The CXX compiler identification is GNU 11.4.0
+[0.696s] -- Detecting C compiler ABI info
+[1.216s] -- Detecting C compiler ABI info - done
+[1.237s] -- Check for working C compiler: /usr/bin/cc - skipped
+[1.237s] -- Detecting C compile features
+[1.238s] -- Detecting C compile features - done
+[1.242s] -- Detecting CXX compiler ABI info
+[1.637s] -- Detecting CXX compiler ABI info - done
+[1.675s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[1.675s] -- Detecting CXX compile features
+[1.677s] -- Detecting CXX compile features - done
+[1.693s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[2.309s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[2.486s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[2.625s] -- Found geometry_msgs: 4.9.0 (/opt/ros/humble/share/geometry_msgs/cmake)
+[2.802s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[2.836s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[2.856s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[2.925s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[3.001s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[3.146s] -- Found franka_msgs: 0.0.0 (/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs/share/franka_msgs/cmake)
+[3.362s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[4.914s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[6.693s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[7.282s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[7.338s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") 
+[7.341s] -- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+[7.415s] -- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") 
+[7.415s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[7.415s] -- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10
+[7.417s] -- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+[7.462s] -- Found PythonExtra: .so  
+[7.706s] -- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[7.853s] -- Added test 'lint_cmake' to check CMake code style
+[7.869s] -- Added test 'xmllint' to check XML markup files
+[7.881s] -- Configuring done
+[8.211s] -- Generating done
+[8.261s] -- Build files have been written to: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/multi_mode_control_msgs

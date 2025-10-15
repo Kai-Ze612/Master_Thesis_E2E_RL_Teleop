@@ -333,11 +333,11 @@ CMakeFiles/panda_identification.dir/src/common/identification/common/examples_co
  /usr/local/include/eigen3/Eigen/src/Core/ArrayWrapper.h \
  /usr/local/include/eigen3/Eigen/src/Core/GlobalFunctions.h \
  /usr/local/include/eigen3/Eigen/src/Core/util/ReenableStupidWarnings.h \
- /home/kai/Libraries/libfranka_install/include/franka/control_types.h \
- /home/kai/Libraries/libfranka_install/include/franka/duration.h \
+ /home/kai/Libraries/libfranka/include/franka/control_types.h \
+ /home/kai/Libraries/libfranka/include/franka/duration.h \
  /usr/include/c++/11/chrono /usr/include/c++/11/ratio \
  /usr/include/c++/11/ctime /usr/include/c++/11/bits/parse_numbers.h \
- /home/kai/Libraries/libfranka_install/include/franka/robot.h \
+ /home/kai/Libraries/libfranka/include/franka/robot.h \
  /usr/include/c++/11/memory \
  /usr/include/c++/11/bits/stl_raw_storage_iter.h \
  /usr/include/c++/11/bits/align.h /usr/include/c++/11/bit \
@@ -353,9 +353,9 @@ CMakeFiles/panda_identification.dir/src/common/identification/common/examples_co
  /usr/include/c++/11/pstl/glue_memory_defs.h /usr/include/c++/11/mutex \
  /usr/include/c++/11/bits/std_mutex.h \
  /usr/include/c++/11/bits/unique_lock.h \
- /home/kai/Libraries/libfranka_install/include/franka/command_types.h \
- /home/kai/Libraries/libfranka_install/include/franka/lowpass_filter.h \
- /home/kai/Libraries/libfranka_install/include/franka/robot_state.h \
- /home/kai/Libraries/libfranka_install/include/franka/errors.h \
- /home/kai/Libraries/libfranka_install/include/franka/exception.h \
- /home/kai/Libraries/libfranka_install/include/franka/log.h
+ /home/kai/Libraries/libfranka/include/franka/command_types.h \
+ /home/kai/Libraries/libfranka/include/franka/lowpass_filter.h \
+ /home/kai/Libraries/libfranka/include/franka/robot_state.h \
+ /home/kai/Libraries/libfranka/include/franka/errors.h \
+ /home/kai/Libraries/libfranka/include/franka/exception.h \
+ /home/kai/Libraries/libfranka/include/franka/log.h

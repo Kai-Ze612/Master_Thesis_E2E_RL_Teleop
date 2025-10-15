@@ -1,0 +1,87 @@
+[0.294s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_hardware': AMENT_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/opt/ros/humble:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake LD_LIBRARY_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/mujoco/lib PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/local/lib/python3.10/dist-packages:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_hardware -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_hardware
+[0.564s] -- The C compiler identification is GNU 11.4.0
+[0.768s] -- The CXX compiler identification is GNU 11.4.0
+[0.796s] -- Detecting C compiler ABI info
+[1.148s] -- Detecting C compiler ABI info - done
+[1.162s] -- Check for working C compiler: /usr/bin/cc - skipped
+[1.169s] -- Detecting C compile features
+[1.170s] -- Detecting C compile features - done
+[1.175s] -- Detecting CXX compiler ABI info
+[1.446s] -- Detecting CXX compiler ABI info - done
+[1.481s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[1.485s] -- Detecting CXX compile features
+[1.486s] -- Detecting CXX compile features - done
+[1.487s] -- Setting build type to 'Release' as none was specified.
+[1.492s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[2.239s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[2.510s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[2.658s] -- Found rclcpp: 16.0.15 (/opt/ros/humble/share/rclcpp/cmake)
+[2.859s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[2.889s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[2.940s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[3.001s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[3.041s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[3.137s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[3.150s] -- Found rmw_fastrtps_cpp: 6.2.8 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[3.700s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[3.789s] -- Found FastRTPS: /opt/ros/humble/include  
+[3.994s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[4.041s] -- Looking for pthread.h
+[4.381s] -- Looking for pthread.h - found
+[4.382s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[4.811s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[4.813s] -- Found Threads: TRUE  
+[5.035s] -- Found rclcpp_action: 16.0.15 (/opt/ros/humble/share/rclcpp_action/cmake)
+[5.160s] -- Found rclcpp_components: 16.0.15 (/opt/ros/humble/share/rclcpp_components/cmake)
+[5.270s] -- Found rclcpp_lifecycle: 16.0.15 (/opt/ros/humble/share/rclcpp_lifecycle/cmake)
+[5.337s] -- Found mujoco_ros2_control: 0.9.0 (/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake)
+[6.250s] -- Found eigen3_cmake_module: 0.1.1 (/opt/ros/humble/share/eigen3_cmake_module/cmake)
+[6.252s] -- Found Eigen3: TRUE (found version "3.3.9") 
+[6.252s] -- Ensuring Eigen3 include directory is part of orocos-kdl CMake target
+[6.461s] [33mCMake Warning (dev) at /usr/share/cmake-3.22/Modules/FindOpenGL.cmake:315 (message):
+[6.461s]   Policy CMP0072 is not set: FindOpenGL prefers GLVND by default when
+[6.461s]   available.  Run "cmake --help-policy CMP0072" for policy details.  Use the
+[6.461s]   cmake_policy command to set the policy and suppress this warning.
+[6.462s] 
+[6.462s]   FindOpenGL found both a legacy GL library:
+[6.462s] 
+[6.462s]     OPENGL_gl_LIBRARY: /usr/lib/x86_64-linux-gnu/libGL.so
+[6.462s] 
+[6.462s]   and GLVND libraries for OpenGL and GLX:
+[6.462s] 
+[6.462s]     OPENGL_opengl_LIBRARY: /usr/lib/x86_64-linux-gnu/libOpenGL.so
+[6.462s]     OPENGL_glx_LIBRARY: /usr/lib/x86_64-linux-gnu/libGLX.so
+[6.463s] 
+[6.463s]   OpenGL_GL_PREFERENCE has not been set to "GLVND" or "LEGACY", so for
+[6.463s]   compatibility with CMake 3.10 and below the legacy GL library will be used.
+[6.463s] Call Stack (most recent call first):
+[6.463s]   /usr/share/cmake-3.22/Modules/CMakeFindDependencyMacro.cmake:47 (find_package)
+[6.463s]   /home/kai/Libraries/mujoco/lib/cmake/mujoco/mujocoConfig.cmake:42 (find_dependency)
+[6.463s]   /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+[6.463s]   /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/mujoco_rosConfig.cmake:41 (include)
+[6.463s]   /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+[6.463s]   /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake/mujoco_ros2_controlConfig.cmake:41 (include)
+[6.464s]   CMakeLists.txt:33 (find_package)
+[6.464s] This warning is for project developers.  Use -Wno-dev to suppress it.
+[6.464s] [0m
+[6.540s] -- Found franka_msgs: 0.0.0 (/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs/share/franka_msgs/cmake)
+[6.673s] -- Found Boost: /usr/lib/x86_64-linux-gnu/cmake/Boost-1.74.0/BoostConfig.cmake (found version "1.74.0") found components: thread chrono 
+[6.708s] [31mCMake Error at CMakeLists.txt:43 (find_package):
+[6.709s]   By not providing "Findpinocchio.cmake" in CMAKE_MODULE_PATH this project
+[6.709s]   has asked CMake to find a package configuration file provided by
+[6.709s]   "pinocchio", but CMake did not find one.
+[6.709s] 
+[6.709s]   Could not find a package configuration file provided by "pinocchio" with
+[6.709s]   any of the following names:
+[6.709s] 
+[6.709s]     pinocchioConfig.cmake
+[6.709s]     pinocchio-config.cmake
+[6.709s] 
+[6.709s]   Add the installation prefix of "pinocchio" to CMAKE_PREFIX_PATH or set
+[6.710s]   "pinocchio_DIR" to a directory containing one of the above files.  If
+[6.710s]   "pinocchio" provides a separate development package or SDK, be sure it has
+[6.710s]   been installed.
+[6.710s] 
+[6.710s] [0m
+[6.710s] -- Configuring incomplete, errors occurred!
+[6.710s] See also "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_hardware/CMakeFiles/CMakeOutput.log".

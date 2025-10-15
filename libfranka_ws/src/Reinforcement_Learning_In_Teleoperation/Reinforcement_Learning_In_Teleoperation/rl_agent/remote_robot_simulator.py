@@ -41,30 +41,7 @@ class RemoteRobotSimulator:
         max_joint_change: float = 0.1,
         continuity_gain: float = 0.5,
     ):
-        """
-        Initializes the remote robot simulator with pre-built controllers.
         
-        Args:
-            model_path: Path to MuJoCo XML model file
-            control_freq: Control frequency in Hz
-            torque_limits: Joint torque limits (N⋅m)
-            joint_limits_lower: Lower joint position limits (rad)
-            joint_limits_upper: Upper joint position limits (rad)
-            
-            # Adaptive PD Controller parameters
-            kp_nominal: Nominal proportional gains (if None, uses defaults for Franka)
-            kd_nominal: Nominal derivative gains (if None, uses defaults for Franka)
-            min_gain_ratio: Minimum gain scaling ratio for high delay
-            delay_threshold: Delay threshold for gain adaptation (seconds)
-            
-            # IK Solver parameters
-            jacobian_max_iter: Maximum iterations for Jacobian-based IK
-            position_tolerance: Position error tolerance for IK convergence
-            jacobian_step_size: Step size for Jacobian-based updates
-            jacobian_damping: Damping factor for pseudo-inverse
-            max_joint_change: Maximum joint change per IK solve (trajectory continuity)
-            continuity_gain: Gain for null-space projection toward previous configuration
-        """
         # Initialize MuJoCo model and data
         self.model = mujoco.MjModel.from_xml_path(model_path)
         self.data = mujoco.MjData(self.model)
@@ -78,10 +55,8 @@ class RemoteRobotSimulator:
         # Simulation frequency and substeps
         sim_freq = int(1.0 / self.model.opt.timestep)
         if sim_freq % control_freq != 0:
-            raise ValueError(
-                f"Simulation frequency ({sim_freq} Hz) must be a multiple "
-                f"of control frequency ({control_freq} Hz)."
-            )
+            raise ValueError(f"Simulation frequency ({sim_freq} Hz) must be a multiple of control frequency ({control_freq} Hz).")
+
         self.n_substeps = sim_freq // control_freq
 
         # Actuator and joint limits
@@ -92,11 +67,7 @@ class RemoteRobotSimulator:
         # TCP offset from flange to end-effector (in meters)
         self.tcp_offset = np.array([0.0, 0.0, 0.1034])
 
-        # ============================================================
-        # Initialize Pre-built Controllers
-        # ============================================================
-        
-        # 1. Inverse Kinematics Solver
+        # Initialize IK solver and PD controller
         self.ik_solver = IKSolver(
             model=self.model,
             joint_limits_lower=joint_limits_lower,
@@ -112,7 +83,6 @@ class RemoteRobotSimulator:
             continuity_gain=continuity_gain,
         )
 
-        # 2. Adaptive PD Controller
         self.pd_controller = AdaptivePDController(
             n_joints=self.n_joints,
             kp_nominal=kp_nominal,
@@ -133,13 +103,8 @@ class RemoteRobotSimulator:
         initial_qpos: NDArray[np.float64],
         reset_controllers: bool = True
     ) -> None:
-        """
-        Resets the robot to an initial joint configuration.
+        """ Reset the simulation to the initial joint configuration."""
         
-        Args:
-            initial_qpos: Initial joint positions (7,)
-            reset_controllers: Whether to reset controller internal states
-        """
         if initial_qpos.shape != (self.n_joints,):
             raise ValueError(
                 f"initial_qpos must have shape ({self.n_joints},), "
@@ -171,19 +136,8 @@ class RemoteRobotSimulator:
         qd: NDArray[np.float64],
         qdd: NDArray[np.float64],
     ) -> NDArray[np.float64]:
-        """
-        Compute inverse dynamics torque using MuJoCo's built-in function.
+        """Inverse dynamics using MuJoCo's built-in function."""
         
-        Uses mj_inverse() which computes: τ = M(q)q̈ + C(q,q̇) + g(q)
-        
-        Args:
-            q: Joint positions (7,)
-            qd: Joint velocities (7,)
-            qdd: Desired joint accelerations (7,)
-            
-        Returns:
-            tau: Required joint torques (7,)
-        """
         # Save current state
         qpos_save = self.data.qpos.copy()
         qvel_save = self.data.qvel.copy()
@@ -213,24 +167,8 @@ class RemoteRobotSimulator:
         current_delay: Optional[float] = None,
         target_vel_cartesian: Optional[NDArray[np.float64]] = None,
     ) -> dict:
-        """
-        Execute one control step with delay-adaptive control.
         
-        Args:
-            target_pos: Target end-effector position (3,) in Cartesian space
-                       Can be delayed observation or NN-predicted future position
-            normalized_action: RL agent's torque correction in [-0.5, 0.5] (7,)
-            current_delay: Current communication delay in seconds (for gain adaptation)
-                          If None, uses current gains without updating
-            target_vel_cartesian: Optional target Cartesian velocity (3,)
-                                 Used for better feedforward if available
-            
-        Returns:
-            step_info: Dictionary containing step statistics and debug information
-        """
-        # ============================================================
-        # Input Validation
-        # ============================================================
+        # Checking up input position
         if target_pos.shape != (3,):
             raise ValueError(f"target_pos must have shape (3,), got {target_pos.shape}")
         if normalized_action.shape != (self.n_joints,):
@@ -239,21 +177,15 @@ class RemoteRobotSimulator:
                 f"got {normalized_action.shape}"
             )
 
-        # ============================================================
-        # Update Adaptive Gains Based on Current Delay
-        # ============================================================
+        # Update PD gains based on current delay measurement
         if current_delay is not None:
             self.pd_controller.update_gains(delay=current_delay)
 
-        # ============================================================
-        # Get Current Robot State
-        # ============================================================
+        # Get current Robot state
         q_current = self.data.qpos[:self.n_joints].copy()
         qd_current = self.data.qvel[:self.n_joints].copy()
 
-        # ============================================================
-        # Inverse Kinematics: Cartesian Target → Joint Space Target
-        # ============================================================
+        # IK
         q_target, ik_success, ik_error = self.ik_solver.solve(
             target_pos=target_pos,
             q_init=q_current,
@@ -262,7 +194,6 @@ class RemoteRobotSimulator:
             enforce_continuity=True,  # Use trajectory continuity enforcement
         )
 
-        # Handle IK failure gracefully
         if q_target is None or not ik_success:
             print(
                 f"Warning: IK failed with error {ik_error:.6f}m. "
@@ -270,9 +201,6 @@ class RemoteRobotSimulator:
             )
             q_target = self.last_q_target.copy()
 
-        # ============================================================
-        # Target Velocity Estimation
-        # ============================================================
         
         # Method 1: Finite difference of joint-space targets (always available)
         q_target_old = self.last_q_target.copy()

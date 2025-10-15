@@ -1,0 +1,43 @@
+[35m[1mConsolidate compiler generated dependencies of target panda_motion_generator_msgs__rosidl_generator_c[0m
+[  0%] Built target ament_cmake_python_symlink_panda_motion_generator_msgs
+[  1%] Built target panda_motion_generator_msgs__cpp
+[ 12%] Built target panda_motion_generator_msgs__rosidl_generator_c
+[35m[1mConsolidate compiler generated dependencies of target panda_motion_generator_msgs__rosidl_typesupport_fastrtps_cpp[0m
+[35m[1mConsolidate compiler generated dependencies of target panda_motion_generator_msgs__rosidl_typesupport_introspection_cpp[0m
+[35m[1mConsolidate compiler generated dependencies of target panda_motion_generator_msgs__rosidl_typesupport_cpp[0m
+[ 14%] [34m[1mGenerating C type support dispatch for ROS interfaces[0m
+[ 15%] [34m[1mGenerating C type support for eProsima Fast-RTPS[0m
+[ 17%] [34m[1mGenerating C introspection for ROS interfaces[0m
+[ 28%] Built target panda_motion_generator_msgs__rosidl_typesupport_introspection_cpp
+[ 39%] Built target panda_motion_generator_msgs__rosidl_typesupport_cpp
+[ 50%] Built target panda_motion_generator_msgs__rosidl_typesupport_fastrtps_cpp
+running egg_info
+writing panda_motion_generator_msgs.egg-info/PKG-INFO
+writing dependency_links to panda_motion_generator_msgs.egg-info/dependency_links.txt
+writing top-level names to panda_motion_generator_msgs.egg-info/top_level.txt
+reading manifest file 'panda_motion_generator_msgs.egg-info/SOURCES.txt'
+writing manifest file 'panda_motion_generator_msgs.egg-info/SOURCES.txt'
+[ 50%] Built target ament_cmake_python_build_panda_motion_generator_msgs_egg
+[ 52%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/joint_pose__type_support.cpp.o[0m
+[ 53%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/set_time_scaling__type_support.cpp.o[0m
+[ 55%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/simple_action_result__type_support.cpp.o[0m
+[ 57%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/action/cartesian_via_motion__type_support.cpp.o[0m
+[ 58%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/action/joint_via_motion__type_support.cpp.o[0m
+[ 60%] [32m[1mLinking CXX shared library libpanda_motion_generator_msgs__rosidl_typesupport_c.so[0m
+[ 61%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/msg/detail/joint_pose__type_support_c.cpp.o[0m
+[ 61%] Built target panda_motion_generator_msgs__rosidl_typesupport_c
+[ 63%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/msg/detail/set_time_scaling__type_support_c.cpp.o[0m
+[ 65%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/action/detail/cartesian_via_motion__type_support_c.cpp.o[0m
+[ 66%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/msg/detail/simple_action_result__type_support_c.cpp.o[0m
+[ 68%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/action/detail/joint_via_motion__type_support_c.cpp.o[0m
+[ 69%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/panda_motion_generator_msgs/msg/detail/joint_pose__type_support.c.o[0m
+[ 71%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/panda_motion_generator_msgs/msg/detail/simple_action_result__type_support.c.o[0m
+[ 73%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/panda_motion_generator_msgs/msg/detail/set_time_scaling__type_support.c.o[0m
+[ 74%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/panda_motion_generator_msgs/action/detail/joint_via_motion__type_support.c.o[0m
+[ 76%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/panda_motion_generator_msgs/action/detail/cartesian_via_motion__type_support.c.o[0m
+[ 77%] [32m[1mLinking C shared library libpanda_motion_generator_msgs__rosidl_typesupport_introspection_c.so[0m
+[ 77%] Built target panda_motion_generator_msgs__rosidl_typesupport_introspection_c
+[ 79%] [32m[1mLinking CXX shared library libpanda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.so[0m
+[ 79%] Built target panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c
+[ 79%] Built target panda_motion_generator_msgs
+[ 80%] [34m[1mGenerating Python code for ROS interfaces[0m

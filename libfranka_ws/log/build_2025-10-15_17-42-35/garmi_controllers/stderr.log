@@ -1,0 +1,27 @@
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/mobile_base_controller.cpp:[m[K In member function ‘[01m[Kvirtual controller_interface::return_type garmi_controllers::MobileBaseController::update(const rclcpp::Time&, const rclcpp::Duration&)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/mobile_base_controller.cpp:28:84:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Ktime[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+   28 | controller_interface::return_type MobileBaseController::update([01;35m[Kconst rclcpp::Time& time[m[K,
+      |                                                                [01;35m[K~~~~~~~~~~~~~~~~~~~~^~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/mobile_base_controller.cpp:29:88:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kperiod[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+   29 |                                                                [01;35m[Kconst rclcpp::Duration& period[m[K){
+      |                                                                [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/mobile_base_controller.cpp:[m[K In member function ‘[01m[Kvirtual CallbackReturn garmi_controllers::MobileBaseController::on_configure(const rclcpp_lifecycle::State&)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/mobile_base_controller.cpp:52:82:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kprevious_state[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+   52 | CallbackReturn MobileBaseController::on_configure([01;35m[Kconst rclcpp_lifecycle::State& previous_state[m[K){
+      |                                                   [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/mobile_base_controller.cpp:[m[K In member function ‘[01m[Kvirtual CallbackReturn garmi_controllers::MobileBaseController::on_activate(const rclcpp_lifecycle::State&)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/mobile_base_controller.cpp:60:81:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kprevious_state[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+   60 | CallbackReturn MobileBaseController::on_activate([01;35m[Kconst rclcpp_lifecycle::State& previous_state[m[K){
+      |                                                  [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~[m[K
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/mobile_base_controller.cpp:[m[K In member function ‘[01m[Kvirtual CallbackReturn garmi_controllers::MobileBaseController::on_deactivate(const rclcpp_lifecycle::State&)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/mobile_base_controller.cpp:66:83:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kprevious_state[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+   66 | CallbackReturn MobileBaseController::on_deactivate([01;35m[Kconst rclcpp_lifecycle::State& previous_state[m[K){
+      |                                                    [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~[m[K
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/head_controller.cpp:1[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/include/garmi_controllers/head_controller.hpp:23:10:[m[K [01;31m[Kfatal error: [m[Ksensor_msgs/sensor_msgs/msg/joint_state.hpp: No such file or directory
+   23 | #include [01;31m[K<sensor_msgs/sensor_msgs/msg/joint_state.hpp>[m[K
+      |          [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+compilation terminated.
+gmake[2]: *** [CMakeFiles/garmi_controllers.dir/build.make:90: CMakeFiles/garmi_controllers.dir/src/head_controller.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/garmi_controllers.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2

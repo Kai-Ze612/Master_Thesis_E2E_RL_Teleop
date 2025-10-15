@@ -1,6 +1,6 @@
 # generated from ament_cmake_export_include_directories/cmake/ament_cmake_export_include_directories-extras.cmake.in
 
-set(_exported_include_dirs "${mujoco_ros_DIR}/../../../include;/home/kai/Libraries/mujoco/mujoco_install/include/;/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/include")
+set(_exported_include_dirs "${mujoco_ros_DIR}/../../../include;/home/kai/Libraries/mujoco/include/;/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/include")
 
 # append include directories to mujoco_ros_INCLUDE_DIRS
 # warn about not existing paths

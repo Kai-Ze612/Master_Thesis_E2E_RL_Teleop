@@ -712,19 +712,19 @@ src/CMakeFiles/mujoco_ros.dir/interface.cpp.o: \
  /opt/ros/humble/include/rclcpp_action/rclcpp_action/server.hpp \
  /opt/ros/humble/include/rclcpp_action/rclcpp_action/server_goal_handle.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/common_types.hpp \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mujoco.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mujoco.h \
  /usr/include/c++/11/math.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjdata.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjtnum.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjmodel.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjthread.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjexport.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjmacro.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjplugin.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjvisualize.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjrender.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjspec.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjui.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjdata.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjtnum.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjmodel.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjthread.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjexport.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjmacro.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjplugin.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjvisualize.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjrender.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjspec.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjui.h \
  /opt/ros/humble/include/std_srvs/std_srvs/srv/empty.hpp \
  /opt/ros/humble/include/std_srvs/std_srvs/srv/detail/empty__struct.hpp \
  /opt/ros/humble/include/std_srvs/std_srvs/srv/detail/empty__builder.hpp \
@@ -903,10 +903,6 @@ src/CMakeFiles/mujoco_ros.dir/interface.cpp.o: \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__builder.hpp \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__traits.hpp \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__type_support.hpp \
- /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/glfw_adapter.h \
- /usr/include/GLFW/glfw3.h /usr/include/GL/gl.h /usr/include/GL/glext.h \
- /usr/include/KHR/khrplatform.h \
- /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/glfw_dispatch.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/ros_two/plugin_utils.hpp \
  /opt/ros/humble/include/rclcpp_lifecycle/rclcpp_lifecycle/lifecycle_node.hpp \
  /opt/ros/humble/include/rclcpp_lifecycle/rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp \

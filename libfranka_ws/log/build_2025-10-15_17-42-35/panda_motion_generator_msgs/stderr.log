@@ -1,0 +1,42 @@
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/lark/load_grammar.py", line 918, in _get_parser
+    return _get_parser.cache
+AttributeError: 'function' object has no attribute 'cache'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/ros/humble/lib/rosidl_typesupport_fastrtps_c/rosidl_typesupport_fastrtps_c", line 33, in <module>
+    sys.exit(main())
+  File "/opt/ros/humble/lib/rosidl_typesupport_fastrtps_c/rosidl_typesupport_fastrtps_c", line 29, in main
+    generate_typesupport_fastrtps_c(args.generator_arguments_file)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_typesupport_fastrtps_c/__init__.py", line 24, in generate_typesupport_fastrtps_c
+    return generate_files(generator_arguments_file, mapping)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 74, in generate_files
+    idl_file = parse_idl_file(locator)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_parser/parser.py", line 64, in parse_idl_file
+    content = parse_idl_string(string, png_file=png_file)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_parser/parser.py", line 72, in parse_idl_string
+    tree = get_ast_from_idl_string(idl_string)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_parser/parser.py", line 88, in get_ast_from_idl_string
+    _parser = Lark(grammar, start='specification', maybe_placeholders=False)
+  File "/usr/lib/python3/dist-packages/lark/lark.py", line 333, in __init__
+    self.grammar, used_files = load_grammar(grammar, self.source_path, self.options.import_paths, self.options.keep_all_tokens)
+  File "/usr/lib/python3/dist-packages/lark/load_grammar.py", line 1408, in load_grammar
+    builder.load_grammar(grammar, source)
+  File "/usr/lib/python3/dist-packages/lark/load_grammar.py", line 1233, in load_grammar
+    tree = _parse_grammar(grammar_text, grammar_name)
+  File "/usr/lib/python3/dist-packages/lark/load_grammar.py", line 961, in _parse_grammar
+    tree = _get_parser().parse(text + '\n', start)
+  File "/usr/lib/python3/dist-packages/lark/load_grammar.py", line 933, in _get_parser
+    _get_parser.cache = ParsingFrontend(lexer_conf, parser_conf, None)
+  File "/usr/lib/python3/dist-packages/lark/parser_frontends.py", line 76, in __init__
+    self.lexer = create_lexer(lexer_conf, self.parser, lexer_conf.postlex, options)
+  File "/usr/lib/python3/dist-packages/lark/parser_frontends.py", line 143, in create_basic_lexer
+    return cls(lexer_conf)
+  File "/usr/lib/python3/dist-packages/lark/lexer.py", line 395, in __init__
+    def __init__(self, conf: 'LexerConf') -> None:
+KeyboardInterrupt
+gmake[2]: *** [CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/build.make:155: rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/msg/detail/joint_pose__rosidl_typesupport_fastrtps_c.h] Interrupt
+gmake[1]: *** [CMakeFiles/Makefile2:238: CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/all] Interrupt
+gmake: *** [Makefile:146: all] Interrupt

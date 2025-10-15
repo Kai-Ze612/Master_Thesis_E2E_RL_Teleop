@@ -1,0 +1,148 @@
+[35m[1mConsolidate compiler generated dependencies of target BulletCollision[0m
+[35m[1mConsolidate compiler generated dependencies of target BulletDynamics[0m
+[35m[1mConsolidate compiler generated dependencies of target gwen[0m
+[  0%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/Menu.cpp.o[0m
+[  1%] Built target Bullet3Common
+[  3%] Built target LinearMath
+[  4%] Built target BulletInverseDynamics
+[  4%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/MenuItem.cpp.o[0m
+[  6%] Built target OpenGLWindow
+[  7%] Built target BulletExampleBrowserLib
+[  8%] Built target BussIK
+[35m[1mConsolidate compiler generated dependencies of target BulletFileLoader[0m
+[35m[1mConsolidate compiler generated dependencies of target BulletSoftBody[0m
+[  8%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btBox2dShape.cpp.o[0m
+[35m[1mConsolidate compiler generated dependencies of target BulletRobotics[0m
+[  8%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/PanelListPanel.cpp.o[0m
+[  8%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/NumericUpDown.cpp.o[0m
+[  8%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btBvhTriangleMeshShape.cpp.o[0m
+[  9%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/MenuStrip.cpp.o[0m
+[ 10%] Built target BulletInverseDynamicsUtils
+[ 10%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBody.cpp.o[0m
+[ 10%] Built target BulletFileLoader
+[ 10%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/ProgressBar.cpp.o[0m
+[ 10%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btCapsuleShape.cpp.o[0m
+[ 10%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/MathUtil.cpp.o[0m
+[ 10%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btDeformableBodySolver.cpp.o[0m
+[ 10%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/Properties.cpp.o[0m
+[ 10%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btCollisionShape.cpp.o[0m
+[ 10%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodyDynamicsWorld.cpp.o[0m
+[ 10%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/RadioButton.cpp.o[0m
+[ 10%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodyFixedConstraint.cpp.o[0m
+[ 10%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btDeformableContactProjection.cpp.o[0m
+[ 11%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btDeformableMultiBodyDynamicsWorld.cpp.o[0m
+[ 11%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/RadioButtonController.cpp.o[0m
+[ 11%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btCompoundShape.cpp.o[0m
+[ 12%] [32mBuilding CXX object Extras/Serialize/BulletWorldImporter/CMakeFiles/BulletWorldImporter.dir/btWorldImporter.cpp.o[0m
+[ 12%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btConcaveShape.cpp.o[0m
+[ 12%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/ResizableControl.cpp.o[0m
+[ 13%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btConeShape.cpp.o[0m
+[ 13%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btConvexHullShape.cpp.o[0m
+[ 13%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/Resizer.cpp.o[0m
+[ 13%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodyGearConstraint.cpp.o[0m
+[ 13%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/ScrollBarBar.cpp.o[0m
+[ 13%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btConvexInternalShape.cpp.o[0m
+[ 14%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodyJointLimitConstraint.cpp.o[0m
+[ 14%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btConvexPointCloudShape.cpp.o[0m
+[ 14%] [32m[1mLinking CXX static library libBulletWorldImporter.a[0m
+[ 15%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/ScrollBar.cpp.o[0m
+[ 15%] Built target BulletWorldImporter
+[ 15%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btConvexPolyhedron.cpp.o[0m
+[ 15%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodyJointMotor.cpp.o[0m
+[ 15%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/BulletReducedDeformableBody/btReducedDeformableContactConstraint.cpp.o[0m
+[ 15%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btConvexShape.cpp.o[0m
+[ 15%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/ScrollBarButton.cpp.o[0m
+[ 15%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodyMLCPConstraintSolver.cpp.o[0m
+[ 15%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btConvex2dShape.cpp.o[0m
+[ 15%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btConvexTriangleMeshShape.cpp.o[0m
+[ 15%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/BulletReducedDeformableBody/btReducedDeformableBodySolver.cpp.o[0m
+[ 15%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/ScrollControl.cpp.o[0m
+[ 15%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btCylinderShape.cpp.o[0m
+[ 15%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btEmptyShape.cpp.o[0m
+[ 15%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/RichLabel.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btHeightfieldTerrainShape.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodyPoint2Point.cpp.o[0m
+[ 16%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/SplitterBar.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btMiniSDF.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodySliderConstraint.cpp.o[0m
+[ 16%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/Slider.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btMinkowskiSumShape.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodySphericalJointMotor.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btMultimaterialTriangleMeshShape.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/BulletReducedDeformableBody/btReducedDeformableBodyHelpers.cpp.o[0m
+[ 16%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/TabButton.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodySphericalJointLimit.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btMultiSphereShape.cpp.o[0m
+[ 16%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/TabControl.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/BulletReducedDeformableBody/btReducedDeformableBody.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/MLCPSolvers/btDantzigLCP.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btOptimizedBvh.cpp.o[0m
+[ 16%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/TinyRenderer/model.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btPolyhedralConvexShape.cpp.o[0m
+[ 16%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/TabStrip.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btScaledBvhTriangleMeshShape.cpp.o[0m
+[ 16%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/TinyRenderer/tgaimage.cpp.o[0m
+[ 16%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/MLCPSolvers/btMLCPSolver.cpp.o[0m
+[ 17%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/Text.cpp.o[0m
+[ 17%] [32m[1mLinking CXX static library libBulletSoftBody.a[0m
+[ 18%] Built target BulletSoftBody
+[ 19%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/TinyRenderer/our_gl.cpp.o[0m
+[ 19%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btSdfCollisionShape.cpp.o[0m
+[ 19%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btShapeHull.cpp.o[0m
+[ 19%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/TextBox.cpp.o[0m
+[ 19%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/TinyRenderer/TinyRenderer.cpp.o[0m
+[ 19%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/MLCPSolvers/btLemkeAlgorithm.cpp.o[0m
+[ 19%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/TextBoxNumeric.cpp.o[0m
+[ 20%] [32m[1mLinking CXX static library libBulletDynamics.a[0m
+[ 23%] Built target BulletDynamics
+[ 24%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btSphereShape.cpp.o[0m
+[ 24%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/TinyRenderer/geometry.cpp.o[0m
+[ 24%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btStaticPlaneShape.cpp.o[0m
+[ 24%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/KinTree.cpp.o[0m
+[ 24%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/TreeControl.cpp.o[0m
+[ 24%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btTetrahedronShape.cpp.o[0m
+[ 24%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btStridingMeshInterface.cpp.o[0m
+[ 24%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/VerticalScrollBar.cpp.o[0m
+[ 24%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btTriangleBuffer.cpp.o[0m
+[ 24%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btTriangleCallback.cpp.o[0m
+[ 24%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btTriangleIndexVertexArray.cpp.o[0m
+[ 24%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/TreeNode.cpp.o[0m
+[ 24%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btTriangleIndexVertexMaterialArray.cpp.o[0m
+[ 24%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btTriangleMesh.cpp.o[0m
+[ 25%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btTriangleMeshShape.cpp.o[0m
+[ 25%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/VerticalSlider.cpp.o[0m
+[ 25%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionShapes/btUniformScalingShape.cpp.o[0m
+[ 25%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/WindowControl.cpp.o[0m
+[ 25%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/btContactProcessing.cpp.o[0m
+[ 25%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/btGenericPoolAllocator.cpp.o[0m
+[ 25%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/DragAndDrop.cpp.o[0m
+[ 25%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/btGImpactBvh.cpp.o[0m
+[ 25%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/collisionFilterPlugin/collisionFilterPlugin.cpp.o[0m
+[ 25%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/btGImpactCollisionAlgorithm.cpp.o[0m
+[ 25%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Gwen.cpp.o[0m
+[ 25%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/pdControlPlugin/pdControlPlugin.cpp.o[0m
+[ 26%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Hook.cpp.o[0m
+[ 26%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/b3RobotSimulatorClientAPI_NoGUI.cpp.o[0m
+[ 26%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/btGImpactQuantizedBvh.cpp.o[0m
+[ 26%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/b3RobotSimulatorClientAPI_NoDirect.cpp.o[0m
+[ 26%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Platforms/Null.cpp.o[0m
+[ 26%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/btGImpactShape.cpp.o[0m
+[ 26%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Platforms/Windows.cpp.o[0m
+[ 26%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/IKTrajectoryHelper.cpp.o[0m
+[ 26%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Renderers/OpenGL_DebugFont.cpp.o[0m
+[ 26%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/btTriangleShapeEx.cpp.o[0m
+[ 26%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/gim_box_set.cpp.o[0m
+[ 26%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/tinyRendererPlugin/tinyRendererPlugin.cpp.o[0m
+[ 26%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/tinyRendererPlugin/TinyRendererVisualShapeConverter.cpp.o[0m
+[ 27%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/gim_contact.cpp.o[0m
+[ 27%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Skin.cpp.o[0m
+[ 27%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/gim_memory.cpp.o[0m
+[ 27%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/Gimpact/gim_tri_collision.cpp.o[0m
+[ 27%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/ToolTip.cpp.o[0m
+[ 27%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/NarrowPhaseCollision/btContinuousConvexCollision.cpp.o[0m
+[ 27%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Utility.cpp.o[0m
+[ 27%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/NarrowPhaseCollision/btConvexCast.cpp.o[0m
+[ 27%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/NarrowPhaseCollision/btGjkConvexCast.cpp.o[0m
+[ 27%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/events.cpp.o[0m
+[ 27%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/NarrowPhaseCollision/btGjkEpa2.cpp.o[0m
+[ 27%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/inputhandler.cpp.o[0m

@@ -10,7 +10,6 @@
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/install/local.dir
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/install/strip.dir
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/src/CMakeFiles/lodepng.dir
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/src/CMakeFiles/platform_ui_adapter.dir
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/src/CMakeFiles/mujoco_ros.dir
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/src/CMakeFiles/mujoco_node.dir
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/src/CMakeFiles/test.dir

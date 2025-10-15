@@ -216,22 +216,22 @@ CMakeFiles/franka_robot_state_broadcaster.dir/src/franka_robot_state_broadcaster
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_cpp/franka_msgs/msg/detail/errors__type_support.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/include/franka_semantic_components/franka_robot_state.hpp \
  /usr/include/c++/11/limits \
- /home/kai/Libraries/libfranka_install/include/franka/robot_state.h \
- /home/kai/Libraries/libfranka_install/include/franka/duration.h \
+ /home/kai/Libraries/libfranka/include/franka/robot_state.h \
+ /home/kai/Libraries/libfranka/include/franka/duration.h \
  /usr/include/c++/11/chrono /usr/include/c++/11/ratio \
  /usr/include/c++/11/bits/parse_numbers.h \
- /home/kai/Libraries/libfranka_install/include/franka/errors.h \
- /opt/ros/humble/include/semantic_components/semantic_component_interface.hpp \
- /opt/ros/humble/include/controller_interface/helpers.hpp \
- /opt/ros/humble/include/hardware_interface/loaned_state_interface.hpp \
- /opt/ros/humble/include/hardware_interface/handle.hpp \
- /opt/ros/humble/include/hardware_interface/macros.hpp \
+ /home/kai/Libraries/libfranka/include/franka/errors.h \
+ /opt/ros/humble/include/controller_interface/semantic_components/semantic_component_interface.hpp \
+ /opt/ros/humble/include/controller_interface/controller_interface/helpers.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/loaned_state_interface.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/handle.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/macros.hpp \
  /opt/ros/humble/include/rcpputils/rcpputils/pointer_traits.hpp \
- /opt/ros/humble/include/hardware_interface/visibility_control.h \
- /opt/ros/humble/include/controller_interface/controller_interface.hpp \
- /opt/ros/humble/include/controller_interface/controller_interface_base.hpp \
- /opt/ros/humble/include/controller_interface/visibility_control.h \
- /opt/ros/humble/include/hardware_interface/loaned_command_interface.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/visibility_control.h \
+ /opt/ros/humble/include/controller_interface/controller_interface/controller_interface.hpp \
+ /opt/ros/humble/include/controller_interface/controller_interface/controller_interface_base.hpp \
+ /opt/ros/humble/include/controller_interface/controller_interface/visibility_control.h \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/loaned_command_interface.hpp \
  /opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp \
  /usr/include/c++/11/csignal /usr/include/signal.h \
  /usr/include/x86_64-linux-gnu/bits/signum-generic.h \
@@ -678,8 +678,8 @@ CMakeFiles/franka_robot_state_broadcaster.dir/src/franka_robot_state_broadcaster
  /opt/ros/humble/include/rclcpp_lifecycle/rclcpp_lifecycle/lifecycle_publisher.hpp \
  /opt/ros/humble/include/realtime_tools/realtime_tools/realtime_publisher.h \
  /opt/ros/humble/include/realtime_tools/realtime_tools/realtime_publisher.hpp \
- /opt/ros/humble/include/hardware_interface/types/hardware_interface_return_values.hpp \
- /opt/ros/humble/include/hardware_interface/types/hardware_interface_type_values.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/types/hardware_interface_return_values.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/types/hardware_interface_type_values.hpp \
  /opt/ros/humble/include/rcpputils/rcpputils/split.hpp \
  /opt/ros/humble/include/std_msgs/std_msgs/msg/header.hpp \
  /opt/ros/humble/include/std_msgs/std_msgs/msg/detail/header__builder.hpp \

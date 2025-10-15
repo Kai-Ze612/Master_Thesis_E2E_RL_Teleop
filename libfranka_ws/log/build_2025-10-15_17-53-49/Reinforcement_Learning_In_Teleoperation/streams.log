@@ -1,0 +1,19 @@
+[3.488s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation': PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation/build --no-deps symlink_data
+[4.511s] running develop
+[5.220s] running egg_info
+[5.229s] writing Reinforcement_Learning_In_Teleoperation.egg-info/PKG-INFO
+[5.229s] writing dependency_links to Reinforcement_Learning_In_Teleoperation.egg-info/dependency_links.txt
+[5.229s] writing entry points to Reinforcement_Learning_In_Teleoperation.egg-info/entry_points.txt
+[5.229s] writing requirements to Reinforcement_Learning_In_Teleoperation.egg-info/requires.txt
+[5.230s] writing top-level names to Reinforcement_Learning_In_Teleoperation.egg-info/top_level.txt
+[5.232s] reading manifest file 'Reinforcement_Learning_In_Teleoperation.egg-info/SOURCES.txt'
+[5.237s] writing manifest file 'Reinforcement_Learning_In_Teleoperation.egg-info/SOURCES.txt'
+[5.239s] running build_ext
+[5.244s] Creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/python3.10/site-packages/Reinforcement-Learning-In-Teleoperation.egg-link (link to .)
+[5.245s] Installing local_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/Reinforcement_Learning_In_Teleoperation
+[5.246s] Installing remote_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/Reinforcement_Learning_In_Teleoperation
+[5.246s] Installing remote_simulated_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/Reinforcement_Learning_In_Teleoperation
+[5.247s] 
+[5.247s] Installed /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation
+[5.247s] running symlink_data
+[5.354s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation' returned '0': PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation/build --no-deps symlink_data

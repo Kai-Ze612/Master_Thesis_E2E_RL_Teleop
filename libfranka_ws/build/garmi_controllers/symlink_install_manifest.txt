@@ -1,6 +1,7 @@
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_controllers/share/garmi_controllers//garmi_controllers.xml
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_controllers/lib/libgarmi_controllers.so
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_controllers/include/garmi_controllers/head_controller.hpp
+/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_controllers/include/garmi_controllers/head_controller.hpp.backup
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_controllers/include/garmi_controllers/mobile_base_controller.hpp
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_controllers/share/garmi_controllers/environment/library_path.sh
 /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_controllers/share/garmi_controllers/environment/library_path.dsv

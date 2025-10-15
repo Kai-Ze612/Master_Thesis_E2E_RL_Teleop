@@ -1,0 +1,262 @@
+[0.840s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control_system': AMENT_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/opt/ros/humble:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake LD_LIBRARY_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control_system -- -j12 -l12
+[1.250s] [ 50%] [32mBuilding CXX object CMakeFiles/mujoco_ros2_control_system.dir/src/mujoco_ros2_control_system.cpp.o[0m
+[8.645s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:[m[K In member function ‘[01m[Kvirtual bool mujoco_ros2_control::MujocoRos2System::initSim(rclcpp_lifecycle::LifecycleNode::SharedPtr&, const hardware_interface::HardwareInfo&, const mjModel*, mjData*, unsigned int&)[m[K’:
+[8.645s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:51:12:[m[K [01;35m[Kwarning: [m[Kunused variable ‘[01m[Khas_value[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-variable-Wunused-variable]8;;[m[K]
+[8.645s]    51 |       bool [01;35m[Khas_value[m[K = joint_info.parameters.find("test") != joint_info.parameters.end();
+[8.645s]       |            [01;35m[K^~~~~~~~~[m[K
+[8.650s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:[m[K In member function ‘[01m[Kvirtual mujoco_ros2_control::CallbackReturn mujoco_ros2_control::MujocoRos2System::on_configure(const rclcpp_lifecycle::State&)[m[K’:
+[8.650s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:191:79:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kprevious_state[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[8.650s]   191 | CallbackReturn MujocoRos2System::on_configure([01;35m[Kconst rclcpp_lifecycle::State & previous_state[m[K){
+[8.651s]       |                                               [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~[m[K
+[8.653s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:[m[K In member function ‘[01m[Kvirtual mujoco_ros2_control::CallbackReturn mujoco_ros2_control::MujocoRos2System::on_activate(const rclcpp_lifecycle::State&)[m[K’:
+[8.653s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:203:78:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kprevious_state[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[8.653s]   203 | CallbackReturn MujocoRos2System::on_activate([01;35m[Kconst rclcpp_lifecycle::State & previous_state[m[K){
+[8.653s]       |                                              [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~[m[K
+[8.654s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:[m[K In member function ‘[01m[Kvirtual mujoco_ros2_control::CallbackReturn mujoco_ros2_control::MujocoRos2System::on_deactivate(const rclcpp_lifecycle::State&)[m[K’:
+[8.654s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:207:80:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kprevious_state[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[8.654s]   207 | CallbackReturn MujocoRos2System::on_deactivate([01;35m[Kconst rclcpp_lifecycle::State & previous_state[m[K){
+[8.654s]       |                                                [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~[m[K
+[8.656s] In file included from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/logging.hpp:24[m[K,
+[8.656s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/client.hpp:40[m[K,
+[8.657s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/callback_group.hpp:24[m[K,
+[8.657s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/any_executable.hpp:20[m[K,
+[8.657s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategy.hpp:25[m[K,
+[8.657s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategies.hpp:18[m[K,
+[8.657s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor_options.hpp:20[m[K,
+[8.657s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor.hpp:37[m[K,
+[8.658s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25[m[K,
+[8.658s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors.hpp:21[m[K,
+[8.658s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp:155[m[K,
+[8.658s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/include/mujoco_ros2_control/mujoco_ros2_control_system_interface.hpp:29[m[K,
+[8.658s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/include/mujoco_ros2_control_system/mujoco_ros2_control_system.hpp:13[m[K,
+[8.658s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:1[m[K:
+[8.659s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:[m[K In member function ‘[01m[Kvirtual hardware_interface::return_type mujoco_ros2_control::MujocoRos2System::prepare_command_mode_switch(const std::vector<std::__cxx11::basic_string<char> >&, const std::vector<std::__cxx11::basic_string<char> >&)[m[K’:
+[8.659s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:248:51:[m[K [01;35m[Kwarning: [m[Kformat ‘[01m[K%s[m[K’ expects a matching ‘[01m[Kchar*[m[K’ argument [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wformat=-Wformat=]8;;[m[K]
+[8.659s]   248 |             RCLCPP_ERROR(this->nh_->get_logger(), [01;35m[K"The joint %s has already been marked to be"[m[K
+[8.659s]       |                                                   [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.659s]   249 | [01;35m[K                                            " started! Check that you are not trying to start"[m[K
+[8.659s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.660s]   250 | [01;35m[K                                            " two command interfaces on the same joint together."[m[K
+[8.660s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.660s]   251 | [01;35m[K                                            " Given: %s, target joint: %s"[m[K,
+[8.660s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.660s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:251:73:[m[K [01;36m[Knote: [m[Kformat string is defined here
+[8.661s]   251 |                                             " Given: %s, target joint: [01;36m[K%s[m[K",
+[8.661s]       |                                                                        [01;36m[K~^[m[K
+[8.661s]       |                                                                         [01;36m[K|[m[K
+[8.661s]       |                                                                         [01;36m[Kchar*[m[K
+[8.662s] In file included from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/logging.hpp:24[m[K,
+[8.662s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/client.hpp:40[m[K,
+[8.662s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/callback_group.hpp:24[m[K,
+[8.663s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/any_executable.hpp:20[m[K,
+[8.663s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategy.hpp:25[m[K,
+[8.663s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategies.hpp:18[m[K,
+[8.663s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor_options.hpp:20[m[K,
+[8.663s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor.hpp:37[m[K,
+[8.663s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25[m[K,
+[8.663s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors.hpp:21[m[K,
+[8.664s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp:155[m[K,
+[8.664s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/include/mujoco_ros2_control/mujoco_ros2_control_system_interface.hpp:29[m[K,
+[8.664s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/include/mujoco_ros2_control_system/mujoco_ros2_control_system.hpp:13[m[K,
+[8.664s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:1[m[K:
+[8.664s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:260:45:[m[K [01;35m[Kwarning: [m[Kformat ‘[01m[K%d[m[K’ expects argument of type ‘[01m[Kint[m[K’, but argument 5 has type ‘[01m[Kstd::vector<std::__cxx11::basic_string<char> >::size_type[m[K’ {aka ‘[01m[Klong unsigned int[m[K’} [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wformat=-Wformat=]8;;[m[K]
+[8.664s]   260 |       RCLCPP_ERROR(this->nh_->get_logger(), [01;35m[K"The number of start interfaces is"[m[K
+[8.665s]       |                                             [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.665s]   261 | [01;35m[K                                            " greater than the number of joints in this system!"[m[K
+[8.665s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.665s]   262 | [01;35m[K                                            " start interfaces: %d, system joint size: %d"[m[K,
+[8.665s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.665s]   263 |                                             [32m[Kfiltered_starts.size()[m[K, this->dataPtr_->joints_.size());
+[8.666s]       |                                             [32m[K~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.666s]       |                                                                 [32m[K|[m[K
+[8.666s]       |                                                                 [32m[Kstd::vector<std::__cxx11::basic_string<char> >::size_type {aka long unsigned int}[m[K
+[8.666s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:262:66:[m[K [01;36m[Knote: [m[Kformat string is defined here
+[8.666s]   262 |                                             " start interfaces: [01;36m[K%d[m[K, system joint size: %d",
+[8.666s]       |                                                                 [01;36m[K~^[m[K
+[8.667s]       |                                                                  [01;36m[K|[m[K
+[8.667s]       |                                                                  [01;36m[Kint[m[K
+[8.667s]       |                                                                 [32m[K%ld[m[K
+[8.667s] In file included from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/logging.hpp:24[m[K,
+[8.667s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/client.hpp:40[m[K,
+[8.668s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/callback_group.hpp:24[m[K,
+[8.668s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/any_executable.hpp:20[m[K,
+[8.668s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategy.hpp:25[m[K,
+[8.668s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategies.hpp:18[m[K,
+[8.668s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor_options.hpp:20[m[K,
+[8.668s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor.hpp:37[m[K,
+[8.668s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25[m[K,
+[8.669s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors.hpp:21[m[K,
+[8.669s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp:155[m[K,
+[8.669s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/include/mujoco_ros2_control/mujoco_ros2_control_system_interface.hpp:29[m[K,
+[8.669s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/include/mujoco_ros2_control_system/mujoco_ros2_control_system.hpp:13[m[K,
+[8.669s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:1[m[K:
+[8.670s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:260:45:[m[K [01;35m[Kwarning: [m[Kformat ‘[01m[K%d[m[K’ expects argument of type ‘[01m[Kint[m[K’, but argument 6 has type ‘[01m[Kstd::vector<mujoco_ros2_control::jointData>::size_type[m[K’ {aka ‘[01m[Klong unsigned int[m[K’} [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wformat=-Wformat=]8;;[m[K]
+[8.670s]   260 |       RCLCPP_ERROR(this->nh_->get_logger(), [01;35m[K"The number of start interfaces is"[m[K
+[8.670s]       |                                             [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.670s]   261 | [01;35m[K                                            " greater than the number of joints in this system!"[m[K
+[8.670s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.670s]   262 | [01;35m[K                                            " start interfaces: %d, system joint size: %d"[m[K,
+[8.671s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.671s]   263 |                                             filtered_starts.size(), [32m[Kthis->dataPtr_->joints_.size()[m[K);
+[8.671s]       |                                                                     [32m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.671s]       |                                                                                                 [32m[K|[m[K
+[8.671s]       |                                                                                                 [32m[Kstd::vector<mujoco_ros2_control::jointData>::size_type {aka long unsigned int}[m[K
+[8.671s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:262:89:[m[K [01;36m[Knote: [m[Kformat string is defined here
+[8.671s]   262 |                                             " start interfaces: %d, system joint size: [01;36m[K%d[m[K",
+[8.671s]       |                                                                                        [01;36m[K~^[m[K
+[8.672s]       |                                                                                         [01;36m[K|[m[K
+[8.672s]       |                                                                                         [01;36m[Kint[m[K
+[8.672s]       |                                                                                        [32m[K%ld[m[K
+[8.678s] In file included from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/logging.hpp:24[m[K,
+[8.678s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/client.hpp:40[m[K,
+[8.678s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/callback_group.hpp:24[m[K,
+[8.678s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/any_executable.hpp:20[m[K,
+[8.679s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategy.hpp:25[m[K,
+[8.679s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategies.hpp:18[m[K,
+[8.679s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor_options.hpp:20[m[K,
+[8.679s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor.hpp:37[m[K,
+[8.679s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25[m[K,
+[8.679s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors.hpp:21[m[K,
+[8.680s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp:155[m[K,
+[8.680s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/include/mujoco_ros2_control/mujoco_ros2_control_system_interface.hpp:29[m[K,
+[8.680s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/include/mujoco_ros2_control_system/mujoco_ros2_control_system.hpp:13[m[K,
+[8.680s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:1[m[K:
+[8.680s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:307:51:[m[K [01;35m[Kwarning: [m[Kformat ‘[01m[K%s[m[K’ expects a matching ‘[01m[Kchar*[m[K’ argument [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wformat=-Wformat=]8;;[m[K]
+[8.680s]   307 |             RCLCPP_ERROR(this->nh_->get_logger(), [01;35m[K"The joint %s has already been marked to be"[m[K
+[8.681s]       |                                                   [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.681s]   308 | [01;35m[K                                            " stopped! Check that you are not trying to stop"[m[K
+[8.681s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.681s]   309 | [01;35m[K                                            " two command interfaces on the same joint together."[m[K
+[8.681s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.681s]   310 | [01;35m[K                                            " Given: %s, target joint: %s"[m[K,
+[8.682s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.682s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:310:73:[m[K [01;36m[Knote: [m[Kformat string is defined here
+[8.682s]   310 |                                             " Given: %s, target joint: [01;36m[K%s[m[K",
+[8.682s]       |                                                                        [01;36m[K~^[m[K
+[8.682s]       |                                                                         [01;36m[K|[m[K
+[8.682s]       |                                                                         [01;36m[Kchar*[m[K
+[8.685s] In file included from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/logging.hpp:24[m[K,
+[8.685s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/client.hpp:40[m[K,
+[8.685s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/callback_group.hpp:24[m[K,
+[8.685s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/any_executable.hpp:20[m[K,
+[8.685s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategy.hpp:25[m[K,
+[8.685s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategies.hpp:18[m[K,
+[8.685s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor_options.hpp:20[m[K,
+[8.685s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor.hpp:37[m[K,
+[8.686s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25[m[K,
+[8.686s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors.hpp:21[m[K,
+[8.686s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp:155[m[K,
+[8.686s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/include/mujoco_ros2_control/mujoco_ros2_control_system_interface.hpp:29[m[K,
+[8.686s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/include/mujoco_ros2_control_system/mujoco_ros2_control_system.hpp:13[m[K,
+[8.686s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:1[m[K:
+[8.686s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:322:45:[m[K [01;35m[Kwarning: [m[Kformat ‘[01m[K%d[m[K’ expects argument of type ‘[01m[Kint[m[K’, but argument 5 has type ‘[01m[Kstd::vector<std::__cxx11::basic_string<char> >::size_type[m[K’ {aka ‘[01m[Klong unsigned int[m[K’} [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wformat=-Wformat=]8;;[m[K]
+[8.686s]   322 |       RCLCPP_ERROR(this->nh_->get_logger(), [01;35m[K"The number of stop interfaces is"[m[K
+[8.687s]       |                                             [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.687s]   323 | [01;35m[K                                            " greater than the number of joints in this system!"[m[K
+[8.687s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.687s]   324 | [01;35m[K                                            " stop interfaces: %d, system joint size: %d"[m[K,
+[8.687s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.687s]   325 |                                             [32m[Kfiltered_stops.size()[m[K, this->dataPtr_->joints_.size());
+[8.687s]       |                                             [32m[K~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.687s]       |                                                                [32m[K|[m[K
+[8.687s]       |                                                                [32m[Kstd::vector<std::__cxx11::basic_string<char> >::size_type {aka long unsigned int}[m[K
+[8.688s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:324:65:[m[K [01;36m[Knote: [m[Kformat string is defined here
+[8.698s]   324 |                                             " stop interfaces: [01;36m[K%d[m[K, system joint size: %d",
+[8.698s]       |                                                                [01;36m[K~^[m[K
+[8.698s]       |                                                                 [01;36m[K|[m[K
+[8.698s]       |                                                                 [01;36m[Kint[m[K
+[8.698s]       |                                                                [32m[K%ld[m[K
+[8.704s] In file included from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/logging.hpp:24[m[K,
+[8.704s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/client.hpp:40[m[K,
+[8.704s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/callback_group.hpp:24[m[K,
+[8.705s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/any_executable.hpp:20[m[K,
+[8.705s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategy.hpp:25[m[K,
+[8.705s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategies.hpp:18[m[K,
+[8.705s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor_options.hpp:20[m[K,
+[8.705s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor.hpp:37[m[K,
+[8.705s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25[m[K,
+[8.705s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors.hpp:21[m[K,
+[8.705s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp:155[m[K,
+[8.706s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/include/mujoco_ros2_control/mujoco_ros2_control_system_interface.hpp:29[m[K,
+[8.706s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/include/mujoco_ros2_control_system/mujoco_ros2_control_system.hpp:13[m[K,
+[8.706s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:1[m[K:
+[8.706s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:322:45:[m[K [01;35m[Kwarning: [m[Kformat ‘[01m[K%d[m[K’ expects argument of type ‘[01m[Kint[m[K’, but argument 6 has type ‘[01m[Kstd::vector<mujoco_ros2_control::jointData>::size_type[m[K’ {aka ‘[01m[Klong unsigned int[m[K’} [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wformat=-Wformat=]8;;[m[K]
+[8.706s]   322 |       RCLCPP_ERROR(this->nh_->get_logger(), [01;35m[K"The number of stop interfaces is"[m[K
+[8.706s]       |                                             [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.706s]   323 | [01;35m[K                                            " greater than the number of joints in this system!"[m[K
+[8.706s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.707s]   324 | [01;35m[K                                            " stop interfaces: %d, system joint size: %d"[m[K,
+[8.707s]       |                                             [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.707s]   325 |                                             filtered_stops.size(), [32m[Kthis->dataPtr_->joints_.size()[m[K);
+[8.707s]       |                                                                    [32m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.707s]       |                                                                                                [32m[K|[m[K
+[8.707s]       |                                                                                                [32m[Kstd::vector<mujoco_ros2_control::jointData>::size_type {aka long unsigned int}[m[K
+[8.707s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:324:88:[m[K [01;36m[Knote: [m[Kformat string is defined here
+[8.707s]   324 |                                             " stop interfaces: %d, system joint size: [01;36m[K%d[m[K",
+[8.707s]       |                                                                                       [01;36m[K~^[m[K
+[8.708s]       |                                                                                        [01;36m[K|[m[K
+[8.708s]       |                                                                                        [01;36m[Kint[m[K
+[8.708s]       |                                                                                       [32m[K%ld[m[K
+[8.708s] In file included from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/logging.hpp:24[m[K,
+[8.708s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/client.hpp:40[m[K,
+[8.709s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/callback_group.hpp:24[m[K,
+[8.709s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/any_executable.hpp:20[m[K,
+[8.709s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategy.hpp:25[m[K,
+[8.709s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/memory_strategies.hpp:18[m[K,
+[8.709s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor_options.hpp:20[m[K,
+[8.709s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executor.hpp:37[m[K,
+[8.709s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25[m[K,
+[8.709s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/executors.hpp:21[m[K,
+[8.709s]                  from [01m[K/opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp:155[m[K,
+[8.710s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/include/mujoco_ros2_control/mujoco_ros2_control_system_interface.hpp:29[m[K,
+[8.710s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/include/mujoco_ros2_control_system/mujoco_ros2_control_system.hpp:13[m[K,
+[8.710s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:1[m[K:
+[8.710s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:340:48:[m[K [01;35m[Kwarning: [m[Ktoo many arguments for format [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wformat-extra-args-Wformat-extra-args]8;;[m[K]
+[8.710s]   340 |           RCLCPP_INFO(this->nh_->get_logger(), [01;35m[K"Joint %s has been set to STOP"[m[K, joint.name.c_str(), interface.c_str());
+[8.710s]       |                                                [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[8.711s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:[m[K In member function ‘[01m[Kvirtual hardware_interface::return_type mujoco_ros2_control::MujocoRos2System::perform_command_mode_switch(const std::vector<std::__cxx11::basic_string<char> >&, const std::vector<std::__cxx11::basic_string<char> >&)[m[K’:
+[8.712s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:351:36:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kstart_interfaces[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[8.712s]   351 |   [01;35m[Kconst std::vector<std::string> & start_interfaces[m[K,
+[8.712s]       |   [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~[m[K
+[8.712s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:352:36:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kstop_interfaces[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[8.712s]   352 |   [01;35m[Kconst std::vector<std::string> & stop_interfaces[m[K){
+[8.712s]       |   [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~[m[K
+[8.713s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:[m[K In member function ‘[01m[Kvirtual hardware_interface::return_type mujoco_ros2_control::MujocoRos2System::write(const rclcpp::Time&, const rclcpp::Duration&)[m[K’:
+[8.713s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control_system/src/mujoco_ros2_control_system.cpp:409:28:[m[K [01;35m[Kwarning: [m[Kunused parameter ‘[01m[Kperiod[m[K’ [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wunused-parameter-Wunused-parameter]8;;[m[K]
+[8.713s]   409 |   [01;35m[Kconst rclcpp::Duration & period[m[K){
+[8.714s]       |   [01;35m[K~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~[m[K
+[10.894s] [100%] [32m[1mLinking CXX shared library libmujoco_ros2_control_system.so[0m
+[11.339s] [100%] Built target mujoco_ros2_control_system
+[11.417s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control_system' returned '0': AMENT_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/opt/ros/humble:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake LD_LIBRARY_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control_system -- -j12 -l12
+[11.418s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control_system': AMENT_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/opt/ros/humble:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake LD_LIBRARY_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --install /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control_system
+[11.444s] -- Install configuration: ""
+[11.445s] -- Execute custom install script
+[11.445s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system//plugins.xml
+[11.487s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/include/mujoco_ros2_control_system/mujoco_ros2_control_system.hpp
+[11.501s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/include/mujoco_ros2_control_system/visibility_control.h
+[11.560s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/environment/library_path.sh
+[11.587s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/environment/library_path.dsv
+[11.600s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/ament_index/resource_index/package_run_dependencies/mujoco_ros2_control_system
+[11.614s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/ament_index/resource_index/parent_prefix_path/mujoco_ros2_control_system
+[11.651s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/environment/ament_prefix_path.sh
+[11.670s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/environment/ament_prefix_path.dsv
+[11.693s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/environment/path.sh
+[11.706s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/environment/path.dsv
+[11.719s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/local_setup.bash
+[11.732s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/local_setup.sh
+[11.746s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/local_setup.zsh
+[11.761s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/local_setup.dsv
+[11.806s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/package.dsv
+[11.834s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/ament_index/resource_index/packages/mujoco_ros2_control_system
+[11.847s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/ament_index/resource_index/mujoco_ros2_control__pluginlib__plugin/mujoco_ros2_control_system
+[11.860s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/cmake/ament_cmake_export_include_directories-extras.cmake
+[11.873s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/cmake/ament_cmake_export_libraries-extras.cmake
+[11.886s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/cmake/ament_cmake_export_targets-extras.cmake
+[11.900s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/cmake/mujoco_ros2_control_systemConfig.cmake
+[11.914s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/cmake/mujoco_ros2_control_systemConfig-version.cmake
+[11.929s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/package.xml
+[11.948s] -- Installing: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/lib/libmujoco_ros2_control_system.so
+[11.950s] -- Set runtime path of "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/lib/libmujoco_ros2_control_system.so" to ""
+[11.950s] -- Installing: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/cmake/export_mujoco_ros2_control_systemExport.cmake
+[11.950s] -- Installing: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/cmake/export_mujoco_ros2_control_systemExport-noconfig.cmake
+[11.953s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control_system' returned '0': AMENT_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:${AMENT_PREFIX_PATH} CMAKE_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/opt/ros/humble:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake LD_LIBRARY_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/lib:/opt/ros/humble/opt/rviz_ogre_vendor/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/local/lib/python3.10/dist-packages:${PYTHONPATH} /usr/bin/cmake --install /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control_system

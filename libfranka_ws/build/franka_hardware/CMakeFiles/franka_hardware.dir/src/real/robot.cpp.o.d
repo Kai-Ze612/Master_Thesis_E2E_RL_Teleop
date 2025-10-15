@@ -183,8 +183,8 @@ CMakeFiles/franka_hardware.dir/src/real/robot.cpp.o: \
  /usr/include/c++/11/bits/unique_lock.h /usr/include/c++/11/thread \
  /usr/include/c++/11/bits/std_thread.h \
  /usr/include/c++/11/bits/this_thread_sleep.h \
- /home/kai/Libraries/libfranka_install/include/franka/model.h \
- /home/kai/Libraries/libfranka_install/include/franka/robot.h \
+ /home/kai/Libraries/libfranka/include/franka/model.h \
+ /home/kai/Libraries/libfranka/include/franka/robot.h \
  /usr/include/c++/11/functional /usr/include/c++/11/bits/std_function.h \
  /usr/include/c++/11/unordered_map /usr/include/c++/11/bits/hashtable.h \
  /usr/include/c++/11/bits/hashtable_policy.h \
@@ -198,8 +198,8 @@ CMakeFiles/franka_hardware.dir/src/real/robot.cpp.o: \
  /usr/include/c++/11/bits/algorithmfwd.h \
  /usr/include/c++/11/bits/stl_heap.h \
  /usr/include/c++/11/bits/uniform_int_dist.h \
- /home/kai/Libraries/libfranka_install/include/franka/command_types.h \
- /home/kai/Libraries/libfranka_install/include/franka/control_types.h \
+ /home/kai/Libraries/libfranka/include/franka/command_types.h \
+ /home/kai/Libraries/libfranka/include/franka/control_types.h \
  /usr/include/c++/11/cmath /usr/include/math.h \
  /usr/include/x86_64-linux-gnu/bits/math-vector.h \
  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
@@ -222,12 +222,12 @@ CMakeFiles/franka_hardware.dir/src/real/robot.cpp.o: \
  /usr/include/c++/11/tr1/poly_hermite.tcc \
  /usr/include/c++/11/tr1/poly_laguerre.tcc \
  /usr/include/c++/11/tr1/riemann_zeta.tcc \
- /home/kai/Libraries/libfranka_install/include/franka/duration.h \
- /home/kai/Libraries/libfranka_install/include/franka/lowpass_filter.h \
- /home/kai/Libraries/libfranka_install/include/franka/robot_state.h \
- /home/kai/Libraries/libfranka_install/include/franka/errors.h \
- /home/kai/Libraries/libfranka_install/include/franka/exception.h \
- /home/kai/Libraries/libfranka_install/include/franka/log.h \
+ /home/kai/Libraries/libfranka/include/franka/duration.h \
+ /home/kai/Libraries/libfranka/include/franka/lowpass_filter.h \
+ /home/kai/Libraries/libfranka/include/franka/robot_state.h \
+ /home/kai/Libraries/libfranka/include/franka/errors.h \
+ /home/kai/Libraries/libfranka/include/franka/exception.h \
+ /home/kai/Libraries/libfranka/include/franka/log.h \
  /opt/ros/humble/include/rclcpp/rclcpp/logger.hpp \
  /opt/ros/humble/include/rclcpp/rclcpp/visibility_control.hpp \
  /opt/ros/humble/include/rcl/rcl/node.h \
@@ -350,7 +350,7 @@ CMakeFiles/franka_hardware.dir/src/real/robot.cpp.o: \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_cpp/franka_msgs/srv/detail/set_tcp_frame__traits.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_cpp/franka_msgs/srv/detail/set_tcp_frame__type_support.hpp \
  /usr/include/c++/11/cassert \
- /home/kai/Libraries/libfranka_install/include/franka/control_tools.h \
+ /home/kai/Libraries/libfranka/include/franka/control_tools.h \
  /opt/ros/humble/include/rclcpp/rclcpp/logging.hpp \
  /opt/ros/humble/include/rcutils/rcutils/logging_macros.h \
  /opt/ros/humble/include/rclcpp/rclcpp/utilities.hpp \

@@ -130,7 +130,7 @@ CMakeFiles/franka_example_controllers.dir/src/comless/gravity_compensation_examp
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/11/bits/charconv.h \
  /usr/include/c++/11/bits/basic_string.tcc \
- /opt/ros/humble/include/controller_interface/controller_interface.hpp \
+ /opt/ros/humble/include/controller_interface/controller_interface/controller_interface.hpp \
  /usr/include/c++/11/memory /usr/include/c++/11/bits/stl_uninitialized.h \
  /usr/include/c++/11/bits/stl_tempbuf.h \
  /usr/include/c++/11/bits/stl_raw_storage_iter.h \
@@ -157,14 +157,14 @@ CMakeFiles/franka_example_controllers.dir/src/comless/gravity_compensation_examp
  /usr/include/c++/11/bits/stl_vector.h \
  /usr/include/c++/11/bits/stl_bvector.h \
  /usr/include/c++/11/bits/vector.tcc \
- /opt/ros/humble/include/controller_interface/controller_interface_base.hpp \
- /opt/ros/humble/include/controller_interface/visibility_control.h \
- /opt/ros/humble/include/hardware_interface/handle.hpp \
- /opt/ros/humble/include/hardware_interface/macros.hpp \
+ /opt/ros/humble/include/controller_interface/controller_interface/controller_interface_base.hpp \
+ /opt/ros/humble/include/controller_interface/controller_interface/visibility_control.h \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/handle.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/macros.hpp \
  /usr/include/c++/11/stdexcept \
  /opt/ros/humble/include/rcpputils/rcpputils/pointer_traits.hpp \
- /opt/ros/humble/include/hardware_interface/visibility_control.h \
- /opt/ros/humble/include/hardware_interface/loaned_command_interface.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/visibility_control.h \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/loaned_command_interface.hpp \
  /usr/include/c++/11/functional /usr/include/c++/11/bits/std_function.h \
  /usr/include/c++/11/unordered_map /usr/include/c++/11/bits/hashtable.h \
  /usr/include/c++/11/bits/hashtable_policy.h \
@@ -175,7 +175,7 @@ CMakeFiles/franka_example_controllers.dir/src/comless/gravity_compensation_examp
  /usr/include/c++/11/bits/algorithmfwd.h \
  /usr/include/c++/11/bits/stl_heap.h \
  /usr/include/c++/11/bits/uniform_int_dist.h \
- /opt/ros/humble/include/hardware_interface/loaned_state_interface.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/loaned_state_interface.hpp \
  /opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp \
  /usr/include/c++/11/csignal /usr/include/signal.h \
  /usr/include/x86_64-linux-gnu/bits/signum-generic.h \

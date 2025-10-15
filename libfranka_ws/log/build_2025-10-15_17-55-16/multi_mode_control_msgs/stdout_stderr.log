@@ -1,0 +1,98 @@
+[  0%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[  0%] Built target multi_mode_control_msgs__cpp
+[  0%] Built target ament_cmake_python_symlink_multi_mode_control_msgs
+[  0%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
+[  1%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/msg/detail/cartesian_impedance_goal__type_support.cpp.o[0m
+[  1%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/msg/detail/wrench__type_support.cpp.o[0m
+[  2%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/get_controllers__type_support.cpp.o[0m
+[  2%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/get_robot_states__type_support.cpp.o[0m
+[  3%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/set_cartesian_impedance__type_support.cpp.o[0m
+[  4%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/set_controllers__type_support.cpp.o[0m
+[  4%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/set_joint_impedance__type_support.cpp.o[0m
+[  5%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/set_recovery_mode__type_support.cpp.o[0m
+[  6%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/set_reflex__type_support.cpp.o[0m
+[  6%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/set_thresholds__type_support.cpp.o[0m
+[  7%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/set_world_state__type_support.cpp.o[0m
+[  8%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/msg/detail/velocity_goal__type_support.cpp.o[0m
+[  9%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/msg/detail/joint_goal__type_support.cpp.o[0m
+[  9%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/msg/detail/joint_array__type_support.cpp.o[0m
+[ 10%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/msg/detail/controller__type_support.cpp.o[0m
+[ 11%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/msg/detail/contact_thresholds__type_support.cpp.o[0m
+[ 11%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/msg/detail/dual_cartesian_impedance_goal__type_support.cpp.o[0m
+[ 12%] [32m[1mLinking CXX shared library libmulti_mode_control_msgs__rosidl_typesupport_introspection_cpp.so[0m
+[ 12%] Built target multi_mode_control_msgs__rosidl_typesupport_introspection_cpp
+running egg_info
+creating multi_mode_control_msgs.egg-info
+writing multi_mode_control_msgs.egg-info/PKG-INFO
+writing dependency_links to multi_mode_control_msgs.egg-info/dependency_links.txt
+writing top-level names to multi_mode_control_msgs.egg-info/top_level.txt
+writing manifest file 'multi_mode_control_msgs.egg-info/SOURCES.txt'
+reading manifest file 'multi_mode_control_msgs.egg-info/SOURCES.txt'
+writing manifest file 'multi_mode_control_msgs.egg-info/SOURCES.txt'
+[ 12%] Built target ament_cmake_python_build_multi_mode_control_msgs_egg
+[ 13%] [34m[1mGenerating C++ type support for eProsima Fast-RTPS[0m
+Traceback (most recent call last):
+  File "/opt/ros/humble/lib/rosidl_typesupport_fastrtps_cpp/rosidl_typesupport_fastrtps_cpp", line 23, in <module>
+gmake[2]: *** Deleting file 'rosidl_typesupport_fastrtps_cpp/multi_mode_control_msgs/msg/detail/dds_fastrtps/cartesian_impedance_goal__type_support.cpp'
+    sys.exit(main())
+  File "/opt/ros/humble/lib/rosidl_typesupport_fastrtps_cpp/rosidl_typesupport_fastrtps_cpp", line 19, in main
+    generate_cpp(args.generator_arguments_file)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_typesupport_fastrtps_cpp/__init__.py", line 24, in generate_cpp
+    return generate_files(generator_arguments_file, mapping)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 87, in generate_files
+    expand_template(
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 149, in expand_template
+    interpreter.string(template_content, template_path, locals=data)
+  File "/usr/lib/python3/dist-packages/em.py", line 2391, in string
+    self.safe(scanner, True, locals)
+  File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe
+    self.parse(scanner, locals)
+  File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse
+    token.run(self, locals)
+  File "/usr/lib/python3/dist-packages/em.py", line 1425, in run
+    interpreter.execute(self.code, locals)
+  File "/usr/lib/python3/dist-packages/em.py", line 2596, in execute
+    _exec(statements, self.globals, locals)
+  File "<string>", line 21, in <module>
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 198, in _expand_template
+    interpreter.string(content, str(template_path), kwargs)
+  File "/usr/lib/python3/dist-packages/em.py", line 2391, in string
+    self.safe(scanner, True, locals)
+  File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe
+    self.parse(scanner, locals)
+  File "/usr/lib/python3/dist-packages/em.py", line 2421, in parse
+    token.run(self, locals)
+  File "/usr/lib/python3/dist-packages/em.py", line 1425, in run
+    interpreter.execute(self.code, locals)
+  File "/usr/lib/python3/dist-packages/em.py", line 2596, in execute
+    _exec(statements, self.globals, locals)
+  File "<string>", line 2, in <module>
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rosidl_cmake/__init__.py", line 198, in _expand_template
+    interpreter.string(content, str(template_path), kwargs)
+  File "/usr/lib/python3/dist-packages/em.py", line 2391, in string
+    self.safe(scanner, True, locals)
+  File "/usr/lib/python3/dist-packages/em.py", line 2401, in safe
+    self.parse(scanner, locals)
+  File "/usr/lib/python3/dist-packages/em.py", line 2417, in parse
+    token = scanner.one()
+  File "/usr/lib/python3/dist-packages/em.py", line 1984, in one
+    token.scan(self)
+  File "/usr/lib/python3/dist-packages/em.py", line 1315, in scan
+    i = scanner.next('?', 0, q, True)
+  File "/usr/lib/python3/dist-packages/em.py", line 1818, in next
+    newQuote = self.check(i, quote)
+  File "/usr/lib/python3/dist-packages/em.py", line 1766, in check
+    if self[i] in '\'\"':
+  File "/usr/lib/python3/dist-packages/em.py", line 1683, in __getitem__
+    if isinstance(index, slice):
+KeyboardInterrupt
+Exception ignored in: <function Interpreter.__del__ at 0x7f8fa29a3eb0>
+Traceback (most recent call last):
+  File "/usr/lib/python3/dist-packages/em.py", line 2094, in __del__
+  File "/usr/lib/python3/dist-packages/em.py", line 2157, in shutdown
+  File "/usr/lib/python3/dist-packages/em.py", line 2647, in finalize
+  File "/usr/lib/python3/dist-packages/em.py", line 2200, in push
+AttributeError: '_io.TextIOWrapper' object has no attribute 'push'
+gmake[2]: *** [CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_fastrtps_cpp.dir/build.make:183: rosidl_typesupport_fastrtps_cpp/multi_mode_control_msgs/msg/detail/dds_fastrtps/cartesian_impedance_goal__type_support.cpp] Interrupt
+gmake[1]: *** [CMakeFiles/Makefile2:290: CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_fastrtps_cpp.dir/all] Interrupt
+gmake: *** [Makefile:146: all] Interrupt

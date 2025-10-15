@@ -1,0 +1,8 @@
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/src/head_controller.cpp:1[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_controllers/include/garmi_controllers/head_controller.hpp:24:10:[m[K [01;31m[Kfatal error: [m[Kstd_msgs/std_msgs/msg/float64_multi_array.hpp: No such file or directory
+   24 | #include [01;31m[K<std_msgs/std_msgs/msg/float64_multi_array.hpp>[m[K
+      |          [01;31m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+compilation terminated.
+gmake[2]: *** [CMakeFiles/garmi_controllers.dir/build.make:90: CMakeFiles/garmi_controllers.dir/src/head_controller.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:137: CMakeFiles/garmi_controllers.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2

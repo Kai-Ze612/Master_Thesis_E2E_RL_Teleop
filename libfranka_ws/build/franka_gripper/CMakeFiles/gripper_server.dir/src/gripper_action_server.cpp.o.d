@@ -173,9 +173,9 @@ CMakeFiles/gripper_server.dir/src/gripper_action_server.cpp.o: \
  /usr/include/c++/11/pstl/glue_memory_defs.h \
  /usr/include/c++/11/pstl/execution_defs.h /usr/include/c++/11/thread \
  /usr/include/c++/11/bits/this_thread_sleep.h \
- /home/kai/Libraries/libfranka_install/include/franka/exception.h \
- /home/kai/Libraries/libfranka_install/include/franka/log.h \
- /home/kai/Libraries/libfranka_install/include/franka/control_types.h \
+ /home/kai/Libraries/libfranka/include/franka/exception.h \
+ /home/kai/Libraries/libfranka/include/franka/log.h \
+ /home/kai/Libraries/libfranka/include/franka/control_types.h \
  /usr/include/c++/11/cmath /usr/include/math.h \
  /usr/include/x86_64-linux-gnu/bits/math-vector.h \
  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
@@ -198,7 +198,7 @@ CMakeFiles/gripper_server.dir/src/gripper_action_server.cpp.o: \
  /usr/include/c++/11/tr1/poly_hermite.tcc \
  /usr/include/c++/11/tr1/poly_laguerre.tcc \
  /usr/include/c++/11/tr1/riemann_zeta.tcc \
- /home/kai/Libraries/libfranka_install/include/franka/robot_state.h \
+ /home/kai/Libraries/libfranka/include/franka/robot_state.h \
  /usr/include/c++/11/ostream /usr/include/c++/11/ios \
  /usr/include/c++/11/bits/ios_base.h \
  /usr/include/c++/11/bits/locale_classes.h \
@@ -213,10 +213,10 @@ CMakeFiles/gripper_server.dir/src/gripper_action_server.cpp.o: \
  /usr/include/c++/11/bits/locale_facets.tcc \
  /usr/include/c++/11/bits/basic_ios.tcc \
  /usr/include/c++/11/bits/ostream.tcc \
- /home/kai/Libraries/libfranka_install/include/franka/duration.h \
- /home/kai/Libraries/libfranka_install/include/franka/errors.h \
- /home/kai/Libraries/libfranka_install/include/franka/gripper.h \
- /home/kai/Libraries/libfranka_install/include/franka/gripper_state.h \
+ /home/kai/Libraries/libfranka/include/franka/duration.h \
+ /home/kai/Libraries/libfranka/include/franka/errors.h \
+ /home/kai/Libraries/libfranka/include/franka/gripper.h \
+ /home/kai/Libraries/libfranka/include/franka/gripper_state.h \
  /opt/ros/humble/include/control_msgs/control_msgs/action/gripper_command.hpp \
  /opt/ros/humble/include/control_msgs/control_msgs/action/detail/gripper_command__struct.hpp \
  /usr/include/c++/11/algorithm \

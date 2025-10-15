@@ -1,0 +1,63 @@
+[0.090s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_msgs -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs
+[0.857s] -- The C compiler identification is GNU 11.4.0
+[0.858s] -- The CXX compiler identification is GNU 11.4.0
+[0.858s] -- Detecting C compiler ABI info
+[0.859s] -- Detecting C compiler ABI info - done
+[0.859s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.859s] -- Detecting C compile features
+[0.859s] -- Detecting C compile features - done
+[0.859s] -- Detecting CXX compiler ABI info
+[0.859s] -- Detecting CXX compiler ABI info - done
+[0.859s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.859s] -- Detecting CXX compile features
+[0.859s] -- Detecting CXX compile features - done
+[0.860s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[1.195s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[1.407s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[1.615s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[1.644s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.681s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[1.978s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[2.158s] -- Found std_msgs: 4.9.0 (/opt/ros/humble/share/std_msgs/cmake)
+[2.327s] -- Found geometry_msgs: 4.9.0 (/opt/ros/humble/share/geometry_msgs/cmake)
+[4.880s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[7.277s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[9.554s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[9.695s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") 
+[9.698s] -- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+[9.841s] -- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") 
+[9.841s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[9.842s] -- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10
+[9.842s] -- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+[9.919s] -- Found PythonExtra: .so  
+[10.369s] -- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[10.478s] -- Added test 'copyright' to check source files copyright and LICENSE
+[10.486s] -- Added test 'lint_cmake' to check CMake code style
+[10.507s] -- Added test 'xmllint' to check XML markup files
+[10.540s] -- Configuring done
+[10.929s] -- Generating done
+[11.030s] -- Build files have been written to: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs
+[11.104s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_msgs -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs
+[11.105s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs -- -j12 -l12
+[11.511s] [  0%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[22.447s] [  0%] Built target franka_msgs__cpp
+[22.672s] [  0%] Built target ament_cmake_python_symlink_franka_msgs
+[22.760s] [  0%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
+[29.001s] [  1%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/action/detail/grasp__type_support.cpp.o[0m
+[31.151s] [  1%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/srv/detail/set_full_collision_behavior__type_support.cpp.o[0m
+[32.790s] [  2%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/srv/detail/set_joint_stiffness__type_support.cpp.o[0m
+[34.222s] [  2%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/srv/detail/set_stiffness_frame__type_support.cpp.o[0m
+[35.404s] [  3%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/srv/detail/set_load__type_support.cpp.o[0m
+[36.284s] [  4%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/srv/detail/set_mujoco_poses__type_support.cpp.o[0m
+[37.520s] [  4%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/msg/detail/grasp_epsilon__type_support.cpp.o[0m
+[38.984s] [  5%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/msg/detail/franka_state__type_support.cpp.o[0m
+[40.358s] [  6%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/msg/detail/franka_model__type_support.cpp.o[0m
+[41.490s] [  6%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/msg/detail/errors__type_support.cpp.o[0m
+[42.738s] [  7%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/msg/detail/pose_stamped_array__type_support.cpp.o[0m
+[43.535s] [  8%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/srv/detail/set_force_torque_collision_behavior__type_support.cpp.o[0m
+[44.416s] [  9%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/srv/detail/set_tcp_frame__type_support.cpp.o[0m
+[45.145s] [  9%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/srv/detail/set_cartesian_stiffness__type_support.cpp.o[0m
+[45.836s] [ 10%] [32mBuilding CXX object CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/srv/detail/error_recovery__type_support.cpp.o[0m
+[46.437s] gmake[2]: *** [CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/build.make:314: CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/franka_msgs/srv/detail/error_recovery__type_support.cpp.o] Interrupt
+[46.438s] gmake[1]: *** [CMakeFiles/Makefile2:369: CMakeFiles/franka_msgs__rosidl_typesupport_introspection_cpp.dir/all] Interrupt
+[46.439s] gmake: *** [Makefile:146: all] Interrupt

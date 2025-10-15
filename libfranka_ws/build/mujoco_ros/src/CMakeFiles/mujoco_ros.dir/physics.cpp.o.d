@@ -175,7 +175,7 @@ src/CMakeFiles/mujoco_ros.dir/physics.cpp.o: \
  /usr/include/c++/11/bits/refwrap.h \
  /usr/include/c++/11/ext/aligned_buffer.h \
  /usr/include/c++/11/bits/fs_dir.h /usr/include/c++/11/bits/fs_ops.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mujoco.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mujoco.h \
  /usr/include/c++/11/stdlib.h /usr/include/c++/11/math.h \
  /usr/include/c++/11/cmath /usr/include/math.h \
  /usr/include/x86_64-linux-gnu/bits/math-vector.h \
@@ -199,21 +199,21 @@ src/CMakeFiles/mujoco_ros.dir/physics.cpp.o: \
  /usr/include/c++/11/tr1/poly_hermite.tcc \
  /usr/include/c++/11/tr1/poly_laguerre.tcc \
  /usr/include/c++/11/tr1/riemann_zeta.tcc \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjdata.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjtnum.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjmodel.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjthread.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjexport.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjmacro.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjplugin.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjvisualize.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjrender.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjspec.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjdata.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjtnum.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjmodel.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjthread.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjexport.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjmacro.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjplugin.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjvisualize.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjrender.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjspec.h \
  /usr/include/c++/11/vector /usr/include/c++/11/bits/stl_uninitialized.h \
  /usr/include/c++/11/bits/stl_vector.h \
  /usr/include/c++/11/bits/stl_bvector.h \
  /usr/include/c++/11/bits/vector.tcc \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjui.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjui.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/include/mujoco_ros/ros_version.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/include/mujoco_ros/render_backend.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/logging.hpp \
@@ -904,10 +904,6 @@ src/CMakeFiles/mujoco_ros.dir/physics.cpp.o: \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__builder.hpp \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__traits.hpp \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__type_support.hpp \
- /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/glfw_adapter.h \
- /usr/include/GLFW/glfw3.h /usr/include/GL/gl.h /usr/include/GL/glext.h \
- /usr/include/KHR/khrplatform.h \
- /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/glfw_dispatch.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/offscreen_camera.hpp \
  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/camera_info.hpp \
  /opt/ros/humble/include/sensor_msgs/sensor_msgs/msg/detail/camera_info__struct.hpp \

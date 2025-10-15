@@ -13,12 +13,8 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/Bullet3Common/b3Vector3.cpp" "src/Bullet3Common/CMakeFiles/Bullet3Common.dir/b3Vector3.cpp.o" "gcc" "src/Bullet3Common/CMakeFiles/Bullet3Common.dir/b3Vector3.cpp.o.d"
   )
 
-# Targets to which this target links which contain Fortran sources.
-set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
-  )
-
-# Targets to which this target links which contain Fortran sources.
-set(CMAKE_Fortran_TARGET_FORWARD_LINKED_INFO_FILES
+# Targets to which this target links.
+set(CMAKE_TARGET_LINKED_INFO_FILES
   )
 
 # Fortran module output directory.

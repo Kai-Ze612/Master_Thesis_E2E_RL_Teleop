@@ -157,7 +157,7 @@ CMakeFiles/mujoco_ros2_control_system.dir/src/mujoco_ros2_control_system.cpp.o: 
  /usr/include/c++/11/bits/stl_vector.h \
  /usr/include/c++/11/bits/stl_bvector.h \
  /usr/include/c++/11/bits/vector.tcc \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mujoco.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mujoco.h \
  /usr/include/c++/11/stdlib.h /usr/include/c++/11/math.h \
  /usr/include/c++/11/cmath /usr/include/math.h \
  /usr/include/x86_64-linux-gnu/bits/math-vector.h \
@@ -182,31 +182,31 @@ CMakeFiles/mujoco_ros2_control_system.dir/src/mujoco_ros2_control_system.cpp.o: 
  /usr/include/c++/11/tr1/poly_hermite.tcc \
  /usr/include/c++/11/tr1/poly_laguerre.tcc \
  /usr/include/c++/11/tr1/riemann_zeta.tcc \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjdata.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjtnum.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjmodel.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjthread.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjexport.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjmacro.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjplugin.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjvisualize.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjrender.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjspec.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjui.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjdata.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjtnum.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjmodel.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjthread.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjexport.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjmacro.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjplugin.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjvisualize.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjrender.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjspec.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjui.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/include/mujoco_ros2_control/mujoco_ros2_control_system_interface.hpp \
- /opt/ros/humble/include/hardware_interface/system_interface.hpp \
- /opt/ros/humble/include/hardware_interface/handle.hpp \
- /opt/ros/humble/include/hardware_interface/macros.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/system_interface.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/handle.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/macros.hpp \
  /usr/include/c++/11/stdexcept \
  /opt/ros/humble/include/rcpputils/rcpputils/pointer_traits.hpp \
- /opt/ros/humble/include/hardware_interface/visibility_control.h \
- /opt/ros/humble/include/hardware_interface/hardware_info.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/visibility_control.h \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/hardware_info.hpp \
  /usr/include/c++/11/unordered_map /usr/include/c++/11/bits/hashtable.h \
  /usr/include/c++/11/bits/hashtable_policy.h \
  /usr/include/c++/11/bits/enable_special_members.h \
  /usr/include/c++/11/bits/unordered_map.h \
- /opt/ros/humble/include/hardware_interface/types/hardware_interface_return_values.hpp \
- /opt/ros/humble/include/hardware_interface/types/lifecycle_state_names.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/types/hardware_interface_return_values.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/types/lifecycle_state_names.hpp \
  /opt/ros/humble/include/lifecycle_msgs/lifecycle_msgs/msg/state.hpp \
  /opt/ros/humble/include/lifecycle_msgs/lifecycle_msgs/msg/detail/state__struct.hpp \
  /usr/include/c++/11/algorithm /usr/include/c++/11/bits/stl_algo.h \
@@ -364,7 +364,7 @@ CMakeFiles/mujoco_ros2_control_system.dir/src/mujoco_ros2_control_system.cpp.o: 
  /opt/ros/humble/include/rcl_lifecycle/rcl_lifecycle/default_state_machine.h \
  /opt/ros/humble/include/rclcpp_lifecycle/rclcpp_lifecycle/state.hpp \
  /opt/ros/humble/include/rclcpp_lifecycle/rclcpp_lifecycle/visibility_control.h \
- /opt/ros/humble/include/hardware_interface/types/hardware_interface_type_values.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/types/hardware_interface_type_values.hpp \
  /opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp \
  /usr/include/c++/11/csignal /usr/include/signal.h \
  /usr/include/x86_64-linux-gnu/bits/signum-generic.h \

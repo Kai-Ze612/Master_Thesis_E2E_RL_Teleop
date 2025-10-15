@@ -1,0 +1,56 @@
+[0.086s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_hardware -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware
+[0.846s] -- The C compiler identification is GNU 11.4.0
+[0.846s] -- The CXX compiler identification is GNU 11.4.0
+[0.846s] -- Detecting C compiler ABI info
+[0.846s] -- Detecting C compiler ABI info - done
+[0.846s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.846s] -- Detecting C compile features
+[0.846s] -- Detecting C compile features - done
+[0.847s] -- Detecting CXX compiler ABI info
+[0.847s] -- Detecting CXX compiler ABI info - done
+[0.847s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.847s] -- Detecting CXX compile features
+[0.847s] -- Detecting CXX compile features - done
+[0.847s] -- Setting build type to 'Release' as none was specified.
+[0.847s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[1.128s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[1.342s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[1.639s] -- Found rclcpp: 16.0.15 (/opt/ros/humble/share/rclcpp/cmake)
+[1.932s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[1.973s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[2.026s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[2.100s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[2.221s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[2.449s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[2.459s] -- Found rmw_fastrtps_cpp: 6.2.8 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[2.961s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[3.255s] -- Found FastRTPS: /opt/ros/humble/include  
+[3.892s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[3.990s] -- Looking for pthread.h
+[4.707s] -- Looking for pthread.h - found
+[4.708s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[5.484s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[5.485s] -- Found Threads: TRUE  
+[6.140s] -- Found rclcpp_action: 16.0.15 (/opt/ros/humble/share/rclcpp_action/cmake)
+[6.620s] -- Found rclcpp_components: 16.0.15 (/opt/ros/humble/share/rclcpp_components/cmake)
+[6.895s] -- Found rclcpp_lifecycle: 16.0.15 (/opt/ros/humble/share/rclcpp_lifecycle/cmake)
+[7.163s] -- Found hardware_interface: 2.52.0 (/opt/ros/humble/share/hardware_interface/cmake)
+[7.861s] -- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[8.455s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[8.455s] -- Configured cppcheck include dirs: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_hardware/include
+[8.455s] -- Configured cppcheck exclude dirs and/or files: 
+[8.494s] -- Added test 'lint_cmake' to check CMake code style
+[8.627s] -- Added test 'uncrustify' to check C / C++ code style
+[8.627s] -- Configured uncrustify additional arguments: 
+[8.637s] -- Added test 'xmllint' to check XML markup files
+[8.700s] -- Configuring done
+[8.828s] -- Generating done
+[8.840s] -- Build files have been written to: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware
+[8.859s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_hardware -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware
+[8.907s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware -- -j12 -l12
+[10.551s] [ 20%] [32mBuilding CXX object CMakeFiles/garmi_hardware.dir/src/udp_server.cpp.o[0m
+[12.249s] [ 40%] [32mBuilding CXX object CMakeFiles/garmi_hardware.dir/src/garmi_base_hardware_interface.cpp.o[0m
+[29.810s] [ 60%] [32mBuilding CXX object CMakeFiles/garmi_hardware.dir/src/garmi_head_hardware_interface.cpp.o[0m
+[42.844s] [ 80%] [32mBuilding CXX object CMakeFiles/garmi_hardware.dir/src/helper_functions.cpp.o[0m
+[43.358s] [100%] [32m[1mLinking CXX shared library libgarmi_hardware.so[0m
+[43.633s] [100%] Built target garmi_hardware

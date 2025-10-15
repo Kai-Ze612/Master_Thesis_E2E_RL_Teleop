@@ -1,0 +1,59 @@
+[35m[1mConsolidate compiler generated dependencies of target BulletCollision[0m
+[35m[1mConsolidate compiler generated dependencies of target gwen[0m
+[35m[1mConsolidate compiler generated dependencies of target Bullet3Common[0m
+[35m[1mConsolidate compiler generated dependencies of target BulletExampleBrowserLib[0m
+[35m[1mConsolidate compiler generated dependencies of target LinearMath[0m
+[35m[1mConsolidate compiler generated dependencies of target BulletDynamics[0m
+[35m[1mConsolidate compiler generated dependencies of target BulletInverseDynamics[0m
+[35m[1mConsolidate compiler generated dependencies of target BulletSoftBody[0m
+[35m[1mConsolidate compiler generated dependencies of target BussIK[0m
+[35m[1mConsolidate compiler generated dependencies of target BulletRobotics[0m
+[35m[1mConsolidate compiler generated dependencies of target BulletInverseDynamicsUtils[0m
+[35m[1mConsolidate compiler generated dependencies of target OpenGLWindow[0m
+[  1%] Built target Bullet3Common
+[  2%] Built target BulletInverseDynamics
+[  2%] [32mBuilding CXX object Extras/Serialize/BulletFileLoader/CMakeFiles/BulletFileLoader.dir/bChunk.cpp.o[0m
+[  3%] Built target BussIK
+[  3%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btDeformableBackwardEulerObjective.cpp.o[0m
+[  5%] Built target LinearMath
+[  6%] Built target BulletInverseDynamicsUtils
+[  6%] [32mBuilding CXX object Extras/Serialize/BulletFileLoader/CMakeFiles/BulletFileLoader.dir/bDNA.cpp.o[0m
+[  6%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btConvex2dConvex2dAlgorithm.cpp.o[0m
+[  6%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btDeformableBodySolver.cpp.o[0m
+[  6%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Dynamics/btRigidBody.cpp.o[0m
+[  7%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Dynamics/btSimpleDynamicsWorld.cpp.o[0m
+[  7%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/HorizontalScrollBar.cpp.o[0m
+[  8%] [32mBuilding CXX object Extras/Serialize/BulletWorldImporter/CMakeFiles/BulletWorldImporter.dir/btMultiBodyWorldImporter.cpp.o[0m
+[  9%] Built target OpenGLWindow
+[  9%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Vehicle/btRaycastVehicle.cpp.o[0m
+[  9%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/RBDModel.cpp.o[0m
+[ 10%] Built target BulletExampleBrowserLib
+[ 10%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btDeformableMultiBodyConstraintSolver.cpp.o[0m
+[ 10%] [32mBuilding CXX object examples/ThirdPartyLibs/clsocket/CMakeFiles/clsocket.dir/src/SimpleSocket.cpp.o[0m
+[ 11%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btDefaultCollisionConfiguration.cpp.o[0m
+[ 11%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/MathUtil.cpp.o[0m
+[ 11%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Vehicle/btWheelInfo.cpp.o[0m
+[ 11%] [32mBuilding CXX object examples/ThirdPartyLibs/clsocket/CMakeFiles/clsocket.dir/src/ActiveSocket.cpp.o[0m
+[ 11%] [32mBuilding CXX object Extras/Serialize/BulletFileLoader/CMakeFiles/BulletFileLoader.dir/bFile.cpp.o[0m
+[ 11%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btEmptyCollisionAlgorithm.cpp.o[0m
+[ 11%] [32mBuilding CXX object examples/ThirdPartyLibs/clsocket/CMakeFiles/clsocket.dir/src/PassiveSocket.cpp.o[0m
+[ 11%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBody.cpp.o[0m
+[ 11%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/HorizontalSlider.cpp.o[0m
+[ 11%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btGhostObject.cpp.o[0m
+[ 12%] [32m[1mLinking CXX static library libclsocket.a[0m
+[ 12%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btHashedSimplePairCache.cpp.o[0m
+[ 12%] Built target clsocket
+[ 12%] [32mBuilding CXX object Extras/Serialize/BulletWorldImporter/CMakeFiles/BulletWorldImporter.dir/btBulletWorldImporter.cpp.o[0m
+[ 12%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btDeformableContactProjection.cpp.o[0m
+[ 12%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/ImagePanel.cpp.o[0m
+[ 12%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btInternalEdgeUtility.cpp.o[0m
+[ 12%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btManifoldResult.cpp.o[0m
+[ 12%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodyConstraint.cpp.o[0m
+[ 12%] [32mBuilding CXX object Extras/Serialize/BulletFileLoader/CMakeFiles/BulletFileLoader.dir/btBulletFile.cpp.o[0m
+[ 12%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btSimulationIslandManager.cpp.o[0m
+[ 12%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodyConstraintSolver.cpp.o[0m
+[ 12%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/Label.cpp.o[0m
+[ 12%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Featherstone/btMultiBodyDynamicsWorld.cpp.o[0m
+[ 13%] [32mBuilding CXX object Extras/Serialize/BulletWorldImporter/CMakeFiles/BulletWorldImporter.dir/btWorldImporter.cpp.o[0m
+[ 13%] [32mBuilding CXX object Extras/BulletRoboticsGUI/CMakeFiles/BulletRoboticsGUI.dir/__/__/examples/ExampleBrowser/InProcessExampleBrowser.cpp.o[0m
+[ 13%] [32mBuilding CXX object Extras/BulletRoboticsGUI/CMakeFiles/BulletRoboticsGUI.dir/__/__/examples/SharedMemory/GraphicsServerExample.cpp.o[0m

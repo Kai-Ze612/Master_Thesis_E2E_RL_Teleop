@@ -1,0 +1,34 @@
+[0.092s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware -- -j12 -l12
+[1.978s] [100%] Built target garmi_hardware
+[2.056s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware -- -j12 -l12
+[2.079s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware
+[2.308s] -- Install configuration: "Release"
+[2.309s] -- Execute custom install script
+[2.310s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware//garmi_hardware.xml
+[2.310s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/lib/libgarmi_hardware.so
+[2.310s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/include/garmi_hardware/garmi_base_hardware_interface.hpp
+[2.310s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/include/garmi_hardware/garmi_head_hardware_interface.hpp
+[2.310s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/include/garmi_hardware/helper_functions.hpp
+[2.310s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/include/garmi_hardware/udp_server.hpp
+[2.310s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/environment/library_path.sh
+[2.310s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/environment/library_path.dsv
+[2.310s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/ament_index/resource_index/package_run_dependencies/garmi_hardware
+[2.311s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/ament_index/resource_index/parent_prefix_path/garmi_hardware
+[2.311s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/environment/ament_prefix_path.sh
+[2.311s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/environment/ament_prefix_path.dsv
+[2.311s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/environment/path.sh
+[2.311s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/environment/path.dsv
+[2.311s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/local_setup.bash
+[2.312s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/local_setup.sh
+[2.312s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/local_setup.zsh
+[2.312s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/local_setup.dsv
+[2.312s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/package.dsv
+[2.312s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/ament_index/resource_index/packages/garmi_hardware
+[2.312s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/ament_index/resource_index/hardware_interface__pluginlib__plugin/garmi_hardware
+[2.312s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/cmake/ament_cmake_export_include_directories-extras.cmake
+[2.312s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/cmake/ament_cmake_export_libraries-extras.cmake
+[2.312s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/cmake/ament_cmake_export_dependencies-extras.cmake
+[2.313s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/cmake/garmi_hardwareConfig.cmake
+[2.314s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/cmake/garmi_hardwareConfig-version.cmake
+[2.314s] -- Up-to-date symlink: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/share/garmi_hardware/package.xml
+[2.484s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --install /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_hardware

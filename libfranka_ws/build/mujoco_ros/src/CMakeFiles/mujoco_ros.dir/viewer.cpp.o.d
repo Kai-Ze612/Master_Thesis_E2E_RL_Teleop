@@ -639,19 +639,19 @@ src/CMakeFiles/mujoco_ros.dir/viewer.cpp.o: \
  /opt/ros/humble/include/rclcpp/rclcpp/wait_set_policies/detail/write_preferring_read_write_lock.hpp \
  /opt/ros/humble/include/rclcpp/rclcpp/wait_set_template.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/viewer.hpp \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjui.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjrender.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjmodel.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjtnum.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mujoco.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjui.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjrender.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjmodel.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjtnum.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mujoco.h \
  /usr/include/c++/11/math.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjdata.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjthread.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjexport.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjmacro.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjplugin.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjvisualize.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjspec.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjdata.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjthread.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjexport.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjmacro.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjplugin.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjvisualize.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjspec.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/array_safety.h \
  /usr/include/c++/11/cstdarg /usr/include/c++/11/cstddef \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/platform_ui_adapter.h \
@@ -903,10 +903,6 @@ src/CMakeFiles/mujoco_ros.dir/viewer.cpp.o: \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__builder.hpp \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__traits.hpp \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__type_support.hpp \
- /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/glfw_adapter.h \
- /usr/include/GLFW/glfw3.h /usr/include/GL/gl.h /usr/include/GL/glext.h \
- /usr/include/KHR/khrplatform.h \
- /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/glfw_dispatch.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjxmacro.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjxmacro.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/lodepng.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/util.hpp

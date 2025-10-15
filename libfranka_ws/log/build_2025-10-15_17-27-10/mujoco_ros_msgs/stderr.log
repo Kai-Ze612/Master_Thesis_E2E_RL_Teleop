@@ -1,0 +1,4 @@
+[31mCMake Error at CMakeLists.txt:7 (message):
+  ROS_VERSION is not defined
+
+[0m

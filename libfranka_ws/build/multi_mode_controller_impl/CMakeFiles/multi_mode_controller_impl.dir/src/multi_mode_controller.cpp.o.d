@@ -473,7 +473,7 @@ CMakeFiles/multi_mode_controller_impl.dir/src/multi_mode_controller.cpp.o: \
  /usr/include/c++/11/list /usr/include/c++/11/bits/stl_list.h \
  /usr/include/c++/11/bits/allocated_ptr.h \
  /usr/include/c++/11/bits/list.tcc \
- /opt/ros/humble/include/controller_interface/controller_interface.hpp \
+ /opt/ros/humble/include/controller_interface/controller_interface/controller_interface.hpp \
  /usr/include/c++/11/memory \
  /usr/include/c++/11/bits/stl_raw_storage_iter.h \
  /usr/include/c++/11/bits/align.h /usr/include/c++/11/bit \
@@ -486,14 +486,14 @@ CMakeFiles/multi_mode_controller_impl.dir/src/multi_mode_controller.cpp.o: \
  /usr/include/c++/11/bits/atomic_lockfree_defines.h \
  /usr/include/c++/11/backward/auto_ptr.h \
  /usr/include/c++/11/pstl/glue_memory_defs.h \
- /opt/ros/humble/include/controller_interface/controller_interface_base.hpp \
- /opt/ros/humble/include/controller_interface/visibility_control.h \
- /opt/ros/humble/include/hardware_interface/handle.hpp \
- /opt/ros/humble/include/hardware_interface/macros.hpp \
+ /opt/ros/humble/include/controller_interface/controller_interface/controller_interface_base.hpp \
+ /opt/ros/humble/include/controller_interface/controller_interface/visibility_control.h \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/handle.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/macros.hpp \
  /opt/ros/humble/include/rcpputils/rcpputils/pointer_traits.hpp \
- /opt/ros/humble/include/hardware_interface/visibility_control.h \
- /opt/ros/humble/include/hardware_interface/loaned_command_interface.hpp \
- /opt/ros/humble/include/hardware_interface/loaned_state_interface.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/visibility_control.h \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/loaned_command_interface.hpp \
+ /opt/ros/humble/include/hardware_interface/hardware_interface/loaned_state_interface.hpp \
  /opt/ros/humble/include/rclcpp/rclcpp/rclcpp.hpp \
  /usr/include/c++/11/csignal /usr/include/signal.h \
  /usr/include/x86_64-linux-gnu/bits/signum-generic.h \
@@ -938,22 +938,22 @@ CMakeFiles/multi_mode_controller_impl.dir/src/multi_mode_controller.cpp.o: \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/multi_mode_controller/include/multi_mode_controller/utils/robot_data.h \
  /usr/local/include/eigen3/Eigen/Dense \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/include/franka_semantic_components/franka_robot_model.hpp \
- /home/kai/Libraries/libfranka_install/include/franka/robot_state.h \
- /home/kai/Libraries/libfranka_install/include/franka/duration.h \
- /home/kai/Libraries/libfranka_install/include/franka/errors.h \
+ /home/kai/Libraries/libfranka/include/franka/robot_state.h \
+ /home/kai/Libraries/libfranka/include/franka/duration.h \
+ /home/kai/Libraries/libfranka/include/franka/errors.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_hardware/include/franka_hardware/common/model_base.hpp \
- /home/kai/Libraries/libfranka_install/include/franka/model.h \
- /home/kai/Libraries/libfranka_install/include/franka/robot.h \
- /home/kai/Libraries/libfranka_install/include/franka/command_types.h \
- /home/kai/Libraries/libfranka_install/include/franka/control_types.h \
- /home/kai/Libraries/libfranka_install/include/franka/lowpass_filter.h \
+ /home/kai/Libraries/libfranka/include/franka/model.h \
+ /home/kai/Libraries/libfranka/include/franka/robot.h \
+ /home/kai/Libraries/libfranka/include/franka/command_types.h \
+ /home/kai/Libraries/libfranka/include/franka/control_types.h \
+ /home/kai/Libraries/libfranka/include/franka/lowpass_filter.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_cpp/franka_msgs/msg/franka_model.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_cpp/franka_msgs/msg/detail/franka_model__struct.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_cpp/franka_msgs/msg/detail/franka_model__builder.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_cpp/franka_msgs/msg/detail/franka_model__traits.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_cpp/franka_msgs/msg/detail/franka_model__type_support.hpp \
- /opt/ros/humble/include/semantic_components/semantic_component_interface.hpp \
- /opt/ros/humble/include/controller_interface/helpers.hpp \
+ /opt/ros/humble/include/controller_interface/semantic_components/semantic_component_interface.hpp \
+ /opt/ros/humble/include/controller_interface/controller_interface/helpers.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/multi_mode_controller/include/multi_mode_controller/utils/conversions.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/multi_mode_controller/include/multi_mode_controller/base/switch_engine.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/multi_mode_control_msgs/rosidl_generator_cpp/multi_mode_control_msgs/srv/get_robot_states.hpp \

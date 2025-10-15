@@ -1,0 +1,6 @@
+[31mCMake Error at cmake/Findmujoco.cmake:39 (message):
+  Failed to find mujoco (MUJOCO_DIR=)
+Call Stack (most recent call first):
+  CMakeLists.txt:89 (find_package)
+
+[0m

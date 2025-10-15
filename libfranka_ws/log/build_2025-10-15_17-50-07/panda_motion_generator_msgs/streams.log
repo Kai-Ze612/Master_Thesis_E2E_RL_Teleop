@@ -1,0 +1,31 @@
+[0.083s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/panda_motion_generator_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/panda_motion_generator_msgs -- -j12 -l12
+[2.304s] [  0%] Built target ament_cmake_python_symlink_panda_motion_generator_msgs
+[2.304s] [  1%] Built target panda_motion_generator_msgs__cpp
+[2.304s] [ 12%] Built target panda_motion_generator_msgs__rosidl_generator_c
+[2.305s] [35m[1mConsolidate compiler generated dependencies of target panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c[0m
+[2.305s] [35m[1mConsolidate compiler generated dependencies of target panda_motion_generator_msgs__rosidl_typesupport_c[0m
+[2.305s] [35m[1mConsolidate compiler generated dependencies of target panda_motion_generator_msgs__rosidl_typesupport_introspection_c[0m
+[2.305s] [ 26%] Built target panda_motion_generator_msgs__rosidl_typesupport_c
+[2.305s] [ 34%] Built target panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c
+[2.305s] [ 46%] Built target panda_motion_generator_msgs__rosidl_typesupport_introspection_c
+[2.305s] [ 57%] Built target panda_motion_generator_msgs__rosidl_typesupport_fastrtps_cpp
+[2.305s] [ 79%] Built target panda_motion_generator_msgs__rosidl_typesupport_cpp
+[2.305s] [ 77%] Built target panda_motion_generator_msgs__rosidl_typesupport_introspection_cpp
+[2.306s] [ 79%] Built target panda_motion_generator_msgs
+[2.306s] [ 80%] [34m[1mGenerating Python code for ROS interfaces[0m
+[2.417s] running egg_info
+[2.418s] writing panda_motion_generator_msgs.egg-info/PKG-INFO
+[2.418s] writing dependency_links to panda_motion_generator_msgs.egg-info/dependency_links.txt
+[2.418s] writing top-level names to panda_motion_generator_msgs.egg-info/top_level.txt
+[2.422s] reading manifest file 'panda_motion_generator_msgs.egg-info/SOURCES.txt'
+[2.423s] writing manifest file 'panda_motion_generator_msgs.egg-info/SOURCES.txt'
+[2.623s] [ 80%] Built target ament_cmake_python_build_panda_motion_generator_msgs_egg
+[7.578s] [ 80%] Built target panda_motion_generator_msgs__py
+[7.709s] [ 82%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_generator_py.dir/rosidl_generator_py/panda_motion_generator_msgs/msg/_joint_pose_s.c.o[0m
+[7.747s] [ 84%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_generator_py.dir/rosidl_generator_py/panda_motion_generator_msgs/msg/_simple_action_result_s.c.o[0m
+[7.773s] [ 85%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_generator_py.dir/rosidl_generator_py/panda_motion_generator_msgs/msg/_set_time_scaling_s.c.o[0m
+[7.792s] [ 87%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_generator_py.dir/rosidl_generator_py/panda_motion_generator_msgs/action/_cartesian_via_motion_s.c.o[0m
+[7.836s] [ 88%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_generator_py.dir/rosidl_generator_py/panda_motion_generator_msgs/action/_joint_via_motion_s.c.o[0m
+[8.541s] gmake[2]: *** [CMakeFiles/panda_motion_generator_msgs__rosidl_generator_py.dir/build.make:132: CMakeFiles/panda_motion_generator_msgs__rosidl_generator_py.dir/rosidl_generator_py/panda_motion_generator_msgs/action/_joint_via_motion_s.c.o] Interrupt
+[8.542s] gmake[1]: *** [CMakeFiles/Makefile2:475: CMakeFiles/panda_motion_generator_msgs__rosidl_generator_py.dir/all] Interrupt
+[8.542s] gmake: *** [Makefile:146: all] Interrupt

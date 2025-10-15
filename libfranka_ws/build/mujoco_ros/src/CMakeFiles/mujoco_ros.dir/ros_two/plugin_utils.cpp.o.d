@@ -666,19 +666,19 @@ src/CMakeFiles/mujoco_ros.dir/ros_two/plugin_utils.cpp.o: \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/include/mujoco_ros/ros_version.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/logging.hpp \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/common_types.hpp \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mujoco.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mujoco.h \
  /usr/include/c++/11/math.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjdata.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjtnum.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjmodel.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjthread.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjexport.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjmacro.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjplugin.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjvisualize.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjrender.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjspec.h \
- /home/kai/Libraries/mujoco/mujoco_install/include/mujoco/mjui.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjdata.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjtnum.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjmodel.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjthread.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjexport.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjmacro.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjplugin.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjvisualize.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjrender.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjspec.h \
+ /home/kai/Libraries/mujoco/include/mujoco/mjui.h \
  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/mujoco_env.hpp \
  /opt/ros/humble/include/rosgraph_msgs/rosgraph_msgs/msg/clock.hpp \
  /opt/ros/humble/include/rosgraph_msgs/rosgraph_msgs/msg/detail/clock__struct.hpp \
@@ -939,10 +939,6 @@ src/CMakeFiles/mujoco_ros.dir/ros_two/plugin_utils.cpp.o: \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__builder.hpp \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__traits.hpp \
  /opt/ros/humble/include/tf2_msgs/tf2_msgs/srv/detail/frame_graph__type_support.hpp \
- /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/glfw_adapter.h \
- /usr/include/GLFW/glfw3.h /usr/include/GL/gl.h /usr/include/GL/glext.h \
- /usr/include/KHR/khrplatform.h \
- /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros/include/mujoco_ros/glfw_dispatch.h \
  /opt/ros/humble/include/pluginlib/pluginlib/class_loader.hpp \
  /opt/ros/humble/include/class_loader/class_loader/multi_library_class_loader.hpp \
  /usr/include/console_bridge/console.h \

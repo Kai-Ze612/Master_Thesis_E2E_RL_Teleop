@@ -1,0 +1,7 @@
+[ 50%] [32mBuilding CXX object CMakeFiles/franka_control2_node.dir/src/franka_control2_node.cpp.o[0m
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_control2/src/franka_control2_node.cpp:24[m[K:
+[01m[K/opt/ros/humble/include/realtime_tools/realtime_tools/thread_priority.hpp:39:2:[m[K [01;35m[Kwarning: [m[K#warning "This header include is deprecated. Please update your code to use 'realtime_helpers.hpp' header and link against 'realtime_tools' library." [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wcpp-Wcpp]8;;[m[K]
+   39 | #[01;35m[Kwarning[m[K \
+      |  [01;35m[K^~~~~~~[m[K
+[100%] [32m[1mLinking CXX executable franka_control2_node[0m
+[100%] Built target franka_control2_node
