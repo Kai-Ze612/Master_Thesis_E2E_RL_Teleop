@@ -13,13 +13,36 @@ The trajectory parameters can be randomized within reasonable bounds to enhance 
 
 # Python imports
 from __future__ import annotations
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Optional
 import numpy as np
 from numpy.typing import NDArray
 import gymnasium as gym
+import mujoco
 
+from Reinforcement_Learning_In_Teleoperation.controllers.inverse_kinematics import IKSolver
+from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+    DEFAULT_MODEL_PATH,
+    N_JOINTS,
+    EE_BODY_NAME,
+    TCP_OFFSET,
+    JOINT_LIMITS_LOWER,
+    JOINT_LIMITS_UPPER,
+    INITIAL_JOINT_CONFIG,
+    KP_LOCAL_DEFAULT,
+    KD_LOCAL_DEFAULT,
+    DEFAULT_CONTROL_FREQ,
+    IK_MAX_ITER,
+    IK_TOLERANCE,
+    IK_DAMPING,
+    IK_MAX_JOINT_CHANGE,
+    IK_CONTINUITY_GAIN,
+    TRAJECTORY_CENTER_DEFAULT,
+    TRAJECTORY_SCALE_DEFAULT,
+    TRAJECTORY_FREQUENCY_DEFAULT,
+)
 
 class TrajectoryType(Enum):
     """Enumeration of available trajectory types."""
@@ -31,12 +54,12 @@ class TrajectoryType(Enum):
 class TrajectoryParams:
     """Trajectory initial parameters."""
     center: NDArray[np.float64] = field(
-        default_factory=lambda: np.array([0.4, 0.0, 0.6], dtype=np.float64)
+        default_factory=lambda: TRAJECTORY_CENTER_DEFAULT.copy()
     )
     scale: NDArray[np.float64] = field(
-        default_factory=lambda: np.array([0.1, 0.3], dtype=np.float64)
+        default_factory=lambda: TRAJECTORY_SCALE_DEFAULT.copy()
     )
-    frequency: float = 0.1
+    frequency: float = TRAJECTORY_FREQUENCY_DEFAULT
     initial_phase: float = 0.0
 
     def __post_init__(self) -> None:
@@ -45,27 +68,31 @@ class TrajectoryParams:
         assert self.scale.shape == (2,), "Scale must be a 2D vector."
         assert self.frequency > 0, "Frequency must be positive."
 
-class TrajectoryGenerator:
-    """Define the blueprint for each trajectory type."""
-    def __init__(self, params: TrajectoryParams):
+class TrajectoryGenerator(ABC):
+    """This class is only position computation for the remote robot"""
+
+    def __init__(self,
+                 params: TrajectoryParams):
         self._params = params
-    
+        
     @property
     def params(self) -> TrajectoryParams:
         return self._params
 
-    def compute_position(self, t_sec: float) -> NDArray[np.float64]:
-        raise NotImplementedError("This method should be overridden by subclasses.")
-    
-    def _compute_phase(self, t: float) -> float:
-        """Convert time to phase angle including frequency and initial offset.
+    @abstractmethod
+    def compute_position(self, t: float) -> NDArray[np.float64]:
+        """Compute position at time t.
         
         Args:
             t: Time in seconds
             
         Returns:
-            Phase angle in radians
+            3D position vector
         """
+        pass
+    
+    def _compute_phase(self, t: float) -> float:
+        """Compute phase angle at time t."""
         return (t * self._params.frequency * 2 * np.pi + 
                 self._params.initial_phase)
 
@@ -105,44 +132,8 @@ class SquareTrajectoryGenerator(TrajectoryGenerator):
         
         dx = self._params.scale[0] * position_2d[0]
         dy = self._params.scale[1] * position_2d[1]
+        
         return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
-    
-    def compute_velocity(self, t: float) -> NDArray[np.float64]:
-        """Compute velocity for smooth square trajectory.
-        
-        Args:
-            t: Time in seconds
-            
-        Returns:
-            3D velocity vector
-        """
-        phase = self._compute_phase(t)
-        t_norm = (phase % (2 * np.pi)) / (2 * np.pi)
-        omega = self._params.frequency * 2 * np.pi
-        
-        corners = np.array([
-            [1, 1],    # Top-right
-            [-1, 1],   # Top-left
-            [-1, -1],  # Bottom-left
-            [1, -1],   # Bottom-right
-        ])
-        
-        segment = int(t_norm * 4) % 4
-        segment_progress = (t_norm * 4) % 1
-        
-        current_corner = corners[segment]
-        next_corner = corners[(segment + 1) % 4]
-        
-        # Derivative of smooth interpolation
-        direction = next_corner - current_corner
-        d_smooth_progress = 0.5 * np.pi * np.sin(segment_progress * np.pi)
-        dt_norm_dt = omega / (2 * np.pi)
-        velocity_2d = direction * d_smooth_progress * 4 * dt_norm_dt
-        
-        vx = self._params.scale[0] * velocity_2d[0]
-        vy = self._params.scale[1] * velocity_2d[1]
-        
-        return np.array([vx, vy, 0.0], dtype=np.float64)
     
 class LissajousComplexGenerator(TrajectoryGenerator):
     """Complex Lissajous curve with 3:4 frequency ratio and phase shift."""
@@ -166,26 +157,6 @@ class LissajousComplexGenerator(TrajectoryGenerator):
         dx = self._params.scale[0] * np.sin(self._FREQ_RATIO_X * phase + self._PHASE_SHIFT)
         dy = self._params.scale[1] * np.sin(self._FREQ_RATIO_Y * phase)
         return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
-    
-    def compute_velocity(self, t: float) -> NDArray[np.float64]:
-        """Compute velocity analytically for complex Lissajous trajectory.
-        
-        Args:
-            t: Time in seconds
-            
-        Returns:
-            3D velocity vector
-        """
-        phase = self._compute_phase(t)
-        omega = self._params.frequency * 2 * np.pi
-        
-        vx = (self._params.scale[0] * self._FREQ_RATIO_X * omega * 
-              np.cos(self._FREQ_RATIO_X * phase + self._PHASE_SHIFT))
-        vy = (self._params.scale[1] * self._FREQ_RATIO_Y * omega * 
-              np.cos(self._FREQ_RATIO_Y * phase))
-        vz = 0.0
-        
-        return np.array([vx, vy, vz], dtype=np.float64)
 
 class Figure8TrajectoryGenerator(TrajectoryGenerator):
     """Figure-8 trajectory using Lissajous curve with 1:2 frequency ratio."""
@@ -205,54 +176,94 @@ class Figure8TrajectoryGenerator(TrajectoryGenerator):
         dy = self._params.scale[1] * np.sin(phase / 2)
         return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
 
-    def compute_velocity(self, t: float) -> NDArray[np.float64]:
-        """Compute velocity analytically for figure-8 trajectory.
-        
-        Args:
-            t: Time in seconds
-            
-        Returns:
-            3D velocity vector
-        """
-        phase = self._compute_phase(t)
-        omega = self._params.frequency * 2 * np.pi
-        
-        vx = self._params.scale[0] * omega * np.cos(phase)
-        vy = self._params.scale[1] * (omega / 2) * np.cos(phase / 2)
-        vz = 0.0
-        
-        return np.array([vx, vy, vz], dtype=np.float64)
-
 class LocalRobotSimulator(gym.Env):
-    """Gymnasium environment for trajectory-following robot simulation."""
-    def __init__(self,
-                 control_freq: int = 200,
-                 trajectory_type: TrajectoryType = TrajectoryType.FIGURE_8,
-                 randomize_params: bool = False,            
+
+    def __init__(
+        self,
+        model_path: str = DEFAULT_MODEL_PATH,
+        control_freq: int = DEFAULT_CONTROL_FREQ,
+        trajectory_type: TrajectoryType = TrajectoryType.FIGURE_8,
+        randomize_params: bool = False,
+        # Franka Panda Parameters
+        joint_limits_lower: Optional[NDArray[np.float64]] = JOINT_LIMITS_LOWER,
+        joint_limits_upper: Optional[NDArray[np.float64]] = JOINT_LIMITS_UPPER,
+        # IK solver parameters
+        ik_max_iter: int = IK_MAX_ITER,
+        ik_tolerance: float = IK_TOLERANCE,
+        ik_damping: float = IK_DAMPING,
+        # PD gains for local robot
+        kp_local: NDArray[np.float64] = KP_LOCAL_DEFAULT,
+        kd_local: NDArray[np.float64] = KD_LOCAL_DEFAULT,
     ) -> None:
         super().__init__()
+        
+        self.n_joints = N_JOINTS
+        self.ee_body_name = EE_BODY_NAME
+        self.tcp_offset = TCP_OFFSET.copy()
         self._dt = 1.0 / control_freq
+        self._control_freq = control_freq
         self._randomize_params = randomize_params
-        self._trajectory_time = 0.0
 
+        # PD gains for local robot
+        self.kd_local = kd_local.copy()
+        self.kp_local = kp_local.copy()
+
+        # Joint limits
+        self.joint_limits_lower = joint_limits_lower.copy()
+        self.joint_limits_upper = joint_limits_upper.copy()
+        
+        # Load MuJoCo model
+        self.model = mujoco.MjModel.from_xml_path(model_path)
+        self.data = mujoco.MjData(self.model)
+        
+        # Simulation frequency and substeps
+        sim_freq = int(1.0 / self.model.opt.timestep)
+        if sim_freq % control_freq != 0:
+            raise ValueError(
+                f"Simulation frequency ({sim_freq} Hz) must be a multiple of control frequency ({control_freq} Hz)."
+            )
+        self.n_substeps = sim_freq // control_freq
+
+        # Initialize IK solver
+        self.ik_solver = IKSolver(
+            model=self.model,
+            joint_limits_lower=self.joint_limits_lower,
+            joint_limits_upper=self.joint_limits_upper,
+            jacobian_max_iter=ik_max_iter,
+            position_tolerance=ik_tolerance,
+            jacobian_damping=ik_damping,
+            max_joint_change=IK_MAX_JOINT_CHANGE,
+            continuity_gain=IK_CONTINUITY_GAIN,
+        )
+
+        # Observation space
         self.observation_space = gym.spaces.Box(
-            low=np.array([0.0, -0.5, 0.0], dtype=np.float32),
-            high=np.array([1.0, 0.5, 1.0], dtype=np.float32),
-            shape=(3,),
+            low=self.joint_limits_lower.astype(np.float32),
+            high=self.joint_limits_upper.astype(np.float32),
+            shape=(self.n_joints,),
             dtype=np.float32
         )
-        
+
+        # Dummy action space
         self.action_space = gym.spaces.Discrete(1)
-        
-        # Initialize with default parameters
+
+        # Initialize trajectory generator
+        self._trajectory_time = 0.0
         self._params = TrajectoryParams()
         self._trajectory_type = trajectory_type
         self._generator = self._create_generator(trajectory_type, self._params)
-        
-    def _create_generator(self,
-                          trajectory_type: TrajectoryType,
-                          params: TrajectoryParams) -> TrajectoryGenerator:
-        
+
+        # State tracking
+        self._q_current = np.zeros(self.n_joints)
+        self._qd_current = np.zeros(self.n_joints)
+        self._last_q_desired = np.zeros(self.n_joints)
+
+    def _create_generator(
+        self,
+        trajectory_type: TrajectoryType,
+        params: TrajectoryParams
+    ) -> TrajectoryGenerator:
+
         generators = {
             TrajectoryType.FIGURE_8: Figure8TrajectoryGenerator,
             TrajectoryType.SQUARE: SquareTrajectoryGenerator,
@@ -264,40 +275,40 @@ class LocalRobotSimulator(gym.Env):
             raise ValueError(f"Unknown trajectory type: {trajectory_type}")
 
         return generator_class(params)
-        
+
     def _generate_random_params(self) -> TrajectoryParams:
-        """Generate randomized parameters within safe operational bounds.
-        
-        Returns:
-            New randomized parameter set
-        """
+        """Generate randomized parameters within safe operational bounds."""
         return TrajectoryParams(
             center=np.array([
-                np.random.uniform(0.3, 0.5),   # X: workspace center
-                np.random.uniform(-0.2, 0.2),  # Y: lateral variation
-                0.6,                            # Z: fixed height
+                np.random.uniform(0.4, 0.5),
+                np.random.uniform(-0.2, 0.2),
+                0.6,
             ], dtype=np.float64),
+            
             scale=np.array([
-                np.random.uniform(0.05, 0.2),   # X scale varies
-                np.random.uniform(0.1, 0.3),    # Y scale varies
+                np.random.uniform(0.1, 0.2),
+                np.random.uniform(0.1, 0.3),
             ], dtype=np.float64),
-            frequency=np.random.uniform(0.08, 0.12),  # Frequency varies slightly
-            initial_phase=np.random.uniform(0, 2 * np.pi),  # Random starting phase
+            
+            frequency=np.random.uniform(0.1, 0.15),
+            
+            initial_phase=0.0,
         )
-        
+
     def reset(
         self,
         seed: Optional[int] = None,
         options: Optional[dict[str, Any]] = None,
-    ) -> tuple[NDArray[np.float64], dict[str, Any]]:
-        """ Reset the environment to initial state."""
+    ) -> tuple[NDArray[np.float32], dict[str, Any]]:
+        """Reset environment and initialize joint configuration."""
+
         super().reset(seed=seed)
-        
+
         # Apply parameter randomization if enabled
         if self._randomize_params:
             self._params = self._generate_random_params()
             self._generator = self._create_generator(self._trajectory_type, self._params)
-        
+
         # Apply optional overrides
         if options:
             if 'trajectory_type' in options:
@@ -305,50 +316,131 @@ class LocalRobotSimulator(gym.Env):
                 if new_type != self._trajectory_type:
                     self._trajectory_type = new_type
                     self._generator = self._create_generator(new_type, self._params)
-        
-        # Reset time to trajectory start
+
+        # Reset trajectory time
         self._trajectory_time = 0.0
         
-        # Get initial state
-        initial_position = self._generator.compute_position(self._trajectory_time)
+        # Solve IK for initial joint configuration
+        q_initial = INITIAL_JOINT_CONFIG.copy()
+
+        # Initialize joint state
+        self._q_current = q_initial.copy()
+        self._qd_current = np.zeros(self.n_joints)
+        self._last_q_desired = q_initial.copy()
+
+        # Reset MuJoCo simulation
+        mujoco.mj_resetData(self.model, self.data)
+        self.data.qpos[:self.n_joints] = q_initial
+        self.data.qvel[:self.n_joints] = np.zeros(self.n_joints)
+        mujoco.mj_forward(self.model, self.data)
+
+        # Get trajectory start position
+        trajectory_start_pos = self._generator.compute_position(self._trajectory_time)
         
+        # Info dictionary
         info = {
             "trajectory_type": self._trajectory_type.value,
+            "joint_pos": self._q_current.copy(),
+            "trajectory_start_pos": trajectory_start_pos,
             "center": self._params.center.copy(),
             "scale_x": self._params.scale[0],
             "scale_y": self._params.scale[1],
             "frequency": self._params.frequency,
-            "initial_phase": self._params.initial_phase,
         }
-        
-        return initial_position.astype(np.float32), info
-        
+
+        return self._q_current.astype(np.float32), info
+
     def step(
         self,
         action: Optional[Any] = None,
-    ) -> tuple[NDArray[np.float64], float, bool, bool, dict[str, Any]]:
+    ) -> tuple[NDArray[np.float32], float, bool, bool, dict[str, Any]]:
+        """
+        Generate next joint configuration with realistic dynamics.
+
+        Pipeline:
+            1. Advance time
+            2. Generate Cartesian position
+            3. Solve IK → q_desired
+            4. PD control → τ_control
+            5. MuJoCo simulation
+            6. Read actual joint state
+        """
+
         self._trajectory_time += self._dt
-        
-        position = self._generator.compute_position(self._trajectory_time)
-        velocity = self._generator.compute_velocity(self._trajectory_time)
-        
+
+        # Target Position
+        cartesian_target = self._generator.compute_position(self._trajectory_time)
+
+        # IK Solver
+        q_desired, ik_success, ik_error = self.ik_solver.solve(
+            target_pos=cartesian_target,
+            q_init=self._q_current,
+            body_name=self.ee_body_name,
+            tcp_offset=self.tcp_offset,
+            enforce_continuity=True,
+        )
+
+        if not ik_success or q_desired is None:
+            print(f"IK failed at t={self._trajectory_time:.3f}s, error={ik_error:.6f}m")
+            q_desired = self._last_q_desired.copy()
+
+        # Desired joint velocities
+        qd_desired = (q_desired - self._last_q_desired) / self._dt
+        self._last_q_desired = q_desired.copy()
+
+        # PD controller for local robot tracking
+        q_error = q_desired - self.data.qpos[:self.n_joints]
+        qd_error = qd_desired - self.data.qvel[:self.n_joints]
+
+        tau_control = self.kp_local * q_error + self.kd_local * qd_error
+        self.data.ctrl[:self.n_joints] = tau_control
+
+        # Simulate MuJoCo dynamics
+        for _ in range(self.n_substeps):
+            mujoco.mj_step(self.model, self.data)
+
+        # Read actual joint state from simulation
+        self._q_current = self.data.qpos[:self.n_joints].copy()
+        self._qd_current = self.data.qvel[:self.n_joints].copy()
+
+        # Compute tracking error
+        cartesian_achieved = self.get_cartesian_position()
+        tracking_error = np.linalg.norm(cartesian_target - cartesian_achieved)
+
+        # Info dictionary
         info = {
             "time": self._trajectory_time,
-            "velocity": velocity,
             "trajectory_type": self._trajectory_type.value,
+            "cartesian_target": cartesian_target,
+            "cartesian_achieved": cartesian_achieved,
+            "tracking_error": tracking_error,
+            "joint_pos": self._q_current.copy(),
+            "joint_vel": self._qd_current.copy(),
+            "ik_success": ik_success,
+            "ik_error": ik_error,
         }
-        
+
         # Basic Gymnasium return structure
         reward = 0.0
         terminated = False
         truncated = False
-        
-        return position.astype(np.float32), reward, terminated, truncated, info
+
+        return self._q_current.astype(np.float32), reward, terminated, truncated, info
+
+    def get_joint_state(self) -> dict:
+        """Get current joint positions and velocities."""
+        return {
+            "joint_pos": self._q_current.copy(),
+            "joint_vel": self._qd_current.copy(),
+        }
+
+    def get_cartesian_position(self) -> NDArray[np.float64]:
+        """Get current end-effector Cartesian position."""
+        ee_id = self.model.body(self.ee_body_name).id
+        flange_pos = self.data.xpos[ee_id].copy()
+        flange_rot = self.data.xmat[ee_id].reshape(3, 3)
+        return flange_pos + flange_rot @ self.tcp_offset
 
     def get_position_at_time(self, t: float) -> NDArray[np.float64]:
-        """Query position at arbitrary time point."""
+        """Query Cartesian position at arbitrary time point."""
         return self._generator.compute_position(t)
-    
-    def get_velocity_at_time(self, t: float) -> NDArray[np.float64]:
-        """Query velocity at arbitrary time point."""
-        return self._generator.compute_velocity(t)

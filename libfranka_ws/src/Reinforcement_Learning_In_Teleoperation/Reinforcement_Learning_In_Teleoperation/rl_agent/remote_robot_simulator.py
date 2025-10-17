@@ -7,6 +7,13 @@ This module implements:
 - We use MuJoco's built-in inverse dynamics function to compute the baseline torque.
 - RL agent learns torque compensation
 - Interpolation using NN predictor to predict missing trajectory points due to delay. 
+
+1. Torque compensation:
+    inverse kinematics + RL compensation
+2. Trajectory interpolation:
+    NN predictor
+3. Adaptive PD control:
+    Adaptive PD control
 """
 
 from __future__ import annotations
@@ -18,7 +25,6 @@ from numpy.typing import NDArray
 
 from Reinforcement_Learning_In_Teleoperation.controllers.inverse_kinematics import IKSolver
 from Reinforcement_Learning_In_Teleoperation.controllers.pd_controller import AdaptivePDController
-
 
 class RemoteRobotSimulator:
     def __init__(
@@ -41,7 +47,6 @@ class RemoteRobotSimulator:
         max_joint_change: float = 0.1,
         continuity_gain: float = 0.5,
     ):
-        
         # Initialize MuJoCo model and data
         self.model = mujoco.MjModel.from_xml_path(model_path)
         self.data = mujoco.MjData(self.model)
@@ -91,7 +96,7 @@ class RemoteRobotSimulator:
             delay_threshold=delay_threshold,
         )
 
-        # State tracking for velocity estimation
+        # State tracking for velocity estimation (finite difference)
         self.last_q_target = np.zeros(self.n_joints)
         self.last_timestamp = 0.0
         
@@ -103,7 +108,12 @@ class RemoteRobotSimulator:
         initial_qpos: NDArray[np.float64],
         reset_controllers: bool = True
     ) -> None:
-        """ Reset the simulation to the initial joint configuration."""
+        """Reset the simulation to initial joint configuration.
+        
+        Args:
+            initial_qpos: Initial joint positions (7,)
+            reset_controllers: Whether to reset IK solver and PD controller states
+        """
         
         if initial_qpos.shape != (self.n_joints,):
             raise ValueError(
@@ -136,7 +146,16 @@ class RemoteRobotSimulator:
         qd: NDArray[np.float64],
         qdd: NDArray[np.float64],
     ) -> NDArray[np.float64]:
-        """Inverse dynamics using MuJoCo's built-in function."""
+        """Inverse dynamics using MuJoCo's built-in function.
+        
+        Args:
+            q: Desired joint positions (7,)
+            qd: Desired joint velocities (7,)
+            qdd: Desired joint accelerations (7,)
+            
+        Returns:
+            tau: Required joint torques (7,)
+        """
         
         # Save current state
         qpos_save = self.data.qpos.copy()
@@ -160,38 +179,50 @@ class RemoteRobotSimulator:
 
         return tau
 
+    # MODIFICATION: Simplified step function - additive torque compensation only
     def step(
         self,
         target_pos: NDArray[np.float64],
-        normalized_action: NDArray[np.float64],
+        torque_compensation: NDArray[np.float64],
         current_delay: Optional[float] = None,
-        target_vel_cartesian: Optional[NDArray[np.float64]] = None,
     ) -> dict:
+        """Execute one control step with additive torque compensation.
         
-        # Checking up input position
+        Args:
+            target_pos: Target end-effector position (delayed from local robot) (3,)
+            torque_compensation: RL agent's additive torque correction Δτ (7,)
+            current_delay: Current communication delay in seconds (optional)
+            
+        Returns:
+            step_info: Dictionary with tracking errors and control status
+        """
+        
+        # Checking input
         if target_pos.shape != (3,):
             raise ValueError(f"target_pos must have shape (3,), got {target_pos.shape}")
-        if normalized_action.shape != (self.n_joints,):
+        if torque_compensation.shape != (self.n_joints,):
             raise ValueError(
-                f"normalized_action must have shape ({self.n_joints},), "
-                f"got {normalized_action.shape}"
+                f"torque_compensation must have shape ({self.n_joints},), "
+                f"got {torque_compensation.shape}"
             )
 
         # Update PD gains based on current delay measurement
         if current_delay is not None:
             self.pd_controller.update_gains(delay=current_delay)
 
-        # Get current Robot state
+        # Get current robot state
         q_current = self.data.qpos[:self.n_joints].copy()
         qd_current = self.data.qvel[:self.n_joints].copy()
 
-        # IK
+        # ============================================================
+        # Inverse Kinematics: Convert Cartesian Position to Joint Angles
+        # ============================================================
         q_target, ik_success, ik_error = self.ik_solver.solve(
             target_pos=target_pos,
             q_init=q_current,
             body_name=self.ee_body_name,
             tcp_offset=self.tcp_offset,
-            enforce_continuity=True,  # Use trajectory continuity enforcement
+            enforce_continuity=True,
         )
 
         if q_target is None or not ik_success:
@@ -201,46 +232,11 @@ class RemoteRobotSimulator:
             )
             q_target = self.last_q_target.copy()
 
-        
-        # Method 1: Finite difference of joint-space targets (always available)
+        # ============================================================
+        # Velocity Estimation via Finite Difference
+        # ============================================================
         q_target_old = self.last_q_target.copy()
-        qd_target_fd = (q_target - q_target_old) / self.dt
-
-        # Method 2: If Cartesian velocity provided, use Jacobian mapping
-        if target_vel_cartesian is not None:
-            # Compute Jacobian at current configuration
-            jacp = np.zeros((3, self.model.nv))
-            ee_id = self.model.body(self.ee_body_name).id
-            ee_pos = self.get_ee_position()
-            
-            mujoco.mj_jac(
-                self.model,
-                self.data,
-                jacp,
-                None,  # We only need position Jacobian
-                ee_pos,
-                ee_id
-            )
-            
-            J = jacp[:, :self.n_joints]
-            
-            # Pseudo-inverse mapping: q̇ = J⁺·v_cartesian
-            try:
-                J_pinv = np.linalg.pinv(J)
-                qd_target_jacobian = J_pinv @ target_vel_cartesian
-                
-                # Blend with finite difference (safety check)
-                # If Jacobian-based velocity is too different, trust FD more
-                velocity_discrepancy = np.linalg.norm(qd_target_jacobian - qd_target_fd)
-                if velocity_discrepancy < 1.0:  # Reasonable agreement
-                    qd_target = qd_target_jacobian
-                else:
-                    print(f"Warning: Large velocity discrepancy {velocity_discrepancy:.3f}, using FD")
-                    qd_target = qd_target_fd
-            except np.linalg.LinAlgError:
-                qd_target = qd_target_fd
-        else:
-            qd_target = qd_target_fd
+        qd_target = (q_target - q_target_old) / self.dt
 
         # Update state tracking
         self.last_q_target = q_target.copy()
@@ -266,10 +262,11 @@ class RemoteRobotSimulator:
         )
 
         # ============================================================
-        # RL Torque Compensation (Multiplicative)
+        # MODIFICATION: Additive RL Torque Compensation
         # ============================================================
-        action_clipped = np.clip(normalized_action, -0.5, 0.5)
-        tau_total = tau_baseline * (1.0 + action_clipped)
+        # RL learns: Δτ ∈ [-max_compensation, +max_compensation]
+        # Assume torque_compensation is already scaled appropriately by policy
+        tau_total = tau_baseline + torque_compensation
 
         # ============================================================
         # Apply Actuator Limits
@@ -282,7 +279,7 @@ class RemoteRobotSimulator:
         )
 
         # ============================================================
-        # Execute Control Command
+        # Execute Control Command in MuJoCo
         # ============================================================
         self.data.ctrl[:self.n_joints] = tau_clipped
 
@@ -315,8 +312,7 @@ class RemoteRobotSimulator:
         self.debug_info = {
             # Torque decomposition
             "tau_baseline": tau_baseline,
-            "tau_rl_correction": tau_baseline * action_clipped,
-            "action_clipped": action_clipped,
+            "tau_compensation": torque_compensation,  # MODIFICATION: Direct additive term
             "tau_total": tau_total,
             "tau_clipped": tau_clipped,
             "limits_hit": limits_hit,
@@ -341,6 +337,7 @@ class RemoteRobotSimulator:
             "qdd_desired": qdd_desired,
             "q_achieved": q_achieved,
             "qd_achieved": qd_achieved,
+            "qd_target": qd_target,
         }
 
         # ============================================================
@@ -428,8 +425,6 @@ class RemoteRobotSimulator:
         """
         Update nominal PD gains during runtime.
         
-        Useful for online tuning or different task requirements.
-        
         Args:
             kp_nominal: New nominal proportional gains
             kd_nominal: New nominal derivative gains
@@ -460,3 +455,4 @@ class RemoteRobotSimulator:
                 "continuity_gain": self.ik_solver.continuity_gain,
             },
         }
+        
