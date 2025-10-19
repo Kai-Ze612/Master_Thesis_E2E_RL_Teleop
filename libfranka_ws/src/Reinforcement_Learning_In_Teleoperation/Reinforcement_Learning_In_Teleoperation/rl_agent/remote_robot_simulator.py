@@ -2,7 +2,6 @@
 MuJoCo-based simulator for the remote robot (follower).
 
 This module implements:
-- Inverse kinematics to convert target end-effector positions to joint angles.
 - Adaptive PD control, when delay is high, PD gains are decreased, when delay is low, PD gains are increased.
 - We use MuJoco's built-in inverse dynamics function to compute the baseline torque.
 - RL agent learns torque compensation
@@ -23,35 +22,37 @@ import mujoco
 import numpy as np
 from numpy.typing import NDArray
 
-from Reinforcement_Learning_In_Teleoperation.controllers.inverse_kinematics import IKSolver
-from Reinforcement_Learning_In_Teleoperation.controllers.pd_controller import AdaptivePDController
+from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+    DEFAULT_MODEL_PATH,
+    DEFAULT_CONTROL_FREQ,
+    N_JOINTS,
+    EE_BODY_NAME,
+    TCP_OFFSET,
+    JOINT_LIMITS_LOWER,
+    JOINT_LIMITS_UPPER,
+    TORQUE_LIMITS,
+    KP_REMOTE_NOMINAL,
+    KD_REMOTE_NOMINAL,
+)
 
 class RemoteRobotSimulator:
     def __init__(
         self,
-        model_path: str,
-        control_freq: int,
-        torque_limits: NDArray[np.float64],
-        joint_limits_lower: NDArray[np.float64],
-        joint_limits_upper: NDArray[np.float64],
-        # Adaptive PD parameters
-        kp_nominal: Optional[NDArray[np.float64]] = None,
-        kd_nominal: Optional[NDArray[np.float64]] = None,
-        min_gain_ratio: float = 0.3,
-        delay_threshold: float = 0.2,
-        # IK solver parameters
-        jacobian_max_iter: int = 100,
-        position_tolerance: float = 1e-4,
-        jacobian_step_size: float = 0.25,
-        jacobian_damping: float = 1e-4,
-        max_joint_change: float = 0.1,
-        continuity_gain: float = 0.5,
+        model_path: str = DEFAULT_MODEL_PATH,
+        control_freq: int = DEFAULT_CONTROL_FREQ,
+        torque_limits: NDArray[np.float64] = TORQUE_LIMITS,
+        joint_limits_lower: NDArray[np.float64] = JOINT_LIMITS_LOWER,
+        joint_limits_upper: NDArray[np.float64] = JOINT_LIMITS_UPPER,
+        kp_remote: NDArray[np.float64] = KP_REMOTE_NOMINAL,
+        kd_remote: NDArray[np.float64] = KD_REMOTE_NOMINAL,
     ):
+        
         # Initialize MuJoCo model and data
         self.model = mujoco.MjModel.from_xml_path(model_path)
         self.data = mujoco.MjData(self.model)
-        self.n_joints = 7
-        self.ee_body_name = "panda_hand"
+        
+        self.n_joints = N_JOINTS
+        self.ee_body_name = EE_BODY_NAME
 
         # Time step configuration
         self.dt = 1.0 / control_freq
@@ -65,80 +66,32 @@ class RemoteRobotSimulator:
         self.n_substeps = sim_freq // control_freq
 
         # Actuator and joint limits
-        self.torque_limits = torque_limits
-        self.joint_limits_lower = joint_limits_lower
-        self.joint_limits_upper = joint_limits_upper
+        self.torque_limits = torque_limits.copy()
+        self.joint_limits_lower = joint_limits_lower.copy()
+        self.joint_limits_upper = joint_limits_upper.copy()
 
         # TCP offset from flange to end-effector (in meters)
-        self.tcp_offset = np.array([0.0, 0.0, 0.1034])
+        self.tcp_offset = TCP_OFFSET.copy()
 
-        # Initialize IK solver and PD controller
-        self.ik_solver = IKSolver(
-            model=self.model,
-            joint_limits_lower=joint_limits_lower,
-            joint_limits_upper=joint_limits_upper,
-            jacobian_max_iter=jacobian_max_iter,
-            position_tolerance=position_tolerance,
-            jacobian_step_size=jacobian_step_size,
-            jacobian_damping=jacobian_damping,
-            optimization_max_iter=100,
-            optimization_ftol=1e-8,
-            optimization_xtol=1e-8,
-            max_joint_change=max_joint_change,
-            continuity_gain=continuity_gain,
-        )
+        # PD gains
+        self.kp = kp_remote.copy()
+        self.kd = kd_remote.copy()
 
-        self.pd_controller = AdaptivePDController(
-            n_joints=self.n_joints,
-            kp_nominal=kp_nominal,
-            kd_nominal=kd_nominal,
-            min_gain_ratio=min_gain_ratio,
-            delay_threshold=delay_threshold,
-        )
-
-        # State tracking for velocity estimation (finite difference)
+        # State tracking
         self.last_q_target = np.zeros(self.n_joints)
-        self.last_timestamp = 0.0
-        
-        # Debug information storage
-        self.debug_info = {}
 
     def reset(
         self, 
-        initial_qpos: NDArray[np.float64],
-        reset_controllers: bool = True
+        initial_qpos: NDArray[np.float64]
     ) -> None:
-        """Reset the simulation to initial joint configuration.
-        
-        Args:
-            initial_qpos: Initial joint positions (7,)
-            reset_controllers: Whether to reset IK solver and PD controller states
-        """
-        
-        if initial_qpos.shape != (self.n_joints,):
-            raise ValueError(
-                f"initial_qpos must have shape ({self.n_joints},), "
-                f"got {initial_qpos.shape}"
-            )
-
-        # Reset MuJoCo simulation
+        """Reset the simulation to initial joint configuration."""
+    
         mujoco.mj_resetData(self.model, self.data)
         self.data.qpos[:self.n_joints] = initial_qpos
         self.data.qvel[:self.n_joints] = np.zeros(self.n_joints)
         mujoco.mj_forward(self.model, self.data)
 
-        # Reset controller states
         self.last_q_target = initial_qpos.copy()
-        self.last_timestamp = 0.0
-        
-        if reset_controllers:
-            # Reset IK solver's trajectory tracking
-            self.ik_solver.reset_trajectory(q_start=initial_qpos)
-            
-            # Reset PD controller gains to nominal (zero delay)
-            self.pd_controller.update_gains(delay=0.0)
-
-        self.debug_info = {}
 
     def compute_inverse_dynamics_torque(
         self,
@@ -179,280 +132,54 @@ class RemoteRobotSimulator:
 
         return tau
 
-    # MODIFICATION: Simplified step function - additive torque compensation only
     def step(
         self,
-        target_pos: NDArray[np.float64],
+        target_q: NDArray[np.float64],
         torque_compensation: NDArray[np.float64],
-        current_delay: Optional[float] = None,
     ) -> dict:
-        """Execute one control step with additive torque compensation.
+        """Execute one control step with additive torque compensation."""
         
-        Args:
-            target_pos: Target end-effector position (delayed from local robot) (3,)
-            torque_compensation: RL agent's additive torque correction Δτ (7,)
-            current_delay: Current communication delay in seconds (optional)
-            
-        Returns:
-            step_info: Dictionary with tracking errors and control status
-        """
-        
-        # Checking input
-        if target_pos.shape != (3,):
-            raise ValueError(f"target_pos must have shape (3,), got {target_pos.shape}")
-        if torque_compensation.shape != (self.n_joints,):
-            raise ValueError(
-                f"torque_compensation must have shape ({self.n_joints},), "
-                f"got {torque_compensation.shape}"
-            )
-
-        # Update PD gains based on current delay measurement
-        if current_delay is not None:
-            self.pd_controller.update_gains(delay=current_delay)
-
-        # Get current robot state
         q_current = self.data.qpos[:self.n_joints].copy()
         qd_current = self.data.qvel[:self.n_joints].copy()
-
-        # ============================================================
-        # Inverse Kinematics: Convert Cartesian Position to Joint Angles
-        # ============================================================
-        q_target, ik_success, ik_error = self.ik_solver.solve(
-            target_pos=target_pos,
-            q_init=q_current,
-            body_name=self.ee_body_name,
-            tcp_offset=self.tcp_offset,
-            enforce_continuity=True,
-        )
-
-        if q_target is None or not ik_success:
-            print(
-                f"Warning: IK failed with error {ik_error:.6f}m. "
-                f"Using previous target."
-            )
-            q_target = self.last_q_target.copy()
-
-        # ============================================================
-        # Velocity Estimation via Finite Difference
-        # ============================================================
+        q_target = target_q
+       
         q_target_old = self.last_q_target.copy()
         qd_target = (q_target - q_target_old) / self.dt
-
-        # Update state tracking
         self.last_q_target = q_target.copy()
 
-        # ============================================================
-        # Adaptive PD Control: Compute Desired Acceleration
-        # ============================================================
-        qdd_desired = self.pd_controller.compute_desired_acceleration(
-            q_current=q_current,
-            qd_current=qd_current,
-            q_target=q_target,
-            qd_target=qd_target,
-            delay=None,  # Already updated gains above if delay provided
-        )
+        q_error = q_target - q_current
+        qd_error = qd_target - qd_current
+        qdd_desired = self.kp * q_error + self.kd * qd_error
 
-        # ============================================================
-        # Inverse Dynamics: Compute Baseline Torque
-        # ============================================================
         tau_baseline = self.compute_inverse_dynamics_torque(
             q=q_current,
             qd=qd_current,
             qdd=qdd_desired,
         )
-
-        # ============================================================
-        # MODIFICATION: Additive RL Torque Compensation
-        # ============================================================
-        # RL learns: Δτ ∈ [-max_compensation, +max_compensation]
-        # Assume torque_compensation is already scaled appropriately by policy
+        
         tau_total = tau_baseline + torque_compensation
-
-        # ============================================================
-        # Apply Actuator Limits
-        # ============================================================
         tau_clipped = np.clip(tau_total, -self.torque_limits, self.torque_limits)
-
-        # Check if limits were hit (for debugging)
-        limits_hit = np.any(
-            (tau_total < -self.torque_limits) | (tau_total > self.torque_limits)
-        )
-
-        # ============================================================
-        # Execute Control Command in MuJoCo
-        # ============================================================
+        limits_hit = np.any(tau_total != tau_clipped)
+        
         self.data.ctrl[:self.n_joints] = tau_clipped
-
-        # Simulate forward for one control step (multiple physics substeps)
         for _ in range(self.n_substeps):
             mujoco.mj_step(self.model, self.data)
 
-        # ============================================================
-        # Compute Performance Metrics
-        # ============================================================
-        
-        # Position tracking error (Cartesian space)
-        ee_pos_achieved = self.get_ee_position()
-        position_error = np.linalg.norm(target_pos - ee_pos_achieved)
-
-        # Joint space tracking error
         q_achieved = self.data.qpos[:self.n_joints].copy()
         joint_position_error = np.linalg.norm(q_target - q_achieved)
-
-        # Velocity tracking error
         qd_achieved = self.data.qvel[:self.n_joints].copy()
         joint_velocity_error = np.linalg.norm(qd_target - qd_achieved)
 
-        # Get current controller gains
-        kp_current, kd_current = self.pd_controller.get_current_gains()
-
-        # ============================================================
-        # Store Debug Information
-        # ============================================================
-        self.debug_info = {
-            # Torque decomposition
-            "tau_baseline": tau_baseline,
-            "tau_compensation": torque_compensation,  # MODIFICATION: Direct additive term
-            "tau_total": tau_total,
-            "tau_clipped": tau_clipped,
-            "limits_hit": limits_hit,
-            
-            # IK information
-            "ik_success": ik_success,
-            "ik_error": ik_error,
-            "q_target": q_target,
-            
-            # Tracking errors
-            "position_error_cartesian": position_error,
-            "position_error_joint": joint_position_error,
-            "velocity_error_joint": joint_velocity_error,
-            
-            # Controller state
-            "current_delay": current_delay if current_delay is not None else self.pd_controller.current_delay,
-            "gain_ratio": self.pd_controller.current_gain_ratio,
-            "kp_current": kp_current,
-            "kd_current": kd_current,
-            
-            # Desired vs achieved
-            "qdd_desired": qdd_desired,
-            "q_achieved": q_achieved,
-            "qd_achieved": qd_achieved,
-            "qd_target": qd_target,
-        }
-
-        # ============================================================
-        # Return Step Information
-        # ============================================================
         step_info = {
-            "position_error": position_error,
             "joint_error": joint_position_error,
             "velocity_error": joint_velocity_error,
-            "ik_success": ik_success,
             "limits_hit": limits_hit,
-            "current_delay": self.debug_info["current_delay"],
-            "gain_ratio": self.pd_controller.current_gain_ratio,
         }
-
         return step_info
 
-    def get_state(self) -> dict:
-        """
-        Returns the current state of the follower robot.
-        
-        Returns:
-            dict with keys:
-                - joint_pos: Current joint positions (7,)
-                - joint_vel: Current joint velocities (7,)
-                - ee_pos: End-effector Cartesian position (3,)
-                - gravity_torque: Gravity compensation torques (7,)
-                - controller_gains: Current adaptive PD gains
-        """
-        q = self.data.qpos[:self.n_joints].copy()
-        qd = self.data.qvel[:self.n_joints].copy()
-        ee_pos = self.get_ee_position()
-
-        # Compute gravity torque by setting velocities to zero
-        qvel_save = self.data.qvel.copy()
-        self.data.qvel[:] = 0
-        mujoco.mj_forward(self.model, self.data)
-        G = -self.data.qfrc_bias[:self.n_joints].copy()
-        self.data.qvel[:] = qvel_save
-        mujoco.mj_forward(self.model, self.data)
-
-        # Get current controller gains
-        kp_current, kd_current = self.pd_controller.get_current_gains()
-
-        return {
-            "joint_pos": q,
-            "joint_vel": qd,
-            "ee_pos": ee_pos,
-            "gravity_torque": G,
-            "controller_gains": {
-                "kp": kp_current,
-                "kd": kd_current,
-                "gain_ratio": self.pd_controller.current_gain_ratio,
-                "current_delay": self.pd_controller.current_delay,
-            },
-        }
-
-    def get_ee_position(self) -> NDArray[np.float64]:
-        """
-        Return the current end-effector (TCP) position in world coordinates.
-        
-        Returns:
-            tcp_position: 3D position of TCP in world frame (3,)
-        """
-        ee_id = self.model.body(self.ee_body_name).id
-        flange_position = self.data.xpos[ee_id].copy()
-        flange_rotation = self.data.xmat[ee_id].reshape(3, 3)
-        tcp_position = flange_position + flange_rotation @ self.tcp_offset
-        return tcp_position
-
-    def get_debug_info(self) -> dict:
-        """
-        Get comprehensive debug information about the control system.
-        
-        Returns:
-            dict containing torque decomposition, tracking errors, and controller state
-        """
-        return self.debug_info.copy()
-
-    def set_nominal_gains(
-        self,
-        kp_nominal: Optional[NDArray[np.float64]] = None,
-        kd_nominal: Optional[NDArray[np.float64]] = None,
-    ) -> None:
-        """
-        Update nominal PD gains during runtime.
-        
-        Args:
-            kp_nominal: New nominal proportional gains
-            kd_nominal: New nominal derivative gains
-        """
-        self.pd_controller.set_nominal_gains(kp_nominal, kd_nominal)
-
-    def get_controller_info(self) -> dict:
-        """
-        Get information about controller configuration.
-        
-        Returns:
-            dict with controller parameters and current state
-        """
-        kp_nom, kd_nom = self.pd_controller.get_nominal_gains()
-        kp_cur, kd_cur = self.pd_controller.get_current_gains()
-
-        return {
-            "nominal_gains": {"kp": kp_nom, "kd": kd_nom},
-            "current_gains": {"kp": kp_cur, "kd": kd_cur},
-            "gain_adaptation": {
-                "min_gain_ratio": self.pd_controller.min_gain_ratio,
-                "delay_threshold": self.pd_controller.delay_threshold,
-                "current_ratio": self.pd_controller.current_gain_ratio,
-            },
-            "ik_solver_config": {
-                "position_tolerance": self.ik_solver.position_tolerance,
-                "max_joint_change": self.ik_solver.max_joint_change,
-                "continuity_gain": self.ik_solver.continuity_gain,
-            },
-        }
-        
+    def get_joint_state(self) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """Returns the current joint positions and velocities."""
+        return (
+            self.data.qpos[:self.n_joints].copy(),
+            self.data.qvel[:self.n_joints].copy()
+        )

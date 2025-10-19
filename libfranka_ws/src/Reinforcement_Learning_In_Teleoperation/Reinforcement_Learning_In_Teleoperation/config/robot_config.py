@@ -75,6 +75,34 @@ TRAJECTORY_SCALE_DEFAULT = np.array([0.1, 0.3], dtype=np.float64)
 TRAJECTORY_FREQUENCY_DEFAULT = 0.1
 
 ######################################
+# RL agent parameters
+######################################
+
+# Maximum steps per episode
+MAX_EPISODE_STEPS = 1000
+
+# Termination condition for high joint error (radians)
+MAX_JOINT_ERROR_TERMINATION = 3.0  # radians
+
+# Length of history buffers for observation space
+ACTION_HISTORY_LEN = 5
+TARGET_HISTORY_LEN = 10
+
+MAX_TORQUE_COMPENSATION = np.array([
+    15.0, 15.0, 15.0, 15.0, 5.0, 5.0, 5.0
+], dtype=np.float64)
+
+OBS_DIM = (
+    N_JOINTS +  # remote_q_pos (current joint position)
+    N_JOINTS +  # remote_q_vel (current joint velocity)
+    N_JOINTS +  # delayed_target_q (delayed target joint position)
+    (N_JOINTS * TARGET_HISTORY_LEN) +  # target_q_history
+    (N_JOINTS * TARGET_HISTORY_LEN) +  # target_qd_history
+    1 +         # delay_magnitude
+    (N_JOINTS * ACTION_HISTORY_LEN)     # action_history
+)
+
+######################################
 
 # Robot configuration validation
 def _validate_config():
