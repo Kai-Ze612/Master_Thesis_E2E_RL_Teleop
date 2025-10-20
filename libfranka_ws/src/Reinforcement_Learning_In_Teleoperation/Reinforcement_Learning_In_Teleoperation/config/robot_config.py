@@ -2,9 +2,7 @@
 Shared Robot configuration setting
 """
 
-from __future__ import annotations
 import numpy as np
-from numpy.typing import NDArray
 
 # Model paths
 DEFAULT_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
@@ -15,22 +13,22 @@ DEFAULT_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implement
 
 N_JOINTS = 7
 EE_BODY_NAME = "panda_hand"
-TCP_OFFSET = np.array([0.0, 0.0, 0.1034], dtype=np.float64)  # meters
+TCP_OFFSET = np.array([0.0, 0.0, 0.1034], dtype=np.float32)  # meters
 
 # Joint limits (radians)
 JOINT_LIMITS_LOWER = np.array([
     -2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973
-], dtype=np.float64)
+], dtype=np.float32)
 
 JOINT_LIMITS_UPPER = np.array([
     2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973
-], dtype=np.float64)
+], dtype=np.float32)
 
 # Torque limits (Nm)
-TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float64)
+TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
 
 # Initial joint configuration (comfortable home position)
-INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], dtype=np.float64)
+INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], dtype=np.float32)
 
 # Joint limits margin to avoid singularities (radians)
 JOINT_LIMIT_MARGIN = 0.05 # radians
@@ -43,12 +41,12 @@ JOINT_LIMIT_MARGIN = 0.05 # radians
 DEFAULT_CONTROL_FREQ = 500
 
 # Local robot PD gains (joint-specific)
-KP_LOCAL_DEFAULT = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float64)
-KD_LOCAL_DEFAULT = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0], dtype=np.float64)
+KP_LOCAL_DEFAULT = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
+KD_LOCAL_DEFAULT = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0], dtype=np.float32)
 
 # Remote robot PD gains (nominal, before adaptation)
-KP_REMOTE_NOMINAL = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float64)
-KD_REMOTE_NOMINAL = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0], dtype=np.float64)
+KP_REMOTE_NOMINAL = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
+KD_REMOTE_NOMINAL = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0], dtype=np.float32)
 
 ######################################
 # IK solver parameters
@@ -66,10 +64,10 @@ IK_CONTINUITY_GAIN = 0.5
 ######################################
 
 # Default trajectory center (meters)
-TRAJECTORY_CENTER_DEFAULT = np.array([0.4, 0.0, 0.6], dtype=np.float64)
+TRAJECTORY_CENTER_DEFAULT = np.array([0.4, 0.0, 0.6], dtype=np.float32)
 
 # Default trajectory scale (meters)
-TRAJECTORY_SCALE_DEFAULT = np.array([0.1, 0.3], dtype=np.float64)
+TRAJECTORY_SCALE_DEFAULT = np.array([0.1, 0.3], dtype=np.float32)
 
 # Default frequency (Hz)
 TRAJECTORY_FREQUENCY_DEFAULT = 0.1
@@ -90,7 +88,7 @@ TARGET_HISTORY_LEN = 10
 
 MAX_TORQUE_COMPENSATION = np.array([
     15.0, 15.0, 15.0, 15.0, 5.0, 5.0, 5.0
-], dtype=np.float64)
+], dtype=np.float32)
 
 OBS_DIM = (
     N_JOINTS +  # remote_q_pos (current joint position)

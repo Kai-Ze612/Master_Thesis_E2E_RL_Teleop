@@ -120,16 +120,6 @@ class TeleoperationEnvWithDelay(gym.Env):
             low=-np.inf, high=np.inf, shape=(OBS_DIM,), dtype=np.float32
         )
         
-        self.reset()
-        dummy_obs = self._get_observation()
-        assert dummy_obs.shape[0] == OBS_DIM, (
-            f"Observation dimension mismatch! config.py specifies OBS_DIM={OBS_DIM}, "
-            f"but the actual constructed observation has dimension {dummy_obs.shape[0]}."
-        )
-        self._print_configuration(OBS_DIM)
-        # We must reset again to ensure a clean start for the user.
-        self.reset()
-        
     def reset(
         self,
         seed: Optional[int] = None,
@@ -139,7 +129,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         super().reset(seed=seed)
         self.current_step = 0
         self.episode_count += 1
-        self.delay_simulator.seed(seed)
 
         leader_start_q, _ = self.leader.reset(seed=seed, options=options)
         self.remote_robot.reset(initial_qpos=self.initial_qpos)
