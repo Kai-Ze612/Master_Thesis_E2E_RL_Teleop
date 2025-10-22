@@ -1,10 +1,15 @@
 """
-The main RL training environment with delay simulation.
+The main RL environment (Gymnasium) with delay simulation.
 
-Integrated with:
-- DelaySimulator for realistic network delay patterns
-- LocalRobotSimulator for reference joint trajectory generation
-- RemoteRobotSimulator (joint space version) for follower robot dynamics
+Architecture:
+- Agent lives on the LOCAL side.
+- Leader (LocalRobotSimulator): Generates reference trajectories (real-time to agent).
+- Delay Simulator:
+    - Models Action Delay (alpha) for commands (Agent -> Remote).
+    - Models Observation Delay (omega) for state/reward (Remote -> Agent).
+- Follower (RemoteRobotSimulator): Executes delayed commands.
+- RL Agent: Learns torque corrections.
+
 """
 
 # RL library imports
@@ -41,19 +46,8 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     OBS_DIM
 )
 
-class TeleoperationEnvWithDelay(gym.Env):
-    """
-    Gymnasium environment for teleoperation with variable network delay.
 
-    Architecture:
-    - Agent lives on the LOCAL side.
-    - Leader (LocalRobotSimulator): Generates reference trajectories (real-time to agent).
-    - Delay Simulator:
-        - Models Action Delay (alpha) for commands (Agent -> Remote).
-        - Models Observation Delay (omega) for state/reward (Remote -> Agent).
-    - Follower (RemoteRobotSimulator): Executes delayed commands.
-    - RL Agent: Learns torque corrections.
-    """
+class TeleoperationEnvWithDelay(gym.Env):
 
     metadata = {'render_modes': []}
 
@@ -112,7 +106,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.leader_qd_history = deque(maxlen=leader_buffer_size)
         
         # Buffer for agent's action (Agent to Remote) 
-        action_buffer_size = max(50, max_action_delay + self.action_history_len + 10)
+        action_buffer_size = max(100, max_action_delay + self.action_history_len + 10)
         self.action_history = deque(maxlen=action_buffer_size)
 
         # Buffer for ground truth remote states(Remote to Agent)
@@ -336,7 +330,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         terminated = at_limits or high_error
         return terminated, -10.0 if terminated else 0.0
 
-    def _get_info(self, real_time_error: float) -> Dict[str, Any]:
+    # AFTER
+    def _get_info(self, real_time_error: float = 0.0) -> Dict[str, Any]:
         """Returns diagnostic information for logging (ground truth)."""
         return {
             'real_time_joint_error': real_time_error,

@@ -38,44 +38,39 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
 class RemoteRobotSimulator:
     def __init__(
         self,
-        model_path: str = DEFAULT_MODEL_PATH,
-        control_freq: int = DEFAULT_CONTROL_FREQ,
-        torque_limits: NDArray[np.float64] = TORQUE_LIMITS,
-        joint_limits_lower: NDArray[np.float64] = JOINT_LIMITS_LOWER,
-        joint_limits_upper: NDArray[np.float64] = JOINT_LIMITS_UPPER,
-        kp_remote: NDArray[np.float64] = KP_REMOTE_NOMINAL,
-        kd_remote: NDArray[np.float64] = KD_REMOTE_NOMINAL,
     ):
-        
+       
         # Initialize MuJoCo model and data
-        self.model = mujoco.MjModel.from_xml_path(model_path)
+        self.model_path = DEFAULT_MODEL_PATH
+        self.model = mujoco.MjModel.from_xml_path(self.model_path)
         self.data = mujoco.MjData(self.model)
-        
-        self.n_joints = N_JOINTS
-        self.ee_body_name = EE_BODY_NAME
+
+        self.n_joints: int = N_JOINTS
+        self.ee_body_name: str = EE_BODY_NAME
 
         # Time step configuration
-        self.dt = 1.0 / control_freq
-        self.control_freq = control_freq
+        self.control_freq: int = DEFAULT_CONTROL_FREQ
+        self.dt = 1.0 / self.control_freq
+        self.control_freq = self.control_freq
 
         # Simulation frequency and substeps
         sim_freq = int(1.0 / self.model.opt.timestep)
-        if sim_freq % control_freq != 0:
-            raise ValueError(f"Simulation frequency ({sim_freq} Hz) must be a multiple of control frequency ({control_freq} Hz).")
+        if sim_freq % self.control_freq != 0:
+            raise ValueError(f"Simulation frequency ({sim_freq} Hz) must be a multiple of control frequency ({self.control_freq} Hz).")
 
-        self.n_substeps = sim_freq // control_freq
+        self.n_substeps = sim_freq // self.control_freq
 
         # Actuator and joint limits
-        self.torque_limits = torque_limits.copy()
-        self.joint_limits_lower = joint_limits_lower.copy()
-        self.joint_limits_upper = joint_limits_upper.copy()
+        self.torque_limits = TORQUE_LIMITS.copy()
+        self.joint_limits_lower = JOINT_LIMITS_LOWER.copy()
+        self.joint_limits_upper = JOINT_LIMITS_UPPER.copy()
 
         # TCP offset from flange to end-effector (in meters)
         self.tcp_offset = TCP_OFFSET.copy()
 
         # PD gains
-        self.kp = kp_remote.copy()
-        self.kd = kd_remote.copy()
+        self.kp = KP_REMOTE_NOMINAL
+        self.kd = KD_REMOTE_NOMINAL
 
         # State tracking
         self.last_q_target = np.zeros(self.n_joints)

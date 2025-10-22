@@ -11,8 +11,9 @@ import argparse
 import numpy as np
 
 # Stable Baselines3 imports
-from stable_baselines3 import SAC
+from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import (
     EvalCallback,
@@ -23,7 +24,7 @@ from stable_baselines3.common.callbacks import (
 from Reinforcement_Learning_In_Teleoperation.rl_agent.training_env import TeleoperationEnvWithDelay
 from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
 from Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import TrajectoryType
-from Reinforcement_Learning_In_Teleoperation.rl_agent.custom_policy import get_policy_kwargs
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -115,10 +116,15 @@ def train_agent(args: argparse.Namespace) -> None:
 
     logger.info(f"Output directory: {output_dir}")
     logger.info(f"Training on: {args.trajectory_type.value} with {args.config.name}")
-
     logger.info("Creating training and evaluation environments...")
-    env = make_env(args, for_eval=False)
+
+    env = make_vec_env(
+        lambda: make_env(args, for_eval=False),
+        n_envs=args.n_envs,
+        vec_env_cls=SubprocVecEnv
+    )
     eval_env = make_env(args, for_eval=True)
+    
     logger.info("Environments created successfully.")
 
     # Setup Callbacks
@@ -126,16 +132,18 @@ def train_agent(args: argparse.Namespace) -> None:
         eval_env,
         best_model_save_path=model_dir,
         log_path=log_dir,
-        eval_freq=args.eval_freq,
+        eval_freq=args.eval_freq // args.n_envs,
         n_eval_episodes=10,
         deterministic=True,
         verbose=1
     )
+    
     checkpoint_callback = CheckpointCallback(
-        save_freq=args.save_freq,
+        save_freq=args.save_freq // args.n_envs,
         save_path=model_dir,
-        name_prefix="sac_checkpoint"
+        name_prefix="ppo_checkpoint"
     )
+    
     callbacks = [eval_callback, checkpoint_callback, TrackingMetricsCallback()]
 
     # Early Stopping Callback
@@ -147,25 +155,31 @@ def train_agent(args: argparse.Namespace) -> None:
         )
         callbacks.append(early_stopping_callback)
         logger.info(f"Early stopping enabled: patience={args.patience}, min_improvement={args.min_improvement}")
-    
-    policy_kwargs = get_policy_kwargs(args.policy_type, args.net_arch)
 
-    model = SAC(
-        'MlpPolicy',
+    # Policy Keyword Arguments
+    policy_kwargs = dict(
+        net_arch=dict(pi=args.net_arch, vf=args.net_arch), # Use same arch for policy and value
+        lstm_hidden_size=args.lstm_size,
+        enable_critic_lstm=True # Use LSTM for the critic as well
+    )
+
+    model = RecurrentPPO(
+        'MlpLstmPolicy',
         env,
         learning_rate=args.learning_rate,
-        buffer_size=args.buffer_size,
+        n_steps=args.n_steps,
         batch_size=args.batch_size,
-        ent_coef='auto',
+        n_epochs=args.n_epochs,
         gamma=args.gamma,
-        tau=args.tau,
-        learning_starts=args.learning_starts,
+        gae_lambda=args.gae_lambda,
+        clip_range=args.clip_range,
+        ent_coef=args.ent_coef,
         seed=args.seed,
         verbose=1,
         tensorboard_log=log_dir,
-        policy_kwargs=policy_kwargs
+        policy_kwargs=policy_kwargs # Pass the new kwargs
     )
-    logger.info("SAC model created.")
+    logger.info(f"RecurrentPPO (MlpLstmPolicy) model created with LSTM size {args.lstm_size}.")
 
     # Train models
     try:
@@ -201,20 +215,23 @@ def main():
     exp_group.add_argument("--timesteps", type=int, default=1_000_000, help="Total training timesteps.")
     exp_group.add_argument("--output-path", type=str, default="./rl_training_output", help="Directory to save models and logs.")
     exp_group.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility.")
+    exp_group.add_argument("--n-envs", type=int, default=8, help="Number of parallel environments for PPO.")
 
     # Policy Configuration
     policy_group = parser.add_argument_group('Policy Configuration')
-    policy_group.add_argument("--policy-type", type=str, default="baseline", choices=["baseline", "interpolation", "learned_predictor"])
+    policy_group.add_argument("--lstm-size", type=int, default=256, help="Size of the LSTM hidden state.")
+    policy_group.add_argument("--net-arch", type=int, nargs='+', default=[512, 256], help="Network architecture (hidden layer sizes) for MLP *after* the LSTM.")
 
-    # --- SAC Hyperparameters ---
-    sac_group = parser.add_argument_group('SAC Hyperparameters')
-    sac_group.add_argument("--learning-rate", "--lr", type=float, default=3e-4, help="Learning rate for the optimizer.")
-    sac_group.add_argument("--buffer-size", type=int, default=200_000, help="Size of the replay buffer.")
-    sac_group.add_argument("--batch-size", type=int, default=512, help="Minibatch size for each training step.")
-    sac_group.add_argument("--gamma", type=float, default=0.99, help="Discount factor.")
-    sac_group.add_argument("--tau", type=float, default=0.005, help="Soft update coefficient for target networks.")
-    sac_group.add_argument("--learning-starts", type=int, default=10_000, help="Number of steps to collect before training starts.")
-    sac_group.add_argument("--net-arch", type=int, nargs='+', default=[512, 256], help="Network architecture (hidden layer sizes).")
+    # --- RecurrentPPO Hyperparameters ---
+    ppo_group = parser.add_argument_group('PPO Hyperparameters')
+    ppo_group.add_argument("--learning-rate", "--lr", type=float, default=3e-4, help="Learning rate for the optimizer.")
+    ppo_group.add_argument("--n-steps", type=int, default=2048, help="Number of steps to run for each environment per update (rollout buffer size).")
+    ppo_group.add_argument("--batch-size", type=int, default=64, help="Minibatch size for PPO epochs.")
+    ppo_group.add_argument("--n-epochs", type=int, default=10, help="Number of epochs to update the policy per rollout.")
+    ppo_group.add_argument("--gamma", type=float, default=0.99, help="Discount factor.")
+    ppo_group.add_argument("--gae-lambda", type=float, default=0.95, help="GAE lambda parameter for advantage estimation.")
+    ppo_group.add_argument("--clip-range", type=float, default=0.2, help="PPO clipping parameter.")
+    ppo_group.add_argument("--ent-coef", type=float, default=1e-4, help="Entropy coefficient for exploration.")
 
     # --- Callback Configuration ---
     cb_group = parser.add_argument_group('Callback Configuration')
