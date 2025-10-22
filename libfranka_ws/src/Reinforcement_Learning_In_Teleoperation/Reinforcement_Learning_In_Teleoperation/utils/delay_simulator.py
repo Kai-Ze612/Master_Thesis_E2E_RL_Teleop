@@ -2,9 +2,9 @@
 Custom setting up delay patterns for teleoperation experiments.
 
 There are three main delay configurations:
-1. Low Delay: Observation delay with 40 ms variance, ~60 ms mean; Action delay fixed at 50 ms.
-2. Medium Delay: Observation delay with 40 ms variance, ~100 ms mean; Action delay fixed at 50 ms.
-3. High Delay: Observation delay with 40 ms variance, ~220 ms mean; Action delay fixed at 50 ms.
+1. Low Delay: Observation delay with 40 ms variance, ~60 ms mean; Action delay with 40 ms variance, ~50 ms mean.
+2. Medium Delay: Observation delay with 40 ms variance, ~140 ms mean; Action delay with 40 ms variance, ~50 ms mean.
+3. High Delay: Observation delay with 40 ms variance, ~220 ms mean; Action delay with 40 ms variance, ~50 ms mean.
 4. No Delay Baseline: No observation or action delay.
 """
 
@@ -28,14 +28,18 @@ class ExperimentConfig(IntEnum):
 
 @dataclass(frozen=True)
 class DelayParameters:
-    action_delay: int
+    action_delay_min: int
+    action_delay_max: int
     obs_delay_min: int
     obs_delay_max: int
     name: str
     
     def __post_init__(self) -> None:
-        if self.action_delay < 0:
-            raise ValueError("Action delay must be non-negative")
+        """Validate delay parameters."""
+        if self.action_delay_min < 0 or self.action_delay_max < 0:
+            raise ValueError("Action delays must be non-negative")
+        if self.action_delay_min > self.action_delay_max:
+            raise ValueError("action_delay_min cannot be greater than action_delay_max")
         if self.obs_delay_min < 0 or self.obs_delay_max < 0:
             raise ValueError("Observation delays must be non-negative")
         if self.obs_delay_min > self.obs_delay_max:
@@ -45,37 +49,43 @@ class DelaySimulator:
     
     _DELAY_CONFIGS: dict[ExperimentConfig, DelayParameters] = {
         ExperimentConfig.LOW_DELAY: DelayParameters(
-            action_delay=50,
+            action_delay_min =30,
+            action_delay_max=70,
             obs_delay_min=40,
             obs_delay_max=80,
             name="Low Delay"
         ),
         ExperimentConfig.MEDIUM_DELAY: DelayParameters(
-            action_delay=50,
+            action_delay_min=30,
+            action_delay_max=70,
             obs_delay_min=120,
             obs_delay_max=160,
             name="Medium Delay"
         ),
         ExperimentConfig.HIGH_DELAY: DelayParameters(
-            action_delay=50,
+            action_delay_min=30,
+            action_delay_max=70,
             obs_delay_min=200,
             obs_delay_max=240,
             name="High Delay"
         ),
         ExperimentConfig.NO_DELAY_BASELINE: DelayParameters(
-            action_delay=0,
+            action_delay_min=0,
+            action_delay_max=0,
             obs_delay_min=0,
             obs_delay_max=0,
             name="No Delay Baseline"
         ),
         ExperimentConfig.OBSERVATION_DELAY_ONLY: DelayParameters(
-            action_delay=0,
+            action_delay_min=0,
+            action_delay_max=0,
             obs_delay_min=100,
             obs_delay_max=100,
             name="Observation Delay Only"
         ),
         ExperimentConfig.ACTION_DELAY_ONLY: DelayParameters(
-            action_delay=50,
+            action_delay_min=30,
+            action_delay_max=70,
             obs_delay_min=0,
             obs_delay_max=0,
             name="Action Delay Only"
@@ -109,14 +119,20 @@ class DelaySimulator:
         self._config_name = params.name
         
         # Convert delays from milliseconds to discrete steps
-        self._action_delay_steps = int(params.action_delay / step_time_ms)
+        self._action_delay_min_steps = int(params.action_delay_min / step_time_ms)
+        self._action_delay_max_steps = int(params.action_delay_max / step_time_ms)
         self._obs_delay_min_steps = int(params.obs_delay_min / step_time_ms)
         self._obs_delay_max_steps = int(params.obs_delay_max / step_time_ms)
         
         # Ensure at least 1 step of delay (unless no-delay baseline)
-        if self._config != ExperimentConfig.NO_DELAY_BASELINE:
+        if self._config != ExperimentConfig.NO_DELAY_BASELINE and self._config != ExperimentConfig.ACTION_DELAY_ONLY:
             self._obs_delay_min_steps = max(1, self._obs_delay_min_steps)
             self._obs_delay_max_steps = max(1, self._obs_delay_max_steps)
+        
+        # Ensure at least 1 step of action delay (unless no-delay baseline)
+        if self._config != ExperimentConfig.NO_DELAY_BASELINE and self._config != ExperimentConfig.OBSERVATION_DELAY_ONLY:
+            self._action_delay_min_steps = max(1, self._action_delay_min_steps)
+            self._action_delay_max_steps = max(1, self._action_delay_max_steps)
     
     @property
     def control_freq(self) -> int:
@@ -132,7 +148,8 @@ class DelaySimulator:
     
     def get_observation_delay(self) -> int:
 
-        if self._config == ExperimentConfig.NO_DELAY_BASELINE:
+        if self._config == ExperimentConfig.NO_DELAY_BASELINE or \
+           self._config == ExperimentConfig.ACTION_DELAY_ONLY:
             return 0
         
         # Sample uniformly from [min, max] inclusive
@@ -142,7 +159,15 @@ class DelaySimulator:
         )
     
     def get_action_delay(self) -> int:
-        return self._action_delay_steps
+        
+        if self._config == ExperimentConfig.NO_DELAY_BASELINE or \
+           self._config == ExperimentConfig.OBSERVATION_DELAY_ONLY:
+            return 0
+            
+        return self._rng.randint(
+            self._action_delay_min_steps,
+            self._action_delay_max_steps + 1
+        )
     
     def get_observation_delay_steps(self, buffer_length: int) -> int:
         
@@ -150,12 +175,13 @@ class DelaySimulator:
             raise ValueError(f"buffer_length must be non-negative, got {buffer_length}")
         
         # No delay baseline or empty buffer
-        if self._config == ExperimentConfig.NO_DELAY_BASELINE or buffer_length == 0:
+        if self._config == ExperimentConfig.NO_DELAY_BASELINE or \
+           self._config == ExperimentConfig.ACTION_DELAY_ONLY or \
+           buffer_length == 0:
             return 0
         
         # If buffer too small, return maximum possible delay
         if buffer_length <= self._obs_delay_min_steps:
-
             warnings.warn(
                 f"Buffer length {buffer_length} insufficient for minimum "
                 f"observation delay {self._obs_delay_min_steps}. "
@@ -165,23 +191,29 @@ class DelaySimulator:
         
         # Sample delay within buffer constraints
         max_possible_delay = min(self._obs_delay_max_steps, buffer_length - 1)
+        min_possible_delay = min(self._obs_delay_min_steps, max_possible_delay)
         
         return self._rng.randint(
-            self._obs_delay_min_steps,
+            min_possible_delay,
             max_possible_delay + 1
         )
     
     def get_action_delay_steps(self) -> int:
-  
-        if self._config == ExperimentConfig.NO_DELAY_BASELINE:
+
+        if self._config == ExperimentConfig.NO_DELAY_BASELINE or \
+           self._config == ExperimentConfig.OBSERVATION_DELAY_ONLY:
             return 0
-        
-        return self._action_delay_steps
+
+        return self._rng.randint(
+            self._action_delay_min_steps,
+            self._action_delay_max_steps + 1
+        )
     
     def __repr__(self) -> str:
 
         return (
-            f"DelaySimulator(control_freq={self._control_freq}, "
-            f"config={self._config.name}, "
-            f"name='{self._config_name}')"
+            f"DelaySimulator(config='{self._config_name}', "
+            f"control_freq={self._control_freq}, "
+            f"obs_delay_steps=({self._obs_delay_min_steps}, {self._obs_delay_max_steps}), "
+            f"act_delay_steps=({self._action_delay_min_steps}, {self._action_delay_max_steps}))"
         )

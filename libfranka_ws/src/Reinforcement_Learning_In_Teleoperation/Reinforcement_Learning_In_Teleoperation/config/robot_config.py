@@ -7,6 +7,9 @@ import numpy as np
 # Model paths
 DEFAULT_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
 
+# RL model paths
+DEFAULT_RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Reinforcement_Learning_In_Teleoperation/Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output"
+
 ######################################
 # Franka panda robot parameters
 ######################################
@@ -39,6 +42,9 @@ JOINT_LIMIT_MARGIN = 0.05 # radians
 
 # Default control frequency (Hz)
 DEFAULT_CONTROL_FREQ = 500
+
+# Default publish frequency for robot state (Hz)
+DEFAULT_PUBLISH_FREQ = 100
 
 # Local robot PD gains (joint-specific)
 KP_LOCAL_DEFAULT = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
@@ -83,21 +89,33 @@ MAX_EPISODE_STEPS = 1000
 MAX_JOINT_ERROR_TERMINATION = 3.0  # radians
 
 # Length of history buffers for observation space
-ACTION_HISTORY_LEN = 5
+ACTION_HISTORY_LEN = 10
 TARGET_HISTORY_LEN = 10
+OBS_HISTORY_LEN = 10
 
 MAX_TORQUE_COMPENSATION = np.array([
-    15.0, 15.0, 15.0, 15.0, 5.0, 5.0, 5.0
+    10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 5.0
 ], dtype=np.float32)
 
+_OBS_PACKET_FEATURE_SIZE = N_JOINTS + N_JOINTS + 1
+
 OBS_DIM = (
-    N_JOINTS +  # remote_q_pos (current joint position)
-    N_JOINTS +  # remote_q_vel (current joint velocity)
-    N_JOINTS +  # delayed_target_q (delayed target joint position)
-    (N_JOINTS * TARGET_HISTORY_LEN) +  # target_q_history
-    (N_JOINTS * TARGET_HISTORY_LEN) +  # target_qd_history
-    1 +         # delay_magnitude
-    (N_JOINTS * ACTION_HISTORY_LEN)     # action_history
+    # Current (delayed) state from the *most recent* packet
+    N_JOINTS +              # delayed_remote_q
+    N_JOINTS +              # delayed_remote_qd
+    1 +                     # obs_delay_magnitude
+    
+    # Real-time target/goal
+    N_JOINTS +              # realtime_target_q
+    (N_JOINTS * TARGET_HISTORY_LEN) + # target_q_history
+    (N_JOINTS * TARGET_HISTORY_LEN) + # target_qd_history
+    
+    # Action info
+    1 +                     # act_delay_magnitude
+    (N_JOINTS * ACTION_HISTORY_LEN) + # action_history
+    
+    # Observation History
+    (_OBS_PACKET_FEATURE_SIZE * OBS_HISTORY_LEN) # obs_history
 )
 
 ######################################

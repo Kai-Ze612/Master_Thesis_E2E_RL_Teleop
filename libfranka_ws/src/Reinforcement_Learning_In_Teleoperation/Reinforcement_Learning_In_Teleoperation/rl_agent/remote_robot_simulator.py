@@ -16,7 +16,7 @@ This module implements:
 """
 
 from __future__ import annotations
-from typing import Optional, Tuple
+from typing import Tuple
 
 import mujoco
 import numpy as np
