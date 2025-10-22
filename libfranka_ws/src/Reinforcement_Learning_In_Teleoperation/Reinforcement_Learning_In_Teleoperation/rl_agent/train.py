@@ -97,7 +97,8 @@ def make_env(args: argparse.Namespace, for_eval: bool = False) -> Monitor:
     env = TeleoperationEnvWithDelay(
         experiment_config=args.config,
         trajectory_type=args.trajectory_type,
-        randomize_trajectory=args.randomize_trajectory and not for_eval
+        randomize_trajectory=args.randomize_trajectory and not for_eval,
+        obs_mode=args.obs_mode  # ← ADD THIS LINE
     )
     return Monitor(env)
 
@@ -216,7 +217,14 @@ def main():
     exp_group.add_argument("--output-path", type=str, default="./rl_training_output", help="Directory to save models and logs.")
     exp_group.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility.")
     exp_group.add_argument("--n-envs", type=int, default=8, help="Number of parallel environments for PPO.")
-
+    exp_group.add_argument(
+        "--obs-mode", 
+        type=str, 
+        default="minimal", 
+        choices=["minimal", "context", "full"],
+        help="Observation space mode: minimal (51d, recommended), context (93d), full (243d)"
+    )
+    
     # Policy Configuration
     policy_group = parser.add_argument_group('Policy Configuration')
     policy_group.add_argument("--lstm-size", type=int, default=256, help="Size of the LSTM hidden state.")

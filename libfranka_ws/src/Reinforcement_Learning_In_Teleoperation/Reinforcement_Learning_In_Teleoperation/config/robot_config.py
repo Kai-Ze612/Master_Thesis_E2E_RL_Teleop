@@ -4,6 +4,8 @@ Shared Robot configuration setting
 
 import numpy as np
 
+from build.Reinforcement_Learning_In_Teleoperation.Reinforcement_Learning_In_Teleoperation.config.robot_config import MAX_TORQUE_COMPENSATION
+
 # Model paths
 DEFAULT_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
 
@@ -88,35 +90,48 @@ MAX_EPISODE_STEPS = 1000
 # Termination condition for high joint error (radians)
 MAX_JOINT_ERROR_TERMINATION = 3.0  # radians
 
-# Length of history buffers for observation space
-ACTION_HISTORY_LEN = 10
-TARGET_HISTORY_LEN = 10
-OBS_HISTORY_LEN = 10
-
 MAX_TORQUE_COMPENSATION = np.array([
     10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 5.0
 ], dtype=np.float32)
 
-_OBS_PACKET_FEATURE_SIZE = N_JOINTS + N_JOINTS + 1
+TARGET_HISTORY_LEN = 10   # How many leader trajectory points to keep
+ACTION_HISTORY_LEN = 5    # How many past actions to buffer
+OBS_HISTORY_LEN = 3       # How many observation packets to keep
 
+# Observation packet structure (Remote → Agent)
+# Each packet contains: (q_remote, qd_remote, obs_delay_magnitude)
+OBS_PACKET_FEATURE_SIZE = N_JOINTS + N_JOINTS + 1  # = 15 features per packet
+
+# Observation space dimensions for different modes
+# NOTE: These are calculated dynamically in the environment based on obs_mode
+# Listed here for documentation purposes:
+#
+# Minimal mode (51 dims):
+#   - Current delayed state: 7 + 7 = 14
+#   - Real-time target: 7 + 7 = 14
+#   - Error signals: 7 + 7 = 14
+#   - Action & delays: 7 + 1 + 1 = 9
+#   Total: 51 dims
+#
+# Context mode (93 dims):
+#   - Minimal: 51
+#   - Previous observation: 7 + 7 = 14
+#   - Short target history: 7 * 2 = 14
+#   - Short action history: 7 * 2 = 14
+#   Total: 93 dims
+#
+# Full mode (243 dims):
 OBS_DIM = (
-    # Current (delayed) state from the *most recent* packet
-    N_JOINTS +              # delayed_remote_q
-    N_JOINTS +              # delayed_remote_qd
-    1 +                     # obs_delay_magnitude
-    
-    # Real-time target/goal
-    N_JOINTS +              # realtime_target_q
-    (N_JOINTS * TARGET_HISTORY_LEN) + # target_q_history
-    (N_JOINTS * TARGET_HISTORY_LEN) + # target_qd_history
-    
-    # Action info
-    1 +                     # act_delay_magnitude
-    (N_JOINTS * ACTION_HISTORY_LEN) + # action_history
-    
-    # Observation History
-    (_OBS_PACKET_FEATURE_SIZE * OBS_HISTORY_LEN) # obs_history
-)
+    N_JOINTS +                              # delayed_remote_q: 7
+    N_JOINTS +                              # delayed_remote_qd: 7
+    1 +                                     # obs_delay_magnitude: 1
+    N_JOINTS +                              # realtime_target_q: 7
+    (N_JOINTS * TARGET_HISTORY_LEN) +       # target_q_history: 70
+    (N_JOINTS * TARGET_HISTORY_LEN) +       # target_qd_history: 70
+    1 +                                     # act_delay_magnitude: 1
+    (N_JOINTS * ACTION_HISTORY_LEN) +       # action_history: 35
+    (OBS_PACKET_FEATURE_SIZE * OBS_HISTORY_LEN)  # obs_history: 45
+)  # Total: 243 dims
 
 ######################################
 
@@ -131,18 +146,27 @@ def _validate_config():
     assert KD_LOCAL_DEFAULT.shape == (N_JOINTS,), f"KD_LOCAL_DEFAULT must have shape ({N_JOINTS},)"
     assert KP_REMOTE_NOMINAL.shape == (N_JOINTS,), f"KP_REMOTE_NOMINAL must have shape ({N_JOINTS},)"
     assert KD_REMOTE_NOMINAL.shape == (N_JOINTS,), f"KD_REMOTE_NOMINAL must have shape ({N_JOINTS},)"
+    assert MAX_TORQUE_COMPENSATION.shape == (N_JOINTS,), f"MAX_TORQUE_COMPENSATION must have shape ({N_JOINTS},)"
     assert 0 < JOINT_LIMIT_MARGIN < 0.5, "JOINT_LIMIT_MARGIN should be reasonable (0 < margin < 0.5 rad)"
     assert np.all(JOINT_LIMITS_LOWER < JOINT_LIMITS_UPPER), "All lower joint limits must be strictly less than upper joint limits."
     assert np.all(INITIAL_JOINT_CONFIG >= JOINT_LIMITS_LOWER) and \
-       np.all(INITIAL_JOINT_CONFIG <= JOINT_LIMITS_UPPER), \
-       "Initial joint configuration must be within the joint limits."
+           np.all(INITIAL_JOINT_CONFIG <= JOINT_LIMITS_UPPER), \
+           "Initial joint configuration must be within the joint limits."
     assert np.all(TORQUE_LIMITS >= 0), "Torque limits must be non-negative."
+    assert np.all(MAX_TORQUE_COMPENSATION >= 0), "Max torque compensation must be non-negative."
     assert np.all(KP_LOCAL_DEFAULT >= 0), "Local Kp gains must be non-negative."
     assert np.all(KD_LOCAL_DEFAULT >= 0), "Local Kd gains must be non-negative."
     assert TCP_OFFSET.shape == (3,), "TCP_OFFSET must be a 3D vector."
     assert TRAJECTORY_CENTER_DEFAULT.shape == (3,), "TRAJECTORY_CENTER_DEFAULT must be a 3D vector."
+    assert MAX_EPISODE_STEPS > 0, "MAX_EPISODE_STEPS must be positive."
+    assert MAX_JOINT_ERROR_TERMINATION > 0, "MAX_JOINT_ERROR_TERMINATION must be positive."
+    assert TARGET_HISTORY_LEN > 0, "TARGET_HISTORY_LEN must be positive."
+    assert ACTION_HISTORY_LEN > 0, "ACTION_HISTORY_LEN must be positive."
+    assert OBS_HISTORY_LEN > 0, "OBS_HISTORY_LEN must be positive."
+    assert OBS_PACKET_FEATURE_SIZE == (2 * N_JOINTS + 1), f"OBS_PACKET_FEATURE_SIZE mismatch: expected {2*N_JOINTS+1}, got {OBS_PACKET_FEATURE_SIZE}"
+    assert OBS_DIM == 243, f"OBS_DIM calculation error: expected 243, got {OBS_DIM}"
+    
     print("Robot configuration validated successfully")
-
 
 # Run validation when config is imported
 _validate_config()
