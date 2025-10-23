@@ -87,7 +87,7 @@ ACTION_HISTORY_LEN = 5
 TARGET_HISTORY_LEN = 10
 
 MAX_TORQUE_COMPENSATION = np.array([
-    15.0, 15.0, 15.0, 15.0, 5.0, 5.0, 5.0
+    10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 5.0
 ], dtype=np.float32)
 
 OBS_DIM = (
@@ -101,6 +101,24 @@ OBS_DIM = (
 )
 
 ######################################
+# State Prediction parameters
+######################################
+
+STATE_BUFFER_LENGTH = 20
+PREDICTION_HORIZON = 0
+
+# Model architecture
+PREDICTION_HIDDEN_DIMS = [512, 256]  
+PREDICTION_ACTIVATION = "relu"    
+
+# Input/Output dimensions
+PREDICTION_INPUT_DIM = N_JOINTS * 2 * STATE_BUFFER_LENGTH  # q, qd history * 7 joints * buffer length
+PREDICTION_OUTPUT_DIM = N_JOINTS * 2 
+
+# Delay simulation parameters
+OBSERVATION_DELAY_MIN = 10
+OBSERVATION_DELAY_MAX = 30
+ACTION_DELAY = 5      
 
 # Robot configuration validation
 def _validate_config():
