@@ -1,0 +1,79 @@
+[0.052s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/BULLET_PHYSICS': /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/BULLET_PHYSICS -- -j12 -l12
+[0.637s] [  2%] Built target LinearMath
+[0.637s] [  2%] [32mBuilding CXX object examples/OpenGLWindow/CMakeFiles/OpenGLWindow.dir/X11OpenGLWindow.cpp.o[0m
+[0.637s] [  2%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btAxisSweep3.cpp.o[0m
+[0.637s] [  2%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/Character/btKinematicCharacterController.cpp.o[0m
+[0.638s] [  2%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/ConstraintSolver/btConeTwistConstraint.cpp.o[0m
+[0.638s] [  2%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Anim.cpp.o[0m
+[0.638s] [  2%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/Jacobian.cpp.o[0m
+[0.638s] [  2%] [32mBuilding CXX object src/Bullet3Common/CMakeFiles/Bullet3Common.dir/b3AlignedAllocator.cpp.o[0m
+[0.638s] [  2%] [32mBuilding CXX object examples/ExampleBrowser/CMakeFiles/BulletExampleBrowserLib.dir/OpenGLExampleBrowser.cpp.o[0m
+[0.638s] [  2%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsServerCommandProcessor.cpp.o[0m
+[0.851s] [  2%] [32mBuilding C object examples/OpenGLWindow/CMakeFiles/OpenGLWindow.dir/__/ThirdPartyLibs/glad/glx.c.o[0m
+[0.861s] [  3%] [32mBuilding CXX object src/Bullet3Common/CMakeFiles/Bullet3Common.dir/b3Vector3.cpp.o[0m
+[1.368s] [  3%] [32mBuilding CXX object src/Bullet3Common/CMakeFiles/Bullet3Common.dir/b3Logging.cpp.o[0m
+[1.434s] [  4%] [32mBuilding CXX object src/BulletInverseDynamics/CMakeFiles/BulletInverseDynamics.dir/IDMath.cpp.o[0m
+[1.443s] [  4%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btSoftBody.cpp.o[0m
+[1.469s] [  4%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/CloneTreeCreator.cpp.o[0m
+[1.505s] [  4%] [32m[1mLinking CXX static library libBullet3Common.a[0m
+[1.516s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/BulletCollision/CollisionDispatch/btCollisionObject.h:34[m[K,
+[1.517s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/BulletCollision/CollisionDispatch/btGhostObject.h:19[m[K,
+[1.517s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/BulletDynamics/Character/btKinematicCharacterController.cpp:18[m[K:
+[1.517s] In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = btPersistentManifold*][m[K’,
+[1.517s]     inlined from ‘[01m[Kbool btKinematicCharacterController::recoverFromPenetration(btCollisionWorld*)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/BulletDynamics/Character/btKinematicCharacterController.cpp:203:25[m[K:
+[1.517s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 8 and 17179869184 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+[1.517s]   223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+[1.517s]       |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[1.518s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/BulletCollision/CollisionDispatch/btCollisionObject.h:34[m[K,
+[1.518s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/BulletCollision/CollisionDispatch/btGhostObject.h:19[m[K,
+[1.518s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/BulletDynamics/Character/btKinematicCharacterController.cpp:18[m[K:
+[1.518s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[Kbool btKinematicCharacterController::recoverFromPenetration(btCollisionWorld*)[m[K’:
+[1.518s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-17179869184, -8] into destination object ‘[01m[K((btAlignedObjectArray<btPersistentManifold*>*)((char*)this + 24))[6].btAlignedObjectArray<btPersistentManifold*>::m_data[m[K’ of size [0, 9223372036854775807]
+[1.518s]   109 |                 if ([01;36m[Km_data[m[K)
+[1.518s]       |                     [01;36m[K^~~~~~[m[K
+[1.892s] [  4%] Built target Bullet3Common
+[1.963s] [  4%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btBroadphaseProxy.cpp.o[0m
+[2.127s] [  4%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/LinearR2.cpp.o[0m
+[2.239s] [  4%] [32mBuilding CXX object examples/ExampleBrowser/CMakeFiles/BulletExampleBrowserLib.dir/OpenGLGuiHelper.cpp.o[0m
+[2.256s] [  4%] [32mBuilding C object examples/OpenGLWindow/CMakeFiles/OpenGLWindow.dir/__/ThirdPartyLibs/glad/gl.c.o[0m
+[2.443s] [  4%] [32mBuilding CXX object src/BulletInverseDynamics/CMakeFiles/BulletInverseDynamics.dir/MultiBodyTree.cpp.o[0m
+[2.595s] [  4%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/BaseRender.cpp.o[0m
+[2.697s] [  4%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/CoilCreator.cpp.o[0m
+[2.945s] [  4%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btCollisionAlgorithm.cpp.o[0m
+[3.080s] [  4%] [32mBuilding CXX object examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/Base.cpp.o[0m
+[3.723s] [  4%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btDbvt.cpp.o[0m
+[3.904s] [  4%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/LinearR3.cpp.o[0m
+[4.163s] [  4%] [32mBuilding CXX object src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btSoftBodyConcaveCollisionAlgorithm.cpp.o[0m
+[4.173s] [  4%] [32mBuilding CXX object examples/OpenGLWindow/CMakeFiles/OpenGLWindow.dir/EGLOpenGLWindow.cpp.o[0m
+[4.443s] [  4%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/ConstraintSolver/btContactConstraint.cpp.o[0m
+[4.467s] [  4%] [32mBuilding CXX object src/BulletInverseDynamics/CMakeFiles/BulletInverseDynamics.dir/details/MultiBodyTreeInitCache.cpp.o[0m
+[4.865s] [  4%] [32mBuilding CXX object examples/OpenGLWindow/CMakeFiles/OpenGLWindow.dir/GLFWOpenGLWindow.cpp.o[0m
+[5.012s] [  4%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/MultiBodyTreeCreator.cpp.o[0m
+[5.120s] [  5%] [32mBuilding CXX object examples/OpenGLWindow/CMakeFiles/OpenGLWindow.dir/GLInstancingRenderer.cpp.o[0m
+[5.536s] [  6%] [32mBuilding CXX object src/BulletDynamics/CMakeFiles/BulletDynamics.dir/ConstraintSolver/btFixedConstraint.cpp.o[0m
+[5.799s] [  6%] [32mBuilding CXX object src/BulletInverseDynamics/CMakeFiles/BulletInverseDynamics.dir/details/MultiBodyTreeImpl.cpp.o[0m
+[6.272s] [  6%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btDbvtBroadphase.cpp.o[0m
+[6.308s] [  6%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/btMultiBodyTreeCreator.cpp.o[0m
+[6.444s] gmake[2]: *** [Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/build.make:118: Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/btMultiBodyTreeCreator.cpp.o] Interrupt
+[6.457s] gmake[2]: *** [src/BulletInverseDynamics/CMakeFiles/BulletInverseDynamics.dir/build.make:118: src/BulletInverseDynamics/CMakeFiles/BulletInverseDynamics.dir/details/MultiBodyTreeImpl.cpp.o] Interrupt
+[6.457s] gmake[2]: *** [Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/build.make:440: Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsServerCommandProcessor.cpp.o] Interrupt
+[6.458s] gmake[2]: *** [src/BulletCollision/CMakeFiles/BulletCollision.dir/build.make:132: src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btDbvtBroadphase.cpp.o] Interrupt
+[6.458s] gmake[2]: *** [src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/build.make:76: src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btSoftBody.cpp.o] Interrupt
+[6.464s] gmake[1]: *** [CMakeFiles/Makefile2:1693: src/BulletInverseDynamics/CMakeFiles/BulletInverseDynamics.dir/all] Interrupt
+[6.465s] gmake[2]: *** [examples/ExampleBrowser/CMakeFiles/BulletExampleBrowserLib.dir/build.make:90: examples/ExampleBrowser/CMakeFiles/BulletExampleBrowserLib.dir/OpenGLGuiHelper.cpp.o] Interrupt
+[6.465s] gmake[2]: *** [examples/OpenGLWindow/CMakeFiles/OpenGLWindow.dir/build.make:146: examples/OpenGLWindow/CMakeFiles/OpenGLWindow.dir/GLInstancingRenderer.cpp.o] Interrupt
+[6.465s] gmake[2]: *** [src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/build.make:90: src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btSoftBodyConcaveCollisionAlgorithm.cpp.o] Interrupt
+[6.465s] gmake[2]: *** [src/BulletDynamics/CMakeFiles/BulletDynamics.dir/build.make:118: src/BulletDynamics/CMakeFiles/BulletDynamics.dir/ConstraintSolver/btFixedConstraint.cpp.o] Interrupt
+[6.466s] gmake[1]: *** [CMakeFiles/Makefile2:1303: Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/all] Interrupt
+[6.466s] gmake[1]: *** [CMakeFiles/Makefile2:920: examples/ExampleBrowser/CMakeFiles/BulletExampleBrowserLib.dir/all] Interrupt
+[6.466s] gmake[1]: *** [CMakeFiles/Makefile2:1239: examples/OpenGLWindow/CMakeFiles/OpenGLWindow.dir/all] Interrupt
+[6.466s] gmake[2]: *** [examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/build.make:104: examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/Controls/Base.cpp.o] Interrupt
+[6.468s] gmake[1]: *** [CMakeFiles/Makefile2:1719: src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/all] Interrupt
+[6.468s] gmake[1]: *** [CMakeFiles/Makefile2:1745: src/BulletCollision/CMakeFiles/BulletCollision.dir/all] Interrupt
+[6.468s] gmake[1]: *** [CMakeFiles/Makefile2:1161: examples/ThirdPartyLibs/Gwen/CMakeFiles/gwen.dir/all] Interrupt
+[6.469s] gmake[1]: *** [CMakeFiles/Makefile2:1355: Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/all] Interrupt
+[6.469s] gmake[1]: *** [CMakeFiles/Makefile2:1771: src/BulletDynamics/CMakeFiles/BulletDynamics.dir/all] Interrupt
+[6.484s] [  6%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/LinearR4.cpp.o[0m
+[6.487s] gmake[2]: *** [examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/build.make:117: examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/LinearR4.cpp.o] Interrupt
+[6.487s] gmake[1]: *** [CMakeFiles/Makefile2:1187: examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/all] Interrupt
+[6.488s] gmake: *** [Makefile:146: all] Interrupt

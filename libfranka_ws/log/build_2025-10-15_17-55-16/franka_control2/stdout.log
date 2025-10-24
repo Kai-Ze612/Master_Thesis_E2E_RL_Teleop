@@ -1,3 +1,0 @@
-[ 50%] [32mBuilding CXX object CMakeFiles/franka_control2_node.dir/src/franka_control2_node.cpp.o[0m
-[100%] [32m[1mLinking CXX executable franka_control2_node[0m
-[100%] Built target franka_control2_node

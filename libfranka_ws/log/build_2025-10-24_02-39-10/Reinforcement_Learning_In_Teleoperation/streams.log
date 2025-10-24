@@ -1,0 +1,28 @@
+[2.216s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation': PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation/build --no-deps symlink_data
+[4.004s] running develop
+[4.004s] running egg_info
+[4.004s] creating Reinforcement_Learning_In_Teleoperation.egg-info
+[4.004s] writing Reinforcement_Learning_In_Teleoperation.egg-info/PKG-INFO
+[4.005s] writing dependency_links to Reinforcement_Learning_In_Teleoperation.egg-info/dependency_links.txt
+[4.005s] writing entry points to Reinforcement_Learning_In_Teleoperation.egg-info/entry_points.txt
+[4.005s] writing requirements to Reinforcement_Learning_In_Teleoperation.egg-info/requires.txt
+[4.005s] writing top-level names to Reinforcement_Learning_In_Teleoperation.egg-info/top_level.txt
+[4.005s] writing manifest file 'Reinforcement_Learning_In_Teleoperation.egg-info/SOURCES.txt'
+[4.005s] reading manifest file 'Reinforcement_Learning_In_Teleoperation.egg-info/SOURCES.txt'
+[4.005s] writing manifest file 'Reinforcement_Learning_In_Teleoperation.egg-info/SOURCES.txt'
+[4.006s] running build_ext
+[4.006s] Creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/python3.10/site-packages/Reinforcement-Learning-In-Teleoperation.egg-link (link to .)
+[4.006s] Installing local_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/Reinforcement_Learning_In_Teleoperation
+[4.006s] Installing remote_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/Reinforcement_Learning_In_Teleoperation
+[4.006s] Installing remote_simulated_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/lib/Reinforcement_Learning_In_Teleoperation
+[4.006s] 
+[4.007s] Installed /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation
+[4.007s] running symlink_data
+[4.007s] creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/share/ament_index
+[4.007s] creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/share/ament_index/resource_index
+[4.007s] creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/share/ament_index/resource_index/packages
+[4.007s] symbolically linking /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation/resource/Reinforcement_Learning_In_Teleoperation -> /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/share/ament_index/resource_index/packages
+[4.008s] symbolically linking /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Reinforcement_Learning_In_Teleoperation/package.xml -> /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/share/Reinforcement_Learning_In_Teleoperation
+[4.008s] creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/share/Reinforcement_Learning_In_Teleoperation/launch
+[4.008s] creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/share/Reinforcement_Learning_In_Teleoperation/config
+[4.008s] creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation/share/Reinforcement_Learning_In_Teleoperation/params

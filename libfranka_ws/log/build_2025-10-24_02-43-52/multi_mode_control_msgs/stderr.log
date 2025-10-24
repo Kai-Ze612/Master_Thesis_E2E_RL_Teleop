@@ -1,0 +1,3 @@
+gmake[2]: *** [CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/build.make:414: CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/get_robot_states__type_support.cpp.o] Interrupt
+gmake[1]: *** [CMakeFiles/Makefile2:369: CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/all] Interrupt
+gmake: *** [Makefile:146: all] Interrupt

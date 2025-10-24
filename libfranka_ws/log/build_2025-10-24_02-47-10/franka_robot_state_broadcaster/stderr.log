@@ -1,0 +1,42 @@
+[33mCMake Warning (dev) at /usr/share/cmake-3.22/Modules/FindOpenGL.cmake:315 (message):
+  Policy CMP0072 is not set: FindOpenGL prefers GLVND by default when
+  available.  Run "cmake --help-policy CMP0072" for policy details.  Use the
+  cmake_policy command to set the policy and suppress this warning.
+
+  FindOpenGL found both a legacy GL library:
+
+    OPENGL_gl_LIBRARY: /usr/lib/x86_64-linux-gnu/libGL.so
+
+  and GLVND libraries for OpenGL and GLX:
+
+    OPENGL_opengl_LIBRARY: /usr/lib/x86_64-linux-gnu/libOpenGL.so
+    OPENGL_glx_LIBRARY: /usr/lib/x86_64-linux-gnu/libGLX.so
+
+  OpenGL_GL_PREFERENCE has not been set to "GLVND" or "LEGACY", so for
+  compatibility with CMake 3.10 and below the legacy GL library will be used.
+Call Stack (most recent call first):
+  /usr/share/cmake-3.22/Modules/CMakeFindDependencyMacro.cmake:47 (find_package)
+  /home/kai/Libraries/mujoco/lib/cmake/mujoco/mujocoConfig.cmake:42 (find_dependency)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/mujoco_rosConfig.cmake:41 (include)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake/mujoco_ros2_controlConfig.cmake:41 (include)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_hardware/share/franka_hardware/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_hardware/share/franka_hardware/cmake/franka_hardwareConfig.cmake:41 (include)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/cmake/franka_semantic_componentsConfig.cmake:41 (include)
+  CMakeLists.txt:32 (find_package)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+[0m
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_robot_state_broadcaster/include/franka_robot_state_broadcaster/franka_robot_state_broadcaster.hpp:15[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_robot_state_broadcaster/src/franka_robot_state_broadcaster.cpp:1[m[K:
+[01m[K/opt/ros/humble/include/realtime_tools/realtime_tools/realtime_publisher.h:22:103:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: This header include is deprecated. Please update your code to use 'realtime_publisher.hpp' header.[m[K’
+   22 | se update your code to use 'realtime_publisher.hpp' header."[01;36m[K)[m[K  //NOLINT
+      |                                                             [01;36m[K^[m[K
+
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_robot_state_broadcaster/include/franka_robot_state_broadcaster/franka_robot_model_broadcaster.hpp:15[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_robot_state_broadcaster/src/franka_robot_model_broadcaster.cpp:1[m[K:
+[01m[K/opt/ros/humble/include/realtime_tools/realtime_tools/realtime_publisher.h:22:103:[m[K [01;36m[Knote: [m[K‘[01m[K#pragma message: This header include is deprecated. Please update your code to use 'realtime_publisher.hpp' header.[m[K’
+   22 | se update your code to use 'realtime_publisher.hpp' header."[01;36m[K)[m[K  //NOLINT
+      |                                                             [01;36m[K^[m[K
+

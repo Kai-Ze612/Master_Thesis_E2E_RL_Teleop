@@ -1,0 +1,136 @@
+[0.060s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/BULLET_PHYSICS': /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/BULLET_PHYSICS -- -j12 -l12
+[0.619s] [  0%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btAlignedAllocator.cpp.o[0m
+[0.619s] [  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btConvexHull.cpp.o[0m
+[1.128s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.h:23[m[K,
+[1.128s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:18[m[K:
+[1.129s] In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = int][m[K’,
+[1.129s]     inlined from ‘[01m[Kbool HullLibrary::_ZN11HullLibrary15CleanupVerticesEjPK9btVector3jRjPS0_fRS0_.part.0(unsigned int, const btVector3*, unsigned int, unsigned int&, btVector3*, btScalar, btVector3&)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:834:29[m[K:
+[1.129s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 4 and 8589934592 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+[1.129s]   223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+[1.129s]       |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[1.129s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.h:23[m[K,
+[1.129s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:18[m[K:
+[1.130s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[Kbool HullLibrary::_ZN11HullLibrary15CleanupVerticesEjPK9btVector3jRjPS0_fRS0_.part.0(unsigned int, const btVector3*, unsigned int, unsigned int&, btVector3*, btScalar, btVector3&)[m[K’:
+[1.130s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-8589934592, -4] into destination object ‘[01m[K((btAlignedObjectArray<int>*)this)[1].btAlignedObjectArray<int>::m_data[m[K’ of size [0, 9223372036854775807]
+[1.130s]   109 |                 if ([01;36m[Km_data[m[K)
+[1.130s]       |                     [01;36m[K^~~~~~[m[K
+[2.023s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.h:23[m[K,
+[2.024s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:18[m[K:
+[2.024s] In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = btHullTriangle*][m[K’,
+[2.024s]     inlined from ‘[01m[Kint HullLibrary::calchull(btVector3*, int, TUIntArray&, int&, int)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:628:15[m[K:
+[2.024s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 8 and 17179869184 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+[2.024s]   223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+[2.025s]       |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[2.025s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.h:23[m[K,
+[2.025s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:18[m[K:
+[2.025s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[Kint HullLibrary::calchull(btVector3*, int, TUIntArray&, int&, int)[m[K’:
+[2.025s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-17179869184, -8] into destination object ‘[01m[K*(btAlignedObjectArray<btHullTriangle*>*)this.btAlignedObjectArray<btHullTriangle*>::m_data[m[K’ of size [0, 9223372036854775807]
+[2.025s]   109 |                 if ([01;36m[Km_data[m[K)
+[2.025s]       |                     [01;36m[K^~~~~~[m[K
+[2.276s] [  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btConvexHullComputer.cpp.o[0m
+[5.043s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.h:19[m[K,
+[5.044s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:17[m[K:
+[5.044s] In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = int][m[K’,
+[5.044s]     inlined from ‘[01m[KbtScalar btConvexHullComputer::compute(const void*, bool, int, int, btScalar, btScalar)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:2676:30[m[K:
+[5.044s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 4 and 8589934592 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+[5.045s]   223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+[5.045s]       |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[5.045s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.h:19[m[K,
+[5.045s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:17[m[K:
+[5.045s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[KbtScalar btConvexHullComputer::compute(const void*, bool, int, int, btScalar, btScalar)[m[K’:
+[5.046s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-8589934592, -4] into destination object ‘[01m[K((btAlignedObjectArray<int>*)this)[1].btAlignedObjectArray<int>::m_data[m[K’ of size [0, 9223372036854775807]
+[5.046s]   109 |                 if ([01;36m[Km_data[m[K)
+[5.046s]       |                     [01;36m[K^~~~~~[m[K
+[5.047s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.h:19[m[K,
+[5.047s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:17[m[K:
+[5.047s] In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = int][m[K’,
+[5.047s]     inlined from ‘[01m[KbtScalar btConvexHullComputer::compute(const void*, bool, int, int, btScalar, btScalar)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:2678:14[m[K:
+[5.048s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 4 and 8589934592 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+[5.048s]   223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+[5.048s]       |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[5.048s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.h:19[m[K,
+[5.049s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:17[m[K:
+[5.049s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[KbtScalar btConvexHullComputer::compute(const void*, bool, int, int, btScalar, btScalar)[m[K’:
+[5.049s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-8589934592, -4] into destination object ‘[01m[K((btAlignedObjectArray<int>*)this)[3].btAlignedObjectArray<int>::m_data[m[K’ of size [0, 9223372036854775807]
+[5.049s]   109 |                 if ([01;36m[Km_data[m[K)
+[5.049s]       |                     [01;36m[K^~~~~~[m[K
+[5.257s] [  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btGeometryUtil.cpp.o[0m
+[5.755s] [  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btPolarDecomposition.cpp.o[0m
+[6.263s] [  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btQuickprof.cpp.o[0m
+[6.595s] [  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btReducedVector.cpp.o[0m
+[7.384s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.h:11[m[K,
+[7.385s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.cpp:8[m[K:
+[7.385s] In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = int][m[K’,
+[7.385s]     inlined from ‘[01m[Kvoid btReducedVector::simplify()[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.h:57:25[m[K:
+[7.385s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 4 and 8589934592 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+[7.385s]   223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+[7.385s]       |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[7.385s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.h:11[m[K,
+[7.386s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.cpp:8[m[K:
+[7.386s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[Kvoid btReducedVector::simplify()[m[K’:
+[7.386s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-8589934592, -4] into destination object ‘[01m[K*(btAlignedObjectArray<int>*)this.btAlignedObjectArray<int>::m_data[m[K’ of size [0, 9223372036854775807]
+[7.386s]   109 |                 if ([01;36m[Km_data[m[K)
+[7.386s]       |                     [01;36m[K^~~~~~[m[K
+[8.833s] [  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btSerializer.cpp.o[0m
+[8.927s] [  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btSerializer64.cpp.o[0m
+[9.017s] [  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btThreads.cpp.o[0m
+[9.713s] [  2%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btVector3.cpp.o[0m
+[9.997s] [  2%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/TaskScheduler/btTaskScheduler.cpp.o[0m
+[10.524s] [  2%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/TaskScheduler/btThreadSupportPosix.cpp.o[0m
+[10.560s] [  2%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/TaskScheduler/btThreadSupportWin32.cpp.o[0m
+[10.597s] [  2%] [32m[1mLinking CXX static library libLinearMath.a[0m
+[10.730s] [  2%] Built target LinearMath
+[10.777s] [  2%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/SpAlg.cpp.o[0m
+[15.790s] [  3%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/Shape.cpp.o[0m
+[16.177s] [  3%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/RBDUtil.cpp.o[0m
+[30.087s] [  3%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/RBDModel.cpp.o[0m
+[32.120s] [  3%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/MathUtil.cpp.o[0m
+[43.138s] [  3%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/KinTree.cpp.o[0m
+[48.749s] [  3%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/stablePDPlugin/BulletConversion.cpp.o[0m
+[51.226s] [  3%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/OpenGLWindow/SimpleCamera.cpp.o[0m
+[51.714s] [  3%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/TinyRenderer/geometry.cpp.o[0m
+[51.911s] [  3%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/TinyRenderer/model.cpp.o[0m
+[53.053s] [  3%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/TinyRenderer/tgaimage.cpp.o[0m
+[53.737s] [  4%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/TinyRenderer/our_gl.cpp.o[0m
+[54.340s] [  4%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/TinyRenderer/TinyRenderer.cpp.o[0m
+[55.786s] [  4%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/collisionFilterPlugin/collisionFilterPlugin.cpp.o[0m
+[56.488s] [  4%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/pdControlPlugin/pdControlPlugin.cpp.o[0m
+[56.964s] [  4%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/b3RobotSimulatorClientAPI_NoGUI.cpp.o[0m
+[57.373s] [  4%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/b3RobotSimulatorClientAPI_NoDirect.cpp.o[0m
+[58.396s] [  4%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/IKTrajectoryHelper.cpp.o[0m
+[59.125s] [  4%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/tinyRendererPlugin/tinyRendererPlugin.cpp.o[0m
+[59.199s] [  4%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/plugins/tinyRendererPlugin/TinyRendererVisualShapeConverter.cpp.o[0m
+[63.905s] [  4%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/InProcessMemory.cpp.o[0m
+[64.568s] [  5%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsClient.cpp.o[0m
+[64.943s] [  5%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsServer.cpp.o[0m
+[65.259s] [  5%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsServerSharedMemory.cpp.o[0m
+[66.451s] [  5%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsDirect.cpp.o[0m
+[69.971s] [  5%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsDirectC_API.cpp.o[0m
+[70.379s] [  5%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsServerCommandProcessor.cpp.o[0m
+[86.779s] In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btHashMap.h:20[m[K,
+[86.779s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/examples/SharedMemory/PhysicsServerCommandProcessor.h:4[m[K,
+[86.779s]                  from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/examples/SharedMemory/PhysicsServerCommandProcessor.cpp:1[m[K:
+[86.779s] In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = int][m[K’,
+[86.779s]     inlined from ‘[01m[Kvoid btMatrixX<T>::rowComputeNonZeroElements() const [with T = float][m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/BulletInverseDynamics/details/../../LinearMath/btMatrixX.h:306:35[m[K,
+[86.779s]     inlined from ‘[01m[Kvirtual bool btSolveProjectedGaussSeidel::solveMLCP(const btMatrixXf&, const btVectorXf&, btVectorXf&, const btVectorXf&, const btVectorXf&, const btAlignedObjectArray<int>&, int, bool)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h:40:30[m[K:
+[86.780s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 4 and 8589934592 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+[86.780s]   223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+[86.780s]       |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[86.780s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[Kvirtual bool btSolveProjectedGaussSeidel::solveMLCP(const btMatrixXf&, const btVectorXf&, btVectorXf&, const btVectorXf&, const btVectorXf&, const btAlignedObjectArray<int>&, int, bool)[m[K’:
+[86.780s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-8589934592, -4] into destination object ‘[01m[K*_147 + _414.btAlignedObjectArray<int>::m_data[m[K’ of size [0, 9223372036854775807]
+[86.780s]   109 |                 if ([01;36m[Km_data[m[K)
+[86.780s]       |                     [01;36m[K^~~~~~[m[K
+[90.298s] In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = int][m[K’,
+[90.298s]     inlined from ‘[01m[Kvoid btReducedVector::simplify()[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.h:57:25[m[K,
+[90.298s]     inlined from ‘[01m[KbtReducedVector btReducedVector::operator-(const btReducedVector&)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.h:161:21[m[K,
+[90.298s]     inlined from ‘[01m[Kvoid btModifiedGramSchmidt<TV>::solve() [with TV = btReducedVector][m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btModifiedGramSchmidt.h:37:19[m[K:
+[90.298s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 4 and 8589934592 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+[90.298s]   223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+[90.298s]       |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+[90.298s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[Kvoid btModifiedGramSchmidt<TV>::solve() [with TV = btReducedVector][m[K’:
+[90.298s] [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:77:42:[m[K [01;36m[Knote: [m[Kat offset [-8589934592, -4] into destination object ‘[01m[K<unnamed>.btReducedVector::m_indices.btAlignedObjectArray<int>::m_data[m[K’ of size [0, 9223372036854775807]
+[90.299s]    77 |                         new (&dest[i]) T([01;36m[Km_data[m[K[i]);
+[90.299s]       |                                          [01;36m[K^~~~~~[m[K
+[100.335s] gmake[2]: *** [Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/build.make:440: Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsServerCommandProcessor.cpp.o] Interrupt
+[100.335s] gmake[1]: *** [CMakeFiles/Makefile2:1355: Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/all] Interrupt
+[100.336s] gmake: *** [Makefile:146: all] Interrupt

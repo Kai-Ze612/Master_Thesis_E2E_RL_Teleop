@@ -1,0 +1,81 @@
+[0.072s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control': CMAKE_PREFIX_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/panda_motion_generators:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/panda_motion_generator_msgs:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/multi_mode_controller_impl:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/multi_mode_controller:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_example_controllers:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/multi_mode_control_msgs:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_pkgs:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_sensors:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_dummy_plugin:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_bringup:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_robot_state_broadcaster:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_moveit_config:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_bringup:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_hardware:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_description:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_controllers:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_gripper:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_control2:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/BULLET_PHYSICS:/home/kai/Libraries/mujoco/lib/cmake:/home/kai/Libraries/libfranka/lib/cmake:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/opt/ros/humble LD_LIBRARY_PATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/panda_motion_generators/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/panda_motion_generator_msgs/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/multi_mode_controller_impl/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/multi_mode_controller/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_example_controllers/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/multi_mode_control_msgs/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_sensors/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_dummy_plugin/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_robot_state_broadcaster/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_hardware/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_hardware/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_controllers/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_gripper/lib:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs/lib:/opt/ros/humble/lib/x86_64-linux-gnu:/opt/ros/humble/lib:/home/kai/Libraries/libfranka/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/mujoco/lib:/home/kai/Libraries/mujoco/lib /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros2_control -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control
+[0.859s] -- The C compiler identification is GNU 11.4.0
+[0.859s] -- The CXX compiler identification is GNU 11.4.0
+[0.859s] -- Detecting C compiler ABI info
+[0.859s] -- Detecting C compiler ABI info - done
+[0.859s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.860s] -- Detecting C compile features
+[0.860s] -- Detecting C compile features - done
+[0.860s] -- Detecting CXX compiler ABI info
+[1.049s] -- Detecting CXX compiler ABI info - done
+[1.085s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[1.086s] -- Detecting CXX compile features
+[1.091s] -- Detecting CXX compile features - done
+[1.113s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[1.696s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[1.983s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[2.123s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[2.137s] -- Found mujoco_ros: 0.9.0 (/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake)
+[2.267s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[2.287s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[2.327s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[2.365s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[2.415s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[2.567s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[2.583s] -- Found rmw_fastrtps_cpp: 6.2.8 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[2.967s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[3.125s] -- Found FastRTPS: /opt/ros/humble/include  
+[3.351s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[3.423s] -- Looking for pthread.h
+[3.810s] -- Looking for pthread.h - found
+[3.810s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[4.222s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[4.226s] -- Found Threads: TRUE  
+[4.868s] -- Found eigen3_cmake_module: 0.1.1 (/opt/ros/humble/share/eigen3_cmake_module/cmake)
+[4.871s] -- Found Eigen3: TRUE (found version "3.3.9") 
+[4.872s] -- Ensuring Eigen3 include directory is part of orocos-kdl CMake target
+[5.031s] [33mCMake Warning (dev) at /usr/share/cmake-3.22/Modules/FindOpenGL.cmake:315 (message):
+[5.032s]   Policy CMP0072 is not set: FindOpenGL prefers GLVND by default when
+[5.032s]   available.  Run "cmake --help-policy CMP0072" for policy details.  Use the
+[5.032s]   cmake_policy command to set the policy and suppress this warning.
+[5.032s] 
+[5.032s]   FindOpenGL found both a legacy GL library:
+[5.032s] 
+[5.033s]     OPENGL_gl_LIBRARY: /usr/lib/x86_64-linux-gnu/libGL.so
+[5.033s] 
+[5.033s]   and GLVND libraries for OpenGL and GLX:
+[5.033s] 
+[5.033s]     OPENGL_opengl_LIBRARY: /usr/lib/x86_64-linux-gnu/libOpenGL.so
+[5.033s]     OPENGL_glx_LIBRARY: /usr/lib/x86_64-linux-gnu/libGLX.so
+[5.033s] 
+[5.034s]   OpenGL_GL_PREFERENCE has not been set to "GLVND" or "LEGACY", so for
+[5.034s]   compatibility with CMake 3.10 and below the legacy GL library will be used.
+[5.034s] Call Stack (most recent call first):
+[5.034s]   /usr/share/cmake-3.22/Modules/CMakeFindDependencyMacro.cmake:47 (find_package)
+[5.034s]   /home/kai/Libraries/mujoco/lib/cmake/mujoco/mujocoConfig.cmake:42 (find_dependency)
+[5.034s]   /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+[5.035s]   /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/mujoco_rosConfig.cmake:41 (include)
+[5.035s]   CMakeLists.txt:11 (find_package)
+[5.035s] This warning is for project developers.  Use -Wno-dev to suppress it.
+[5.035s] [0m
+[5.117s] -- Found hardware_interface: 2.52.0 (/opt/ros/humble/share/hardware_interface/cmake)
+[5.220s] -- Found controller_manager: 2.52.0 (/opt/ros/humble/share/controller_manager/cmake)
+[5.437s] [31mCMake Error at CMakeLists.txt:66 (find_package):
+[5.437s]   By not providing "Findament_lint_auto.cmake" in CMAKE_MODULE_PATH this
+[5.437s]   project has asked CMake to find a package configuration file provided by
+[5.437s]   "ament_lint_auto", but CMake did not find one.
+[5.438s] 
+[5.438s]   Could not find a package configuration file provided by "ament_lint_auto"
+[5.438s]   with any of the following names:
+[5.438s] 
+[5.438s]     ament_lint_autoConfig.cmake
+[5.438s]     ament_lint_auto-config.cmake
+[5.439s] 
+[5.439s]   Add the installation prefix of "ament_lint_auto" to CMAKE_PREFIX_PATH or
+[5.439s]   set "ament_lint_auto_DIR" to a directory containing one of the above files.
+[5.439s]   If "ament_lint_auto" provides a separate development package or SDK, be
+[5.439s]   sure it has been installed.
+[5.439s] 
+[5.439s] [0m
+[5.440s] -- Configuring incomplete, errors occurred!
+[5.440s] See also "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control/CMakeFiles/CMakeOutput.log".
