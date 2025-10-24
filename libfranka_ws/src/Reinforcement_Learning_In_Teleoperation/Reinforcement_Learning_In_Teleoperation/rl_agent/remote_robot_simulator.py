@@ -52,7 +52,7 @@ class RemoteRobotSimulator:
         self.control_freq: int = DEFAULT_CONTROL_FREQ
         self.dt = 1.0 / self.control_freq
         self.control_freq = self.control_freq
-
+        
         # Simulation frequency and substeps
         sim_freq = int(1.0 / self.model.opt.timestep)
         if sim_freq % self.control_freq != 0:

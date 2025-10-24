@@ -1,7 +1,7 @@
 <mujoco model="panda">
   <compiler angle="radian" meshdir="assets"/>
 
-  <option timestep="0.001" iterations="50" tolerance="1e-9" solver="Newton" jacobian="dense" cone="pyramidal"/>
+  <option timestep="0.002" iterations="50" tolerance="1e-9" solver="Newton" jacobian="dense" cone="pyramidal"/>
 
   <default>
     <default class="panda">

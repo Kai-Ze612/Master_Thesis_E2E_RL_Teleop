@@ -49,11 +49,11 @@ JOINT_LIMIT_MARGIN = 0.05  # radians
 ######################################
 
 # Default control frequency (Hz)
-DEFAULT_CONTROL_FREQ = 100
+DEFAULT_CONTROL_FREQ = 500
 CONTROL_CYCLE_TIME = 1.0 / DEFAULT_CONTROL_FREQ  # Seconds
 
 # Default publish frequency for robot state (Hz)
-DEFAULT_PUBLISH_FREQ = 200
+DEFAULT_PUBLISH_FREQ = 250
 
 # Local robot PD gains (joint-specific)
 KP_LOCAL_DEFAULT = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
