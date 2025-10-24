@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description/ament_cmake_core/franka_descriptionConfig-version.cmake

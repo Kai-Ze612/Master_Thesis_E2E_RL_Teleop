@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_semantic_components/ament_cmake_environment_hooks/local_setup.bash

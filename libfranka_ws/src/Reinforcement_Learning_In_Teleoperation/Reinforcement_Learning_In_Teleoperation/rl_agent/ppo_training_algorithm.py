@@ -45,10 +45,10 @@ logger = logging.getLogger(__name__)
 
 class RecurrentPPOTrainer:
 
-    def __init__(self, env, device: str = 'cuda'):
+    def __init__(self, env):
         
         self.env = env
-        self.device = torch.device(device)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # Initialize policy
         self.policy = RecurrentPPOPolicy().to(self.device)
@@ -206,21 +206,7 @@ class RecurrentPPOTrainer:
         logger.info(f"Training summary saved to: {summary_file}")
 
     def collect_rollout(self) -> float:
-        """
-        Collect one rollout (PPO_ROLLOUT_STEPS) of experience.
-        
-        Key Flow:
-            1. Get delayed observations from environment
-            2. Policy predicts current state using LSTM
-            3. Policy outputs torque compensation action
-            4. Pass predicted state to environment via set_predicted_target()
-            5. Environment calculates dense reward (prediction + tracking)
-            6. Store experience in buffer
-            7. Manage LSTM hidden state (carry forward, reset on episode end)
-        
-        Returns:
-            Average episode reward encountered during the rollout.
-        """
+
         self.buffer.reset()  # Clear buffer before collecting new data
         
         # Reset environment
@@ -453,15 +439,6 @@ class RecurrentPPOTrainer:
         """Main training loop with visualization and early stopping."""
         num_updates_total = total_timesteps // PPO_ROLLOUT_STEPS
 
-        logger.info(f"\n{'='*70}")
-        logger.info(f"Starting Recurrent-PPO Training with Visualization")
-        logger.info(f"{'='*70}")
-        logger.info(f"  Total timesteps: {total_timesteps:,}")
-        logger.info(f"  Updates planned: {num_updates_total:,}")
-        logger.info(f"  Steps per update: {PPO_ROLLOUT_STEPS}")
-        logger.info(f"  Checkpoint dir: {self.checkpoint_dir}")
-        logger.info(f"{'='*70}\n")
-
         # Initialize visualization
         self._init_tensorboard(self.checkpoint_dir)
         self.training_start_time = datetime.now()
@@ -565,4 +542,4 @@ class RecurrentPPOTrainer:
             self.tb_writer.close()
             logger.info("TensorBoard writer closed")
         
-        logger.info(f"\n✓ All training data saved to: {self.checkpoint_dir}")
+        logger.info(f"All training data saved to: {self.checkpoint_dir}")

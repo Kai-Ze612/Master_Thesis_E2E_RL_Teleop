@@ -1,5 +1,3 @@
-# File: utils/rollout_buffer.py
-
 """
 Rollout buffer for storing and managing PPO training data,
 including specific data needed for the recurrent predictor.

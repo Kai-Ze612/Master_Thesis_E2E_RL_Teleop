@@ -1,5 +1,0 @@
-[console_scripts]
-local_node = Reinforcement_Learning_In_Teleoperation.nodes.leader_mujoco_simulator:main
-remote_node = Reinforcement_Learning_In_Teleoperation.nodes.follower_real_robot:main
-remote_simulated_node = Reinforcement_Learning_In_Teleoperation.nodes.follower_mujoco_simulator:main
-

@@ -1,2 +1,0 @@
-mujoco_ros_msgs/EqualityConstraintParameters[] parameters
-string admin_hash

@@ -1,4 +1,0 @@
-
-float64[3] gravity
-bool success
-string status_message
