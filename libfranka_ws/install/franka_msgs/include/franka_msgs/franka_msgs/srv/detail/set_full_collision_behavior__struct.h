@@ -1,0 +1,1 @@
+/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_c/franka_msgs/srv/detail/set_full_collision_behavior__struct.h

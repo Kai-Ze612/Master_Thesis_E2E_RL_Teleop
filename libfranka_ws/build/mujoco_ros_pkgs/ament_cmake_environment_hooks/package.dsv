@@ -1,0 +1,4 @@
+source;share/mujoco_ros_pkgs/local_setup.bash
+source;share/mujoco_ros_pkgs/local_setup.dsv
+source;share/mujoco_ros_pkgs/local_setup.sh
+source;share/mujoco_ros_pkgs/local_setup.zsh

@@ -1,0 +1,28 @@
+// generated from rosidl_adapter/resource/action.idl.em
+// with input from panda_motion_generator_msgs/action/CartesianViaMotion.action
+// generated code does not contain a copyright notice
+
+#include "geometry_msgs/msg/Pose.idl"
+#include "panda_motion_generator_msgs/msg/SimpleActionResult.idl"
+
+module panda_motion_generator_msgs {
+  module action {
+    struct CartesianViaMotion_Goal {
+      @verbatim (language="comment", text=
+        "orientation zero will keep current orientation")
+      sequence<geometry_msgs::msg::Pose> via_poses;
+
+      @verbatim (language="comment", text=
+        "(0-1] of maximum velocity to be used for motion")
+      double v_scale;
+    };
+    struct CartesianViaMotion_Result {
+      panda_motion_generator_msgs::msg::SimpleActionResult result;
+    };
+    struct CartesianViaMotion_Feedback {
+      float progress;
+
+      float time_to_completion;
+    };
+  };
+};

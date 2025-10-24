@@ -1,0 +1,16 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from franka_msgs/srv/SetMujocoPoses.srv
+// generated code does not contain a copyright notice
+
+#include "geometry_msgs/msg/PoseStamped.idl"
+
+module franka_msgs {
+  module srv {
+    struct SetMujocoPoses_Request {
+      sequence<geometry_msgs::msg::PoseStamped> objects;
+    };
+    struct SetMujocoPoses_Response {
+      sequence<boolean> valid;
+    };
+  };
+};

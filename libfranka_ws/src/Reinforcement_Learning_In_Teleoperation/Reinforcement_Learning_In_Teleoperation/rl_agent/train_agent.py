@@ -20,6 +20,9 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     DEFAULT_CONTROL_FREQ
 )
 
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.common.env_util import make_vec_env
+
 def setup_logging(output_dir: str) -> logging.Logger:
     """Configure logging to file and console."""
     
@@ -132,36 +135,43 @@ def train_agent(args: argparse.Namespace) -> None:
         logger.info("")
 
     # Environment Setup
-    logger.info("Creating training environment...")
+    NUM_ENVIRONMENTS = 8  # Number of parallel environments
+    logger.info(f"Creating {NUM_ENVIRONMENTS} parallel training environments...")
     env = None
-    
     try:
-        env = TeleoperationEnvWithDelay(
-            delay_config=args.config,
-            trajectory_type=args.trajectory_type,
-            randomize_trajectory=args.randomize_trajectory,
-            seed=args.seed
+        # Define a function that creates a single environment instance
+        # This is needed by make_vec_env
+        def make_env():
+            env_instance = TeleoperationEnvWithDelay(
+                delay_config=args.config,
+                trajectory_type=args.trajectory_type,
+                randomize_trajectory=args.randomize_trajectory
+                # Seed will be handled by make_vec_env wrapper
+            )
+            return env_instance
+
+        # Create the vectorized environment
+        env = make_vec_env(
+            make_env,
+            n_envs=NUM_ENVIRONMENTS,
+            seed=args.seed, # Handles seeding each sub-environment
+            vec_env_cls=SubprocVecEnv # Use SubprocVecEnv for true parallelism
+            # vec_env_cls=DummyVecEnv # Use DummyVecEnv for debugging or single-core
         )
-        
-        logger.info(f"  Environment: TeleoperationEnvWithDelay")
-        logger.info(f"  Delay Config: {env.delay_simulator.config_name}")
-        logger.info(f"  Control Frequency: {env.control_freq} Hz")
-        logger.info(f"  Max Episode Steps: {env.max_episode_steps}")
-        logger.info(f"  Observation Space: {env.observation_space.shape}")
-        logger.info(f"  Action Space: {env.action_space.shape}")
-                
-        # Validate environment
+
+        logger.info(f"  Vectorized Environment: {env.__class__.__name__}")
+        logger.info(f"  Number of Envs: {env.num_envs}")
+        # Note: Accessing underlying env attributes needs care with VecEnv
+        # Example: logger.info(f"  Delay Config: {env.get_attr('delay_simulator')[0].config_name}") # Gets from first env
+        logger.info(f"  Observation Space: {env.observation_space.shape}") # Shape is usually same
+        logger.info(f"  Action Space: {env.action_space.shape}") # Shape is usually same
+
+        # --- Skipping detailed validation for VecEnv ---
+        logger.info("Skipping detailed validation for VecEnv (use single env for debugging)")
         logger.info("")
-        logger.info("Validating environment...")
-        if not validate_environment(env, logger):
-            logger.error("Environment validation failed. Aborting training.")
-            if env:
-                env.close()
-            sys.exit(1)
-        logger.info("")
-        
+
     except Exception as e:
-        logger.error(f"Failed to create environment: {e}", exc_info=True)
+        logger.error(f"Failed to create vectorized environment: {e}", exc_info=True)
         if env:
             env.close()
         sys.exit(1)
@@ -171,7 +181,7 @@ def train_agent(args: argparse.Namespace) -> None:
     trainer = None
     
     try:
-        trainer = RecurrentPPOTrainer(env=env)
+        trainer = RecurrentPPOTrainer(env=env, device=device)
         trainer.checkpoint_dir = output_dir
         
         logger.info(f"  Trainer: RecurrentPPOTrainer")

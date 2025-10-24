@@ -1,0 +1,4 @@
+source;share/mujoco_ros_msgs/local_setup.bash
+source;share/mujoco_ros_msgs/local_setup.dsv
+source;share/mujoco_ros_msgs/local_setup.sh
+source;share/mujoco_ros_msgs/local_setup.zsh

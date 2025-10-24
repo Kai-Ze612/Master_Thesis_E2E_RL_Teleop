@@ -1,0 +1,19 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from mujoco_ros_msgs/srv/Reload.srv
+// generated code does not contain a copyright notice
+
+
+module mujoco_ros_msgs {
+  module srv {
+    struct Reload_Request {
+      string model;
+
+      string admin_hash;
+    };
+    struct Reload_Response {
+      boolean success;
+
+      string status_message;
+    };
+  };
+};

@@ -1,0 +1,24 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/action/cartesian_via_motion__type_support.cpp.o"
+  "CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/action/cartesian_via_motion__type_support.cpp.o.d"
+  "CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/action/joint_via_motion__type_support.cpp.o"
+  "CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/action/joint_via_motion__type_support.cpp.o.d"
+  "CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/joint_pose__type_support.cpp.o"
+  "CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/joint_pose__type_support.cpp.o.d"
+  "CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/set_time_scaling__type_support.cpp.o"
+  "CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/set_time_scaling__type_support.cpp.o.d"
+  "CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/simple_action_result__type_support.cpp.o"
+  "CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/simple_action_result__type_support.cpp.o.d"
+  "libpanda_motion_generator_msgs__rosidl_typesupport_c.pdb"
+  "libpanda_motion_generator_msgs__rosidl_typesupport_c.so"
+  "rosidl_typesupport_c/panda_motion_generator_msgs/action/cartesian_via_motion__type_support.cpp"
+  "rosidl_typesupport_c/panda_motion_generator_msgs/action/joint_via_motion__type_support.cpp"
+  "rosidl_typesupport_c/panda_motion_generator_msgs/msg/joint_pose__type_support.cpp"
+  "rosidl_typesupport_c/panda_motion_generator_msgs/msg/set_time_scaling__type_support.cpp"
+  "rosidl_typesupport_c/panda_motion_generator_msgs/msg/simple_action_result__type_support.cpp"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

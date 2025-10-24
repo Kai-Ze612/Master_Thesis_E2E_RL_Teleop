@@ -49,11 +49,11 @@ JOINT_LIMIT_MARGIN = 0.05  # radians
 ######################################
 
 # Default control frequency (Hz)
-DEFAULT_CONTROL_FREQ = 250
+DEFAULT_CONTROL_FREQ = 100
 CONTROL_CYCLE_TIME = 1.0 / DEFAULT_CONTROL_FREQ  # Seconds
 
 # Default publish frequency for robot state (Hz)
-DEFAULT_PUBLISH_FREQ = 100
+DEFAULT_PUBLISH_FREQ = 200
 
 # Local robot PD gains (joint-specific)
 KP_LOCAL_DEFAULT = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
@@ -99,7 +99,7 @@ MAX_JOINT_ERROR_TERMINATION = 3.0  # radians
 
 # Length of history buffers for observation space
 TARGET_HISTORY_LEN = 10  # How many leader trajectory points to keep
-ACTION_HISTORY_LEN = 5   # How many past actions to buffer
+ACTION_HISTORY_LEN = 10   # How many past actions to buffer
 
 OBS_DIM = (
     N_JOINTS +                              # remote_q: 7
@@ -108,7 +108,7 @@ OBS_DIM = (
     (N_JOINTS * TARGET_HISTORY_LEN) +       # target_q_history: 70
     (N_JOINTS * TARGET_HISTORY_LEN) +       # target_qd_history: 70
     1 +                                     # delay_magnitude: 1
-    (N_JOINTS * ACTION_HISTORY_LEN)         # action_history: 35
+    (N_JOINTS * ACTION_HISTORY_LEN)         # action_history: 70
 )  # Total: 197 dimensions
 
 ######################################
@@ -147,7 +147,7 @@ PREDICTION_LOSS_WEIGHT = 5.0  # Weight for supervised state prediction loss
 PPO_LOSS_WEIGHT = 1.0          # Weight for PPO loss (actor + critic + entropy)
 
 # Training schedule
-PPO_ROLLOUT_STEPS = 2048
+PPO_ROLLOUT_STEPS = 12000
 PPO_NUM_EPOCHS = 10
 PPO_BATCH_SIZE = 64
 PPO_TOTAL_TIMESTEPS = 2_000_000
@@ -164,6 +164,7 @@ REWARD_TRACKING_WEIGHT = 10.0    # Weight for tracking performance
 REWARD_ERROR_SCALE = 100.0       # Scale factor for exponential reward
 REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 0.3  # Weight for velocity prediction vs position
 
+NUM_ENVIRONMENTS = 8  # Number of parallel environments
 ######################################
 # Logging and Checkpointing
 ######################################
@@ -343,71 +344,8 @@ def _validate_config():
         assert EARLY_STOPPING_PATIENCE > 0, "Early stopping patience must be positive"
         assert EARLY_STOPPING_MIN_DELTA >= 0, "Early stopping min delta must be non-negative"
         assert EARLY_STOPPING_CHECK_FREQ > 0, "Early stopping check frequency must be positive"
-    
-    # ============================================================
-    # Print Validation Summary
-    # ============================================================
-    print("\n" + "="*70)
-    print("Configuration Validation Summary")
-    print("="*70)
-    
-    print("\n✓ Robot Configuration:")
-    print(f"  • Joints: {N_JOINTS}")
-    print(f"  • Joint Limits: [{JOINT_LIMITS_LOWER[0]:.2f}, {JOINT_LIMITS_UPPER[0]:.2f}] rad (first joint)")
-    print(f"  • Max Torque: {TORQUE_LIMITS[0]:.1f} Nm (first joint)")
-    print(f"  • Max RL Compensation: {MAX_TORQUE_COMPENSATION[0]:.1f} Nm (first joint)")
-    
-    print("\n✓ Control System:")
-    print(f"  • Frequency: {DEFAULT_CONTROL_FREQ} Hz")
-    print(f"  • Control Cycle: {CONTROL_CYCLE_TIME*1000:.2f} ms")
-    print(f"  • Max Inference Time: {MAX_INFERENCE_TIME*1000:.2f} ms")
-    print(f"  • Safety Margin: {(CONTROL_CYCLE_TIME - MAX_INFERENCE_TIME)*1000:.2f} ms")
-    
-    print("\n✓ Environment:")
-    print(f"  • Max Episode Steps: {MAX_EPISODE_STEPS}")
-    print(f"  • Observation Dimension: {OBS_DIM}")
-    print(f"  • Action Dimension: {N_JOINTS}")
-    print(f"  • Target History Length: {TARGET_HISTORY_LEN}")
-    print(f"  • Action History Length: {ACTION_HISTORY_LEN}")
-    
-    print("\n✓ Model Architecture:")
-    print(f"  • LSTM Hidden Dim: {RNN_HIDDEN_DIM}")
-    print(f"  • LSTM Layers: {RNN_NUM_LAYERS}")
-    print(f"  • LSTM Sequence Length: {RNN_SEQUENCE_LENGTH}")
-    print(f"  • Policy MLP: {PPO_MLP_HIDDEN_DIMS}")
-    
-    print("\n✓ Training Configuration:")
-    print(f"  • Algorithm: Recurrent-PPO (End-to-End)")
-    print(f"  • Total Timesteps: {PPO_TOTAL_TIMESTEPS:,}")
-    print(f"  • Rollout Steps: {PPO_ROLLOUT_STEPS}")
-    print(f"  • Epochs per Update: {PPO_NUM_EPOCHS}")
-    print(f"  • Batch Size: {PPO_BATCH_SIZE}")
-    print(f"  • Learning Rate: {PPO_LEARNING_RATE}")
-    print(f"  • Total Updates: {PPO_TOTAL_TIMESTEPS // PPO_ROLLOUT_STEPS:,}")
-    
-    print("\n✓ Reward Configuration:")
-    print(f"  • Prediction Weight: {REWARD_PREDICTION_WEIGHT}")
-    print(f"  • Tracking Weight: {REWARD_TRACKING_WEIGHT}")
-    print(f"  • Error Scale: {REWARD_ERROR_SCALE}")
-    print(f"  • Velocity Factor: {REWARD_VEL_PREDICTION_WEIGHT_FACTOR}")
-    
-    print("\n✓ Loss Weights:")
-    print(f"  • Prediction Loss: {PREDICTION_LOSS_WEIGHT}")
-    print(f"  • PPO Loss: {PPO_LOSS_WEIGHT}")
-    
-    if ENABLE_EARLY_STOPPING:
-        print("\n✓ Early Stopping:")
-        print(f"  • Enabled: Yes")
-        print(f"  • Patience: {EARLY_STOPPING_PATIENCE} checks")
-        print(f"  • Min Delta: {EARLY_STOPPING_MIN_DELTA}")
-        print(f"  • Check Frequency: every {EARLY_STOPPING_CHECK_FREQ} updates")
-    else:
-        print("\n✗ Early Stopping: Disabled")
-    
-    print("\n" + "="*70)
-    print("All configuration parameters validated successfully! ✓")
-    print("="*70 + "\n")
 
-
+    print("Robot configuration validation passed.")
+    
 # Run validation when config is imported
 _validate_config()

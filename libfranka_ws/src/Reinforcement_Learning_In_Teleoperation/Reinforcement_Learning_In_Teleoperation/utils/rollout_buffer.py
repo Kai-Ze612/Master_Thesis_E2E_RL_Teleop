@@ -1,6 +1,5 @@
 """
-Rollout buffer for storing and managing PPO training data,
-including specific data needed for the recurrent predictor.
+Rollout buffer is a data container that stores the explored experience during interaction with environment.
 """
 
 import numpy as np
@@ -172,7 +171,7 @@ class RolloutBuffer:
         Returns:
             A dictionary containing all trajectory data as tensors on the specified device.
         """
-        if not self.full and self.ptr == 0:
+        if len(self.rewards) == 0:
             raise ValueError("Buffer is empty, cannot get data.")
 
         # Ensure data consistency
@@ -206,4 +205,5 @@ class RolloutBuffer:
 
     def __len__(self) -> int:
         """Return the current number of transitions stored."""
-        return self.buffer_size if self.full else self.ptr
+        # Use the actual length of one of the stored lists
+        return len(self.rewards)

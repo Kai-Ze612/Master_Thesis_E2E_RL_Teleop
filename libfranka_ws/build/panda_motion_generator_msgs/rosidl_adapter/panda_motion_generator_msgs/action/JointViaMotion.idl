@@ -1,0 +1,26 @@
+// generated from rosidl_adapter/resource/action.idl.em
+// with input from panda_motion_generator_msgs/action/JointViaMotion.action
+// generated code does not contain a copyright notice
+
+#include "panda_motion_generator_msgs/msg/JointPose.idl"
+#include "panda_motion_generator_msgs/msg/SimpleActionResult.idl"
+
+module panda_motion_generator_msgs {
+  module action {
+    struct JointViaMotion_Goal {
+      sequence<panda_motion_generator_msgs::msg::JointPose> via_poses;
+
+      @verbatim (language="comment", text=
+        "(0-1] of maximum velocity to be used for motion")
+      double v_scale;
+    };
+    struct JointViaMotion_Result {
+      panda_motion_generator_msgs::msg::SimpleActionResult result;
+    };
+    struct JointViaMotion_Feedback {
+      float progress;
+
+      float time_to_completion;
+    };
+  };
+};

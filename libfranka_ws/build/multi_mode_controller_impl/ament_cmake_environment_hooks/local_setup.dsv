@@ -1,0 +1,3 @@
+source;share/multi_mode_controller_impl/environment/ament_prefix_path.sh
+source;share/multi_mode_controller_impl/environment/library_path.sh
+source;share/multi_mode_controller_impl/environment/path.sh
