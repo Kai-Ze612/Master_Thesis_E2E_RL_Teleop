@@ -3,10 +3,9 @@ Gymnasium environment for teleoperation with variable network delay.
 
 Architecture:
 - Leader (LocalRobotSimulator): Generates reference trajectories
-- Delay Simulator: Models network observation and action delays
 - Follower (RemoteRobotSimulator): Tracks leader with delay-adaptive control
 - RL Agent: Learns torque corrections on top of baseline controller
-
+- Delay Simulator: Models network observation and action delays
 """
 
 # RL library imports
