@@ -1,1 +1,0 @@
-ament_cmake_symlink_install_targets("TARGET_FILES" "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_control2/franka_control2_node" "TARGETS" "franka_control2_node" "RUNTIME_DESTINATION" "lib/franka_control2")

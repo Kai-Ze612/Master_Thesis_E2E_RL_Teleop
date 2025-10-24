@@ -1,5 +1,0 @@
-uint16 num_steps
----
-bool success
----
-uint16 steps_left

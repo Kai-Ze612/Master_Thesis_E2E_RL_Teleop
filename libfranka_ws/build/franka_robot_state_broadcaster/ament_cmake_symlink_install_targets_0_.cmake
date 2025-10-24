@@ -1,1 +1,0 @@
-ament_cmake_symlink_install_targets("TARGET_FILES" "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_robot_state_broadcaster/libfranka_robot_state_broadcaster.so" "TARGETS" "franka_robot_state_broadcaster" "DESTINATION" "lib")

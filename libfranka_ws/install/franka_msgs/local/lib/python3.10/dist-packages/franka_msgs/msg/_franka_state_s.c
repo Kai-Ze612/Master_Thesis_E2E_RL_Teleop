@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_py/franka_msgs/msg/_franka_state_s.c

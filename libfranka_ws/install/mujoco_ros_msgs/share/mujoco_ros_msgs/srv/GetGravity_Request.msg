@@ -1,1 +1,0 @@
-string admin_hash

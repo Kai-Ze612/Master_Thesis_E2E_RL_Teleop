@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_typesupport_fastrtps_c/franka_msgs/srv/detail/set_cartesian_stiffness__rosidl_typesupport_fastrtps_c.h

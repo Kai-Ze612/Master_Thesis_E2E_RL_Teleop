@@ -1,0 +1,24 @@
+[0.024s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros_msgs -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs
+[0.052s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.216s] [31mCMake Error at cmake/Ros2.cmake:2 (find_package):
+[0.216s]   By not providing "Findrosidl_default_generators.cmake" in CMAKE_MODULE_PATH
+[0.216s]   this project has asked CMake to find a package configuration file provided
+[0.216s]   by "rosidl_default_generators", but CMake did not find one.
+[0.216s] 
+[0.216s]   Could not find a package configuration file provided by
+[0.216s]   "rosidl_default_generators" with any of the following names:
+[0.216s] 
+[0.216s]     rosidl_default_generatorsConfig.cmake
+[0.216s]     rosidl_default_generators-config.cmake
+[0.216s] 
+[0.216s]   Add the installation prefix of "rosidl_default_generators" to
+[0.216s]   CMAKE_PREFIX_PATH or set "rosidl_default_generators_DIR" to a directory
+[0.217s]   containing one of the above files.  If "rosidl_default_generators" provides
+[0.217s]   a separate development package or SDK, be sure it has been installed.
+[0.217s] Call Stack (most recent call first):
+[0.217s]   CMakeLists.txt:15 (include)
+[0.217s] 
+[0.217s] [0m
+[0.217s] -- Configuring incomplete, errors occurred!
+[0.217s] See also "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_msgs/CMakeFiles/CMakeOutput.log".
+[0.218s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_msgs' returned '1': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/mujoco_ros_pkgs/mujoco_ros_msgs -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros_msgs

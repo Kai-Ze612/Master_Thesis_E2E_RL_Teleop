@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_generator_py/franka_msgs/_franka_msgs_s.ep.rosidl_typesupport_c.c

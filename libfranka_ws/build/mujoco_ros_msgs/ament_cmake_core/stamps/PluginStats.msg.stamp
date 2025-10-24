@@ -1,7 +1,0 @@
-string plugin_type
-float32 load_time
-float32 reset_time
-float32 ema_steptime_control
-float32 ema_steptime_passive
-float32 ema_steptime_render
-float32 ema_steptime_last_stage

@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_dummy_plugin/ament_cmake_core/mujoco_ros2_dummy_pluginConfig-version.cmake

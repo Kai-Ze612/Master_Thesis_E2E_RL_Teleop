@@ -1,241 +1,459 @@
-# File: train_recurrent_ppo.py
-# (Place this in a location like Reinforcement_Learning_In_Teleoperation/ or Reinforcement_Learning_In_Teleoperation/rl_agent/)
-
 """
 Main training script for end-to-end Recurrent-PPO agent
 for joint-space teleoperation with delay compensation.
 
+This script orchestrates the training process:
+    1. Parse command-line arguments
+    2. Setup output directories and logging
+    3. Create training environment
+    4. Initialize Recurrent-PPO trainer
+    5. Run training loop with checkpointing
+    6. Handle graceful shutdown and error recovery
+
 Usage:
-    python train_recurrent_ppo.py [--config CONFIG_NAME] [--trajectory-type TRAJ_NAME] [...]
+    # Train with medium delay and figure-8 trajectory (default)
+    python train_agent.py
+    
+    # Train with high delay and square trajectory
+    python train_agent.py --config HIGH_DELAY --trajectory-type square
+    
+    # Train with custom timesteps and seed
+    python train_agent.py --timesteps 5000000 --seed 42
+    
+    # Train with trajectory randomization
+    python train_agent.py --randomize-trajectory --tag "rand_traj"
+
+Author: [Your Name]
+Date: [Date]
 """
 
-# Python imports
 import os
 import sys
 from datetime import datetime
 import logging
 import argparse
+from typing import Optional
 import torch
 import numpy as np
 
 # --- Ensure project modules can be imported ---
-# Adjust the path based on where you place this script relative to your project root
 script_dir = os.path.dirname(os.path.abspath(__file__))
-# Example: If script is in project_root/rl_agent/, navigate up one level
 project_root = os.path.dirname(script_dir)
-# Example: If script is in project_root/, use script_dir directly
-# project_root = script_dir
 if project_root not in sys.path:
     sys.path.append(project_root)
+
 # --- Custom imports ---
-# Environment (Adjust path based on your structure)
 from Reinforcement_Learning_In_Teleoperation.rl_agent.training_env import TeleoperationEnvWithDelay
-# Delay and Trajectory Types (Adjust path based on your structure)
 from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
 from Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import TrajectoryType
-# Algorithm Trainer (Adjust path based on your structure)
-from Reinforcement_Learning_In_Teleoperation.Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm import RecurrentPPOTrainer
-# Config (Imports hyperparameters directly)
+from Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm import RecurrentPPOTrainer
 from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    PPO_TOTAL_TIMESTEPS, CHECKPOINT_DIR, DEFAULT_CONTROL_FREQ
+    PPO_TOTAL_TIMESTEPS,
+    CHECKPOINT_DIR,
+    DEFAULT_CONTROL_FREQ
 )
 
 
-# --- Basic Logging Setup ---
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] - %(name)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout) # Log to console
-        # Optional: Add FileHandler to log to a file in the output directory
-        # logging.FileHandler(os.path.join(output_dir, "training.log"))
-    ]
-)
-logger = logging.getLogger(__name__) # Get logger for this script
+def setup_logging(output_dir: str, console_level: int = logging.INFO) -> logging.Logger:
+    """
+    Configure logging to both file and console.
+    
+    Args:
+        output_dir: Directory to save log file
+        console_level: Logging level for console output
+        
+    Returns:
+        Configured logger instance
+    """
+    log_file = os.path.join(output_dir, "training.log")
+    
+    # Create formatters
+    detailed_formatter = logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(name)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    simple_formatter = logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(message)s',
+        datefmt='%H:%M:%S'
+    )
+    
+    # File handler (detailed logging)
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(detailed_formatter)
+    
+    # Console handler (simpler, less verbose)
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(console_level)
+    console_handler.setFormatter(simple_formatter)
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+    root_logger.handlers.clear()  # Remove any existing handlers
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"Logging initialized. Log file: {log_file}")
+    
+    return logger
+
+
+def validate_environment(env: TeleoperationEnvWithDelay, logger: logging.Logger) -> bool:
+    """
+    Perform basic validation checks on the environment.
+    
+    Args:
+        env: Environment instance to validate
+        logger: Logger for outputting messages
+        
+    Returns:
+        True if validation passes, False otherwise
+    """
+    try:
+        # Check observation space
+        obs, info = env.reset()
+        expected_obs_shape = env.observation_space.shape
+        if obs.shape != expected_obs_shape:
+            logger.error(f"Observation shape mismatch: got {obs.shape}, expected {expected_obs_shape}")
+            return False
+        
+        # Check action space
+        expected_action_shape = env.action_space.shape
+        dummy_action = np.zeros(expected_action_shape)
+        
+        # Try a step
+        next_obs, reward, terminated, truncated, info = env.step(dummy_action)
+        
+        if next_obs.shape != expected_obs_shape:
+            logger.error(f"Next observation shape mismatch: got {next_obs.shape}, expected {expected_obs_shape}")
+            return False
+        
+        logger.info("Environment validation passed")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Environment validation failed: {e}", exc_info=True)
+        return False
+
 
 def train_agent(args: argparse.Namespace) -> None:
-    """Sets up the environment, initializes the trainer, and runs the training loop."""
-
+    """
+    Main training function: sets up environment, trainer, and runs training loop.
+    
+    Args:
+        args: Parsed command-line arguments
+    """
+    
     # --- Setup Output Directories ---
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    config_name = args.config.name # Use Enum name
-    trajectory_name = args.trajectory_type.value # Use Enum value (string)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    config_name = args.config.name
+    trajectory_name = args.trajectory_type.value
     run_tag = f"_{args.tag}" if args.tag else ""
-    # Define a clear run name including the algorithm
+    
+    # Create descriptive run name
     run_name = f"RecPPO_{config_name}_{trajectory_name}{run_tag}_{timestamp}"
-
-    # Use CHECKPOINT_DIR from config as the base output path, handle None case
-    base_output_dir = args.output_path or CHECKPOINT_DIR or "./rl_training_output/recurrent_ppo" # Default path
+    
+    # Determine base output directory
+    base_output_dir = args.output_path or CHECKPOINT_DIR or "./rl_training_output/recurrent_ppo"
     output_dir = os.path.join(base_output_dir, run_name)
-
+    
     try:
-        os.makedirs(output_dir, exist_ok=True) # Trainer will save models inside this directory
-        logger.info(f"Output directory: {output_dir}")
-        # Log arguments used for this run
-        logger.info("--- Run Arguments ---")
-        for arg, value in vars(args).items():
-            # Log Enum names for clarity
-            if isinstance(value, (ExperimentConfig, TrajectoryType)):
-                 logger.info(f"  --{arg}: {value.name}")
-            else:
-                 logger.info(f"  --{arg}: {value}")
-        logger.info("---------------------")
+        os.makedirs(output_dir, exist_ok=True)
     except OSError as e:
-        logger.error(f"Failed to create output directories: {e}")
-        return
-
+        print(f"ERROR: Failed to create output directory {output_dir}: {e}")
+        sys.exit(1)
+    
+    # --- Setup Logging ---
+    logger = setup_logging(output_dir)
+    
+    logger.info("="*70)
+    logger.info("Recurrent-PPO Training for Delayed Teleoperation")
+    logger.info("="*70)
+    logger.info(f"Run Name: {run_name}")
+    logger.info(f"Output Directory: {output_dir}")
+    logger.info("")
+    
+    # --- Log Arguments ---
+    logger.info("Training Configuration:")
+    logger.info(f"  Delay Config: {args.config.name}")
+    logger.info(f"  Trajectory Type: {args.trajectory_type.value}")
+    logger.info(f"  Randomize Trajectory: {args.randomize_trajectory}")
+    logger.info(f"  Total Timesteps: {args.timesteps:,}")
+    logger.info(f"  Random Seed: {args.seed if args.seed is not None else 'None (random)'}")
+    logger.info(f"  Device: {args.device}")
+    if args.tag:
+        logger.info(f"  Tag: {args.tag}")
+    logger.info("")
+    
     # --- Device Setup ---
     if args.device == 'auto':
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     else:
         device = args.device
-    logger.info(f"Using device: {device}")
+    
+    logger.info(f"Device: {device}")
     if device == 'cuda':
         try:
-            logger.info(f"  GPU: {torch.cuda.get_device_name(0)}")
+            gpu_name = torch.cuda.get_device_name(0)
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1e9
+            logger.info(f"  GPU: {gpu_name}")
+            logger.info(f"  GPU Memory: {gpu_memory:.1f} GB")
         except Exception as e:
-            logger.error(f"Could not get GPU name: {e}")
-
-
-    # --- Environment Setup ---
-    logger.info("Creating training environment...")
-    try:
-        # Pass the selected config, trajectory, seed etc.
-        env = TeleoperationEnvWithDelay(
-            experiment_config=args.config,
-            trajectory_type=args.trajectory_type,
-            randomize_trajectory=args.randomize_trajectory,
-            seed=args.seed
-        )
-        logger.info(f"Environment created: {env.delay_simulator.config_name}, Freq: {env.control_freq} Hz")
-        # Validate frequency if desired
-        if env.control_freq != DEFAULT_CONTROL_FREQ:
-             logger.warning(f"Env freq ({env.control_freq}Hz) != Config default ({DEFAULT_CONTROL_FREQ}Hz)")
-
-    except Exception as e:
-        logger.error(f"Failed to create environment: {e}", exc_info=True)
-        return
-
-    # --- Trainer Initialization ---
-    logger.info("Initializing Recurrent-PPO trainer...")
-    try:
-        # Pass the environment instance and device
-        # The trainer will use hyperparameters imported from config.py
-        trainer = RecurrentPPOTrainer(env, device=device)
-        # Set the specific directory for this run's checkpoints within the trainer
-        trainer.checkpoint_dir = output_dir # Trainer will save inside this directory
-        logger.info("Trainer initialized.")
-    except Exception as e:
-        logger.error(f"Failed to initialize trainer: {e}", exc_info=True)
-        env.close()
-        return
-
-    # --- Start Training ---
-    try:
-        logger.info(f"Starting training for {args.timesteps:,} timesteps...")
-        # Train using the total timesteps specified (command line or config default)
-        trainer.train(total_timesteps=args.timesteps)
-        logger.info("Training finished.")
-    except KeyboardInterrupt:
-        logger.warning("Training interrupted by user. Saving final model...")
-        # Save model gracefully on interrupt
-        final_path = os.path.join(trainer.checkpoint_dir, "interrupted_final_policy.pth")
-        try:
-            trainer.policy.save(final_path)
-            logger.info(f"Interrupted model saved to {final_path}")
-        except Exception as save_e:
-            logger.error(f"Could not save interrupted model: {save_e}")
-    except Exception as e:
-         logger.error(f"An error occurred during training: {e}", exc_info=True)
-         # Attempt to save a crash model for debugging
-         crash_path = os.path.join(trainer.checkpoint_dir, "crash_policy.pth")
-         try: # Try saving, might fail if error is severe
-             trainer.policy.save(crash_path)
-             logger.info(f"Saved crash model to {crash_path}")
-         except Exception as save_e:
-              logger.error(f"Could not save crash model: {save_e}")
-    finally:
-        # --- Cleanup ---
-        env.close()
-        logger.info("Environment closed.")
-
-def main():
-    """Parses command-line arguments and launches the Recurrent-PPO training."""
-    parser = argparse.ArgumentParser(
-        description="Train an end-to-end Recurrent-PPO agent for teleoperation.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    # --- Experiment Configuration ---
-    exp_group = parser.add_argument_group('Experiment Configuration')
-    exp_group.add_argument(
-        "--config", type=str.upper, default="MEDIUM_DELAY", # Default to Medium Delay, use upper case
-        choices=[e.name for e in ExperimentConfig], # Use Enum names
-        help="Delay config preset name from ExperimentConfig (e.g., LOW_DELAY, MEDIUM_DELAY, OBSERVATION_DELAY_ONLY)."
-    )
-    exp_group.add_argument(
-        "--trajectory-type", type=str.lower, default="figure_8",
-        choices=[t.value for t in TrajectoryType], # Use Enum values (strings)
-        help="Type of reference trajectory (e.g., figure_8, square)."
-    )
-    exp_group.add_argument(
-        "--randomize-trajectory", action="store_true",
-        help="If set, randomize trajectory parameters during training."
-    )
-    exp_group.add_argument(
-        "--timesteps", type=int, default=PPO_TOTAL_TIMESTEPS, # Default from config
-        help="Total training timesteps."
-    )
-    exp_group.add_argument(
-        "--output-path", type=str, default=None, # Default based on CHECKPOINT_DIR
-        help=f"Base directory to save models and logs (defaults to config's CHECKPOINT_DIR or ./rl_training_output/recurrent_ppo)."
-    )
-    exp_group.add_argument(
-        "--seed", type=int, default=None,
-        help="Random seed for reproducibility (numpy, torch, env)."
-    )
-    exp_group.add_argument(
-        "--tag", type=str, default=None,
-        help="Optional tag to append to the run name for identification."
-    )
-    exp_group.add_argument(
-        "--device", type=str, default='auto', choices=['auto', 'cuda', 'cpu'],
-        help="Device for training ('auto' uses cuda if available, else cpu)."
-    )
-
-    # --- No algorithm hyperparameters here - they are in config.py ---
-
-    args = parser.parse_args()
-
-    # --- Process Arguments ---
-    # Convert string names from argparse back to Enum members
-    try:
-        # Match case-insensitively just in case
-        args.config = ExperimentConfig[args.config.upper()]
-    except KeyError:
-        logger.error(f"Invalid --config name provided: '{args.config}'. Available: {[e.name for e in ExperimentConfig]}")
-        sys.exit(1)
-
-    try:
-        # Match case-insensitively
-        args.trajectory_type = next(t for t in TrajectoryType if t.value.lower() == args.trajectory_type.lower())
-    except StopIteration:
-        logger.error(f"Invalid --trajectory-type value provided: '{args.trajectory_type}'. Available: {[t.value for t in TrajectoryType]}")
-        sys.exit(1)
-
-    # Set seed for reproducibility if provided
+            logger.warning(f"Could not get GPU info: {e}")
+    logger.info("")
+    
+    # --- Set Random Seeds ---
     if args.seed is not None:
+        logger.info(f"Setting random seed: {args.seed}")
         np.random.seed(args.seed)
         torch.manual_seed(args.seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(args.seed)
-            # Consider adding these for full determinism, but they can slow down training
+            # For full determinism (may slow down training):
             # torch.backends.cudnn.deterministic = True
             # torch.backends.cudnn.benchmark = False
-        logger.info(f"Using random seed: {args.seed}")
+        logger.info("Random seeds set for NumPy, PyTorch, and CUDA")
+        logger.info("")
+    
+    # --- Environment Setup ---
+    logger.info("Creating training environment...")
+    env = None
+    try:
+        env = TeleoperationEnvWithDelay(
+            delay_config=args.config,  # Fixed: was experiment_config
+            trajectory_type=args.trajectory_type,
+            randomize_trajectory=args.randomize_trajectory,
+            seed=args.seed
+        )
+        
+        logger.info(f"  Environment: TeleoperationEnvWithDelay")
+        logger.info(f"  Delay Config: {env.delay_simulator.config_name}")
+        logger.info(f"  Control Frequency: {env.control_freq} Hz")
+        logger.info(f"  Max Episode Steps: {env.max_episode_steps}")
+        logger.info(f"  Observation Space: {env.observation_space.shape}")
+        logger.info(f"  Action Space: {env.action_space.shape}")
+        
+        # Validate frequency matches config
+        if env.control_freq != DEFAULT_CONTROL_FREQ:
+            logger.warning(f"Environment frequency ({env.control_freq} Hz) differs from "
+                         f"config default ({DEFAULT_CONTROL_FREQ} Hz)")
+        
+        # Validate environment
+        logger.info("")
+        logger.info("Validating environment...")
+        if not validate_environment(env, logger):
+            logger.error("Environment validation failed. Aborting training.")
+            if env:
+                env.close()
+            sys.exit(1)
+        logger.info("")
+        
+    except Exception as e:
+        logger.error(f"Failed to create environment: {e}", exc_info=True)
+        if env:
+            env.close()
+        sys.exit(1)
+    
+    # --- Trainer Initialization ---
+    logger.info("Initializing Recurrent-PPO trainer...")
+    trainer = None
+    try:
+        trainer = RecurrentPPOTrainer(env=env, device=device)
+        
+        # Override checkpoint directory for this specific run
+        trainer.checkpoint_dir = output_dir
+        
+        logger.info(f"  Trainer: RecurrentPPOTrainer")
+        logger.info(f"  Policy Parameters: {trainer.policy.count_parameters():,}")
+        logger.info(f"  Checkpoint Directory: {output_dir}")
+        logger.info("")
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize trainer: {e}", exc_info=True)
+        env.close()
+        sys.exit(1)
+    
+    # --- Start Training ---
+    training_successful = False
+    try:
+        logger.info("="*70)
+        logger.info("Starting Training")
+        logger.info("="*70)
+        logger.info("")
+        
+        trainer.train(total_timesteps=args.timesteps)
+        
+        logger.info("")
+        logger.info("="*70)
+        logger.info("Training Completed Successfully")
+        logger.info("="*70)
+        training_successful = True
+        
+    except KeyboardInterrupt:
+        logger.warning("")
+        logger.warning("="*70)
+        logger.warning("Training Interrupted by User")
+        logger.warning("="*70)
+        logger.warning("Saving interrupted model...")
+        
+        # Save model gracefully on interrupt
+        interrupt_path = os.path.join(trainer.checkpoint_dir, "interrupted_policy.pth")
+        try:
+            trainer.policy.save(interrupt_path)
+            logger.info(f"Interrupted model saved to: {interrupt_path}")
+        except Exception as save_e:
+            logger.error(f"Could not save interrupted model: {save_e}")
+    
+    except Exception as e:
+        logger.error("")
+        logger.error("="*70)
+        logger.error("Training Failed with Error")
+        logger.error("="*70)
+        logger.error(f"Error: {e}", exc_info=True)
+        
+        # Attempt to save crash model for debugging
+        crash_path = os.path.join(trainer.checkpoint_dir, "crash_policy.pth")
+        try:
+            trainer.policy.save(crash_path)
+            logger.info(f"Crash model saved to: {crash_path}")
+        except Exception as save_e:
+            logger.error(f"Could not save crash model: {save_e}")
+    
+    finally:
+        # --- Cleanup ---
+        logger.info("")
+        logger.info("Cleaning up...")
+        if env:
+            env.close()
+            logger.info("Environment closed")
+        
+        logger.info("")
+        logger.info("="*70)
+        logger.info(f"Output Directory: {output_dir}")
+        logger.info("="*70)
+        
+        if training_successful:
+            logger.info("Training completed successfully! 🎉")
+        else:
+            logger.info("Training ended prematurely.")
 
-    # --- Launch Training ---
-    train_agent(args)
+
+def parse_arguments() -> argparse.Namespace:
+    """
+    Parse command-line arguments.
+    
+    Returns:
+        Namespace containing parsed arguments
+    """
+    parser = argparse.ArgumentParser(
+        description="Train an end-to-end Recurrent-PPO agent for delayed teleoperation.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    # --- Experiment Configuration ---
+    exp_group = parser.add_argument_group('Experiment Configuration')
+    
+    exp_group.add_argument(
+        "--config",
+        type=str.upper,
+        default="MEDIUM_DELAY",
+        choices=[e.name for e in ExperimentConfig],
+        help="Delay configuration preset (LOW_DELAY, MEDIUM_DELAY, HIGH_DELAY, etc.)"
+    )
+    
+    exp_group.add_argument(
+        "--trajectory-type",
+        type=str.lower,
+        default="figure_8",
+        choices=[t.value for t in TrajectoryType],
+        help="Reference trajectory type (figure_8, square, lissajous_complex)"
+    )
+    
+    exp_group.add_argument(
+        "--randomize-trajectory",
+        action="store_true",
+        help="Randomize trajectory parameters during training for better generalization"
+    )
+    
+    exp_group.add_argument(
+        "--timesteps",
+        type=int,
+        default=PPO_TOTAL_TIMESTEPS,
+        help="Total training timesteps"
+    )
+    
+    exp_group.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed for reproducibility (None for random seed)"
+    )
+    
+    exp_group.add_argument(
+        "--device",
+        type=str,
+        default='auto',
+        choices=['auto', 'cuda', 'cpu'],
+        help="Device for training (auto selects CUDA if available)"
+    )
+    
+    # --- Output Configuration ---
+    output_group = parser.add_argument_group('Output Configuration')
+    
+    output_group.add_argument(
+        "--output-path",
+        type=str,
+        default=None,
+        help=f"Base directory for saving models and logs (default: {CHECKPOINT_DIR or './rl_training_output/recurrent_ppo'})"
+    )
+    
+    output_group.add_argument(
+        "--tag",
+        type=str,
+        default=None,
+        help="Optional tag to append to run name for easy identification"
+    )
+    
+    args = parser.parse_args()
+    
+    # --- Process and Validate Arguments ---
+    try:
+        args.config = ExperimentConfig[args.config.upper()]
+    except KeyError:
+        print(f"ERROR: Invalid --config '{args.config}'")
+        print(f"Available options: {[e.name for e in ExperimentConfig]}")
+        sys.exit(1)
+    
+    try:
+        args.trajectory_type = next(
+            t for t in TrajectoryType 
+            if t.value.lower() == args.trajectory_type.lower()
+        )
+    except StopIteration:
+        print(f"ERROR: Invalid --trajectory-type '{args.trajectory_type}'")
+        print(f"Available options: {[t.value for t in TrajectoryType]}")
+        sys.exit(1)
+    
+    # Validate timesteps
+    if args.timesteps <= 0:
+        print(f"ERROR: --timesteps must be positive, got {args.timesteps}")
+        sys.exit(1)
+    
+    return args
+
+
+def main():
+    """Main entry point."""
+    try:
+        args = parse_arguments()
+        train_agent(args)
+    except Exception as e:
+        print(f"FATAL ERROR: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,0 @@
-setup.py
-multi_mode_control_msgs/__init__.py
-multi_mode_control_msgs.egg-info/PKG-INFO
-multi_mode_control_msgs.egg-info/SOURCES.txt
-multi_mode_control_msgs.egg-info/dependency_links.txt
-multi_mode_control_msgs.egg-info/top_level.txt
