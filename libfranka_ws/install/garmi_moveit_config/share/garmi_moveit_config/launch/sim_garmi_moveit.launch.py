@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_moveit_config/launch/sim_garmi_moveit.launch.py

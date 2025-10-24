@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_multi_mode_controller/panda_motion_generators/include/panda_motion_generators/base/motion_generator_ros_interface.h

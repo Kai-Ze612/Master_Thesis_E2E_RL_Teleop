@@ -1,7 +1,0 @@
-[  0%] Built target multi_mode_control_msgs__cpp
-[  0%] Built target ament_cmake_python_symlink_multi_mode_control_msgs
-[  0%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
-[  1%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/msg/detail/cartesian_impedance_goal__type_support.cpp.o[0m
-[  1%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/msg/detail/wrench__type_support.cpp.o[0m
-[  2%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/get_controllers__type_support.cpp.o[0m
-[  2%] [32mBuilding CXX object CMakeFiles/multi_mode_control_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/multi_mode_control_msgs/srv/detail/get_robot_states__type_support.cpp.o[0m

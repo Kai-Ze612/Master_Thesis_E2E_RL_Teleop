@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_typesupport_introspection_c/franka_msgs/msg/detail/franka_model__rosidl_typesupport_introspection_c.h

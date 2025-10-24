@@ -1,3 +1,0 @@
-gmake[2]: *** [Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/build.make:440: Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsServerCommandProcessor.cpp.o] Interrupt
-gmake[1]: *** [CMakeFiles/Makefile2:1355: Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/all] Interrupt
-gmake: *** [Makefile:146: all] Interrupt

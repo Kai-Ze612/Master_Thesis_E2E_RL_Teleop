@@ -1,2 +1,0 @@
-string level1
-string level2

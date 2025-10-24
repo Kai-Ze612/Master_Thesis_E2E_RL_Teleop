@@ -1,8 +1,0 @@
-[0.055s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/BULLET_PHYSICS': /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/BULLET_PHYSICS -- -j12 -l12
-[0.523s] [35m[1mConsolidate compiler generated dependencies of target LinearMath[0m
-[0.523s] [  2%] Built target LinearMath
-[0.523s] [35m[1mConsolidate compiler generated dependencies of target BulletRobotics[0m
-[0.523s] [  2%] [32mBuilding CXX object Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsServerCommandProcessor.cpp.o[0m
-[5.693s] gmake[2]: *** [Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/build.make:440: Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsServerCommandProcessor.cpp.o] Interrupt
-[5.693s] gmake[1]: *** [CMakeFiles/Makefile2:1355: Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/all] Interrupt
-[5.694s] gmake: *** [Makefile:146: all] Interrupt
