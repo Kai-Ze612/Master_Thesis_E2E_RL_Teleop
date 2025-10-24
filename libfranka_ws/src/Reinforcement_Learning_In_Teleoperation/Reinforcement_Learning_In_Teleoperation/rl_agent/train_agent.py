@@ -89,14 +89,19 @@ def train_agent(args: argparse.Namespace) -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     config_name = args.config.name
     trajectory_name = args.trajectory_type.value
-    run_tag = f"_{args.tag}" if args.tag else ""
     
     # File name
-    run_name = f"RecPPO_{config_name}_{trajectory_name}{run_tag}_{timestamp}"
-    
+    run_name = f"RecPPO_{config_name}_{trajectory_name}_{timestamp}"
+        
     # Determine base output directory
-    base_output_dir = args.output_path or CHECKPOINT_DIR or "./rl_training_output/recurrent_ppo"
+    base_output_dir = CHECKPOINT_DIR or "./rl_training_output/recurrent_ppo"
     output_dir = os.path.join(base_output_dir, run_name)
+    
+    try:
+        os.makedirs(output_dir, exist_ok=True)
+    except OSError as e:
+        print(f"ERROR: Failed to create output directory {output_dir}: {e}")
+        sys.exit(1)
     
     # Setup Logging
     logger = setup_logging(output_dir)
@@ -108,8 +113,6 @@ def train_agent(args: argparse.Namespace) -> None:
     logger.info(f"  Randomize Trajectory: {args.randomize_trajectory}")
     logger.info(f"  Total Timesteps: {args.timesteps:,}")
     logger.info(f"  Random Seed: {args.seed if args.seed is not None else 'None (random)'}")
-    if args.tag:
-        logger.info(f"  Tag: {args.tag}")
     logger.info("")
     
     # Device setup
@@ -180,7 +183,7 @@ def train_agent(args: argparse.Namespace) -> None:
         logger.error(f"Failed to initialize trainer: {e}", exc_info=True)
         env.close()
         sys.exit(1)
-    
+   
     # --- Start Training ---
     training_successful = False
     try:
