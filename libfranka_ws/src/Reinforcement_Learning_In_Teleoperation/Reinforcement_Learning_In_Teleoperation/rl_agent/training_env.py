@@ -50,7 +50,7 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
 
 class TeleoperationEnvWithDelay(gym.Env):
 
-    metadata = {'render_modes': ['human']}
+    metadata = {'render_modes': []}
 
     def __init__(
         self,

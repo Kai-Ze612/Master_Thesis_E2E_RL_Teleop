@@ -102,15 +102,6 @@ MAX_JOINT_ERROR_TERMINATION = 3.0  # radians
 TARGET_HISTORY_LEN = 10  # How many leader trajectory points to keep
 ACTION_HISTORY_LEN = 5   # How many past actions to buffer
 
-# Observation space dimension calculation
-# Components:
-#   - remote_q: 7
-#   - remote_qd: 7
-#   - delayed_target_q: 7
-#   - target_q_history: 7 * TARGET_HISTORY_LEN = 70
-#   - target_qd_history: 7 * TARGET_HISTORY_LEN = 70
-#   - delay_magnitude: 1
-#   - action_history: 7 * ACTION_HISTORY_LEN = 35
 OBS_DIM = (
     N_JOINTS +                              # remote_q: 7
     N_JOINTS +                              # remote_qd: 7
@@ -187,7 +178,7 @@ CHECKPOINT_DIR = "./rl_training_output/checkpoints/recurrent_ppo"
 ######################################
 
 INFERENCE_DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-MAX_INFERENCE_TIME = 0.75 * CONTROL_CYCLE_TIME  # 75% of control cycle for safety
+MAX_INFERENCE_TIME = 0.9 * CONTROL_CYCLE_TIME  # 90% of control cycle for safety
 
 ######################################
 # Early Stopping Configuration
