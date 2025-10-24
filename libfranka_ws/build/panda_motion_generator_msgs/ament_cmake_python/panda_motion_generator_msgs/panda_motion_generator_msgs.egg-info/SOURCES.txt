@@ -1,0 +1,13 @@
+setup.py
+panda_motion_generator_msgs/__init__.py
+panda_motion_generator_msgs.egg-info/PKG-INFO
+panda_motion_generator_msgs.egg-info/SOURCES.txt
+panda_motion_generator_msgs.egg-info/dependency_links.txt
+panda_motion_generator_msgs.egg-info/top_level.txt
+panda_motion_generator_msgs/action/__init__.py
+panda_motion_generator_msgs/action/_cartesian_via_motion.py
+panda_motion_generator_msgs/action/_joint_via_motion.py
+panda_motion_generator_msgs/msg/__init__.py
+panda_motion_generator_msgs/msg/_joint_pose.py
+panda_motion_generator_msgs/msg/_set_time_scaling.py
+panda_motion_generator_msgs/msg/_simple_action_result.py

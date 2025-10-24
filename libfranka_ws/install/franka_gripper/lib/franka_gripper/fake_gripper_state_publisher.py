@@ -1,0 +1,1 @@
+/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_gripper/scripts/fake_gripper_state_publisher.py

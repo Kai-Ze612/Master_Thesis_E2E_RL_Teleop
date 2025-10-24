@@ -1,0 +1,54 @@
+[33mCMake Warning (dev) at /usr/share/cmake-3.22/Modules/FindOpenGL.cmake:315 (message):
+  Policy CMP0072 is not set: FindOpenGL prefers GLVND by default when
+  available.  Run "cmake --help-policy CMP0072" for policy details.  Use the
+  cmake_policy command to set the policy and suppress this warning.
+
+  FindOpenGL found both a legacy GL library:
+
+    OPENGL_gl_LIBRARY: /usr/lib/x86_64-linux-gnu/libGL.so
+
+  and GLVND libraries for OpenGL and GLX:
+
+    OPENGL_opengl_LIBRARY: /usr/lib/x86_64-linux-gnu/libOpenGL.so
+    OPENGL_glx_LIBRARY: /usr/lib/x86_64-linux-gnu/libGLX.so
+
+  OpenGL_GL_PREFERENCE has not been set to "GLVND" or "LEGACY", so for
+  compatibility with CMake 3.10 and below the legacy GL library will be used.
+Call Stack (most recent call first):
+  /usr/share/cmake-3.22/Modules/CMakeFindDependencyMacro.cmake:47 (find_package)
+  /home/kai/Libraries/mujoco/lib/cmake/mujoco/mujocoConfig.cmake:42 (find_dependency)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/mujoco_rosConfig.cmake:41 (include)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake/mujoco_ros2_controlConfig.cmake:41 (include)
+  CMakeLists.txt:33 (find_package)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+[0m
+[33mCMake Warning at /usr/share/cmake-3.22/Modules/FindBoost.cmake:2201 (message):
+  No header defined for python310; skipping header check (note: header-only
+  libraries have no designated component)
+Call Stack (most recent call first):
+  /opt/ros/humble/lib/x86_64-linux-gnu/cmake/eigenpy/boost.cmake:148 (find_package)
+  /opt/ros/humble/lib/x86_64-linux-gnu/cmake/eigenpy/eigenpyConfig.cmake:149 (SEARCH_FOR_BOOST_PYTHON)
+  /usr/share/cmake-3.22/Modules/CMakeFindDependencyMacro.cmake:47 (find_package)
+  /opt/ros/humble/lib/x86_64-linux-gnu/cmake/pinocchio/pinocchioConfig.cmake:161 (find_dependency)
+  CMakeLists.txt:43 (find_package)
+
+[0m
+[31mCMake Error at CMakeLists.txt:188 (find_package):
+  By not providing "Findament_cmake_copyright.cmake" in CMAKE_MODULE_PATH
+  this project has asked CMake to find a package configuration file provided
+  by "ament_cmake_copyright", but CMake did not find one.
+
+  Could not find a package configuration file provided by
+  "ament_cmake_copyright" with any of the following names:
+
+    ament_cmake_copyrightConfig.cmake
+    ament_cmake_copyright-config.cmake
+
+  Add the installation prefix of "ament_cmake_copyright" to CMAKE_PREFIX_PATH
+  or set "ament_cmake_copyright_DIR" to a directory containing one of the
+  above files.  If "ament_cmake_copyright" provides a separate development
+  package or SDK, be sure it has been installed.
+
+[0m

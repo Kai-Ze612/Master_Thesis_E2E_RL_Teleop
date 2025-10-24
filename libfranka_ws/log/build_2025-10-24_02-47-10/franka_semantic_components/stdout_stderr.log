@@ -1,0 +1,107 @@
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+-- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+-- Override CMake install command with custom implementation using symlinks instead of copying resources
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Found franka_hardware: 0.0.0 (/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_hardware/share/franka_hardware/cmake)
+-- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+-- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+-- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+-- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+-- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+-- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+-- Found rmw_fastrtps_cpp: 6.2.8 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+-- Found TinyXML2 via Config file: TinyXML2_DIR-NOTFOUND
+-- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+-- Found TinyXML2 via Config file: TinyXML2_DIR-NOTFOUND
+-- Found FastRTPS: /opt/ros/humble/include  
+-- Found TinyXML2 via Config file: TinyXML2_DIR-NOTFOUND
+-- Found TinyXML2 via Config file: TinyXML2_DIR-NOTFOUND
+-- Using RMW implementation 'rmw_fastrtps_cpp' as default
+-- Found eigen3_cmake_module: 0.1.1 (/opt/ros/humble/share/eigen3_cmake_module/cmake)
+-- Found Eigen3: TRUE (found version "3.3.9") 
+-- Ensuring Eigen3 include directory is part of orocos-kdl CMake target
+[33mCMake Warning (dev) at /usr/share/cmake-3.22/Modules/FindOpenGL.cmake:315 (message):
+  Policy CMP0072 is not set: FindOpenGL prefers GLVND by default when
+  available.  Run "cmake --help-policy CMP0072" for policy details.  Use the
+  cmake_policy command to set the policy and suppress this warning.
+
+  FindOpenGL found both a legacy GL library:
+
+    OPENGL_gl_LIBRARY: /usr/lib/x86_64-linux-gnu/libGL.so
+
+  and GLVND libraries for OpenGL and GLX:
+
+    OPENGL_opengl_LIBRARY: /usr/lib/x86_64-linux-gnu/libOpenGL.so
+    OPENGL_glx_LIBRARY: /usr/lib/x86_64-linux-gnu/libGLX.so
+
+  OpenGL_GL_PREFERENCE has not been set to "GLVND" or "LEGACY", so for
+  compatibility with CMake 3.10 and below the legacy GL library will be used.
+Call Stack (most recent call first):
+  /usr/share/cmake-3.22/Modules/CMakeFindDependencyMacro.cmake:47 (find_package)
+  /home/kai/Libraries/mujoco/lib/cmake/mujoco/mujocoConfig.cmake:42 (find_dependency)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros/share/mujoco_ros/cmake/mujoco_rosConfig.cmake:41 (include)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control/share/mujoco_ros2_control/cmake/mujoco_ros2_controlConfig.cmake:41 (include)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_hardware/share/franka_hardware/cmake/ament_cmake_export_dependencies-extras.cmake:21 (find_package)
+  /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_hardware/share/franka_hardware/cmake/franka_hardwareConfig.cmake:41 (include)
+  CMakeLists.txt:20 (find_package)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+[0m
+-- Found franka_msgs: 0.0.0 (/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_msgs/share/franka_msgs/cmake)
+-- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)
+-- Added test 'clang_format' to check C / C++ code style
+-- Added test 'copyright' to check source files copyright and LICENSE
+-- Added test 'cppcheck' to perform static code analysis on C / C++ code
+-- Configured cppcheck include dirs: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_semantic_components/include
+-- Configured cppcheck exclude dirs and/or files: 
+-- Added test 'lint_cmake' to check CMake code style
+-- Added test 'xmllint' to check XML markup files
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_semantic_components
+[ 33%] [32mBuilding CXX object CMakeFiles/franka_semantic_components.dir/src/franka_robot_state.cpp.o[0m
+[ 66%] [32mBuilding CXX object CMakeFiles/franka_semantic_components.dir/src/franka_robot_model.cpp.o[0m
+[100%] [32m[1mLinking CXX shared library libfranka_semantic_components.so[0m
+[100%] Built target franka_semantic_components
+-- Install configuration: ""
+-- Execute custom install script
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/lib/libfranka_semantic_components.so
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/include/franka_semantic_components/franka_robot_model.hpp
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/include/franka_semantic_components/franka_robot_state.hpp
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/environment/library_path.sh
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/environment/library_path.dsv
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/ament_index/resource_index/package_run_dependencies/franka_semantic_components
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/ament_index/resource_index/parent_prefix_path/franka_semantic_components
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/environment/ament_prefix_path.sh
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/environment/ament_prefix_path.dsv
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/environment/path.sh
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/environment/path.dsv
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/local_setup.bash
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/local_setup.sh
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/local_setup.zsh
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/local_setup.dsv
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/package.dsv
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/ament_index/resource_index/packages/franka_semantic_components
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/cmake/ament_cmake_export_include_directories-extras.cmake
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/cmake/ament_cmake_export_libraries-extras.cmake
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/cmake/ament_cmake_export_dependencies-extras.cmake
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/cmake/franka_semantic_componentsConfig.cmake
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/cmake/franka_semantic_componentsConfig-version.cmake
+-- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_semantic_components/share/franka_semantic_components/package.xml

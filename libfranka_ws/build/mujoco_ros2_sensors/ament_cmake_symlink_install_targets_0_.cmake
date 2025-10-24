@@ -1,0 +1,1 @@
+ament_cmake_symlink_install_targets("TARGET_FILES" "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_sensors/libmujoco_ros2_sensors_plugin.so" "TARGETS" "mujoco_ros2_sensors_plugin" "ARCHIVE_DESTINATION" "lib" "LIBRARY_DESTINATION" "lib" "RUNTIME_DESTINATION" "bin")

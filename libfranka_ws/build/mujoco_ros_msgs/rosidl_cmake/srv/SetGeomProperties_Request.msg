@@ -1,0 +1,6 @@
+mujoco_ros_msgs/GeomProperties properties
+bool set_type
+bool set_mass
+bool set_friction
+bool set_size
+string admin_hash

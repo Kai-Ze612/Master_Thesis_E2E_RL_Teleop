@@ -1,0 +1,31 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from mujoco_ros_msgs/msg/GeomProperties.msg
+// generated code does not contain a copyright notice
+
+#include "mujoco_ros_msgs/msg/GeomType.idl"
+
+module mujoco_ros_msgs {
+  module msg {
+    struct GeomProperties {
+      string name;
+
+      mujoco_ros_msgs::msg::GeomType type;
+
+      @verbatim (language="comment", text=
+        "total mass of the body this geom belongs to")
+      float body_mass;
+
+      float size_0;
+
+      float size_1;
+
+      float size_2;
+
+      float friction_slide;
+
+      float friction_spin;
+
+      float friction_roll;
+    };
+  };
+};

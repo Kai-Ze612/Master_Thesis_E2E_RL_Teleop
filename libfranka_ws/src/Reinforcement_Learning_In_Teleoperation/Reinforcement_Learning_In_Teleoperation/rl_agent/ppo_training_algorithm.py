@@ -55,11 +55,10 @@ logger = logging.getLogger(__name__)
 
 
 class RecurrentPPOTrainer:
- 
-    def __init__(self, env):
-        
+
+    def __init__(self, env, device = 'cuda'):
         self.env = env
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device(device)
 
         # Initialize policy
         self.policy = RecurrentPPOPolicy().to(self.device)

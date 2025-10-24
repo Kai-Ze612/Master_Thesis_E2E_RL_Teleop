@@ -1,0 +1,7 @@
+gmake[2]: *** [Extras/Serialize/BulletFileLoader/CMakeFiles/BulletFileLoader.dir/build.make:104: Extras/Serialize/BulletFileLoader/CMakeFiles/BulletFileLoader.dir/bFile.cpp.o] Interrupt
+gmake[2]: *** [src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/build.make:76: src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/btSoftBody.cpp.o] Interrupt
+gmake[2]: *** [Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/build.make:440: Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/__/__/examples/SharedMemory/PhysicsServerCommandProcessor.cpp.o] Interrupt
+gmake[1]: *** [CMakeFiles/Makefile2:1485: Extras/Serialize/BulletFileLoader/CMakeFiles/BulletFileLoader.dir/all] Interrupt
+gmake[1]: *** [CMakeFiles/Makefile2:1719: src/BulletSoftBody/CMakeFiles/BulletSoftBody.dir/all] Interrupt
+gmake[1]: *** [CMakeFiles/Makefile2:1355: Extras/BulletRobotics/CMakeFiles/BulletRobotics.dir/all] Interrupt
+gmake: *** [Makefile:146: all] Interrupt

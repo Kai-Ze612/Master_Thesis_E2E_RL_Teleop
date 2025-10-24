@@ -1,0 +1,35 @@
+[0.780s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_moveit_config -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config
+[1.040s] -- The C compiler identification is GNU 11.4.0
+[1.308s] -- The CXX compiler identification is GNU 11.4.0
+[1.349s] -- Detecting C compiler ABI info
+[1.784s] -- Detecting C compiler ABI info - done
+[1.803s] -- Check for working C compiler: /usr/bin/cc - skipped
+[1.805s] -- Detecting C compile features
+[1.808s] -- Detecting C compile features - done
+[1.824s] -- Detecting CXX compiler ABI info
+[2.209s] -- Detecting CXX compiler ABI info - done
+[2.253s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[2.261s] -- Detecting CXX compile features
+[2.262s] -- Detecting CXX compile features - done
+[2.276s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[2.972s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[3.164s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[3.344s] [31mCMake Error at CMakeLists.txt:13 (find_package):
+[3.345s]   By not providing "Findament_lint_auto.cmake" in CMAKE_MODULE_PATH this
+[3.345s]   project has asked CMake to find a package configuration file provided by
+[3.345s]   "ament_lint_auto", but CMake did not find one.
+[3.345s] 
+[3.345s]   Could not find a package configuration file provided by "ament_lint_auto"
+[3.345s]   with any of the following names:
+[3.346s] 
+[3.346s]     ament_lint_autoConfig.cmake
+[3.346s]     ament_lint_auto-config.cmake
+[3.346s] 
+[3.346s]   Add the installation prefix of "ament_lint_auto" to CMAKE_PREFIX_PATH or
+[3.346s]   set "ament_lint_auto_DIR" to a directory containing one of the above files.
+[3.346s]   If "ament_lint_auto" provides a separate development package or SDK, be
+[3.347s]   sure it has been installed.
+[3.347s] 
+[3.347s] [0m
+[3.358s] -- Configuring incomplete, errors occurred!
+[3.362s] See also "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config/CMakeFiles/CMakeOutput.log".
