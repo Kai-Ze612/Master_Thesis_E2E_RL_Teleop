@@ -1,0 +1,3 @@
+source;share/BULLET_PHYSICS/hook/cmake_prefix_path.ps1
+source;share/BULLET_PHYSICS/hook/cmake_prefix_path.dsv
+source;share/BULLET_PHYSICS/hook/cmake_prefix_path.sh

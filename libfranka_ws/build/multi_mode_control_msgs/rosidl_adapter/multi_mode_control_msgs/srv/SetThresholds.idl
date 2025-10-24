@@ -1,0 +1,18 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from multi_mode_control_msgs/srv/SetThresholds.srv
+// generated code does not contain a copyright notice
+
+#include "multi_mode_control_msgs/msg/ContactThresholds.idl"
+
+module multi_mode_control_msgs {
+  module srv {
+    struct SetThresholds_Request {
+      multi_mode_control_msgs::msg::ContactThresholds level1;
+
+      multi_mode_control_msgs::msg::ContactThresholds level2;
+    };
+    struct SetThresholds_Response {
+      uint8 structure_needs_at_least_one_member;
+    };
+  };
+};

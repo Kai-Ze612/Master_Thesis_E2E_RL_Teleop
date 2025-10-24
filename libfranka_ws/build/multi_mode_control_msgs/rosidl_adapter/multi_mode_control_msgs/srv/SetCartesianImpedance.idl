@@ -1,0 +1,23 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from multi_mode_control_msgs/srv/SetCartesianImpedance.srv
+// generated code does not contain a copyright notice
+
+
+module multi_mode_control_msgs {
+  module srv {
+    typedef double double__36[36];
+    typedef double double__6[6];
+    struct SetCartesianImpedance_Request {
+      @verbatim (language="comment", text=
+        "column major")
+      double__36 stiffness;
+
+      double__6 damping_ratio;
+
+      double nullspace_stiffness;
+    };
+    struct SetCartesianImpedance_Response {
+      uint8 structure_needs_at_least_one_member;
+    };
+  };
+};

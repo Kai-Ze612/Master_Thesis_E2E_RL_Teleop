@@ -1,10 +1,10 @@
 """
-The main RL training environment with delay simulation.
+Gymnasium Training environment.
 
 Integrated with:
-- DelaySimulator for realistic network delay patterns
-- LocalRobotSimulator for reference joint trajectory generation
-- RemoteRobotSimulator (joint space version) for follower robot dynamics
+- DelaySimulator for realistic network delay patterns.
+- LocalRobotSimulator: create target joint positions and velocities.
+- RemoteRobotSimulator: subscribe to RL output predicited targets and velocities, apply inverse dynamics and torque compensation.
 """
 
 # RL library imports
@@ -40,7 +40,6 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     TORQUE_LIMITS,
     MAX_TORQUE_COMPENSATION,
     OBS_DIM,
-    STATE_BUFFER_LENGTH,
     REWARD_PREDICTION_WEIGHT,
     REWARD_TRACKING_WEIGHT,
     REWARD_ERROR_SCALE,

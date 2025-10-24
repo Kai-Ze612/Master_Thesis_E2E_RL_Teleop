@@ -1,6 +1,5 @@
 """
 Shared Robot configuration settings
-
 """
 
 import numpy as np

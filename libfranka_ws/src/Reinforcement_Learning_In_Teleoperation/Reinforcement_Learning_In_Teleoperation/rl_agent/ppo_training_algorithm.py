@@ -25,18 +25,10 @@ import logging
 from typing import Dict, List, Optional
 import time
 import json
+from torch.utils.tensorboard import SummaryWriter
 
 from Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_policy_network import RecurrentPPOPolicy, HiddenStateType
 from Reinforcement_Learning_In_Teleoperation.utils.rollout_buffer import RolloutBuffer
-
-# Try to import TensorBoard, gracefully handle if not installed
-try:
-    from torch.utils.tensorboard import SummaryWriter
-    TENSORBOARD_AVAILABLE = True
-except ImportError:
-    TENSORBOARD_AVAILABLE = False
-    print("Warning: TensorBoard not available. Install with: pip install tensorboard")
-
 from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS, RNN_SEQUENCE_LENGTH,
     PPO_LEARNING_RATE, PPO_GAMMA, PPO_GAE_LAMBDA, PPO_CLIP_EPSILON,
@@ -52,33 +44,9 @@ logger = logging.getLogger(__name__)
 
 
 class RecurrentPPOTrainer:
-    """
-    End-to-end Recurrent-PPO trainer with visualization and early stopping.
-    
-    Training Pipeline:
-        1. Collect rollout: Policy predicts state → takes action → environment calculates reward
-        2. Compute GAE: Calculate advantages and returns
-        3. Update policy: PPO loss + Supervised prediction loss
-        4. Log metrics: TensorBoard + JSON files
-        5. Check early stopping: Save best model if improvement
-    
-    Key Design:
-        - Environment handles ALL reward calculation (prediction + tracking)
-        - Trainer only passes predicted_target to environment via set_predicted_target()
-        - LSTM hidden states managed per rollout (reset on episode boundaries)
-        - Automatic visualization via TensorBoard (if installed)
-        - Fallback to JSON logging if TensorBoard unavailable
-    """
 
-    def __init__(self, env, device: str = 'cuda', enable_tensorboard: bool = True):
-        """
-        Initialize Recurrent-PPO trainer.
+    def __init__(self, env, device: str = 'cuda'):
         
-        Args:
-            env: TeleoperationEnvWithDelay instance
-            device: 'cuda' or 'cpu'
-            enable_tensorboard: Whether to enable TensorBoard logging (if available)
-        """
         self.env = env
         self.device = torch.device(device)
 
@@ -104,7 +72,6 @@ class RecurrentPPOTrainer:
         self.checkpoint_dir = CHECKPOINT_DIR  # Default from config, can be overridden
 
         # Visualization setup
-        self.enable_tensorboard = enable_tensorboard and TENSORBOARD_AVAILABLE
         self.tb_writer: Optional[SummaryWriter] = None
         
         # Metrics storage for JSON logging
@@ -119,6 +86,7 @@ class RecurrentPPOTrainer:
             'approx_kls': [],
             'total_losses': [],
         }
+        
         self.training_start_time = None
 
         # Early Stopping Attributes
@@ -126,25 +94,13 @@ class RecurrentPPOTrainer:
         self.no_improvement_count = 0
         self.best_model_path = os.path.join(self.checkpoint_dir, "best_policy_earlystop.pth")
 
-        logger.info(f"RecurrentPPOTrainer initialized on {self.device}")
-        logger.info(f"  Policy Params: {self.policy.count_parameters():,}")
-        logger.info(f"  TensorBoard: {'Enabled' if self.enable_tensorboard else 'Disabled (not available or disabled)'}")
-        if ENABLE_EARLY_STOPPING:
-            logger.info(f"  Early Stopping ENABLED: Patience={EARLY_STOPPING_PATIENCE}, "
-                       f"MinDelta={EARLY_STOPPING_MIN_DELTA}, CheckFreq={EARLY_STOPPING_CHECK_FREQ} updates")
-        else:
-            logger.info("  Early Stopping DISABLED")
-
     def _init_tensorboard(self, log_dir: str):
         """Initialize TensorBoard writer."""
-        if self.enable_tensorboard:
-            tb_dir = os.path.join(log_dir, "tensorboard")
-            os.makedirs(tb_dir, exist_ok=True)
-            self.tb_writer = SummaryWriter(log_dir=tb_dir, flush_secs=120)
-            logger.info(f"\nTensorBoard logging enabled")
-            logger.info(f"  Log directory: {tb_dir}")
-            logger.info(f"  Launch with: tensorboard --logdir {tb_dir}")
-            logger.info(f"  Then open: http://localhost:6006\n")
+        tb_dir = os.path.join(log_dir, "tensorboard")
+        os.makedirs(tb_dir, exist_ok=True)
+        self.tb_writer = SummaryWriter(log_dir=tb_dir, flush_secs=120)
+        logger.info(f"  Launch with: tensorboard --logdir {tb_dir}")
+        logger.info(f"  Then open: http://localhost:6006\n")
 
     def _log_metrics(self, metrics: Dict[str, float], avg_reward: float):
         """
