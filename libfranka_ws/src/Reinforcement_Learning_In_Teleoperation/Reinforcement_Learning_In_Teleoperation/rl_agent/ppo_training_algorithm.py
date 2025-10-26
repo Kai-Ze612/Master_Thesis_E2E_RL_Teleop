@@ -76,8 +76,7 @@ class RecurrentPPOTrainer:
              buffer_size = PPO_ROLLOUT_STEPS
 
         self.buffer = RolloutBuffer(
-            buffer_size=buffer_size,
-            device=self.device
+            buffer_size=buffer_size
         )
 
         # --- (Rest of __init__ is mostly the same) ---

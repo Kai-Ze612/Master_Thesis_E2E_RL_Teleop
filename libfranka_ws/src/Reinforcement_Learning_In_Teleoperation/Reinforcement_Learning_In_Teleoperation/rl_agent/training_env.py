@@ -44,6 +44,7 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     REWARD_TRACKING_WEIGHT,
     REWARD_ERROR_SCALE,
     REWARD_VEL_PREDICTION_WEIGHT_FACTOR,
+    RNN_SEQUENCE_LENGTH,
 )
 
 
@@ -99,7 +100,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Calculate buffer sizes based on maximum possible delays
         max_obs_delay = self.delay_simulator._obs_delay_max_steps
         max_action_delay = self.delay_simulator._action_delay_steps
-        leader_q_buffer_size = max(100, max_obs_delay + self.target_history_len + 20)
+        leader_q_buffer_size = max(100, max_obs_delay + RNN_SEQUENCE_LENGTH + 20)
         action_buffer_size = max(50, max_action_delay + self.action_history_len + 10)
 
         self.leader_q_history = deque(maxlen=leader_q_buffer_size)
@@ -273,7 +274,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         Observation components:
             - remote_q: Current remote joint positions (7)
             - remote_qd: Current remote joint velocities (7)
-            - delayed_target_q: Delayed target joint position (7)
+            - predicted_q: Predicted target joint position (7) <-- MODIFIED
             - target_q_history: Recent target positions (7 * TARGET_HISTORY_LEN)
             - target_qd_history: Recent target velocities (7 * TARGET_HISTORY_LEN)
             - delay_magnitude: Current observation delay (1)
@@ -285,8 +286,14 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Get current remote state
         remote_q, remote_qd = self.remote_robot.get_joint_state()
         
-        # Get delayed target
-        delayed_target_q = self._get_delayed_q()
+        # --- [START MODIFICATION] ---
+        # Get the last predicted target's POSITION component
+        if self._last_predicted_target is not None:
+            predicted_q = self._last_predicted_target[:N_JOINTS] # Get only the 7 pos values
+        else:
+            # Handle case before first prediction (e.g., at reset)
+            predicted_q = np.zeros(N_JOINTS) # Must return a 7-dim vector
+        # --- [END MODIFICATION] ---
 
         # Get target history
         target_q_history = []
@@ -331,16 +338,18 @@ class TeleoperationEnvWithDelay(gym.Env):
         obs_delay_steps = self.delay_simulator.get_observation_delay_steps(len(self.leader_q_history))
         delay_magnitude = np.array([obs_delay_steps / 100.0])
 
+        # --- [START MODIFICATION] ---
         # Concatenate all components
         obs_vec = np.concatenate([
             remote_q,
             remote_qd,
-            delayed_target_q,
+            predicted_q,  # <--- MODIFIED
             target_q_history_padded,
             target_qd_history_padded,
             delay_magnitude,
             action_history_padded
         ]).astype(np.float32)
+        # --- [END MODIFICATION] ---
         
         # Validate observation shape
         if obs_vec.shape[0] != self.observation_space.shape[0]:
@@ -367,55 +376,44 @@ class TeleoperationEnvWithDelay(gym.Env):
         """
         Get delayed target sequence for state predictor (LSTM) input.
         
-        This method returns a sequence of delayed observations going backwards in time
-        from the most recent delayed observation. The sequence is in chronological order
-        (oldest first, most recent delayed last) as expected by LSTM.
-        
-        Args:
-            buffer_length: Number of timesteps to retrieve (e.g., RNN_SEQUENCE_LENGTH)
-            
-        Returns:
-            Shape (buffer_length * N_JOINTS * 2,) flattened array
-            Format: [q0, qd0, q1, qd1, ..., q_newest, qd_newest]
+        Returns sequence in chronological order: [oldest, ..., most_recent_delayed]
         """
         history_len = len(self.leader_q_history)
         
-        # Handle empty history (initial state)
+        # Handle empty history
         if history_len == 0:
             initial_state = np.concatenate([self.initial_qpos, np.zeros(self.n_joints)])
             return np.tile(initial_state, buffer_length).astype(np.float32)
 
         # Get current observation delay
         obs_delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
-
-        # Collect sequence: [oldest_in_buffer, ..., newest_delayed]
+        
+        # Most recent delayed observation index
+        most_recent_delayed_idx = -(obs_delay_steps + 1)
+        
+        # Oldest index we need
+        oldest_idx = most_recent_delayed_idx - buffer_length + 1
+        
         buffer_q = []
         buffer_qd = []
         
-        # Start from most recent delayed observation, go backwards
-        start_idx = -(obs_delay_steps + 1)
-        end_idx = start_idx - buffer_length
-
-        for i in range(start_idx, end_idx, -1):
-            # Clip index to valid range [-history_len, -1]
+        # Iterate from oldest to most recent (FORWARD in time)
+        for i in range(oldest_idx, most_recent_delayed_idx + 1):
+            # Clip to valid range [-history_len, -1]
             safe_idx = np.clip(i, -history_len, -1)
             buffer_q.append(self.leader_q_history[safe_idx].copy())
             buffer_qd.append(self.leader_qd_history[safe_idx].copy())
-
-        # Reverse to get chronological order [oldest ... newest_delayed]
-        buffer_q.reverse()
-        buffer_qd.reverse()
-
-        # Flatten into [q0, qd0, q1, qd1, ...]
+        
+        # Flatten: [q0, qd0, q1, qd1, ...]
         buffer = np.stack([np.concatenate([q, qd]) for q, qd in zip(buffer_q, buffer_qd)]).flatten()
-
+        
         # Validate shape
         expected_shape = buffer_length * N_JOINTS * 2
         if buffer.shape[0] != expected_shape:
             warnings.warn(f"Delayed buffer shape mismatch: got {buffer.shape[0]}, expected {expected_shape}")
-
+        
         return buffer.astype(np.float32)
-    
+        
     def get_remote_state(self) -> np.ndarray:
         """
         Get current remote robot state (real-time, no delay).

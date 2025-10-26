@@ -135,7 +135,7 @@ def train_agent(args: argparse.Namespace) -> None:
         logger.info("")
 
     # Environment Setup
-    NUM_ENVIRONMENTS = 8  # Number of parallel environments
+    NUM_ENVIRONMENTS = 1  # Number of parallel environments
     logger.info(f"Creating {NUM_ENVIRONMENTS} parallel training environments...")
     env = None
     try:

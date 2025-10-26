@@ -1,5 +1,15 @@
 """
 Rollout buffer is a data container that stores the explored experience during interaction with environment.
+
+It will be used for calculating advantages and returns, and feeding data to the policy update.
+
+Store data:
+- delayed_sequences
+- remote_states
+- actions, log_probs, values
+- rewards, dones
+- predicted_targets (from policy)
+- true_targets (from environment)
 """
 
 import numpy as np
@@ -7,28 +17,11 @@ import torch
 from typing import Dict, List, Optional
 
 class RolloutBuffer:
-    """
-    Buffer for storing trajectories experienced by a PPO agent interacting
-    with the environment. Used for calculating advantages and returns,
-    and feeding data to the policy update.
-
-    Stores data specifically required for the RecurrentPPOPolicy:
-    - delayed_sequences
-    - remote_states
-    - actions, log_probs, values
-    - rewards, dones
-    - predicted_targets (from policy)
-    - true_targets (from environment)
-    """
-
-    def __init__(self, buffer_size: int, device: torch.device = torch.device('cuda')):
-        """
-        Args:
-            buffer_size: Max number of transitions to store. Corresponds to PPO_ROLLOUT_STEPS.
-            device: PyTorch device (e.g., 'cuda' or 'cpu').
-        """
-        self.buffer_size = buffer_size
-        self.device = device
+ 
+    def __init__(self, buffer_size: int):    
+        
+        self.buffer_size = buffer_size # The agent will collect this many steps for each policy
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # Initialize lists to store trajectory data
         self.delayed_sequences: List[np.ndarray] = []
@@ -41,6 +34,7 @@ class RolloutBuffer:
         self.predicted_targets: List[np.ndarray] = []
         self.true_targets: List[np.ndarray] = []
 
+        # Initialize pointers
         self.ptr: int = 0          # Current position in the buffer
         self.path_start_idx: int = 0 # Index of the start of the current trajectory (not strictly needed for basic PPO)
         self.full: bool = False    # Flag indicating if buffer has wrapped around
@@ -57,7 +51,7 @@ class RolloutBuffer:
         self.predicted_targets.clear()
         self.true_targets.clear()
         self.ptr = 0
-        self.full = False # Should be reset as well
+        self.full = False
         self.path_start_idx = 0
 
     def add(
@@ -72,22 +66,10 @@ class RolloutBuffer:
         predicted_target: np.ndarray,
         true_target: np.ndarray
     ):
-        """
-        Add a single transition step to the buffer.
-
-        Args:
-            delayed_sequence: Delayed observation sequence (seq_len, features).
-            remote_state: Current remote state (features,).
-            action: Action taken by the policy (action_dim,).
-            log_prob: Log probability of the action.
-            value: Value estimate from the critic V(s).
-            reward: Reward received after taking the action.
-            done: Whether the episode terminated after this step.
-            predicted_target: Target state predicted by the policy (target_dim,).
-            true_target: Ground truth target state from the environment (target_dim,).
-        """
+        """Add new experience to the buffer."""
+        
+        # Append new data if buffer is not full
         if len(self.rewards) < self.buffer_size:
-            # Append new data if buffer is not full
             self.delayed_sequences.append(delayed_sequence)
             self.remote_states.append(remote_state)
             self.actions.append(action)
@@ -97,20 +79,6 @@ class RolloutBuffer:
             self.dones.append(done)
             self.predicted_targets.append(predicted_target)
             self.true_targets.append(true_target)
-        else:
-            # Overwrite oldest data if buffer is full (circular buffer behavior)
-            # Although for standard PPO, we usually clear after getting data
-            self.full = True
-            idx = self.ptr
-            self.delayed_sequences[idx] = delayed_sequence
-            self.remote_states[idx] = remote_state
-            self.actions[idx] = action
-            self.log_probs[idx] = log_prob
-            self.values[idx] = value
-            self.rewards[idx] = reward
-            self.dones[idx] = done
-            self.predicted_targets[idx] = predicted_target
-            self.true_targets[idx] = true_target
 
         # Increment pointer and wrap around if necessary
         self.ptr = (self.ptr + 1) % self.buffer_size
@@ -160,17 +128,7 @@ class RolloutBuffer:
 
 
     def get(self, advantages: np.ndarray, returns: np.ndarray) -> Dict[str, torch.Tensor]:
-        """
-        Retrieve all collected data as PyTorch tensors, along with calculated
-        advantages and returns. Resets the buffer after data retrieval.
-
-        Args:
-            advantages: Calculated advantages from `compute_returns_and_advantages`.
-            returns: Calculated returns from `compute_returns_and_advantages`.
-
-        Returns:
-            A dictionary containing all trajectory data as tensors on the specified device.
-        """
+        """ Advantage computes a scalar score for each"""
         if len(self.rewards) == 0:
             raise ValueError("Buffer is empty, cannot get data.")
 
