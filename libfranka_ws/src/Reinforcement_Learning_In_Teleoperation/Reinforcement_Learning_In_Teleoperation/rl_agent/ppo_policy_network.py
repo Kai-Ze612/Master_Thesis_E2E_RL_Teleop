@@ -1,7 +1,7 @@
 """
-Custom recurrent PPO policy for end to end training.
+Definition of the architecture of the PPO policy network with recurrent state prediction.
 
-This script defines the NN architecture, forward pass, action sampling, and action evaluation methods.
+This script is the forward pass, action sampling, and action evaluation methods.
 
 Architecture:
     1. RNN (LSTM): State prediction head (trained with supervised loss).
@@ -21,7 +21,7 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     MAX_TORQUE_COMPENSATION,
     RNN_HIDDEN_DIM,
     RNN_NUM_LAYERS,
-    RNN_SEQUENCE_LENGTH, # Should be same as STATE_BUFFER_LENGTH
+    RNN_SEQUENCE_LENGTH,
     PPO_MLP_HIDDEN_DIMS,
     PPO_ACTIVATION,
 )
@@ -34,19 +34,16 @@ class RecurrentPPOPolicy(nn.Module):
         self,
         rnn_hidden_dim: int = RNN_HIDDEN_DIM,
         rnn_num_layers: int = RNN_NUM_LAYERS,
-        mlp_hidden_dims: Optional[list] = None,
+        mlp_hidden_dims: list = PPO_MLP_HIDDEN_DIMS,
         activation: str = PPO_ACTIVATION
     ):
         super().__init__()
-    
+
+        # RNN architecture
         self.rnn_hidden_dim = rnn_hidden_dim
         self.rnn_num_layers = rnn_num_layers
         self.seq_length = RNN_SEQUENCE_LENGTH
         self.activation_fn = self._get_activation(activation)
-        
-        if mlp_hidden_dims is None:
-            mlp_hidden_dims = PPO_MLP_HIDDEN_DIMS
-            
         self.feature_dim = N_JOINTS * 2  # q and qd
         
         # LSTM for state prediction
@@ -64,12 +61,12 @@ class RecurrentPPOPolicy(nn.Module):
             nn.Linear(128, N_JOINTS * 2) # Output: Predicted [q_target, qd_target] (14 dims)
         )
         
-        # PPO MLP networks
+        # MLP architecture for PPO policy
         policy_input_dim = (N_JOINTS * 2) * 2
-        
-        # Build shared MLP backbone for actor and critic
+        mlp_hidden_dims = PPO_MLP_HIDDEN_DIMS
         layers = []
         last_dim = policy_input_dim
+        
         for hidden_dim in mlp_hidden_dims:
             layers.append(nn.Linear(last_dim, hidden_dim))
             layers.append(self.activation_fn())

@@ -400,7 +400,7 @@ class RecurrentPPOTrainer:
              # Ensure the buffer check uses the dunder len method
              if len(self.buffer) == 0:
                   raise ValueError("Buffer is empty, cannot get data.")
-             data = self.buffer.get(self.advantages, self.returns)
+             data = self.buffer.get_policy_data(self.advantages, self.returns)
         except ValueError as e: # Catch the "Buffer is empty" error specifically
              logger.error(f"Cannot update policy: {e}")
              # Return empty metrics or NaN to signal failure

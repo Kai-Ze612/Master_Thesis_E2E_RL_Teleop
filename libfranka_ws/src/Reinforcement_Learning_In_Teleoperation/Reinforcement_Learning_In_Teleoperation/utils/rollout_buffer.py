@@ -66,10 +66,10 @@ class RolloutBuffer:
         predicted_target: np.ndarray,
         true_target: np.ndarray
     ):
-        """Add new experience to the buffer."""
+        """Add new experience to the buffer (circular append when full)."""
         
-        # Append new data if buffer is not full
         if len(self.rewards) < self.buffer_size:
+            # Append until buffer fills
             self.delayed_sequences.append(delayed_sequence)
             self.remote_states.append(remote_state)
             self.actions.append(action)
@@ -79,18 +79,32 @@ class RolloutBuffer:
             self.dones.append(done)
             self.predicted_targets.append(predicted_target)
             self.true_targets.append(true_target)
-
-        # Increment pointer and wrap around if necessary
-        self.ptr = (self.ptr + 1) % self.buffer_size
-
+        elif len(self.rewards) == self.buffer_size:
+            # Overwrite oldest data (circular buffer)
+            self.full = True
+            idx = self.ptr % self.buffer_size
+            self.delayed_sequences[idx] = delayed_sequence
+            self.remote_states[idx] = remote_state
+            self.actions[idx] = action
+            self.log_probs[idx] = log_prob
+            self.values[idx] = value
+            self.rewards[idx] = reward
+            self.dones[idx] = done
+            self.predicted_targets[idx] = predicted_target
+            self.true_targets[idx] = true_target
+        else:
+            raise RuntimeError(
+                f"Buffer state inconsistency: len(rewards)={len(self.rewards)} > "
+                f"buffer_size={self.buffer_size}. This indicates external corruption."
+            )
 
     def compute_returns_and_advantages(self, last_value: float, gamma: float, gae_lambda: float):
         """Compute advantages and returns using GAE."""
         """
         GAE: Generalized Advantage Estimation
-        A_t = δ_t + (γ * λ) * δ_{t+1} + (γ * λ)^2 * δ_{t+2} + ...
-        
-        where δ_t = r_t + γ * V(s_{t+1}) - V(s_t) is the temporal difference error.       
+        A_t = \delta_t + (\gamma * \lambda) * \delta_{t+1} + (\gamma * \lambda)^2 * \delta_{t+2} + ...
+
+        where \delta_t = r_t + \gamma * V(s_{t+1}) - V(s_t) is the temporal difference error.
         """
         # Convert lists to numpy arrays for calculation
         values_np = np.array(self.values + [last_value]) # Append last value for bootstrap
@@ -123,41 +137,66 @@ class RolloutBuffer:
 
         return advantages, returns
 
-
-    def get(self, advantages: np.ndarray, returns: np.ndarray) -> Dict[str, torch.Tensor]:
-        """ Advantage computes a scalar score for each"""
+    def get_prediction_data(self) -> Dict[str, torch.Tensor]:
+        """
+        Extract prediction data WITHOUT clearing buffer.
+        
+        Critical for Phase 1: enables supervised LSTM loss computation
+        while keeping buffer intact for get_policy_data().
+        
+        Returns:
+            Dictionary with 'predicted_targets' and 'true_targets' tensors.
+        """
+        if len(self.predicted_targets) == 0:
+            raise ValueError("No prediction data in buffer.")
+        
+        data = {
+            'predicted_targets': torch.FloatTensor(
+                np.array(self.predicted_targets)
+            ).to(self.device),
+            'true_targets': torch.FloatTensor(
+                np.array(self.true_targets)
+            ).to(self.device),
+            'num_samples': len(self.predicted_targets)
+        }
+        return data
+    
+    def get_policy_data(self, advantages: np.ndarray, returns: np.ndarray) -> Dict[str, torch.Tensor]:
+        """Loading data for training and clear the buffer afterwards."""
         if len(self.rewards) == 0:
             raise ValueError("Buffer is empty, cannot get data.")
-
-        # Ensure data consistency
+        
         assert len(self.rewards) == len(advantages) == len(returns), "Data length mismatch!"
 
-        # --- Normalize Advantages --- (Common practice in PPO)
+        # Normalize advantages (good practice for PPO)
         advantages = (advantages - np.mean(advantages)) / (np.std(advantages) + 1e-8)
-
-        # Convert all stored lists to tensors
+        
         data = {
-            # Observations for the policy
             'delayed_sequences': torch.FloatTensor(np.array(self.delayed_sequences)).to(self.device),
             'remote_states': torch.FloatTensor(np.array(self.remote_states)).to(self.device),
-            # Actions taken and their log probs (from the policy *during rollout*)
             'actions': torch.FloatTensor(np.array(self.actions)).to(self.device),
             'old_log_probs': torch.FloatTensor(self.log_probs).to(self.device),
-            # Value estimates (from the policy *during rollout*)
             'old_values': torch.FloatTensor(self.values).to(self.device),
-            # Targets for training
             'advantages': torch.FloatTensor(advantages).to(self.device),
             'returns': torch.FloatTensor(returns).to(self.device),
-            # Data for prediction loss
             'predicted_targets': torch.FloatTensor(np.array(self.predicted_targets)).to(self.device),
             'true_targets': torch.FloatTensor(np.array(self.true_targets)).to(self.device)
         }
-
-        # Clear the buffer after retrieving data (standard for on-policy PPO)
+        
+        # Clear buffer after extracting data
         self.reset()
-
         return data
 
+    def log_gradient_norms(self, module) -> Dict[str, float]:
+        """Utility method to extract LSTM parameter gradient magnitudes for debugging."""
+        grad_norms = {}
+        for name, param in module.named_parameters():
+            if param.grad is not None:
+                grad_norms[name] = param.grad.norm().item()
+            else:
+                grad_norms[name] = 0.0
+        return grad_norms
+    
     def __len__(self) -> int:
         """Return the current number of transitions stored."""
         # Use the actual length of one of the stored lists

@@ -1,0 +1,53 @@
+2025-10-27 15:37:40 [INFO] __main__ - Run Name: RecPPO_MEDIUM_DELAY_figure_8_20251027_153740
+2025-10-27 15:37:40 [INFO] __main__ - Output Directory: ./rl_training_output/recurrent_ppo/RecPPO_MEDIUM_DELAY_figure_8_20251027_153740
+2025-10-27 15:37:40 [INFO] __main__ - Training Configuration:
+2025-10-27 15:37:40 [INFO] __main__ -   Delay Config: MEDIUM_DELAY
+2025-10-27 15:37:40 [INFO] __main__ -   Trajectory Type: figure_8
+2025-10-27 15:37:40 [INFO] __main__ -   Randomize Trajectory: False
+2025-10-27 15:37:40 [INFO] __main__ -   Total Timesteps: 2,000,000
+2025-10-27 15:37:40 [INFO] __main__ -   Random Seed: None (random)
+2025-10-27 15:37:40 [INFO] __main__ - 
+2025-10-27 15:37:40 [INFO] __main__ - Creating 1 parallel training environments...
+2025-10-27 15:37:43 [INFO] __main__ -   Vectorized Environment: SubprocVecEnv
+2025-10-27 15:37:43 [INFO] __main__ -   Number of Envs: 1
+2025-10-27 15:37:43 [INFO] __main__ -   Observation Space: (134,)
+2025-10-27 15:37:43 [INFO] __main__ -   Action Space: (7,)
+2025-10-27 15:37:43 [INFO] __main__ - Skipping detailed validation for VecEnv (use single env for debugging)
+2025-10-27 15:37:43 [INFO] __main__ - 
+2025-10-27 15:37:43 [INFO] __main__ - Initializing Recurrent-PPO trainer...
+2025-10-27 15:37:44 [INFO] __main__ -   Trainer: RecurrentPPOTrainer
+2025-10-27 15:37:44 [INFO] __main__ -   Policy Parameters: 3,463,069
+2025-10-27 15:37:44 [INFO] __main__ -   Checkpoint Directory: ./rl_training_output/recurrent_ppo/RecPPO_MEDIUM_DELAY_figure_8_20251027_153740
+2025-10-27 15:37:44 [INFO] __main__ - 
+2025-10-27 15:37:44 [INFO] __main__ - ======================================================================
+2025-10-27 15:37:44 [INFO] __main__ - Starting Training
+2025-10-27 15:37:44 [INFO] __main__ - ======================================================================
+2025-10-27 15:37:44 [INFO] __main__ - 
+2025-10-27 15:37:44 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Launch with: tensorboard --logdir ./rl_training_output/recurrent_ppo/RecPPO_MEDIUM_DELAY_figure_8_20251027_153740/tensorboard
+2025-10-27 15:37:44 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Then open: http://localhost:6006
+
+2025-10-27 16:42:16 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-10-27 16:42:16 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - Update: 10/400 | Timesteps: 50,000 | Elapsed: 1:04:31
+2025-10-27 16:42:16 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-10-27 16:42:16 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Avg Rollout Reward: 4772.924
+2025-10-27 16:42:16 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Actor Loss: 0.0050 | Critic Loss: 4.7730
+2025-10-27 16:42:16 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Prediction Loss: 0.019100
+2025-10-27 16:42:16 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Entropy: 6.7905 | Approx KL: 0.02326
+2025-10-27 16:42:16 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Collect Time: 170.82s | Update Time: 232.30s | FPS: 12
+2025-10-27 16:42:16 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - 
+  ✓ Early Stopping: New best reward 4772.924 (+inf). Saving model.
+2025-10-27 17:24:51 [WARNING] __main__ - 
+2025-10-27 17:24:51 [WARNING] __main__ - ======================================================================
+2025-10-27 17:24:51 [WARNING] __main__ - Training Interrupted by User
+2025-10-27 17:24:51 [WARNING] __main__ - ======================================================================
+2025-10-27 17:24:51 [WARNING] __main__ - Saving interrupted model...
+2025-10-27 17:24:51 [INFO] __main__ - Interrupted model saved to: ./rl_training_output/recurrent_ppo/RecPPO_MEDIUM_DELAY_figure_8_20251027_153740/interrupted_policy.pth
+2025-10-27 17:24:51 [INFO] __main__ - 
+2025-10-27 17:24:51 [INFO] __main__ - Cleaning up...
+2025-10-27 17:24:51 [INFO] __main__ - Environment closed
+2025-10-27 17:24:51 [INFO] __main__ - 
+2025-10-27 17:24:51 [INFO] __main__ - ======================================================================
+2025-10-27 17:24:51 [INFO] __main__ - Output Directory: ./rl_training_output/recurrent_ppo/RecPPO_MEDIUM_DELAY_figure_8_20251027_153740
+2025-10-27 17:24:51 [INFO] __main__ - ======================================================================
+2025-10-27 17:24:51 [INFO] __main__ - Training ended prematurely.
