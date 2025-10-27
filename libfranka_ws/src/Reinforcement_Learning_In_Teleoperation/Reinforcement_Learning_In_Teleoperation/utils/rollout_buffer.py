@@ -85,19 +85,12 @@ class RolloutBuffer:
 
 
     def compute_returns_and_advantages(self, last_value: float, gamma: float, gae_lambda: float):
+        """Compute advantages and returns using GAE."""
         """
-        Compute returns and advantages using Generalized Advantage Estimation (GAE).
-        Call this method after the rollout is complete and before `get()`.
-
-        Args:
-            last_value: Value estimate V(s_T) for the last state in the rollout
-                        (used for bootstrapping if the episode didn't end).
-            gamma: Discount factor.
-            gae_lambda: Lambda factor for GAE (e.g., 0.95).
-
-        Returns:
-            advantages: Calculated advantages for each step.
-            returns: Calculated returns (targets for the value function).
+        GAE: Generalized Advantage Estimation
+        
+        
+        
         """
         # Convert lists to numpy arrays for calculation
         values_np = np.array(self.values + [last_value]) # Append last value for bootstrap
