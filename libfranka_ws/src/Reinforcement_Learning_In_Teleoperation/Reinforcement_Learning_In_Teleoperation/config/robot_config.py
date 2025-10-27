@@ -119,7 +119,7 @@ OBS_DIM = (
 STATE_BUFFER_LENGTH = 256
 
 # RNN (LSTM) architecture for state prediction
-RNN_HIDDEN_DIM = 1024
+RNN_HIDDEN_DIM = 512
 RNN_NUM_LAYERS = 2
 RNN_SEQUENCE_LENGTH = STATE_BUFFER_LENGTH  # Must match buffer length
 
@@ -133,7 +133,7 @@ PPO_ACTIVATION = 'relu'
 
 # Learning
 PPO_LEARNING_RATE = 3e-4
-PPO_GAMMA = 0.99
+PPO_GAMMA = 0.9
 PPO_GAE_LAMBDA = 0.95
 
 # PPO-specific

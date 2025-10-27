@@ -88,9 +88,9 @@ class RolloutBuffer:
         """Compute advantages and returns using GAE."""
         """
         GAE: Generalized Advantage Estimation
+        A_t = δ_t + (γ * λ) * δ_{t+1} + (γ * λ)^2 * δ_{t+2} + ...
         
-        
-        
+        where δ_t = r_t + γ * V(s_{t+1}) - V(s_t) is the temporal difference error.       
         """
         # Convert lists to numpy arrays for calculation
         values_np = np.array(self.values + [last_value]) # Append last value for bootstrap
@@ -101,14 +101,18 @@ class RolloutBuffer:
         last_gae_lam = 0
         n_steps = len(rewards_np)
 
+        # The new coming data (at T) is stored at the end of the list
+        # In order to compute the GAE at timestep t, t+1, ...., T, we have to iterate backwards
         for t in reversed(range(n_steps)):
-            # If the episode ended at step t, the value of the next state V(s_{t+1}) is 0
-            # Otherwise, use the estimated value V(s_{t+1})
-            # Handle the very last step: if dones_np[t] is True, next_non_terminal is 0
             next_non_terminal = 1.0 - dones_np[t]
-            next_value = values_np[t + 1] # V(s_{t+1})
+            next_value = values_np[t + 1]
 
-            # Calculate TD error (delta)
+            # Calculate the TD error (delta) for a single timestep t.
+            # delta_t = r_t + γ * V(s_{t+1}) - V(s_t)
+            # V(s_t) is the value function estimate for the current state s_t.
+            # The term (r_t + γ * V(s_{t+1})) is the TD target. It's an one more step ahead estimation
+            # of the value of state s_t, using the real reward r_t and the estimated value of the next state.
+            # If the episode terminates at step t, the value of the next state V(s_{t+1}) is 0.
             delta = rewards_np[t] + gamma * next_value * next_non_terminal - values_np[t]
 
             # Calculate GAE
