@@ -37,3 +37,17 @@
 2025-10-28 12:23:59 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Collect Time: 210.35s | Update Time: 386.14s | FPS: 8
 2025-10-28 12:23:59 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - 
   ✓ Early Stopping: New best reward 2998.838 (+inf). Saving model.
+2025-10-28 13:31:23 [WARNING] __main__ - 
+2025-10-28 13:31:23 [WARNING] __main__ - ======================================================================
+2025-10-28 13:31:23 [WARNING] __main__ - Training Interrupted by User
+2025-10-28 13:31:23 [WARNING] __main__ - ======================================================================
+2025-10-28 13:31:23 [WARNING] __main__ - Saving interrupted model...
+2025-10-28 13:31:23 [INFO] __main__ - Interrupted model saved to: ./rl_training_output/recurrent_ppo/RecPPO_HIGH_DELAY_figure_8_20251028_104957/interrupted_policy.pth
+2025-10-28 13:31:23 [INFO] __main__ - 
+2025-10-28 13:31:23 [INFO] __main__ - Cleaning up...
+2025-10-28 13:31:23 [INFO] __main__ - Environment closed
+2025-10-28 13:31:23 [INFO] __main__ - 
+2025-10-28 13:31:23 [INFO] __main__ - ======================================================================
+2025-10-28 13:31:23 [INFO] __main__ - Output Directory: ./rl_training_output/recurrent_ppo/RecPPO_HIGH_DELAY_figure_8_20251028_104957
+2025-10-28 13:31:23 [INFO] __main__ - ======================================================================
+2025-10-28 13:31:23 [INFO] __main__ - Training ended prematurely.

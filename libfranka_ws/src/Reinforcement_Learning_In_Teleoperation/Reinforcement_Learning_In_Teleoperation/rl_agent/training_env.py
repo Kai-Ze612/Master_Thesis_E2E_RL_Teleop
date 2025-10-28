@@ -18,6 +18,7 @@ import numpy as np
 from collections import deque  # better for list function with fixed max length and faster appends/pops
 from typing import Tuple, Dict, Any, Optional
 import warnings
+import matplotlib.pyplot as plt
 
 # Custom imports
 from .local_robot_simulator import LocalRobotSimulator, TrajectoryType
@@ -52,18 +53,31 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
 
 class TeleoperationEnvWithDelay(gym.Env):
 
-    metadata = {'render_modes': []}
-
+    metadata = {'render_modes': ["human", "rgb_array"], 'render_fps': DEFAULT_CONTROL_FREQ}
+    
     def __init__(
         self,
         delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY,
         trajectory_type: TrajectoryType = TrajectoryType.FIGURE_8,
         randomize_trajectory: bool = False,
         seed: Optional[int] = None,
+        render_mode: Optional[str] = None,
         # Initialize trajectory as simplest for simplicity
     ):
         super().__init__()
 
+        # Render mode
+        self.render_mode = render_mode
+        self.viewer = None
+        self.ax = None
+        
+        # History buffers for plotting
+        self.plot_history_len = 1000
+        self.hist_tracking_reward = deque(maxlen=self.plot_history_len)
+        self.hist_prediction_reward = deque(maxlen=self.plot_history_len)
+        self.hist_total_reward = deque(maxlen=self.plot_history_len)
+        self._step_counter = 0
+        
         # Environment parameters
         self.max_episode_steps = MAX_EPISODE_STEPS
         self.control_freq = DEFAULT_CONTROL_FREQ
@@ -206,44 +220,56 @@ class TeleoperationEnvWithDelay(gym.Env):
         """
         
         self.current_step += 1
-        
-        # Step 1: Advance Leader (generate new target)
-        new_leader_q, _, _, _, leader_info = self.leader.step()
-        new_leader_qd = leader_info.get('joint_vel', np.zeros(self.n_joints))
+
+        # Leader generate trajectory point
+        new_leader_q, new_leader_qd, _, _, _, _ = self.leader.step()
         self.leader_q_history.append(new_leader_q.copy())
         self.leader_qd_history.append(new_leader_qd.copy())
 
-        # Step 2: Store action in history
+        # Store action in history buffer
         self.action_history.append(action.copy())
 
-        # Step 3: Get delayed inputs for remote robot
+        # Get delay input for remote robot
         delayed_q = self._get_delayed_q()
         delayed_action = self._get_delayed_action()
 
-        # Step 4: Apply delayed action to remote robot
+        # Apply delayed action to remote robot - tau compensation is the current action
         step_info = self.remote_robot.step(
             target_q=delayed_q,
             torque_compensation=delayed_action,
         )
 
-        # Step 5: Get remote robot state
+        # Get remote robot current state after implementing action
         remote_q, remote_qd = self.remote_robot.get_joint_state()
 
-        # Step 6: Calculate tracking error
+        # Calculate tracking error
         true_target_q = self.leader_q_history[-1]  # Current ground truth
         real_time_pos_error_norm = np.linalg.norm(true_target_q - remote_q)
 
-        # Step 7: Calculate reward (includes prediction + tracking)
+        # Calculate reward (includes prediction + tracking)
         reward = self._calculate_reward(real_time_pos_error_norm, action)
 
-        # Step 8: Check termination
+        # Update history buffers for plotting
+        self.hist_total_reward.append(reward)
+        
+        # Calculate individual tracking/prediction rewards to store them
+        r_prediction_weighted = REWARD_PREDICTION_WEIGHT * self._calculate_reward_components()['r_prediction']
+        r_tracking_weighted = REWARD_TRACKING_WEIGHT * self._calculate_reward_components()['r_tracking']
+
+        self.hist_prediction_reward.append(r_prediction_weighted)
+        self.hist_tracking_reward.append(r_tracking_weighted)
+        
+        # Check termination
         terminated, term_penalty = self._check_termination(real_time_pos_error_norm, remote_q)
         if terminated:
             reward += term_penalty
 
-        # Step 9: Check truncation
+        # Check truncation
         truncated = self.current_step >= self.max_episode_steps
 
+        if self.render_mode == "human":
+            self.render()        
+        
         return (
             self._get_observation(),
             reward,
@@ -257,30 +283,29 @@ class TeleoperationEnvWithDelay(gym.Env):
         Construct the observation vector.
         
         Observation components:
-            - remote_q: Current remote joint positions (7)
-            - remote_qd: Current remote joint velocities (7)
-            - predicted_q: Predicted target joint position (7) <-- MODIFIED
-            - target_q_history: Recent target positions (7 * TARGET_HISTORY_LEN)
-            - target_qd_history: Recent target velocities (7 * TARGET_HISTORY_LEN)
-            - delay_magnitude: Current observation delay (1)
-            - action_history: Recent actions (7 * ACTION_HISTORY_LEN)
-        
-        Returns:
-            Observation vector of shape (OBS_DIM,)
+            - remote_q: Current remote robot joint positions (7,)
+            - remote_qd: Current remote robot joint velocities (7,)
+            - predicted_q: Last predicted target joint positions (7,)
+            - predicted_qd: Last predicted target joint velocities (7,)
+            - target_q_history: History of target joint positions (N_JOINTS * TARGET_HISTORY_LEN,)
+            - target_qd_history: History of target joint velocities (N_JOINTS * TARGET_HISTORY_LEN,)
+            - delay_magnitude: Current observation delay in timesteps (1,)
+            - action_history: History of past actions (N_JOINTS * ACTION_HISTORY_LEN,)
         """
+        
         # Get current remote state
         remote_q, remote_qd = self.remote_robot.get_joint_state()
         
-        # --- [START MODIFICATION] ---
-        # Get the last predicted target's POSITION component
+        # Get predicted target from last set_predicted_target() call
         if self._last_predicted_target is not None:
             predicted_q = self._last_predicted_target[:N_JOINTS] # Get only the 7 pos values
+            predicted_qd = self._last_predicted_target[N_JOINTS:] # Get only the 7 vel values
         else:
             # Handle case before first prediction (e.g., at reset)
             predicted_q = np.zeros(N_JOINTS) # Must return a 7-dim vector
-        # --- [END MODIFICATION] ---
+            predicted_qd = np.zeros(N_JOINTS) # Must return a 7-dim vector
 
-        # Get target history
+        # Store target history
         target_q_history = []
         target_qd_history = []
         for i in range(1, self.target_history_len + 1):
@@ -291,7 +316,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         target_q_history = np.array(target_q_history).flatten()
         target_qd_history = np.array(target_qd_history).flatten()
 
-        # Get action history
+        # Store action history
         action_history = []
         for i in range(1, self.action_history_len + 1):
             idx = -i - 1 if i < len(self.action_history) else 0
@@ -319,22 +344,21 @@ class TeleoperationEnvWithDelay(gym.Env):
             mode='edge'
         )
 
-        # Get current delay magnitude (scaled)
+        # Store delay magnitude
         obs_delay_steps = self.delay_simulator.get_observation_delay_steps(len(self.leader_q_history))
         delay_magnitude = np.array([obs_delay_steps / 100.0])
 
-        # --- [START MODIFICATION] ---
         # Concatenate all components
         obs_vec = np.concatenate([
             remote_q,
             remote_qd,
-            predicted_q,  # <--- MODIFIED
+            predicted_q,
+            predicted_qd,
             target_q_history_padded,
             target_qd_history_padded,
             delay_magnitude,
             action_history_padded
         ]).astype(np.float32)
-        # --- [END MODIFICATION] ---
         
         # Validate observation shape
         if obs_vec.shape[0] != self.observation_space.shape[0]:
@@ -343,26 +367,19 @@ class TeleoperationEnvWithDelay(gym.Env):
         return obs_vec
 
     def get_true_current_target(self) -> np.ndarray:
-        """
-        Get ground truth current target for supervised learning.
+        """Get ground truth current target for RNN training."""
         
-        Returns:
-            Shape (14,) array containing [q_true, qd_true]
-        """
         if not self.leader_q_history or not self.leader_qd_history:
             # Return initial state if history is empty
             return np.concatenate([self.initial_qpos, np.zeros(self.n_joints)]).astype(np.float32)
         
-        current_q = self.leader_q_history[-1].copy()
-        current_qd = self.leader_qd_history[-1].copy()
-        return np.concatenate([current_q, current_qd]).astype(np.float32)
-    
+        current_q_gt = self.leader_q_history[-1].copy()
+        current_qd_gt = self.leader_qd_history[-1].copy()
+        return np.concatenate([current_q_gt, current_qd_gt]).astype(np.float32)
+
     def get_delayed_target_buffer(self, buffer_length: int) -> np.ndarray:
-        """
-        Get delayed target sequence for state predictor (LSTM) input.
+        """Get delayed target sequence for state predictor (LSTM) input."""
         
-        Returns sequence in chronological order: [oldest, ..., most_recent_delayed]
-        """
         history_len = len(self.leader_q_history)
         
         # Handle empty history
@@ -389,7 +406,7 @@ class TeleoperationEnvWithDelay(gym.Env):
             buffer_q.append(self.leader_q_history[safe_idx].copy())
             buffer_qd.append(self.leader_qd_history[safe_idx].copy())
         
-        # Flatten: [q0, qd0, q1, qd1, ...]
+        # Flatten the for input data
         buffer = np.stack([np.concatenate([q, qd]) for q, qd in zip(buffer_q, buffer_qd)]).flatten()
         
         # Validate shape
@@ -400,87 +417,42 @@ class TeleoperationEnvWithDelay(gym.Env):
         return buffer.astype(np.float32)
         
     def get_remote_state(self) -> np.ndarray:
-        """
-        Get current remote robot state (real-time, no delay).
-        
-        Returns:
-            Shape (14,) array containing [q_remote, qd_remote]
-        """
+        """Get current remote robot state (real-time, no delay)."""
         remote_q, remote_qd = self.remote_robot.get_joint_state()
         return np.concatenate([remote_q, remote_qd]).astype(np.float32)
     
     def get_current_observation_delay(self) -> int:
-        """
-        Get the current observation delay in timesteps.
-        
-        Returns:
-            Delay in number of control steps
-        """
+        """Get the current observation delay in timesteps."""
+
         history_len = len(self.leader_q_history)
         return self.delay_simulator.get_observation_delay_steps(history_len)
+    
+    def _calculate_reward_components(self) -> Dict[str, float]:
+        """Calculates and returns the unweighted reward components (r_prediction, r_tracking) for plotting"""
 
-    def _calculate_reward(
-        self,
-        real_time_pos_error_norm: float,  # ||true_q[t] - remote_q[t]||
-        action: np.ndarray  # tau_compensation
-    ) -> float:
-        """
-        Calculate dense reward combining prediction and tracking accuracy.
-        
-        Reward Components:
-            1. Prediction Accuracy (r_prediction):
-                - Position prediction: exp(-scale * pos_error^2)
-                - Velocity prediction: exp(-scale * vel_error^2) * weight_factor
-            
-            2. Tracking Accuracy (r_tracking):
-                - Position tracking: exp(-scale * pos_error^2)
-                - Velocity tracking: exp(-scale * vel_error^2) * 0.3
-        
-        Total Reward:
-            reward = REWARD_PREDICTION_WEIGHT * r_prediction 
-                   + REWARD_TRACKING_WEIGHT * r_tracking
-        
-        Args:
-            real_time_pos_error_norm: Real-time position tracking error
-            action: Torque compensation action (not currently used in reward)
-            
-        Returns:
-            Total dense reward (float)
-        """
-        # Component 1: Prediction Accuracy
+        real_time_pos_error_norm = np.linalg.norm(self.leader_q_history[-1] - self.remote_robot.get_joint_state()[0])
+    
         r_prediction = 0.0
-        pos_pred_error = np.nan
-        vel_pred_error = np.nan
-
+        r_tracking = 0.0
+        
         if self._last_predicted_target is not None:
-            # Get ground truth current target
             true_target = self.get_true_current_target()
             true_target_q = true_target[:N_JOINTS]
             true_target_qd = true_target[N_JOINTS:]
 
-            # Get predicted target
             predicted_q = self._last_predicted_target[:N_JOINTS]
             predicted_qd = self._last_predicted_target[N_JOINTS:]
 
-            # Position prediction error and reward
             pos_pred_error = np.linalg.norm(predicted_q - true_target_q)
             r_pos_prediction = np.exp(-REWARD_ERROR_SCALE * pos_pred_error**2)
-
-            # Velocity prediction error and reward
+            
             vel_pred_error = np.linalg.norm(predicted_qd - true_target_qd)
             r_vel_prediction = np.exp(-REWARD_ERROR_SCALE * 0.5 * vel_pred_error**2)
-
-            # Combine prediction rewards
+            
             r_prediction = r_pos_prediction + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_prediction
-        else:
-            # No prediction provided - reward is 0 for prediction component
-            warnings.warn("set_predicted_target() was not called before step(). Prediction reward = 0.")
-            r_prediction = 0.0
 
-        # Component 2: Tracking Accuracy
         r_pos_tracking = np.exp(-REWARD_ERROR_SCALE * real_time_pos_error_norm**2)
-
-        # Velocity tracking reward
+        
         if self.leader_qd_history:
             true_target_qd = self.leader_qd_history[-1]
             _, remote_qd = self.remote_robot.get_joint_state()
@@ -490,6 +462,24 @@ class TeleoperationEnvWithDelay(gym.Env):
             r_vel_tracking = 0.0
 
         r_tracking = r_pos_tracking + 0.3 * r_vel_tracking
+        
+        return {
+            'r_prediction': r_prediction,
+            'r_tracking': r_tracking
+        }
+        
+    def _calculate_reward(
+        self,
+        real_time_pos_error_norm: float,
+        action: np.ndarray  # tau_compensation
+    ) -> float:
+        """
+        Calculate dense reward combining prediction and tracking accuracy.
+        """
+        
+        components = self._calculate_reward_components()
+        r_prediction = components['r_prediction']
+        r_tracking = components['r_tracking']
 
         # Weighted Combination
         total_reward = (
@@ -497,15 +487,31 @@ class TeleoperationEnvWithDelay(gym.Env):
             REWARD_TRACKING_WEIGHT * r_tracking
         )
 
-        # Periodic logging (every 500 steps)
-        if self.current_step % 500 == 0 and not np.isnan(pos_pred_error):
+        # Periodic logging (every 1000 steps)
+        if self.current_step % 1000 == 0:
+            # Re-calculate errors for logging purposes only
+            pos_pred_error, vel_pred_error, r_pos_prediction, r_vel_prediction, vel_track_error, r_vel_tracking = [np.nan] * 6
+            if self._last_predicted_target is not None:
+                true_target = self.get_true_current_target()
+                predicted_q = self._last_predicted_target[:N_JOINTS]
+                predicted_qd = self._last_predicted_target[N_JOINTS:]
+                true_target_q = true_target[:N_JOINTS]
+                true_target_qd = true_target[N_JOINTS:]
+                pos_pred_error = np.linalg.norm(predicted_q - true_target_q)
+                r_pos_prediction = np.exp(-REWARD_ERROR_SCALE * pos_pred_error**2)
+                vel_pred_error = np.linalg.norm(predicted_qd - true_target_qd)
+                r_vel_prediction = np.exp(-REWARD_ERROR_SCALE * 0.5 * vel_pred_error**2)
+                _, remote_qd = self.remote_robot.get_joint_state()
+                vel_track_error = np.linalg.norm(true_target_qd - remote_qd)
+                r_vel_tracking = np.exp(-REWARD_ERROR_SCALE * 0.5 * vel_track_error**2)
+                
             print(f"\n[Reward Debug - Step {self.current_step}]")
             print(f"  Prediction Component:")
             print(f"    Pos Error: {pos_pred_error*1000:.1f}mm → Reward: {r_pos_prediction:.3f}")
             print(f"    Vel Error: {vel_pred_error:.3f} → Reward: {r_vel_prediction:.3f}")
             print(f"    Total Pred: {r_prediction:.3f} (Weight: {REWARD_PREDICTION_WEIGHT})")
             print(f"  Tracking Component:")
-            print(f"    Pos Error: {real_time_pos_error_norm*1000:.1f}mm → Reward: {r_pos_tracking:.3f}")
+            print(f"    Pos Error: {real_time_pos_error_norm*1000:.1f}mm → Reward: {np.exp(-REWARD_ERROR_SCALE * real_time_pos_error_norm**2):.3f}")
             print(f"    Vel Error: {vel_track_error:.3f} → Reward: {r_vel_tracking:.3f}")
             print(f"    Total Track: {r_tracking:.3f} (Weight: {REWARD_TRACKING_WEIGHT})")
             print(f"  TOTAL REWARD: {total_reward:.3f}")
@@ -518,21 +524,12 @@ class TeleoperationEnvWithDelay(gym.Env):
         remote_q: np.ndarray
     ) -> Tuple[bool, float]:
         """
-        Check termination conditions.
-        
         Termination occurs if:
             1. Joint limits are approached (within margin)
             2. Joint error is too high (> max_joint_error)
             3. Joint error is NaN (numerical instability)
-        
-        Args:
-            joint_error: Current joint tracking error norm
-            remote_q: Current remote robot joint positions
-            
-        Returns:
-            terminated: Boolean indicating if episode should end
-            penalty: Penalty value if terminated (-10.0), else 0.0
         """
+        
         # Check joint limits
         at_limits = (
             np.any(remote_q <= self.joint_limits_lower + self.joint_limit_margin) or
@@ -549,14 +546,14 @@ class TeleoperationEnvWithDelay(gym.Env):
 
     def _get_info(self) -> Dict[str, Any]:
         """
-        Return diagnostic information.
+        info for debugging and analysis.
         
-        Returns:
-            Dictionary containing:
-                - real_time_joint_error: Current position tracking error
-                - prediction_error: Current prediction error (if available)
-                - current_delay_steps: Current observation delay
+        components:
+            - real_time_joint_error: ||true_q[t] - remote_q[t]||
+            - prediction_error: ||predicted_q[t] - true_q[t]||
+            - current_delay_steps: current observation delay in timesteps
         """
+        
         info_dict = {}
         remote_q, _ = self.remote_robot.get_joint_state()
 
@@ -582,9 +579,53 @@ class TeleoperationEnvWithDelay(gym.Env):
         return info_dict
 
     def render(self) -> None:
-        """Rendering is not implemented."""
-        pass
+        """Render the environment for human viewing (live plot)."""
+        if self.render_mode != "human":
+            return
+
+        if self.viewer is None:
+            # Initialize a 3-subplot figure for key performance metrics
+            self.viewer, self.ax = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+            self.viewer.suptitle(f'Live Teleoperation Tracking - Run {self.episode_count}', fontsize=12)
+            
+            # Subplot 1: Total Reward
+            self.line1, = self.ax[0].plot([], [], label='TOTAL Step Reward', color='green')
+            self.ax[0].set_ylabel('Total Reward')
+            self.ax[0].legend(loc='upper right')
+            
+            # Subplot 2: Tracking Component
+            self.line2, = self.ax[1].plot([], [], label='Tracking Reward (Weighted)', color='blue')
+            self.ax[1].set_ylabel('Tracking Reward')
+            self.ax[1].legend(loc='upper right')
+            
+            # Subplot 3: Prediction Component
+            self.line3, = self.ax[2].plot([], [], label='Prediction Reward (Weighted)', color='red')
+            self.ax[2].set_ylabel('Prediction Reward')
+            self.ax[2].set_xlabel(f'Time Steps (History Length: {self.plot_history_len})')
+            self.ax[2].legend(loc='upper right')
+            
+            plt.ion() # Turn on interactive mode for non-blocking plot updates
+            plt.show(block=False)
+
+        # 1. Update Plot Title and X-axis Data
+        x_data = np.arange(self._step_counter - len(self.hist_total_reward) + 1, 
+                           self._step_counter + 1)
+        
+        # 2. Update Y-axis Data
+        self.line1.set_data(x_data, self.hist_total_reward)
+        self.line2.set_data(x_data, self.hist_tracking_reward)
+        self.line3.set_data(x_data, self.hist_prediction_reward)
+
+        # 3. Autoscale and Redraw (Crucial for live updating)
+        for ax in self.ax:
+            ax.relim()      # Recalculate limits based on new data
+            ax.autoscale_view() # Rescale axes
+        
+        self.viewer.canvas.draw_idle()
+        self.viewer.canvas.flush_events()
 
     def close(self) -> None:
-        """Clean up resources."""
-        pass
+        """Clean up resources and close the Matplotlib figure."""
+        if self.viewer is not None:
+            plt.close(self.viewer)
+            self.viewer = None

@@ -425,7 +425,7 @@ class LocalRobotSimulator(gym.Env):
         terminated = False
         truncated = False
 
-        return self._q_current.astype(np.float32), reward, terminated, truncated, info
+        return self._q_current.astype(np.float32), self._qd_current.astype(np.float32), reward, terminated, truncated, info
 
     def get_joint_state(self) -> dict:
         """Get current joint positions and velocities."""

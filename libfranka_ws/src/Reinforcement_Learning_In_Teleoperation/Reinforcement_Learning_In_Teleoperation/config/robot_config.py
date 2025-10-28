@@ -119,7 +119,7 @@ OBS_DIM = (
 STATE_BUFFER_LENGTH = 256
 
 # RNN (LSTM) architecture for state prediction
-RNN_HIDDEN_DIM = 512
+RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 2
 RNN_SEQUENCE_LENGTH = STATE_BUFFER_LENGTH  # Must match buffer length
 
@@ -164,7 +164,7 @@ REWARD_TRACKING_WEIGHT = 10.0    # Weight for tracking performance
 REWARD_ERROR_SCALE = 100.0       # Scale factor for exponential reward
 REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 0.3  # Weight for velocity prediction vs position
 
-NUM_ENVIRONMENTS = 1  # Number of parallel environments
+NUM_ENVIRONMENTS = 8   # Number of parallel environments
 ######################################
 # Logging and Checkpointing
 ######################################

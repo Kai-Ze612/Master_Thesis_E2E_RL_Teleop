@@ -1,0 +1,42 @@
+2025-10-28 13:31:37 [INFO] __main__ - Run Name: RecPPO_HIGH_DELAY_figure_8_20251028_133137
+2025-10-28 13:31:37 [INFO] __main__ - Output Directory: ./rl_training_output/recurrent_ppo/RecPPO_HIGH_DELAY_figure_8_20251028_133137
+2025-10-28 13:31:37 [INFO] __main__ - Training Configuration:
+2025-10-28 13:31:37 [INFO] __main__ -   Delay Config: HIGH_DELAY
+2025-10-28 13:31:37 [INFO] __main__ -   Trajectory Type: figure_8
+2025-10-28 13:31:37 [INFO] __main__ -   Randomize Trajectory: False
+2025-10-28 13:31:37 [INFO] __main__ -   Total Timesteps: 2,000,000
+2025-10-28 13:31:37 [INFO] __main__ -   Random Seed: None (random)
+2025-10-28 13:31:37 [INFO] __main__ - 
+2025-10-28 13:31:37 [INFO] __main__ - Creating 1 parallel training environments...
+2025-10-28 13:31:42 [INFO] __main__ -   Vectorized Environment: SubprocVecEnv
+2025-10-28 13:31:42 [INFO] __main__ -   Number of Envs: 1
+2025-10-28 13:31:42 [INFO] __main__ -   Observation Space: (134,)
+2025-10-28 13:31:42 [INFO] __main__ -   Action Space: (7,)
+2025-10-28 13:31:42 [INFO] __main__ - Skipping detailed validation for VecEnv (use single env for debugging)
+2025-10-28 13:31:42 [INFO] __main__ - 
+2025-10-28 13:31:42 [INFO] __main__ - Initializing Recurrent-PPO trainer...
+2025-10-28 13:31:43 [INFO] __main__ -   Trainer: RecurrentPPOTrainer
+2025-10-28 13:31:43 [INFO] __main__ -   Policy Parameters: 3,463,069
+2025-10-28 13:31:43 [INFO] __main__ -   Checkpoint Directory: ./rl_training_output/recurrent_ppo/RecPPO_HIGH_DELAY_figure_8_20251028_133137
+2025-10-28 13:31:43 [INFO] __main__ - 
+2025-10-28 13:31:43 [INFO] __main__ - ======================================================================
+2025-10-28 13:31:43 [INFO] __main__ - Starting Training
+2025-10-28 13:31:43 [INFO] __main__ - ======================================================================
+2025-10-28 13:31:43 [INFO] __main__ - 
+2025-10-28 13:31:43 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Launch with: tensorboard --logdir ./rl_training_output/recurrent_ppo/RecPPO_HIGH_DELAY_figure_8_20251028_133137/tensorboard
+2025-10-28 13:31:43 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Then open: http://localhost:6006
+
+2025-10-28 13:32:51 [WARNING] __main__ - 
+2025-10-28 13:32:51 [WARNING] __main__ - ======================================================================
+2025-10-28 13:32:51 [WARNING] __main__ - Training Interrupted by User
+2025-10-28 13:32:51 [WARNING] __main__ - ======================================================================
+2025-10-28 13:32:51 [WARNING] __main__ - Saving interrupted model...
+2025-10-28 13:32:51 [INFO] __main__ - Interrupted model saved to: ./rl_training_output/recurrent_ppo/RecPPO_HIGH_DELAY_figure_8_20251028_133137/interrupted_policy.pth
+2025-10-28 13:32:51 [INFO] __main__ - 
+2025-10-28 13:32:51 [INFO] __main__ - Cleaning up...
+2025-10-28 13:32:51 [INFO] __main__ - Environment closed
+2025-10-28 13:32:51 [INFO] __main__ - 
+2025-10-28 13:32:51 [INFO] __main__ - ======================================================================
+2025-10-28 13:32:51 [INFO] __main__ - Output Directory: ./rl_training_output/recurrent_ppo/RecPPO_HIGH_DELAY_figure_8_20251028_133137
+2025-10-28 13:32:51 [INFO] __main__ - ======================================================================
+2025-10-28 13:32:51 [INFO] __main__ - Training ended prematurely.
