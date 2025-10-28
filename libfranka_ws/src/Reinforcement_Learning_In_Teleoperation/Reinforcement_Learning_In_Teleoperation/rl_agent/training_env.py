@@ -1,19 +1,21 @@
 """
 Gymnasium Training environment.
 
+The environment is 
+
 Integrated with:
-- DelaySimulator for realistic network delay patterns.
+- DelaySimulator for setting network delay patterns.
 - LocalRobotSimulator: create target joint positions and velocities.
 - RemoteRobotSimulator: subscribe to RL output predicited targets and velocities, apply inverse dynamics and torque compensation.
 """
 
 # RL library imports
 import gymnasium as gym
-from gymnasium import spaces
+from gymnasium import spaces  # in order to define the action and observation spaces
 
 # Python standard libraries
 import numpy as np
-from collections import deque
+from collections import deque  # better for list function with fixed max length and faster appends/pops
 from typing import Tuple, Dict, Any, Optional
 import warnings
 
@@ -54,20 +56,23 @@ class TeleoperationEnvWithDelay(gym.Env):
 
     def __init__(
         self,
-        delay_config: ExperimentConfig = ExperimentConfig.MEDIUM_DELAY,
+        delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY,
         trajectory_type: TrajectoryType = TrajectoryType.FIGURE_8,
         randomize_trajectory: bool = False,
         seed: Optional[int] = None,
+        # Initialize trajectory as simplest for simplicity
     ):
+        super().__init__()
 
+        # Environment parameters
         self.max_episode_steps = MAX_EPISODE_STEPS
         self.control_freq = DEFAULT_CONTROL_FREQ
         self.current_step = 0
         self.episode_count = 0
 
         # Safety limits
-        self.max_joint_error = MAX_JOINT_ERROR_TERMINATION
-        self.joint_limit_margin = JOINT_LIMIT_MARGIN
+        self.max_joint_error = MAX_JOINT_ERROR_TERMINATION  # RL termination threshold
+        self.joint_limit_margin = JOINT_LIMIT_MARGIN 
 
         # Franka Panda robot parameters
         self.n_joints = N_JOINTS
@@ -83,7 +88,7 @@ class TeleoperationEnvWithDelay(gym.Env):
             config=delay_config,
             seed=seed
         )
-        
+
         # Initialize Leader and Remote Robot
         self.trajectory_type = trajectory_type
         self.randomize_trajectory = randomize_trajectory
@@ -100,11 +105,12 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Calculate buffer sizes based on maximum possible delays
         max_obs_delay = self.delay_simulator._obs_delay_max_steps
         max_action_delay = self.delay_simulator._action_delay_steps
-        leader_q_buffer_size = max(100, max_obs_delay + RNN_SEQUENCE_LENGTH + 20)
-        action_buffer_size = max(50, max_action_delay + self.action_history_len + 10)
+        leader_q_buffer_size = max(100, max_obs_delay + RNN_SEQUENCE_LENGTH + 20) # make sure the buffer has at least 100 entries and can fit the RNN sequence, 20 is the safety margin
+        leader_qd_buffer_size = max(100, max_obs_delay + RNN_SEQUENCE_LENGTH + 20)
+        action_buffer_size = max(100, max_action_delay + self.action_history_len + 20)
 
         self.leader_q_history = deque(maxlen=leader_q_buffer_size)
-        self.leader_qd_history = deque(maxlen=leader_q_buffer_size)
+        self.leader_qd_history = deque(maxlen=leader_qd_buffer_size)
         self.action_history = deque(maxlen=action_buffer_size)
         
         # Store predicted target from policy (set via set_predicted_target())
@@ -127,17 +133,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         seed: Optional[int] = None,
         options: Optional[Dict[str, Any]] = None
     ) -> Tuple[np.ndarray, Dict[str, Any]]:
-        """
-        Reset the environment to initial state for a new episode.
+        """Reset the environment to initial state for every new episode."""
         
-        Args:
-            seed: Random seed
-            options: Optional reset parameters
-            
-        Returns:
-            observation: Initial observation
-            info: Initial info dictionary
-        """
         super().reset(seed=seed)
         
         self.current_step = 0
@@ -147,7 +144,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Reset leader and remote robot
         leader_start_q, _ = self.leader.reset(seed=seed, options=options)
         self.remote_robot.reset(initial_qpos=self.initial_qpos)
-
+        
         # Clear history buffers
         self.leader_q_history.clear()
         self.leader_qd_history.clear()

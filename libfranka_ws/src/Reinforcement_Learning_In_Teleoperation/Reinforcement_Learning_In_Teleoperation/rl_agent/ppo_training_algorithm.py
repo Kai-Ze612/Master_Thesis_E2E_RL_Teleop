@@ -3,12 +3,6 @@ Custom recurrent PPO policy for end to end training.
 
 This script defines the training loop and optimization process for the recurrent PPO agent.
 
-Combines:
-- Supervised loss for state prediction (RNN)
-- PPO loss for RL compensation (Actor-Critic)
-- Handles RNN hidden state management during training.
-- Dense reward computed in environment (prediction + tracking accuracy)
-
 Training pipeline:
     1. Collect rollout: Policy predicts state → takes action → environment calculates reward
     2. Compute GAE: Calculate advantages and returns
