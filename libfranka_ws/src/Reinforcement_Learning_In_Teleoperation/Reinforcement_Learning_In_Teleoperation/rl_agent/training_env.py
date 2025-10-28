@@ -165,13 +165,9 @@ class TeleoperationEnvWithDelay(gym.Env):
 
     def set_predicted_target(self, predicted_target: np.ndarray) -> None:
         """
-        Set the predicted local robot state from the policy.
-        
-        CRITICAL: This method must be called by the trainer BEFORE env.step()
-        to enable the environment to calculate the prediction reward component.
-        
-        Args:
-            predicted_target: Shape (14,) array containing [q_predicted, qd_predicted]
+        - predict the current local robot position and velocity based on the delayed observations.
+        - This method must be called before env.step() to set the predicted target from the policy.
+        - Output: 14 D array: [predicted_q (7,), predicted_qd (7,)]
         """
         if predicted_target.shape[0] != N_JOINTS * 2:
             raise ValueError(f"predicted_target must have shape ({N_JOINTS * 2},), got {predicted_target.shape}")
@@ -184,6 +180,13 @@ class TeleoperationEnvWithDelay(gym.Env):
         delay_steps = self.delay_simulator.get_observation_delay_steps(buffer_len)
         delay_index = min(delay_steps, buffer_len - 1)
         return self.leader_q_history[-delay_index - 1].copy()
+    
+    def _get_delayed_qd(self) -> np.ndarray:
+        """Get the delayed target joint velocity from the history buffer."""
+        buffer_len = len(self.leader_qd_history)
+        delay_steps = self.delay_simulator.get_observation_delay_steps(buffer_len)
+        delay_index = min(delay_steps, buffer_len - 1)
+        return self.leader_qd_history[-delay_index - 1].copy()
 
     def _get_delayed_action(self) -> np.ndarray:
         """Get the delayed action from the history buffer."""
@@ -197,28 +200,13 @@ class TeleoperationEnvWithDelay(gym.Env):
         action: np.ndarray
     ) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
         """
-        Execute one time step in the environment.
-        
-        Pipeline:
-            1. Leader advances (generates new target state)
-            2. Store action in history
-            3. Apply delayed action to remote robot
-            4. Calculate reward (includes prediction component if set_predicted_target was called)
-            5. Check termination conditions
-            6. Return (observation, reward, terminated, truncated, info)
-        
-        Args:
-            action: Torque compensation from policy, shape (7,)
-            
-        Returns:
-            observation: Current observation
-            reward: Dense reward (prediction + tracking)
-            terminated: Whether episode ended (joint limits, high error)
-            truncated: Whether episode was truncated (max steps)
-            info: Diagnostic information
+        Execute one timestep in the environment given the predited target and RL action (tau compensation).
+    
+        Returns: observation, reward, terminated, truncated, info
         """
+        
         self.current_step += 1
-
+        
         # Step 1: Advance Leader (generate new target)
         new_leader_q, _, _, _, leader_info = self.leader.step()
         new_leader_qd = leader_info.get('joint_vel', np.zeros(self.n_joints))
