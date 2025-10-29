@@ -10,6 +10,11 @@ import argparse
 import torch
 import numpy as np
 
+# stable-baselines3 imports
+from stable_baselines3.common.vec_env import  SubprocVecEnv  # For parallel envs
+from stable_baselines3.common.env_util import make_vec_env  # To create vec envs
+
+# Custom imports
 from Reinforcement_Learning_In_Teleoperation.rl_agent.training_env import TeleoperationEnvWithDelay
 from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
 from Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import TrajectoryType
@@ -17,11 +22,9 @@ from Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm imp
 from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     PPO_TOTAL_TIMESTEPS,
     CHECKPOINT_DIR,
-    DEFAULT_CONTROL_FREQ
+    NUM_ENVIRONMENTS
 )
 
-from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
-from stable_baselines3.common.env_util import make_vec_env
 
 def setup_logging(output_dir: str) -> logging.Logger:
     """Configure logging to file and console."""
@@ -97,7 +100,7 @@ def train_agent(args: argparse.Namespace) -> None:
     run_name = f"RecPPO_{config_name}_{trajectory_name}_{timestamp}"
         
     # Determine base output directory
-    base_output_dir = CHECKPOINT_DIR or "./rl_training_output/recurrent_ppo"
+    base_output_dir = CHECKPOINT_DIR
     output_dir = os.path.join(base_output_dir, run_name)
     
     try:
@@ -121,22 +124,19 @@ def train_agent(args: argparse.Namespace) -> None:
     # Device setup
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    # Set Random Seeds ---
+    # Set Random Seeds
     if args.seed is not None:
         logger.info(f"Setting random seed: {args.seed}")
         np.random.seed(args.seed)
         torch.manual_seed(args.seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(args.seed)
-            # For full determinism (may slow down training):
-            # torch.backends.cudnn.deterministic = True
-            # torch.backends.cudnn.benchmark = False
         logger.info("Random seeds set for NumPy, PyTorch, and CUDA")
         logger.info("")
 
-    # Environment Setup
-    NUM_ENVIRONMENTS = 1  # Number of parallel environments
-    logger.info(f"Creating {NUM_ENVIRONMENTS} parallel training environments...")
+    # Environment setup
+    N_env = NUM_ENVIRONMENTS 
+    
     env = None
     try:
         # Define a function that creates a single environment instance
@@ -145,29 +145,24 @@ def train_agent(args: argparse.Namespace) -> None:
             env_instance = TeleoperationEnvWithDelay(
                 delay_config=args.config,
                 trajectory_type=args.trajectory_type,
-                randomize_trajectory=args.randomize_trajectory
-                # Seed will be handled by make_vec_env wrapper
+                randomize_trajectory=args.randomize_trajectory,
+                render_mode=args.render
             )
+           
             return env_instance
 
         # Create the vectorized environment
         env = make_vec_env(
             make_env,
-            n_envs=NUM_ENVIRONMENTS,
+            n_envs=N_env,
             seed=args.seed, # Handles seeding each sub-environment
-            vec_env_cls=SubprocVecEnv # Use SubprocVecEnv for true parallelism
-            # vec_env_cls=DummyVecEnv # Use DummyVecEnv for debugging or single-core
+            vec_env_cls=SubprocVecEnv # for parallparallelism
         )
 
         logger.info(f"  Vectorized Environment: {env.__class__.__name__}")
         logger.info(f"  Number of Envs: {env.num_envs}")
-        # Note: Accessing underlying env attributes needs care with VecEnv
-        # Example: logger.info(f"  Delay Config: {env.get_attr('delay_simulator')[0].config_name}") # Gets from first env
         logger.info(f"  Observation Space: {env.observation_space.shape}") # Shape is usually same
         logger.info(f"  Action Space: {env.action_space.shape}") # Shape is usually same
-
-        # --- Skipping detailed validation for VecEnv ---
-        logger.info("Skipping detailed validation for VecEnv (use single env for debugging)")
         logger.info("")
 
     except Exception as e:
@@ -176,12 +171,12 @@ def train_agent(args: argparse.Namespace) -> None:
             env.close()
         sys.exit(1)
     
-    # --- Trainer Initialization ---
+    # Trrainer Initialization
     logger.info("Initializing Recurrent-PPO trainer...")
     trainer = None
     
     try:
-        trainer = RecurrentPPOTrainer(env=env, device=device)
+        trainer = RecurrentPPOTrainer(env=env)
         trainer.checkpoint_dir = output_dir
         
         logger.info(f"  Trainer: RecurrentPPOTrainer")
@@ -194,7 +189,7 @@ def train_agent(args: argparse.Namespace) -> None:
         env.close()
         sys.exit(1)
    
-    # --- Start Training ---
+    # Start Training Loop
     training_successful = False
     try:
         logger.info("="*70)
@@ -241,7 +236,7 @@ def train_agent(args: argparse.Namespace) -> None:
             logger.error(f"Could not save crash model: {save_e}")
     
     finally:
-        # --- Cleanup ---
+        # clean up the environment
         logger.info("")
         logger.info("Cleaning up...")
         if env:
@@ -266,80 +261,42 @@ def parse_arguments() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     
-    # --- Experiment Configuration ---
+    # Experiment configuration group
     exp_group = parser.add_argument_group('Experiment Configuration')
-    
-    exp_group.add_argument(
-        "--config",
-        type=str,
-        default="2",
-        choices=['1', '2', '3', '4'],
-        help="Delay configuration preset (1=LOW, 2=MEDIUM, 3=HIGH, 4=EXTREME)"
-    )
-    
-    exp_group.add_argument(
-        "--trajectory-type",
-        type=str.lower,
-        default="figure_8",
-        choices=[t.value for t in TrajectoryType],
-        help="Reference trajectory type (figure_8, square, lissajous_complex)"
-    )
-    
-    exp_group.add_argument(
-        "--randomize-trajectory",
-        action="store_true",
-        help="Randomize trajectory parameters during training for better generalization"
-    )
-    
-    exp_group.add_argument(
-        "--timesteps",
-        type=int,
-        default=PPO_TOTAL_TIMESTEPS,
-        help="Total training timesteps"
-    )
-    
-    exp_group.add_argument(
-        "--seed",
-        type=int,
-        default=None,
-        help="Random seed for reproducibility (None for random seed)"
-    )
+    exp_group.add_argument("--config", type=str, default="2", choices=['1', '2', '3', '4'], help="Delay configuration preset (1=LOW, 2=MEDIUM, 3=HIGH, 4=EXTREME)")
+    exp_group.add_argument("--trajectory-type", type=str.lower, default="figure_8", choices=[t.value for t in TrajectoryType], help="Reference trajectory type (figure_8, square, lissajous_complex)")
+    exp_group.add_argument("--randomize-trajectory", action="store_true", help="Randomize trajectory parameters during training for better generalization")
+    exp_group.add_argument("--timesteps", type=int, default=PPO_TOTAL_TIMESTEPS, help="Total training timesteps")
+    exp_group.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility (None for random seed)")
+    exp_group.add_argument("--render", type=str.lower, default=None, choices=['human', 'rgb_array', 'none'], help="Rendering mode for visualization ('human' opens a live plot).")
     
     args = parser.parse_args()
     
-    try:
-        # Get all enum members from ExperimentConfig
-        config_options = list(ExperimentConfig)
-        
-        if len(config_options) < 4:
-            raise ValueError(f"Config mapping needs 4 options, but ExperimentConfig only has {len(config_options)}")
-            
-        # Create a mapping from string numbers to the first 4 enum members
-        CONFIG_MAP = {
-            '1': config_options[0], # e.g., LOW_DELAY
-            '2': config_options[1], # e.g., MEDIUM_DELAY
-            '3': config_options[2], # e.g., HIGH_DELAY
-            '4': config_options[3]  # e.g., EXTREME_DELAY
-        }
-        
-        # Convert the string '1', '2', etc., to the actual enum object
-        args.config = CONFIG_MAP[args.config]
-        
-    except Exception as e:
-        print(f"ERROR: Invalid --config '{args.config}'. {e}")
-        print(f"Available options: {list(CONFIG_MAP.keys())}")
-        sys.exit(1)
-
-    try:
-        args.trajectory_type = next(
-            t for t in TrajectoryType 
-            if t.value.lower() == args.trajectory_type.lower()
-        )
-    except StopIteration:
-        print(f"ERROR: Invalid --trajectory-type '{args.trajectory_type}'")
-        print(f"Available options: {[t.value for t in TrajectoryType]}")
-        sys.exit(1)
+    # Get all enum members from ExperimentConfig
+    config_options = list(ExperimentConfig)
     
+    if len(config_options) < 4:
+        raise ValueError(f"Config mapping needs 4 options, but ExperimentConfig only has {len(config_options)}")
+        
+    # Create a mapping from string numbers to the first 4 enum members
+    CONFIG_MAP = {
+        '1': config_options[0], # e.g., LOW_DELAY
+        '2': config_options[1], # e.g., MEDIUM_DELAY
+        '3': config_options[2], # e.g., HIGH_DELAY
+        '4': config_options[3]  # e.g., EXTREME_DELAY
+    }
+    
+    # Convert the string '1', '2', etc., to the actual enum object
+    args.config = CONFIG_MAP[args.config]
+        
+        
+    # Convert trajectory type string to TrajectoryType enum
+    args.trajectory_type = next(
+        t for t in TrajectoryType 
+        if t.value.lower() == args.trajectory_type.lower()
+    )
+   
+    # Validate timesteps
     if args.timesteps <= 0:
         print(f"ERROR: --timesteps must be positive, got {args.timesteps}")
         sys.exit(1)

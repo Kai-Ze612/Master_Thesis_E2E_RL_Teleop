@@ -91,10 +91,10 @@ TRAJECTORY_FREQUENCY_DEFAULT = 0.1
 ######################################
 
 # Maximum steps per episode
-MAX_EPISODE_STEPS = 2000
+MAX_EPISODE_STEPS = 1000
 
 # Termination condition for high joint error (radians)
-MAX_JOINT_ERROR_TERMINATION = 3.0  # radians
+MAX_JOINT_ERROR_TERMINATION = 1.0  # radians
 
 # Length of history buffers for observation space
 TARGET_HISTORY_LEN = 5  # How many leader trajectory points to keep
@@ -147,7 +147,7 @@ PREDICTION_LOSS_WEIGHT = 5.0  # Weight for supervised state prediction loss
 PPO_LOSS_WEIGHT = 1.0          # Weight for PPO loss (actor + critic + entropy)
 
 # Training schedule
-PPO_ROLLOUT_STEPS = 5000
+PPO_ROLLOUT_STEPS = 10000
 PPO_NUM_EPOCHS = 10
 PPO_BATCH_SIZE = 128
 PPO_TOTAL_TIMESTEPS = 2_000_000
@@ -157,21 +157,25 @@ PPO_TOTAL_TIMESTEPS = 2_000_000
 ######################################
 
 # Reward component weights
-REWARD_PREDICTION_WEIGHT = 5.0   # Weight for state prediction accuracy
-REWARD_TRACKING_WEIGHT = 10.0    # Weight for tracking performance
+REWARD_PREDICTION_WEIGHT = 20   # Weight for state prediction accuracy
+REWARD_TRACKING_WEIGHT = 1.0    # Weight for tracking performance
+
+# Reward scaling factors
+REWARD_TRACKING_SCALE = 0.2  # Same as REWARD_ERROR_SCALE
+REWARD_ACTION_PENALTY = 0.01
 
 # Reward scaling
-REWARD_ERROR_SCALE = 100.0       # Scale factor for exponential reward
+REWARD_ERROR_SCALE = 0.2       # Scale factor for exponential reward
 REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 0.3  # Weight for velocity prediction vs position
 
-NUM_ENVIRONMENTS = 8   # Number of parallel environments
+NUM_ENVIRONMENTS = 5   # Number of parallel environments
 ######################################
 # Logging and Checkpointing
 ######################################
 
 LOG_FREQ = 10   # Log metrics every N updates
 SAVE_FREQ = 100  # Save checkpoint every N updates
-CHECKPOINT_DIR = "./rl_training_output/recurrent_ppo"
+CHECKPOINT_DIR = "./rl_training_output"
 
 ######################################
 # Deployment Parameters
@@ -214,6 +218,6 @@ def _print_config():
     print(f"PPO_TOTAL_TIMESTEPS: {PPO_TOTAL_TIMESTEPS}")
     print("*" * 70)
     print(f"NUM_ENVIRONMENTS: {NUM_ENVIRONMENTS}")
-
+    print("*" * 70)
 
 _print_config()

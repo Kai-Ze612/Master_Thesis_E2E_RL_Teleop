@@ -81,7 +81,7 @@ class RecurrentPPOPolicy(nn.Module):
             self.activation_fn(),
             nn.Linear(128, N_JOINTS) # Output: Mean of torque compensation dist (7 dims)
         )
-
+        
         # Log standard deviation (learnable parameter, shared across batch)
         # Initialized near zero for small initial std deviation
         self.actor_log_std = nn.Parameter(torch.zeros(1, N_JOINTS) - 0.5)

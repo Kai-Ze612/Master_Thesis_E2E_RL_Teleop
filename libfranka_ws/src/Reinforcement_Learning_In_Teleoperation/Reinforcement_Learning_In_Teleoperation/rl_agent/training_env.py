@@ -220,7 +220,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         """
         
         self.current_step += 1
-
+        self._step_counter += 1
+        
         # Leader generate trajectory point
         new_leader_q, new_leader_qd, _, _, _, _ = self.leader.step()
         self.leader_q_history.append(new_leader_q.copy())
@@ -233,21 +234,29 @@ class TeleoperationEnvWithDelay(gym.Env):
         delayed_q = self._get_delayed_q()
         delayed_action = self._get_delayed_action()
 
-        # Apply delayed action to remote robot - tau compensation is the current action
+        # Determine target for remote robot based on last predicted target
+        if self._last_predicted_target is not None:
+            # The remote robot targets the position component of the agent's prediction (the q value)
+            target_q_for_remote = self._last_predicted_target[:N_JOINTS]
+            
+            # The torque compensation is the immediate RL action (input 'action')
+            torque_compensation_for_remote = action
+        else:
+            # Fallback for the very first step before the agent predicts (should not happen in VecEnv)
+            target_q_for_remote = self.initial_qpos.copy() # Use a safe, static target
+            torque_compensation_for_remote = np.zeros(N_JOINTS)
+        
+        # Apply target and torque compensation to remote robot
         step_info = self.remote_robot.step(
-            target_q=delayed_q,
-            torque_compensation=delayed_action,
+            target_q=target_q_for_remote,      
+            torque_compensation=torque_compensation_for_remote,
         )
-
+        
         # Get remote robot current state after implementing action
         remote_q, remote_qd = self.remote_robot.get_joint_state()
 
-        # Calculate tracking error
-        true_target_q = self.leader_q_history[-1]  # Current ground truth
-        real_time_pos_error_norm = np.linalg.norm(true_target_q - remote_q)
-
         # Calculate reward (includes prediction + tracking)
-        reward = self._calculate_reward(real_time_pos_error_norm, action)
+        reward = self._calculate_reward(action)
 
         # Update history buffers for plotting
         self.hist_total_reward.append(reward)
@@ -260,7 +269,14 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.hist_tracking_reward.append(r_tracking_weighted)
         
         # Check termination
-        terminated, term_penalty = self._check_termination(real_time_pos_error_norm, remote_q)
+        if self._last_predicted_target is not None:
+            predicted_q = self._last_predicted_target[:N_JOINTS]
+            joint_error = np.linalg.norm(predicted_q - remote_q)
+        else:
+            # Fallback: use error from initial position
+            joint_error = np.linalg.norm(self.initial_qpos - remote_q)
+            
+        terminated, term_penalty = self._check_termination(joint_error, remote_q)
         if terminated:
             reward += term_penalty
 
@@ -429,11 +445,12 @@ class TeleoperationEnvWithDelay(gym.Env):
     
     def _calculate_reward_components(self) -> Dict[str, float]:
         """Calculates and returns the unweighted reward components (r_prediction, r_tracking) for plotting"""
-
-        real_time_pos_error_norm = np.linalg.norm(self.leader_q_history[-1] - self.remote_robot.get_joint_state()[0])
     
         r_prediction = 0.0
         r_tracking = 0.0
+        
+        # Get current remote state
+        remote_q, remote_qd = self.remote_robot.get_joint_state()
         
         if self._last_predicted_target is not None:
             true_target = self.get_true_current_target()
@@ -451,70 +468,66 @@ class TeleoperationEnvWithDelay(gym.Env):
             
             r_prediction = r_pos_prediction + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_prediction
 
-        r_pos_tracking = np.exp(-REWARD_ERROR_SCALE * real_time_pos_error_norm**2)
+            tracking_pos_error = np.linalg.norm(predicted_q - remote_q)
+            r_pos_tracking = np.exp(-REWARD_ERROR_SCALE * tracking_pos_error**2)
+            
+            tracking_vel_error = np.linalg.norm(predicted_qd - remote_qd)
+            r_vel_tracking = np.exp(-REWARD_ERROR_SCALE * 0.5 * tracking_vel_error**2)
+            
+            r_tracking = r_pos_tracking + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_tracking
         
-        if self.leader_qd_history:
-            true_target_qd = self.leader_qd_history[-1]
-            _, remote_qd = self.remote_robot.get_joint_state()
-            vel_track_error = np.linalg.norm(true_target_qd - remote_qd)
-            r_vel_tracking = np.exp(-REWARD_ERROR_SCALE * 0.5 * vel_track_error**2)
         else:
-            r_vel_tracking = 0.0
-
-        r_tracking = r_pos_tracking + 0.3 * r_vel_tracking
+            # Fallback if no prediction available yet
+            r_prediction = 0.0
+            r_tracking = 0.0
         
         return {
-            'r_prediction': r_prediction,
-            'r_tracking': r_tracking
+            'r_prediction': r_prediction,  # For logging only
+            'r_tracking': r_tracking       # This is the actual RL reward
         }
         
     def _calculate_reward(
         self,
-        real_time_pos_error_norm: float,
-        action: np.ndarray  # tau_compensation
+        action: np.ndarray,  # tau_compensation
     ) -> float:
         """
         Calculate dense reward combining prediction and tracking accuracy.
         """
         
         components = self._calculate_reward_components()
-        r_prediction = components['r_prediction']
-        r_tracking = components['r_tracking']
-
-        # Weighted Combination
-        total_reward = (
-            REWARD_PREDICTION_WEIGHT * r_prediction +
-            REWARD_TRACKING_WEIGHT * r_tracking
-        )
-
-        # Periodic logging (every 1000 steps)
+        total_reward = components['r_tracking']
+        
+        # Add small penalty for large actions to encourage smoother control
+        action_penalty = 0.01 * np.sum(action**2)
+        total_reward -= action_penalty
+        
+        # Logging (every 1000 steps)
         if self.current_step % 1000 == 0:
-            # Re-calculate errors for logging purposes only
-            pos_pred_error, vel_pred_error, r_pos_prediction, r_vel_prediction, vel_track_error, r_vel_tracking = [np.nan] * 6
+            r_prediction = components['r_prediction']
+            r_tracking = components['r_tracking']
+            
             if self._last_predicted_target is not None:
                 true_target = self.get_true_current_target()
                 predicted_q = self._last_predicted_target[:N_JOINTS]
                 predicted_qd = self._last_predicted_target[N_JOINTS:]
                 true_target_q = true_target[:N_JOINTS]
                 true_target_qd = true_target[N_JOINTS:]
-                pos_pred_error = np.linalg.norm(predicted_q - true_target_q)
-                r_pos_prediction = np.exp(-REWARD_ERROR_SCALE * pos_pred_error**2)
-                vel_pred_error = np.linalg.norm(predicted_qd - true_target_qd)
-                r_vel_prediction = np.exp(-REWARD_ERROR_SCALE * 0.5 * vel_pred_error**2)
-                _, remote_qd = self.remote_robot.get_joint_state()
-                vel_track_error = np.linalg.norm(true_target_qd - remote_qd)
-                r_vel_tracking = np.exp(-REWARD_ERROR_SCALE * 0.5 * vel_track_error**2)
+                remote_q, remote_qd = self.remote_robot.get_joint_state()
                 
-            print(f"\n[Reward Debug - Step {self.current_step}]")
-            print(f"  Prediction Component:")
-            print(f"    Pos Error: {pos_pred_error*1000:.1f}mm → Reward: {r_pos_prediction:.3f}")
-            print(f"    Vel Error: {vel_pred_error:.3f} → Reward: {r_vel_prediction:.3f}")
-            print(f"    Total Pred: {r_prediction:.3f} (Weight: {REWARD_PREDICTION_WEIGHT})")
-            print(f"  Tracking Component:")
-            print(f"    Pos Error: {real_time_pos_error_norm*1000:.1f}mm → Reward: {np.exp(-REWARD_ERROR_SCALE * real_time_pos_error_norm**2):.3f}")
-            print(f"    Vel Error: {vel_track_error:.3f} → Reward: {r_vel_tracking:.3f}")
-            print(f"    Total Track: {r_tracking:.3f} (Weight: {REWARD_TRACKING_WEIGHT})")
-            print(f"  TOTAL REWARD: {total_reward:.3f}")
+                pred_pos_error = np.linalg.norm(predicted_q - true_target_q)
+                pred_vel_error = np.linalg.norm(predicted_qd - true_target_qd)
+                track_pos_error = np.linalg.norm(predicted_q - remote_q)
+                track_vel_error = np.linalg.norm(predicted_qd - remote_qd)
+                
+                print(f"\n[Reward Debug - Step {self.current_step}]")
+                print(f"  RNN Prediction Accuracy (NOT part of RL reward):")
+                print(f"    Pos Error: {pred_pos_error*1000:.1f}mm → Component: {r_prediction:.3f}")
+                print(f"    Vel Error: {pred_vel_error:.3f} rad/s")
+                print(f"  RL Tracking Performance (to predicted goal):")
+                print(f"    Pos Error: {track_pos_error*1000:.1f}mm → Component: {r_tracking:.3f}")
+                print(f"    Vel Error: {track_vel_error:.3f} rad/s")
+                print(f"    Weighted Tracking: {REWARD_TRACKING_WEIGHT * r_tracking:.3f}")
+                print(f"  TOTAL RL REWARD: {total_reward:.3f}")
 
         return total_reward
     

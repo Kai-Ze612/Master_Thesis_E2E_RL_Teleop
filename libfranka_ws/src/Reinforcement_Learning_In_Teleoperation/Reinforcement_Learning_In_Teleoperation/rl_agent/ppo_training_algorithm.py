@@ -1,7 +1,7 @@
 """
 Custom recurrent PPO policy for end to end training.
 
-This script defines the training loop and optimization process for the recurrent PPO agent.
+This script defines the backward training loop and optimization process for the recurrent PPO agent.
 
 Training pipeline:
     1. Collect rollout: Policy predicts state → takes action → environment calculates reward
@@ -16,14 +16,13 @@ import numpy as np
 import os
 from datetime import datetime
 import logging
-from typing import Dict, List, Optional, Tuple # Added Tuple
+from typing import Dict, List, Optional, Tuple
 import time
 import json
-from torch.utils.tensorboard import SummaryWriter
 
-# --- [NEW] Import VecEnv types ---
-from stable_baselines3.common.vec_env import VecEnv
-# -------------------------------
+# stable baselines3 imports
+from stable_baselines3.common.vec_env import VecEnv  # make vector environment
+from torch.utils.tensorboard import SummaryWriter
 
 from Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_policy_network import RecurrentPPOPolicy, HiddenStateType
 from Reinforcement_Learning_In_Teleoperation.utils.rollout_buffer import RolloutBuffer
@@ -36,22 +35,23 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     LOG_FREQ, SAVE_FREQ, CHECKPOINT_DIR,
     ENABLE_EARLY_STOPPING, EARLY_STOPPING_PATIENCE, EARLY_STOPPING_MIN_DELTA,
     EARLY_STOPPING_CHECK_FREQ,
-    NUM_ENVIRONMENTS # Make sure this is defined in your config
+    NUM_ENVIRONMENTS
 )
 
 logger = logging.getLogger(__name__)
 
 
 class RecurrentPPOTrainer:
-
-    # --- [MODIFIED] __init__ accepts VecEnv ---
-    def __init__(self, env: VecEnv, device: torch.device): # Changed type hint
-
-        # --- [CRITICAL] env is now a VecEnv ---
+    
+    def __init__(self, env: VecEnv):
+        """Initialize the Recurrent PPO Trainer."""
+        
+        # Initialize environment
         self.env = env
-        self.num_envs = env.num_envs # Store number of envs
-        # ----------------------------------------
-        self.device = device
+        self.num_envs = env.num_envs
+        
+        # Device configuration
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         # Initialize policy
         self.policy = RecurrentPPOPolicy().to(self.device)
@@ -60,43 +60,43 @@ class RecurrentPPOTrainer:
         self.optimizer = torch.optim.Adam(
             self.policy.parameters(), lr=PPO_LEARNING_RATE, eps=1e-5)
 
-        # Rollout buffer
-        # Assuming PPO_ROLLOUT_STEPS is the TOTAL number of steps collected across all envs per update
+        # Rollout buffer - we will divide PPO_ROLLOUT_STEPS by num_envs
+        # Which means we create separate buffers for each env (parallel env for data collection)
         if PPO_ROLLOUT_STEPS % self.num_envs != 0:
             logger.warning(f"PPO_ROLLOUT_STEPS ({PPO_ROLLOUT_STEPS}) not divisible by NUM_ENVIRONMENTS ({self.num_envs}).")
-            # Adjust buffer size or rollout steps if needed. For now, use PPO_ROLLOUT_STEPS.
-            buffer_size = PPO_ROLLOUT_STEPS
+            buffer_size = PPO_ROLLOUT_STEPS # adjust the buffer size accordingly (not ideal)
         else:
              buffer_size = PPO_ROLLOUT_STEPS
 
+        # Initialize rollout buffer
         self.buffer = RolloutBuffer(
             buffer_size=buffer_size
         )
 
-        # --- (Rest of __init__ is mostly the same) ---
         self.total_timesteps = 0
         self.num_updates = 0
         self.checkpoint_dir = CHECKPOINT_DIR
+        
+        # Initialize tensorboard writer
         self.tb_writer: Optional[SummaryWriter] = None
         self.metrics_history = { 'steps': [], 'timestamps': [], 'rewards': [], 'actor_losses': [], 'critic_losses': [],
                                'prediction_losses': [], 'entropies': [], 'approx_kls': [], 'total_losses': [] }
         self.training_start_time = None
+
+        # for early stopping
         self.best_mean_reward = -np.inf
         self.no_improvement_count = 0
-        # self.best_model_path will be set relative to self.checkpoint_dir later
 
-    # --- (_init_tensorboard, _log_metrics, _save_metrics_json, _save_training_summary are mostly the same) ---
     def _init_tensorboard(self, log_dir: str):
         """Initialize TensorBoard writer."""
-        # Ensure checkpoint_dir is set correctly *before* calling this
-        tb_dir = os.path.join(self.checkpoint_dir, "tensorboard") # Use self.checkpoint_dir
+        tb_dir = os.path.join(self.checkpoint_dir, "tensorboard")
         os.makedirs(tb_dir, exist_ok=True)
         self.tb_writer = SummaryWriter(log_dir=tb_dir, flush_secs=120)
-        logger.info(f"  Launch with: tensorboard --logdir {tb_dir}")
-        logger.info(f"  Then open: http://localhost:6006\n")
+        logger.info(f"  Tensorboard login: http://localhost:6006/")
 
     def _log_metrics(self, metrics: Dict[str, float], avg_reward: float):
         """Log metrics to both TensorBoard and JSON storage."""
+        
         step = self.num_updates
         if np.isnan(avg_reward): avg_reward = 0.0 # Handle potential NaN early on
 
@@ -176,13 +176,12 @@ class RecurrentPPOTrainer:
         except Exception as e:
             logger.error(f"Failed to save training summary: {e}")
 
-    # --- [MODIFIED] collect_rollout for VecEnv ---
     def collect_rollout(self) -> float:
         """Collect rollout data from multiple environments in parallel."""
 
         self.buffer.reset()
 
-        # --- Reset VecEnv (returns batch of observations) ---
+        # Reset VecEnv and get initial observations
         try:
             current_obs_batch = self.env.reset()
             if not isinstance(current_obs_batch, np.ndarray):
@@ -192,25 +191,21 @@ class RecurrentPPOTrainer:
         except Exception as e:
             logger.error(f"Error during VecEnv reset: {e}", exc_info=True)
             return -np.inf # Signal error
-        # ---------------------------------------------------
 
-        # --- Initialize hidden states (one for each env) ---
+        # Initialize hidden states (one for each env)
         hidden_state: HiddenStateType = self.policy.init_hidden_state(batch_size=self.num_envs, device=self.device)
-        # ---------------------------------------------------
-
         episode_rewards_list: List[float] = [] # Store completed episode rewards
         current_episode_rewards = np.zeros(self.num_envs, dtype=np.float32)
 
-        # --- Determine number of steps PER ENV ---
+        # Determine number of steps PER ENV
         # Assuming PPO_ROLLOUT_STEPS is TOTAL steps across all envs
         num_steps_per_env = PPO_ROLLOUT_STEPS // self.num_envs
         if PPO_ROLLOUT_STEPS % self.num_envs != 0:
             logger.warning(f"Rollout steps {PPO_ROLLOUT_STEPS} not divisible by num_envs {self.num_envs}. Using {num_steps_per_env} steps per env.")
-        # ------------------------------------------
 
-        # --- Rollout Loop ---
+        # Rollout Loop
         for step in range(num_steps_per_env): # Loop for steps per env
-            # --- Get data from VecEnv using env_method ---
+            # Get data from VecEnv using env_method
             try:
                 # These return LISTS (one item per env)
                 delayed_buffers_list = self.env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
@@ -226,12 +221,11 @@ class RecurrentPPOTrainer:
                  logger.error(f"Error getting batched env data at step {step}: {e}", exc_info=True)
                  return -np.inf # Signal error
 
-            # --- Convert batches to tensors ---
+            # Convert batches to tensors
             delayed_sequences_t = torch.FloatTensor(delayed_sequences_batch).to(self.device)
             remote_states_t = torch.FloatTensor(remote_states_batch).to(self.device)
-            # ----------------------------------
 
-            # --- Get actions (batch) from policy ---
+            # Get actions (batch) from policy
             with torch.no_grad():
                 # Policy now operates on batch dimension (num_envs)
                 action_t, log_prob_t, value_t, predicted_target_t, new_hidden_state = self.policy.get_action(
@@ -240,7 +234,6 @@ class RecurrentPPOTrainer:
                     hidden_state, # Pass the batched hidden state
                     deterministic=False
                 )
-            # ----------------------------------------
 
             # Convert tensors to numpy batches
             actions_np = action_t.cpu().numpy()
@@ -248,7 +241,7 @@ class RecurrentPPOTrainer:
             log_probs_np = log_prob_t.cpu().numpy() if log_prob_t is not None else np.zeros(self.num_envs)
             values_np = value_t.cpu().numpy().flatten()
 
-            # --- Set predictions for EACH env INDIVIDUALLY ---
+            # Set predictions for EACH env INDIVIDUALLY
             try:
                 for i in range(self.num_envs):
                     # Call env_method for each environment 'i', passing only its prediction
@@ -260,18 +253,16 @@ class RecurrentPPOTrainer:
             except Exception as e:
                 logger.error(f"Error setting predicted targets in VecEnv: {e}", exc_info=True)
                 return -np.inf # Signal error
-    # ---------------------------------------------
-            # ---------------------------------------------
 
-            # --- Step VecEnv (takes batch of actions, returns batches) ---
+
+            # Step VecEnv (takes batch of actions, returns batches)
             try:
                 next_obs_batch, rewards_batch, dones_batch, infos_batch = self.env.step(actions_np)
             except Exception as e:
                 logger.error(f"Error during VecEnv step {step}: {e}", exc_info=True)
                 return -np.inf # Signal error
-            # -------------------------------------------------------------
 
-            # --- Store transitions in buffer (iterate through the batch) ---
+            # Store transitions in buffer (iterate through the batch)
             for i in range(self.num_envs):
                 self.buffer.add(
                     delayed_sequence=delayed_sequences_batch[i],
@@ -284,23 +275,21 @@ class RecurrentPPOTrainer:
                     predicted_target=predicted_targets_np[i],
                     true_target=true_targets_batch[i]
                 )
-            # ------------------------------------------------------------
 
             current_episode_rewards += rewards_batch
             self.total_timesteps += self.num_envs
 
-            # --- Update hidden state (already batched) ---
+            # Update hidden state (already batched)
             hidden_state = new_hidden_state
-            # ------------------------------------------
 
-            # --- Handle episode ends (per environment) ---
+            # Handle episode ends (per environment)
             for i in range(self.num_envs):
                 if dones_batch[i]:
                     # Log and reset reward counter
                     episode_rewards_list.append(current_episode_rewards[i])
                     current_episode_rewards[i] = 0.0
 
-                    # --- Reset LSTM state for finished environments ---
+                    # Reset LSTM state for finished environments
                     # Ensure hidden_state is mutable if it's a tuple
                     if isinstance(hidden_state, tuple):
                         h, c = hidden_state
@@ -313,7 +302,6 @@ class RecurrentPPOTrainer:
                     elif isinstance(hidden_state, torch.Tensor): # Assuming tensor for GRU
                         hidden_state = hidden_state.clone()
                         hidden_state[:, i, :] = 0.0
-                    # -------------------------------------------------
 
                     # Note: VecEnv handles resetting the actual environment state internally
                     # `next_obs_batch` already contains the reset observation for env i
@@ -420,7 +408,6 @@ class RecurrentPPOTrainer:
                 batch_advantages = data['advantages'][batch_idx]
                 batch_returns = data['returns'][batch_idx]
                 batch_true_targets = data['true_targets'][batch_idx]
-                # -----------------------------------------------------------
 
                 # --- Evaluate actions (Handle potential shape issues if batch size is 1) ---
                 # Add check for evaluate_actions signature if needed
@@ -433,7 +420,6 @@ class RecurrentPPOTrainer:
                     batch_actions,
                     hidden_state=None # Assuming stateless evaluation during update
                 )
-                # -----------------------------------------------------------------------------------------
 
                 # Calculate Losses
                 prediction_loss = F.mse_loss(predicted_targets, batch_true_targets)
@@ -469,10 +455,9 @@ class RecurrentPPOTrainer:
         # Average metrics over all minibatch updates
         return {key: val / num_minibatch_updates for key, val in metrics_agg.items()}
 
-
-    # --- (train loop remains mostly the same, calls modified collect_rollout/update_policy) ---
     def train(self, total_timesteps: int):
         """Main training loop."""
+        
         # Calculate total updates based on TOTAL steps per update cycle
         num_updates_total = total_timesteps // PPO_ROLLOUT_STEPS
 
@@ -483,7 +468,6 @@ class RecurrentPPOTrainer:
         # Set best model path relative to the specific run's checkpoint dir
         self.best_model_path = os.path.join(self.checkpoint_dir, "best_policy_earlystop.pth")
 
-
         for update in range(num_updates_total):
             update_start_time = time.time()
 
@@ -493,7 +477,6 @@ class RecurrentPPOTrainer:
                  logger.error("Rollout collection failed, stopping training.")
                  break
             collect_time = time.time() - update_start_time
-            # ----------------------------------------
 
             # Update Policy
             update_start_time_ppo = time.time()
@@ -554,11 +537,11 @@ class RecurrentPPOTrainer:
                 checkpoint_path = os.path.join(self.checkpoint_dir, f"policy_update_{self.num_updates}.pth")
                 try:
                     self.policy.save(checkpoint_path)
-                    logger.info(f"  💾 Checkpoint saved: {checkpoint_path}")
+                    logger.info(f"Checkpoint saved: {checkpoint_path}")
                 except Exception as e:
                     logger.error(f"Failed to save checkpoint {checkpoint_path}: {e}")
 
-        # --- Final actions after loop finishes or breaks ---
+        # Final actions after loop finishes or breaks
         logger.info(f"\n{'='*70}")
         final_path = os.path.join(self.checkpoint_dir, "final_policy.pth")
 
