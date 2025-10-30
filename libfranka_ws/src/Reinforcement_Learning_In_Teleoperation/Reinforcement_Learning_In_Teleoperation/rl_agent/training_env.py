@@ -443,47 +443,62 @@ class TeleoperationEnvWithDelay(gym.Env):
         history_len = len(self.leader_q_history)
         return self.delay_simulator.get_observation_delay_steps(history_len)
     
+    def _get_adaptive_position_scale(self, error: float) -> float:
+        """Adaptive scaling: gentle for large errors, steep for small"""
+        error_mm = error * 1000
+        
+        if error_mm > 200:
+            return 10.0
+        elif error_mm > 100:
+            alpha = (200 - error_mm) / 100.0
+            return 10.0 + 25.0 * alpha
+        else:
+            return 35.0
+
     def _calculate_reward_components(self) -> Dict[str, float]:
-        """Calculates and returns the unweighted reward components (r_prediction, r_tracking) for plotting"""
-    
         r_prediction = 0.0
         r_tracking = 0.0
         
-        # Get current remote state
         remote_q, remote_qd = self.remote_robot.get_joint_state()
         
         if self._last_predicted_target is not None:
             true_target = self.get_true_current_target()
             true_target_q = true_target[:N_JOINTS]
             true_target_qd = true_target[N_JOINTS:]
-
             predicted_q = self._last_predicted_target[:N_JOINTS]
             predicted_qd = self._last_predicted_target[N_JOINTS:]
 
+            # Adaptive scaling
             pos_pred_error = np.linalg.norm(predicted_q - true_target_q)
-            r_pos_prediction = np.exp(-REWARD_ERROR_SCALE * pos_pred_error**2)
+            pos_scale = self._get_adaptive_position_scale(pos_pred_error)
             
-            vel_pred_error = np.linalg.norm(predicted_qd - true_target_qd)
-            r_vel_prediction = np.exp(-REWARD_ERROR_SCALE * 0.5 * vel_pred_error**2)
-            
-            r_prediction = r_pos_prediction + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_prediction
-
             tracking_pos_error = np.linalg.norm(predicted_q - remote_q)
-            r_pos_tracking = np.exp(-REWARD_ERROR_SCALE * tracking_pos_error**2)
+            track_scale = self._get_adaptive_position_scale(tracking_pos_error)
+            
+            # Position rewards
+            r_pos_prediction = np.exp(-pos_scale * pos_pred_error**2)
+            r_pos_tracking = np.exp(-track_scale * tracking_pos_error**2)
+            
+            # Velocity rewards - MODERATE scale (not too harsh)
+            vel_pred_error = np.linalg.norm(predicted_qd - true_target_qd)
+            r_vel_prediction = np.exp(-pos_scale * 1.0 * vel_pred_error**2)  # 1× scale
             
             tracking_vel_error = np.linalg.norm(predicted_qd - remote_qd)
-            r_vel_tracking = np.exp(-REWARD_ERROR_SCALE * 0.5 * tracking_vel_error**2)
+            r_vel_tracking = np.exp(-track_scale * 1.0 * tracking_vel_error**2)  # 1× scale
             
-            r_tracking = r_pos_tracking + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_tracking
+            # ARITHMETIC MEAN (normalized) - more stable!
+            r_prediction = (r_pos_prediction + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_prediction) / \
+                        (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
+            r_tracking = (r_pos_tracking + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_tracking) / \
+                        (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
         
         else:
-            # Fallback if no prediction available yet
             r_prediction = 0.0
             r_tracking = 0.0
         
         return {
-            'r_prediction': r_prediction,  # For logging only
-            'r_tracking': r_tracking       # This is the actual RL reward
+            'r_prediction': r_prediction,
+            'r_tracking': r_tracking
         }
         
     def _calculate_reward(

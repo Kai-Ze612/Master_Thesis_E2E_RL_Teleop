@@ -87,7 +87,7 @@ class RecurrentPPOTrainer:
         self.best_mean_reward = -np.inf
         self.no_improvement_count = 0
 
-    def _init_tensorboard(self, log_dir: str):
+    def _init_tensorboard(self):
         """Initialize TensorBoard writer."""
         tb_dir = os.path.join(self.checkpoint_dir, "tensorboard")
         os.makedirs(tb_dir, exist_ok=True)
@@ -179,9 +179,11 @@ class RecurrentPPOTrainer:
     def collect_rollout(self) -> float:
         """Collect rollout data from multiple environments in parallel."""
 
+        # Reset buffer
         self.buffer.reset()
 
         # Reset VecEnv and get initial observations
+        # It aims to batch the initial observations from all parallel environments
         try:
             current_obs_batch = self.env.reset()
             if not isinstance(current_obs_batch, np.ndarray):
@@ -254,7 +256,6 @@ class RecurrentPPOTrainer:
                 logger.error(f"Error setting predicted targets in VecEnv: {e}", exc_info=True)
                 return -np.inf # Signal error
 
-
             # Step VecEnv (takes batch of actions, returns batches)
             try:
                 next_obs_batch, rewards_batch, dones_batch, infos_batch = self.env.step(actions_np)
@@ -309,8 +310,6 @@ class RecurrentPPOTrainer:
 
             # Update current observation batch for the next loop iteration (redundant if obs aren't used next loop)
             # current_obs_batch = next_obs_batch
-
-        # --- End of Rollout Loop ---
 
         # --- Verify buffer has data ---
         # Use the len() dunder method of the buffer
@@ -375,7 +374,6 @@ class RecurrentPPOTrainer:
         avg_episode_reward = np.mean(episode_rewards_list) if episode_rewards_list else np.nan
         return avg_episode_reward
 
-    # --- (update_policy remains mostly the same, as buffer.get() prepares the data) ---
     def update_policy(self) -> Dict[str, float]:
         """Update policy using collected rollout data."""
         try:
@@ -391,6 +389,7 @@ class RecurrentPPOTrainer:
 
         metrics_agg = { 'actor_loss': 0.0, 'critic_loss': 0.0, 'prediction_loss': 0.0,
                         'entropy': 0.0, 'total_loss': 0.0, 'approx_kl': 0.0 }
+                
         num_minibatch_updates = 0 # Use a different counter name
         rollout_size = len(data['advantages']) # Correctly uses 'advantages'
 
@@ -399,8 +398,6 @@ class RecurrentPPOTrainer:
             for start in range(0, rollout_size, PPO_BATCH_SIZE):
                 end = min(start + PPO_BATCH_SIZE, rollout_size)
                 batch_idx = indices[start:end]
-
-                # --- Get batch data (keys should match buffer.get output) ---
                 batch_delayed_seq = data['delayed_sequences'][batch_idx]
                 batch_remote_states = data['remote_states'][batch_idx]
                 batch_actions = data['actions'][batch_idx]
@@ -409,11 +406,6 @@ class RecurrentPPOTrainer:
                 batch_returns = data['returns'][batch_idx]
                 batch_true_targets = data['true_targets'][batch_idx]
 
-                # --- Evaluate actions (Handle potential shape issues if batch size is 1) ---
-                # Add check for evaluate_actions signature if needed
-                # For Recurrent PPO, evaluate_actions might need hidden states
-                # if sequences span minibatches, but simple PPO often assumes
-                # stateless evaluation during update. Let's stick with stateless for now.
                 log_probs, entropy, values, predicted_targets, _ = self.policy.evaluate_actions(
                     batch_delayed_seq,
                     batch_remote_states,
@@ -458,22 +450,25 @@ class RecurrentPPOTrainer:
     def train(self, total_timesteps: int):
         """Main training loop."""
         
-        # Calculate total updates based on TOTAL steps per update cycle
+        # Total number of updates
         num_updates_total = total_timesteps // PPO_ROLLOUT_STEPS
 
-        # Use self.checkpoint_dir which is set during __init__ or overridden
-        self._init_tensorboard(self.checkpoint_dir)
+        # Initialize TensorBoard
+        self._init_tensorboard()
+        
+        # Initialize training time
         self.training_start_time = datetime.now()
         start_time = self.training_start_time
+        
         # Set best model path relative to the specific run's checkpoint dir
         self.best_model_path = os.path.join(self.checkpoint_dir, "best_policy_earlystop.pth")
 
         for update in range(num_updates_total):
             update_start_time = time.time()
 
-            # --- Collect Rollout (now uses VecEnv) ---
+            # Collect Rollout
             avg_episode_reward = self.collect_rollout()
-            if np.isinf(avg_episode_reward): # Check for error signal
+            if np.isinf(avg_episode_reward):
                  logger.error("Rollout collection failed, stopping training.")
                  break
             collect_time = time.time() - update_start_time
@@ -516,7 +511,7 @@ class RecurrentPPOTrainer:
                  if not np.isnan(current_check_reward):
                      improvement = current_check_reward - self.best_mean_reward
                      if improvement >= EARLY_STOPPING_MIN_DELTA:
-                         logger.info(f"\n  ✓ Early Stopping: New best reward {current_check_reward:.3f} (+{improvement:.3f}). Saving model.")
+                         logger.info(f"\n Early Stopping: New best reward {current_check_reward:.3f} (+{improvement:.3f}). Saving model.")
                          self.best_mean_reward = current_check_reward
                          self.no_improvement_count = 0
                          # Save to the dynamically set best_model_path
@@ -524,7 +519,7 @@ class RecurrentPPOTrainer:
                          if self.tb_writer: self.tb_writer.add_scalar("train/best_reward", self.best_mean_reward, self.num_updates)
                      else:
                          self.no_improvement_count += 1
-                         logger.info(f"  ○ Early Stopping: No improvement ({improvement:.3f} < {EARLY_STOPPING_MIN_DELTA}). Patience: {self.no_improvement_count}/{EARLY_STOPPING_PATIENCE}")
+                         logger.info(f" Early Stopping: No improvement ({improvement:.3f} < {EARLY_STOPPING_MIN_DELTA}). Patience: {self.no_improvement_count}/{EARLY_STOPPING_PATIENCE}")
                      if self.no_improvement_count >= EARLY_STOPPING_PATIENCE:
                          logger.warning(f"\n{'!'*70}\nEARLY STOPPING triggered at update {self.num_updates}\n{'!'*70}\n")
                          break # Exit the training loop
