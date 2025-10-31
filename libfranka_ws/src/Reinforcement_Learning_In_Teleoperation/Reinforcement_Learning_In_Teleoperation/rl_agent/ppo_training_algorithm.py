@@ -35,7 +35,6 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     LOG_FREQ, SAVE_FREQ, CHECKPOINT_DIR,
     ENABLE_EARLY_STOPPING, EARLY_STOPPING_PATIENCE, EARLY_STOPPING_MIN_DELTA,
     EARLY_STOPPING_CHECK_FREQ,
-    NUM_ENVIRONMENTS
 )
 
 logger = logging.getLogger(__name__)

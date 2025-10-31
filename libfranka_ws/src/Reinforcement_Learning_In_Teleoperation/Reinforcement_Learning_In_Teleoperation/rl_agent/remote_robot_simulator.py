@@ -31,8 +31,8 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     JOINT_LIMITS_LOWER,
     JOINT_LIMITS_UPPER,
     TORQUE_LIMITS,
-    KP_REMOTE_DEFAULT,
-    KD_REMOTE_DEFAULT,
+    DEFAULT_KP_REMOTE,
+    DEFAULT_KD_REMOTE,
 )
 
 class RemoteRobotSimulator:
@@ -69,8 +69,8 @@ class RemoteRobotSimulator:
         self.tcp_offset = TCP_OFFSET.copy()
 
         # PD gains
-        self.kp = KP_REMOTE_DEFAULT
-        self.kd = KD_REMOTE_DEFAULT
+        self.kp = DEFAULT_KP_REMOTE
+        self.kd = DEFAULT_KD_REMOTE
 
         # State tracking
         self.last_q_target = np.zeros(self.n_joints)

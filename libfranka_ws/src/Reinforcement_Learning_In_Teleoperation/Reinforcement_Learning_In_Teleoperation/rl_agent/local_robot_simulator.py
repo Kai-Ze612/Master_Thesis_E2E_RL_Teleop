@@ -31,17 +31,17 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     JOINT_LIMITS_LOWER,
     JOINT_LIMITS_UPPER,
     INITIAL_JOINT_CONFIG,
-    KP_LOCAL_DEFAULT,
-    KD_LOCAL_DEFAULT,
+    KP_LOCAL,
+    KD_LOCAL,
     DEFAULT_CONTROL_FREQ,
     IK_MAX_ITER,
     IK_TOLERANCE,
     IK_DAMPING,
     IK_MAX_JOINT_CHANGE,
     IK_CONTINUITY_GAIN,
-    TRAJECTORY_CENTER_DEFAULT,
-    TRAJECTORY_SCALE_DEFAULT,
-    TRAJECTORY_FREQUENCY_DEFAULT,
+    TRAJECTORY_CENTER,
+    TRAJECTORY_SCALE,
+    TRAJECTORY_FREQUENCY,
 )
 
 class TrajectoryType(Enum):
@@ -54,12 +54,12 @@ class TrajectoryType(Enum):
 class TrajectoryParams:
     """Trajectory initial parameters."""
     center: NDArray[np.float64] = field(
-        default_factory=lambda: TRAJECTORY_CENTER_DEFAULT.copy()
+        default_factory=lambda: TRAJECTORY_CENTER.copy()
     )
     scale: NDArray[np.float64] = field(
-        default_factory=lambda: TRAJECTORY_SCALE_DEFAULT.copy()
+        default_factory=lambda: TRAJECTORY_SCALE.copy()
     )
-    frequency: float = TRAJECTORY_FREQUENCY_DEFAULT
+    frequency: float = TRAJECTORY_FREQUENCY
     initial_phase: float = 0.0
 
     def __post_init__(self) -> None:
@@ -192,8 +192,8 @@ class LocalRobotSimulator(gym.Env):
         ik_tolerance: float = IK_TOLERANCE,
         ik_damping: float = IK_DAMPING,
         # PD gains for local robot
-        kp_local: NDArray[np.float64] = KP_LOCAL_DEFAULT,
-        kd_local: NDArray[np.float64] = KD_LOCAL_DEFAULT,
+        kp_local: NDArray[np.float64] = KP_LOCAL,
+        kd_local: NDArray[np.float64] = KD_LOCAL,
     ) -> None:
         super().__init__()
         

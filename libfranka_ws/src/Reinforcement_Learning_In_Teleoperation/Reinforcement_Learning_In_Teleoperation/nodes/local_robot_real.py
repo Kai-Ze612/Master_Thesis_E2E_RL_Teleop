@@ -25,7 +25,7 @@ class LocalRobotReal(Node):
 
         # Initialize ROS2 topic
         self.driver_topic_ = self.declare_parameter(
-            'driver_topic', '/local_robot/joint_states').value ## Reading current robot joint states from real robot
+            'driver_topic', '/local_robot/joint_states').value # Reading current robot joint states from real robot
         
         self.publish_topic_ = self.declare_parameter(
             'publish_topic', '/local_robot/joint_states').value

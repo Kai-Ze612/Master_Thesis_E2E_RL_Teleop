@@ -479,27 +479,23 @@ class TeleoperationEnvWithDelay(gym.Env):
             r_pos_prediction = np.exp(-pos_scale * pos_pred_error**2)
             r_pos_tracking = np.exp(-track_scale * tracking_pos_error**2)
             
-            # Velocity rewards - MODERATE scale (not too harsh)
+            # Velocity rewards - CRITICAL FIX: 5× STRONGER
             vel_pred_error = np.linalg.norm(predicted_qd - true_target_qd)
-            r_vel_prediction = np.exp(-pos_scale * 1.0 * vel_pred_error**2)  # 1× scale
+            r_vel_prediction = np.exp(-pos_scale * 5.0 * vel_pred_error**2)  # Changed from 1.0 to 5.0
             
             tracking_vel_error = np.linalg.norm(predicted_qd - remote_qd)
-            r_vel_tracking = np.exp(-track_scale * 1.0 * tracking_vel_error**2)  # 1× scale
+            r_vel_tracking = np.exp(-track_scale * 5.0 * tracking_vel_error**2)  # Changed from 1.0 to 5.0
             
-            # ARITHMETIC MEAN (normalized) - more stable!
+            # Normalized arithmetic mean
             r_prediction = (r_pos_prediction + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_prediction) / \
                         (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
             r_tracking = (r_pos_tracking + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_tracking) / \
                         (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
-        
-        else:
-            r_prediction = 0.0
-            r_tracking = 0.0
-        
-        return {
-            'r_prediction': r_prediction,
-            'r_tracking': r_tracking
-        }
+            
+            return {
+                'r_prediction': r_prediction,
+                'r_tracking': r_tracking
+            }
         
     def _calculate_reward(
         self,

@@ -123,11 +123,11 @@ class RemoteRobot(Node):
         # Subscribers
         self.create_subscription(
             JointState,
-            '/real_robot/joint_states',
+            '/_robot/joint_states',
             self.real_robot_joint_state_callback,
             10
         )
-        
+       
         self.create_subscription(
             JointState,
             '/desired_robot/joint_states',

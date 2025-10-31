@@ -121,9 +121,6 @@ def train_agent(args: argparse.Namespace) -> None:
     logger.info(f"  Random Seed: {args.seed if args.seed is not None else 'None (random)'}")
     logger.info("")
     
-    # Device setup
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    
     # Set Random Seeds
     if args.seed is not None:
         logger.info(f"Setting random seed: {args.seed}")

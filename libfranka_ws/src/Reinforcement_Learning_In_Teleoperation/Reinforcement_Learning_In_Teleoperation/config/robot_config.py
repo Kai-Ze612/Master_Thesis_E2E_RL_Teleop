@@ -3,7 +3,6 @@ Shared Robot configuration settings
 """
 
 import numpy as np
-import torch
 
 ######################################
 # File Paths
@@ -13,10 +12,11 @@ import torch
 DEFAULT_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
 
 # RL model paths
-DEFAULT_RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Reinforcement_Learning_In_Teleoperation/Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output"
+DEFAULT_RL_MODEL_PATH_BASE = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Reinforcement_Learning_In_Teleoperation/Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output"
 
 ######################################
-# Franka Panda Robot Parameters
+# Franka Panda Robot Parameters, hard coded.
+# Do not change these parameters
 ######################################
 
 N_JOINTS = 7
@@ -44,8 +44,13 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 # Joint limits margin to avoid singularities (radians)
 JOINT_LIMIT_MARGIN = 0.05  # radians
 
+# Local robot PD gains (joint-specific)
+KP_LOCAL = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
+KD_LOCAL = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0], dtype=np.float32)
+
 ######################################
-# Control Parameters
+# Control Parameters.
+# Set Default value, can be changed later via ROS2 parameters
 ######################################
 
 # Default control frequency (Hz)
@@ -54,13 +59,9 @@ DEFAULT_CONTROL_FREQ = 500 # match the sim freq
 # Default publish frequency for robot state (Hz)
 DEFAULT_PUBLISH_FREQ = 100
 
-# Local robot PD gains (joint-specific)
-KP_LOCAL_DEFAULT = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
-KD_LOCAL_DEFAULT = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0], dtype=np.float32)
-
 # Remote robot PD gains, setting softer because of stable under delay
-KP_REMOTE_DEFAULT = np.array([150.0, 150.0, 150.0, 150.0, 60.0, 60.0, 15.0], dtype=np.float32)
-KD_REMOTE_DEFAULT = np.array([30.0, 30.0, 30.0, 30.0, 20.0, 20.0, 5.0], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([150.0, 150.0, 150.0, 150.0, 60.0, 60.0, 15.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([30.0, 30.0, 30.0, 30.0, 20.0, 20.0, 5.0], dtype=np.float32)
 
 ######################################
 # IK Solver Parameters
@@ -78,13 +79,13 @@ IK_CONTINUITY_GAIN = 0.5
 ######################################
 
 # Default trajectory center (meters)
-TRAJECTORY_CENTER_DEFAULT = np.array([0.4, 0.0, 0.6], dtype=np.float32)
+TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.6], dtype=np.float32)
 
 # Default trajectory scale (meters)
-TRAJECTORY_SCALE_DEFAULT = np.array([0.1, 0.3], dtype=np.float32)
+TRAJECTORY_SCALE = np.array([0.1, 0.3], dtype=np.float32)
 
 # Default frequency (Hz)
-TRAJECTORY_FREQUENCY_DEFAULT = 0.1
+TRAJECTORY_FREQUENCY = 0.1
 
 ######################################
 # RL Environment Parameters
@@ -119,8 +120,8 @@ OBS_DIM = (
 STATE_BUFFER_LENGTH = 256
 
 # RNN (LSTM) architecture for state prediction
-RNN_HIDDEN_DIM = 256
-RNN_NUM_LAYERS = 2
+RNN_HIDDEN_DIM = 512
+RNN_NUM_LAYERS = 3
 RNN_SEQUENCE_LENGTH = STATE_BUFFER_LENGTH  # Must match buffer length
 
 # PPO policy (Actor-Critic) architecture
@@ -138,7 +139,7 @@ PPO_GAE_LAMBDA = 0.95
 
 # PPO-specific
 PPO_CLIP_EPSILON = 0.2
-PPO_ENTROPY_COEF = 0.01
+PPO_ENTROPY_COEF = 0.02
 PPO_VALUE_COEF = 0.5
 PPO_MAX_GRAD_NORM = 0.5
 
@@ -166,7 +167,7 @@ REWARD_ACTION_PENALTY = 0.01
 
 # Reward scaling
 REWARD_ERROR_SCALE = 25    # Scale factor for exponential reward
-REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 0.5  # Weight for velocity prediction vs position
+REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 1.5  # Weight for velocity prediction vs position
 
 NUM_ENVIRONMENTS = 5   # Number of parallel environments
 ######################################
@@ -183,11 +184,13 @@ CHECKPOINT_DIR = "./rl_training_output"
 
 MAX_INFERENCE_TIME = 0.9 * (1.0 / DEFAULT_CONTROL_FREQ)  # 90% of control cycle time for safety
 
+DEPLOYMENT_HISTORY_BUFFER_SIZE = 1000  # Must be > max_delay_steps + RNN sequence length
+
 ######################################
 # Early Stopping Configuration
 ######################################
 
-ENABLE_EARLY_STOPPING = True           # Set to True to enable early stopping
+ENABLE_EARLY_STOPPING = False           # Set to True to enable early stopping
 EARLY_STOPPING_PATIENCE = 10           # Number of checks without improvement before stopping
 EARLY_STOPPING_MIN_DELTA = 1.0         # Minimum reward improvement to be considered significant
 EARLY_STOPPING_CHECK_FREQ = 10         # Check for improvement every N updates
@@ -200,12 +203,13 @@ def _print_config():
     print("Robot Configuration for Franka Panda:")
     print(f"N_JOINTS: {N_JOINTS}")
     print(f"DEFAULT_CONTROL_FREQ: {DEFAULT_CONTROL_FREQ} Hz")
-    print(f"KP_REMOTE_DEFAULT: {KP_REMOTE_DEFAULT}")
-    print(f"KD_REMOTE_DEFAULT: {KD_REMOTE_DEFAULT}")
+    print(f"KP_REMOTE_DEFAULT: {DEFAULT_KP_REMOTE}")
+    print(f"KD_REMOTE_DEFAULT: {DEFAULT_KD_REMOTE}")
     print(f"OBS_DIM: {OBS_DIM}")
     print("*" * 70)
-    print(f"TAJECTORY_CENTER_DEFAULT: {TRAJECTORY_CENTER_DEFAULT}")
-    print(f"TRAJECTORY_SCALE_DEFAULT: {TRAJECTORY_SCALE_DEFAULT}")
+    print(f"TRAJECTORY_CENTER: {TRAJECTORY_CENTER}")
+    print(f"TRAJECTORY_SCALE: {TRAJECTORY_SCALE}")
+    print(f"TRAJECTORY_FREQUENCY: {TRAJECTORY_FREQUENCY}")
     print("*" * 70)
     print(f"TARGET_HISTORY_LEN: {TARGET_HISTORY_LEN}")
     print(f"ACTION_HISTORY_LEN: {ACTION_HISTORY_LEN}")

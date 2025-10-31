@@ -17,6 +17,7 @@ import numpy as np
 
 
 class ExperimentConfig(IntEnum):
+    """For mapping config to number"""
     LOW_DELAY = 1
     MEDIUM_DELAY = 2
     HIGH_DELAY = 3
@@ -24,7 +25,6 @@ class ExperimentConfig(IntEnum):
     # Debugging only:
     OBSERVATION_DELAY_ONLY = 5
     ACTION_DELAY_ONLY = 6
-    
 
 @dataclass(frozen=True)
 class DelayParameters:
