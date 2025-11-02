@@ -24,7 +24,7 @@ import mujoco
 
 from Reinforcement_Learning_In_Teleoperation.utils.inverse_kinematics import IKSolver
 from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    DEFAULT_MODEL_PATH,
+    DEFAULT_MUJOCO_MODEL_PATH,
     N_JOINTS,
     EE_BODY_NAME,
     TCP_OFFSET,
@@ -180,7 +180,7 @@ class LocalRobotSimulator(gym.Env):
 
     def __init__(
         self,
-        model_path: str = DEFAULT_MODEL_PATH,
+        model_path: str = DEFAULT_MUJOCO_MODEL_PATH,
         control_freq: int = DEFAULT_CONTROL_FREQ,
         trajectory_type: TrajectoryType = TrajectoryType.FIGURE_8,
         randomize_params: bool = False,

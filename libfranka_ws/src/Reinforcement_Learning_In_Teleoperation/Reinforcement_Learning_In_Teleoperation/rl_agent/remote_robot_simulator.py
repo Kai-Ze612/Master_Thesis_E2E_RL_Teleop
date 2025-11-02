@@ -23,7 +23,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    DEFAULT_MODEL_PATH,
+    DEFAULT_MUJOCO_MODEL_PATH,
     DEFAULT_CONTROL_FREQ,
     N_JOINTS,
     EE_BODY_NAME,
@@ -41,7 +41,7 @@ class RemoteRobotSimulator:
     ):
        
         # Initialize MuJoCo model and data
-        self.model_path = DEFAULT_MODEL_PATH
+        self.model_path = DEFAULT_MUJOCO_MODEL_PATH
         self.model = mujoco.MjModel.from_xml_path(self.model_path)
         self.data = mujoco.MjData(self.model)
 

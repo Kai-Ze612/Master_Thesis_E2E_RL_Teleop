@@ -9,7 +9,7 @@ import numpy as np
 ######################################
 
 # Model paths
-DEFAULT_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
 
 # RL model paths
 DEFAULT_RL_MODEL_PATH_BASE = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Reinforcement_Learning_In_Teleoperation/Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output"
@@ -60,7 +60,7 @@ DEFAULT_CONTROL_FREQ = 500 # match the sim freq
 DEFAULT_PUBLISH_FREQ = 100
 
 # Remote robot PD gains, setting softer because of stable under delay
-DEFAULT_KP_REMOTE = np.array([150.0, 150.0, 150.0, 150.0, 60.0, 60.0, 15.0], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([300.0, 300.0, 300.0, 300.0, 125.0, 75.0, 25.0], dtype=np.float32)
 DEFAULT_KD_REMOTE = np.array([30.0, 30.0, 30.0, 30.0, 20.0, 20.0, 5.0], dtype=np.float32)
 
 ######################################
@@ -120,7 +120,7 @@ OBS_DIM = (
 STATE_BUFFER_LENGTH = 256
 
 # RNN (LSTM) architecture for state prediction
-RNN_HIDDEN_DIM = 512
+RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 3
 RNN_SEQUENCE_LENGTH = STATE_BUFFER_LENGTH  # Must match buffer length
 
@@ -151,7 +151,7 @@ PPO_LOSS_WEIGHT = 1.0          # Weight for PPO loss (actor + critic + entropy)
 PPO_ROLLOUT_STEPS = 5000
 PPO_NUM_EPOCHS = 10
 PPO_BATCH_SIZE = 128
-PPO_TOTAL_TIMESTEPS = 2_000_000
+PPO_TOTAL_TIMESTEPS = 3_000_000
 
 ######################################
 # Dense Reward Function Weights
@@ -166,7 +166,10 @@ REWARD_TRACKING_SCALE = 0.2  # Same as REWARD_ERROR_SCALE
 REWARD_ACTION_PENALTY = 0.01
 
 # Reward scaling
-REWARD_ERROR_SCALE = 25    # Scale factor for exponential reward
+REWARD_ERROR_SCALE_HIGH_ERROR = 10  # Scale factor for exponential reward
+REWARD_ERROR_SCALE_MID_ERROR = 25   # Scale factor for mid-range error
+REWARD_ERROR_SCALE_LOW_ERROR = 50   # Scale factor for linear reward
+
 REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 1.5  # Weight for velocity prediction vs position
 
 NUM_ENVIRONMENTS = 5   # Number of parallel environments

@@ -27,14 +27,45 @@ from torch.utils.tensorboard import SummaryWriter
 from Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_policy_network import RecurrentPPOPolicy, HiddenStateType
 from Reinforcement_Learning_In_Teleoperation.utils.rollout_buffer import RolloutBuffer
 from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    N_JOINTS, RNN_SEQUENCE_LENGTH,
-    PPO_LEARNING_RATE, PPO_GAMMA, PPO_GAE_LAMBDA, PPO_CLIP_EPSILON,
-    PPO_ENTROPY_COEF, PPO_VALUE_COEF, PPO_MAX_GRAD_NORM,
-    PREDICTION_LOSS_WEIGHT, PPO_LOSS_WEIGHT,
-    PPO_ROLLOUT_STEPS, PPO_NUM_EPOCHS, PPO_BATCH_SIZE,
-    LOG_FREQ, SAVE_FREQ, CHECKPOINT_DIR,
-    ENABLE_EARLY_STOPPING, EARLY_STOPPING_PATIENCE, EARLY_STOPPING_MIN_DELTA,
-    EARLY_STOPPING_CHECK_FREQ,
+    N_JOINTS, 
+    DEFAULT_CONTROL_FREQ,
+    RNN_SEQUENCE_LENGTH,
+    RNN_HIDDEN_DIM,
+    RNN_NUM_LAYERS,
+    PPO_MLP_HIDDEN_DIMS,
+    
+    PPO_LEARNING_RATE, 
+    PPO_GAMMA, 
+    PPO_GAE_LAMBDA, 
+    PPO_CLIP_EPSILON,
+    PPO_ENTROPY_COEF, 
+    PPO_VALUE_COEF, 
+    PPO_MAX_GRAD_NORM,
+    
+    PREDICTION_LOSS_WEIGHT, 
+    PPO_LOSS_WEIGHT,
+    
+    PPO_ROLLOUT_STEPS, 
+    PPO_NUM_EPOCHS, 
+    PPO_BATCH_SIZE,
+    PPO_TOTAL_TIMESTEPS,
+    
+    LOG_FREQ, 
+    SAVE_FREQ, 
+    CHECKPOINT_DIR,
+    NUM_ENVIRONMENTS,
+    
+    REWARD_PREDICTION_WEIGHT,
+    REWARD_TRACKING_WEIGHT,
+    REWARD_ERROR_SCALE_HIGH_ERROR,
+    REWARD_ERROR_SCALE_MID_ERROR,
+    REWARD_ERROR_SCALE_LOW_ERROR,
+    REWARD_VEL_PREDICTION_WEIGHT_FACTOR,
+
+    ENABLE_EARLY_STOPPING, 
+    EARLY_STOPPING_PATIENCE, 
+    EARLY_STOPPING_MIN_DELTA,
+    EARLY_STOPPING_CHECK_FREQ
 )
 
 logger = logging.getLogger(__name__)
@@ -144,14 +175,54 @@ class RecurrentPPOTrainer:
         summary_file = os.path.join(self.checkpoint_dir, "training_summary.txt")
         try:
             with open(summary_file, 'w') as f:
+                
+                f.write("="*70 + "\nConfiguration\n" + "="*70 + "\n\n")
+                
+                f.write("Environment:\n")
+                f.write(f"  Total Timesteps: {PPO_TOTAL_TIMESTEPS:,}\n")
+                f.write(f"  Num Environments: {NUM_ENVIRONMENTS}\n")
+                f.write(f"  Control Frequency: {DEFAULT_CONTROL_FREQ} Hz\n")
+                f.write(f"  Rollout Steps: {PPO_ROLLOUT_STEPS}\n\n")
+                
+                f.write("Model Architecture:\n")
+                f.write(f"  RNN Layers: {RNN_NUM_LAYERS}\n")
+                f.write(f"  RNN Hidden Dim: {RNN_HIDDEN_DIM}\n")
+                f.write(f"  RNN Sequence Len: {RNN_SEQUENCE_LENGTH}\n")
+                f.write(f"  PPO MLP Dims: {PPO_MLP_HIDDEN_DIMS}\n\n")
+
+                f.write("PPO Hyperparameters:\n")
+                f.write(f"  Learning Rate: {PPO_LEARNING_RATE}\n")
+                f.write(f"  Num Epochs: {PPO_NUM_EPOCHS}\n")
+                f.write(f"  Batch Size: {PPO_BATCH_SIZE}\n")
+                f.write(f"  Gamma: {PPO_GAMMA}\n")
+                f.write(f"  GAE Lambda: {PPO_GAE_LAMBDA}\n")
+                f.write(f"  Clip Epsilon: {PPO_CLIP_EPSILON}\n")
+                f.write(f"  Entropy Coef: {PPO_ENTROPY_COEF}\n")
+                f.write(f"  Value Coef: {PPO_VALUE_COEF}\n\n")
+
+                f.write("Loss Weights:\n")
+                f.write(f"  Prediction Loss Weight: {PREDICTION_LOSS_WEIGHT}\n")
+                f.write(f"  PPO Loss Weight: {PPO_LOSS_WEIGHT}\n\n")
+                
+                f.write("Reward Function:\n")
+                f.write(f"  Prediction Weight: {REWARD_PREDICTION_WEIGHT}\n")
+                f.write(f"  Tracking Weight: {REWARD_TRACKING_WEIGHT}\n")
+                f.write(f"  Vel Weight Factor: {REWARD_VEL_PREDICTION_WEIGHT_FACTOR}\n")
+                f.write(f"  Scale (Low Error): {REWARD_ERROR_SCALE_LOW_ERROR}\n")
+                f.write(f"  Scale (Mid Error): {REWARD_ERROR_SCALE_MID_ERROR}\n")
+                f.write(f"  Scale (High Error): {REWARD_ERROR_SCALE_HIGH_ERROR}\n\n")
+                
                 f.write("="*70 + "\nTraining Summary\n" + "="*70 + "\n\n")
+
                 if self.training_start_time:
                     duration = (datetime.now() - self.training_start_time).total_seconds()
                     f.write(f"Start Time: {self.training_start_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
                     f.write(f"End Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                     f.write(f"Duration: {duration / 3600:.2f} hours ({duration / 60:.1f} minutes)\n\n")
+                
                 f.write(f"Total Updates: {len(self.metrics_history['steps'])}\n")
                 f.write(f"Total Timesteps: {self.total_timesteps:,}\n\n")
+                
                 if self.metrics_history['rewards']:
                     rewards = [r for r in self.metrics_history['rewards'] if not np.isnan(r)] # Filter NaNs
                     if rewards:
@@ -161,6 +232,7 @@ class RecurrentPPOTrainer:
                         f.write(f"  Best: {max(rewards):.3f}\n")
                         f.write(f"  Mean: {sum(rewards)/len(rewards):.3f}\n")
                         f.write(f"  Std: {np.std(rewards):.3f}\n\n")
+                
                 if self.metrics_history['prediction_losses']:
                     pred_losses = [l for l in self.metrics_history['prediction_losses'] if not np.isnan(l)]
                     if pred_losses:
@@ -168,8 +240,10 @@ class RecurrentPPOTrainer:
                         f.write(f"  Initial: {pred_losses[0]:.6f}\n")
                         f.write(f"  Final: {pred_losses[-1]:.6f}\n")
                         f.write(f"  Best: {min(pred_losses):.6f}\n\n")
+                
                 if self.best_mean_reward > -np.inf:
                     f.write(f"Best Reward Achieved (Early Stopping): {self.best_mean_reward:.3f}\n")
+                
                 f.write("\n" + "="*70 + "\n")
             logger.info(f"Training summary saved to: {summary_file}")
         except Exception as e:

@@ -45,10 +45,12 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     OBS_DIM,
     REWARD_PREDICTION_WEIGHT,
     REWARD_TRACKING_WEIGHT,
-    REWARD_ERROR_SCALE,
     REWARD_VEL_PREDICTION_WEIGHT_FACTOR,
     RNN_SEQUENCE_LENGTH,
-)
+    REWARD_ERROR_SCALE_HIGH_ERROR,
+    REWARD_ERROR_SCALE_MID_ERROR,
+    REWARD_ERROR_SCALE_LOW_ERROR,
+    )
 
 
 class TeleoperationEnvWithDelay(gym.Env):
@@ -448,12 +450,11 @@ class TeleoperationEnvWithDelay(gym.Env):
         error_mm = error * 1000
         
         if error_mm > 200:
-            return 10.0
+            return REWARD_ERROR_SCALE_HIGH_ERROR
         elif error_mm > 100:
-            alpha = (200 - error_mm) / 100.0
-            return 10.0 + 25.0 * alpha
+            return REWARD_ERROR_SCALE_MID_ERROR
         else:
-            return 35.0
+            return REWARD_ERROR_SCALE_LOW_ERROR
 
     def _calculate_reward_components(self) -> Dict[str, float]:
         r_prediction = 0.0
