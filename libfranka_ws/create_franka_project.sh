@@ -21,7 +21,7 @@ source /opt/ros/humble/setup.bash
 # Create package
 ## Modify here if want to use CPP - change ament_python to ament_cmake
 echo "Creating ROS2 package..."
-ros2 pkg create --build-type ament_python {Project name} \
+ros2 pkg create --build-type ament_python {Project namez} \
   --dependencies rclpy sensor_msgs std_msgs geometry_msgs
 
 cd {Project name}
