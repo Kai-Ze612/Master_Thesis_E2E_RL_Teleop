@@ -12,8 +12,8 @@ source setup_environment.sh
 ---
 ## Initial Position Return
 ```bash
-cd ~/Libraries/libfranka/examples/build
-./communication_test 192.168.03.109
+cd ~/Libraries/libfranka/build/examples
+./communication_test 192.168.03.107
 ```
 
 ---
@@ -46,7 +46,7 @@ source ./install/setup.bash
 ## Run the simulation robot arm
 1. Launch Simulator
 ```bash 
-ros2 launch Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays leader_mujoco_simulator.launch.py
+ros2 launch Reinforcement_Learning_In_Teleoperation teleoperation.launch.py
 ```
 
 2. Activate Controller
@@ -68,7 +68,7 @@ ros2 topic echo --once /local_robot/leader_pose
 ## Run the real robot arm
 1. Start robot with necessary features via bringup, this will load the controllers.
 ```bash
-ros2 launch Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays follower_real_robot.launch.py robot_ip:=192.168.03.109
+ros2 launch Reinforcement_Learning_In_Teleoperation teleoperation.launch.py robot_ip:=192.168.03.107
 ```
 
 2. Activate Controller

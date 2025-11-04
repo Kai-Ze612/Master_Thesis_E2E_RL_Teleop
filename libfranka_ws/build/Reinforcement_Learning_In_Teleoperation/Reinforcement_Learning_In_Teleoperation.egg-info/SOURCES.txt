@@ -9,5 +9,6 @@ Reinforcement_Learning_In_Teleoperation.egg-info/entry_points.txt
 Reinforcement_Learning_In_Teleoperation.egg-info/requires.txt
 Reinforcement_Learning_In_Teleoperation.egg-info/top_level.txt
 Reinforcement_Learning_In_Teleoperation.egg-info/zip-safe
-launch/teleoperation.launch.py
+launch/local_robot.launch.py
+launch/remote_agent.launch.py
 resource/Reinforcement_Learning_In_Teleoperation

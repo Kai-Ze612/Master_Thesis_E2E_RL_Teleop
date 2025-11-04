@@ -1,18 +1,18 @@
 Performing C SOURCE FILE Test SUPPORTS_LLD failed with the following output:
 Change Dir: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/gmake -f Makefile cmTC_a0176/fast && /usr/bin/gmake  -f CMakeFiles/cmTC_a0176.dir/build.make CMakeFiles/cmTC_a0176.dir/build
+Run Build Command(s):/usr/bin/gmake -f Makefile cmTC_bdf4d/fast && /usr/bin/gmake  -f CMakeFiles/cmTC_bdf4d.dir/build.make CMakeFiles/cmTC_bdf4d.dir/build
 gmake[1]: Entering directory '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/CMakeTmp'
-Building C object CMakeFiles/cmTC_a0176.dir/src.c.o
-/usr/bin/cc -DSUPPORTS_LLD  -fuse-ld=lld -fPIE -std=c11 -o CMakeFiles/cmTC_a0176.dir/src.c.o -c /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/CMakeTmp/src.c
-Linking C executable cmTC_a0176
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a0176.dir/link.txt --verbose=1
-/usr/bin/cc  -fuse-ld=lld CMakeFiles/cmTC_a0176.dir/src.c.o -o cmTC_a0176 
+Building C object CMakeFiles/cmTC_bdf4d.dir/src.c.o
+/usr/bin/cc -DSUPPORTS_LLD  -fuse-ld=lld -fPIE -std=c11 -o CMakeFiles/cmTC_bdf4d.dir/src.c.o -c /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_bdf4d
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_bdf4d.dir/link.txt --verbose=1
+/usr/bin/cc  -fuse-ld=lld CMakeFiles/cmTC_bdf4d.dir/src.c.o -o cmTC_bdf4d 
 collect2: fatal error: cannot find ‘ld’
 compilation terminated.
-gmake[1]: *** [CMakeFiles/cmTC_a0176.dir/build.make:99: cmTC_a0176] Error 1
+gmake[1]: *** [CMakeFiles/cmTC_bdf4d.dir/build.make:99: cmTC_bdf4d] Error 1
 gmake[1]: Leaving directory '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/CMakeTmp'
-gmake: *** [Makefile:127: cmTC_a0176/fast] Error 2
+gmake: *** [Makefile:127: cmTC_bdf4d/fast] Error 2
 
 
 Source file was:
