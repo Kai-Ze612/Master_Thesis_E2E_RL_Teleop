@@ -12,135 +12,213 @@ The node implements:
 # ROS2 imports
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
-from ament_index_python.packages import get_package_share_directory
-from collections import deque
 
 # Mujoco imports
 import mujoco
 
 # Python imports
 import numpy as np
-import os
 from numpy.typing import NDArray
-from scipy.spatial.transform import Rotation as R
 
 # Custom imports
 import torch
 from stable_baselines3 import SAC
-from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator
-from Reinforcement_Learning_In_Teleoperation.config import (
+from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
-    EE_BODY_NAME,
-    TCP_OFFSET,
-    JOINT_LIMITS_LOWER,
-    JOINT_LIMITS_UPPER,
-    TORQUE_LIMITS,
-    INITIAL_JOINT_CONFIG,
+    DEFAULT_MUJOCO_MODEL_PATH, 
     DEFAULT_CONTROL_FREQ,
-    DEFAULT_PUBLISH_FREQ,
-    KP_REMOTE_NOMINAL,
-    KD_REMOTE_NOMINAL,
-    ACTION_HISTORY_LEN,
-    TARGET_HISTORY_LEN,
-    DEFAULT_MODEL_PATH,
-    DEFAULT_RL_MODEL_PATH
+    INITIAL_JOINT_CONFIG,
+    TORQUE_LIMITS,
+    DEFAULT_KD_REMOTE,
+    DEFAULT_KP_REMOTE,
 )
 
-class RemoteRobot(Node):
+class RemoteRobotNode(Node):
     def __init__(self):
         super().__init__('remote_robot_node')
         
-        self._init_parameters()
-        self._init_mujoco()
-        self._init_controllers()
-        self._init_compensation_model()
-        self._init_ros_interfaces()
-        self._init_delay_simulator()
+        # Initialize parameters
+        self.n_joints_ = N_JOINTS
+        self.control_freq_ = DEFAULT_CONTROL_FREQ
+        self.dt_ = 1.0 / self.control_freq_
+        self.kp_ = DEFAULT_KP_REMOTE
+        self.kd_ = DEFAULT_KD_REMOTE
+        self.torque_limits_ = TORQUE_LIMITS
+        self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
+        self.initial_joint_config_ = INITIAL_JOINT_CONFIG
+        self.current_q_ = self.initial_joint_config_.copy()
+        self.current_dq_ = np.zeros(self.n_joints_, dtype=np.float32)
         
-    def _init_parameters(self):
+        # Initialize Mujoco model and data
+        model_path = DEFAULT_MUJOCO_MODEL_PATH
+        self.mj_model_ = mujoco.MjModel.from_xml_path(model_path)
+        self.mj_data_ = mujoco.MjData(self.mj_model_)
         
-        self.num_joints: int = N_JOINTS
-        self.ee_body_name: str = EE_BODY_NAME
-        self.tcp_offset: NDArray[np.float32] = TCP_OFFSET
-        self.joint_limits_lower: NDArray[np.float32] = JOINT_LIMITS_LOWER
-        self.joint_limits_upper: NDArray[np.float32] = JOINT_LIMITS_UPPER
-        self.torque_limits: NDArray[np.float32] = TORQUE_LIMITS
-        self.initial_joint_config: NDArray[np.float32] = INITIAL_JOINT_CONFIG
-        self.control_freq: float = DEFAULT_CONTROL_FREQ
-        self.publish_freq: float = DEFAULT_PUBLISH_FREQ
-        self.kp_remote_nominal: NDArray[np.float32] = KP_REMOTE_NOMINAL
-        self.kd_remote_nominal: NDArray[np.float32] = KD_REMOTE_NOMINAL
-        self.model_path: str = DEFAULT_MODEL_PATH
-        self.rl_model_path: str = DEFAULT_RL_MODEL_PATH
+        # Latest command from AgentNode
+        self.target_q_ = INITIAL_JOINT_CONFIG.copy()
+        self.target_qd_ = np.zeros(self.n_joints_)
+        self.tau_rl_ = np.zeros(self.n_joints_)
         
-        # dt
-        self.dt = 1.0 / self.control_freq
+        # Readiness flag
+        self.robot_state_ready_ = False
+        self.agent_command_ready_ = False
         
-        # Real robot states
-        self.real_joint_positions = self.initial_qpos.copy()
-        self.real_joint_velocities = np.zeros(self.num_joints)
+        # ROS2 Interfaces
+        # Subscribe to agent command
+        self.agent_command_sub_ = self.create_subscription(
+            JointState, 'agent/command', self.agent_command_callback, 10)
         
-        # Connection monitoring
-        self.robot_connected = False
+        # Subscribe to real robot joint states
+        self.robot_state_sub_ = self.create_subscription(
+            JointState, 'remote_robot/joint_states', self.robot_state_callback, 10)
         
-        # RL compensation toggle
-        self.action_history: deque[NDArray[np.float32]] = deque(maxlen=ACTION_HISTORY_LEN)
-        self.target_history: deque[NDArray[np.float32]] = deque(maxlen=TARGET_HISTORY_LEN)
+        # Publisher to the real robot's torque driver
+        self.torque_command_pub_ = self.create_publisher(
+            Float64MultiArray, '/joint_tau/torques_desired', 10)
         
-        # History buffer for RL observation
-        self.target_q_history = deque(maxlen=self.target_history_len)
-        self.target_qd_history = deque(maxlen=self.target_history_len)
-        self.action_history = deque(maxlen=self.action_history_len)
+        # Main control loop timer
+        self.control_timer_ = self.create_timer(
+            self.dt_, self.control_loop_callback)
         
-        # Initialize histories
-        for _ in range(self.target_history_len):
-            self.target_q_history.append(self.initial_qpos.copy())
-            self.target_qd_history.append(np.zeros(self.num_joints))
-            
-        for _ in range(self.action_history_len):
-            # RL action is typically [-1, 1], so init history with 0s
-            self.action_history.append(np.zeros(self.num_joints))
-            
-    def _init_mujoco(self):
-        """ Initialize Mujoco model for Inverse Dynamics Computation."""
-        self.mj_model = mujoco.MjModel.from_xml_path(self.model_path)
-        self.mj_data = mujoco.MjData(self.mj_model)
-        self.get_logger().info("Mujoco model loaded for Inverse Dynamics computation initialized.")
-    
-    def _init_compensation_model(self):
-        """ Load trained RL model for torque compensation."""
+        self.get_logger().info("Remote Robot Node (Follower) initialized.")
+        
+    def agent_command_callback(self, msg: JointState) -> None:
+        """
+        Receives the command from the AgentNode.
+        - position = predicted target q
+        - velocity = predicted target qd
+        - effort = RL torque compensation tau_rl
+        """
+        try:
+            # Re-order logic from AgentNode
+            name_to_index_map = {name: i for i, name in enumerate(msg.name)}
+            self.target_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
+            self.target_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
+            self.tau_rl_ = np.array([msg.effort[name_to_index_map[name]] for name in self.joint_names_])
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.compensation_model = SAC.load(self.rl_model_path, device=self.device)
-        
-        self.get_logger().info("RL compensation model loaded.")
-    
-    def _init_ros_interfaces(self):
-        """ Initialize ROS2 publishers and subscribers."""
-        # Subscribers
-        self.create_subscription(
-            JointState,
-            '/_robot/joint_states',
-            self.real_robot_joint_state_callback,
-            10
-        )
-       
-        self.create_subscription(
-            JointState,
-            '/desired_robot/joint_states',
-            self.desired_robot_joint_state_callback,
-            10
-        )
-        
-        # Publishers
-        self.joint_command_publisher = self.create_publisher(
-            Float64MultiArray,
-            '/real_robot/joint_commands',
-            10
-        )
-        
-        self.get_logger().info("ROS2 interfaces initialized.")
+            if not self.agent_command_ready_:
+                self.agent_command_ready_ = True
+                self.get_logger().info("First command from AgentNode received.")
                 
+        except (KeyError, IndexError) as e:
+            self.get_logger().warn(f"Error processing agent command: {e}")
+
+    def robot_state_callback(self, msg: JointState) -> None:
+        """Receives the real-time state from the robot hardware."""
+        try:
+            # Assuming msg.name is in the correct order or matches joint_names_
+            name_to_index_map = {name: i for i, name in enumerate(msg.name)}
+            self.current_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
+            self.current_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
+            
+            if not self.robot_state_ready_:
+                self.robot_state_ready_ = True
+                self.get_logger().info("First hardware state from Remote Robot received.")
+                
+        except (KeyError, IndexError) as e:
+            self.get_logger().warn(f"Error processing robot state: {e}")
+
+    def _compute_inverse_dynamics_torque(
+        self,
+        q: NDArray[np.float64],
+        qd: NDArray[np.float64],
+        qdd: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Inverse dynamics using MuJoCo's built-in function."""
+        
+        # Save current state
+        qpos_save = self.mj_data_.qpos.copy()
+        qvel_save = self.mj_data_.qvel.copy()
+        qacc_save = self.mj_data_.qacc.copy()
+
+        # Set desired state
+        self.mj_data_.qpos[:self.n_joints_] = q
+        self.mj_data_.qvel[:self.n_joints_] = qd
+        self.mj_data_.qacc[:self.n_joints_] = qdd
+
+        # Compute inverse dynamics
+        mujoco.mj_inverse(self.mj_model_, self.mj_data_)
+        tau = self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
+
+        # Restore original state
+        self.mj_data_.qpos[:] = qpos_save
+        self.mj_data_.qvel[:] = qvel_save
+        self.mj_data_.qacc[:] = qacc_save
+        
+        return tau
+
+    def control_loop_callback(self) -> None:
+        """Main control loop for the remote robot."""
+        
+        # Wait until both agent and robot are ready
+        if not self.agent_command_ready_ or not self.robot_state_ready_:
+            self.get_logger().warn(
+                "Waiting for agent command and robot state...",
+                throttle_duration_sec=5.0
+            )
+            return
+
+        try:
+            # Get current and target states
+            q_current = self.current_q_
+            qd_current = self.current_qd_
+            
+            q_target = self.target_q_     # From agent
+            qd_target = self.target_qd_   # From agent
+            tau_rl = self.tau_rl_       # From agent
+            
+            self.get_logger().info(f"Current State: {q_current}, {qd_current}")
+            self.get_logger().info(f"Target State: {q_target}, {qd_target}, Tau_RL: {tau_rl}")
+            self.get_logger().info(f"tau_rl: {tau_rl}")
+           
+            # Apply PD Controller
+            q_error = q_target - q_current
+            qd_error = qd_target - qd_current
+            qdd_desired = self.kp_ * q_error + self.kd_ * qd_error # Desired acceleration
+            
+            # Inverse Dynamics (Baseline Torque)
+            # Computes M(q) * qdd_desired + C(q, qd)
+            tau_baseline = self._compute_inverse_dynamics_torque(
+                q=q_current,
+                qd=qd_current,
+                qdd=qdd_desired,
+            )
+            
+            # Total Command = Baseline (ID+PD) + RL Compensation
+            tau_command = tau_baseline + tau_rl
+
+            # Torque Clipping
+            tau_clipped = np.clip( tau_command, -self.torque_limits_, self.torque_limits_)
+
+            # Publish Command to Hardware
+            msg = Float64MultiArray()
+            msg.data = tau_clipped.tolist()
+            self.torque_command_pub_.publish(msg)
+
+        except Exception as e:
+            self.get_logger().error(f"Error in remote control loop: {e}")
+            import traceback
+            traceback.print_exc()
+
+def main(args=None):
+    rclpy.init(args=args)
+    remote_robot_node = None
+    try:
+        remote_robot_node = RemoteRobotNode()
+        rclpy.spin(remote_robot_node)
+    except KeyboardInterrupt:
+        if remote_robot_node:
+            remote_robot_node.get_logger().info("Keyboard interrupt, shutting down...")
+    except Exception as e:
+        print(f"Node failed to initialize or run: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        if remote_robot_node:
+            remote_robot_node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()

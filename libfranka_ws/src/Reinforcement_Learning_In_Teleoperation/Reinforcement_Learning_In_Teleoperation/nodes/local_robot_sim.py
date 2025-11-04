@@ -14,7 +14,6 @@ from typing import Any, Optional
 import numpy as np
 from numpy.typing import NDArray
 import mujoco
-import sys
 
 # ROS2 imports
 import rclpy
@@ -24,25 +23,23 @@ from sensor_msgs.msg import JointState
 # Custom imports
 from Reinforcement_Learning_In_Teleoperation.utils.inverse_kinematics import IKSolver
 from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    DEFAULT_MODEL_PATH,
+    DEFAULT_MUJOCO_MODEL_PATH,
     N_JOINTS,
     EE_BODY_NAME,
     TCP_OFFSET,
     INITIAL_JOINT_CONFIG,
     JOINT_LIMITS_LOWER,
     JOINT_LIMITS_UPPER,
-    DEFAULT_CONTROL_FREQ,
-    KP_LOCAL_DEFAULT,
-    KD_LOCAL_DEFAULT,
+    DEFAULT_PUBLISH_FREQ,
     IK_MAX_ITER,
     IK_TOLERANCE,
     IK_DAMPING,
     IK_MAX_JOINT_CHANGE,
     IK_CONTINUITY_GAIN,
     IK_STEP_SIZE,
-    TRAJECTORY_CENTER_DEFAULT,
-    TRAJECTORY_SCALE_DEFAULT,
-    TRAJECTORY_FREQUENCY_DEFAULT,
+    TRAJECTORY_CENTER,
+    TRAJECTORY_SCALE,
+    TRAJECTORY_FREQUENCY,
 )
 
 class TrajectoryType(Enum):
@@ -50,17 +47,17 @@ class TrajectoryType(Enum):
     FIGURE_8 = "figure_8"
     SQUARE = "square"
     LISSAJOUS_COMPLEX = "lissajous_complex"
-    
+
 @dataclass(frozen=True)
 class TrajectoryParameters:
     """Trajectory initial parameters."""
     center: NDArray[np.float64] = field(
-        default_factory=lambda: TRAJECTORY_CENTER_DEFAULT.copy()
+        default_factory=lambda: TRAJECTORY_CENTER.copy()
     )
     scale: NDArray[np.float64] = field(
-        default_factory=lambda: TRAJECTORY_SCALE_DEFAULT.copy()
+        default_factory=lambda: TRAJECTORY_SCALE.copy()
     )
-    frequency: float = TRAJECTORY_FREQUENCY_DEFAULT
+    frequency: float = TRAJECTORY_FREQUENCY
     initial_phase: float = 0.0
 
     def __post_init__(self) -> None:
@@ -141,35 +138,25 @@ class LeaderRobotPublisher(Node):
         super().__init__('leader_robot_publisher')
 
         # ROS2 parameters
-        self.control_freq_ = self.declare_parameter('control_freq', DEFAULT_CONTROL_FREQ).value
-        self.timer_period_ = 1.0 / self.control_freq_
+        self.publish_freq_ = self.declare_parameter('publish_freq', DEFAULT_PUBLISH_FREQ).value
+        self.timer_period_ = 1.0 / self.publish_freq_
         self._dt = self.timer_period_
 
         traj_type_str = self.declare_parameter('trajectory_type', TrajectoryType.FIGURE_8.value).value
         self._trajectory_type = TrajectoryType(traj_type_str)                
         self._randomize_params = self.declare_parameter('randomize_params', False).value
-        self.model_path_ = self.declare_parameter('model_path', DEFAULT_MODEL_PATH).value
+        self.model_path_ = self.declare_parameter('model_path', DEFAULT_MUJOCO_MODEL_PATH).value
 
         # Robot parameters
         self.n_joints = N_JOINTS
         self.ee_body_name = EE_BODY_NAME
         self.tcp_offset = TCP_OFFSET.copy()
-        self.kd_local = KD_LOCAL_DEFAULT.copy()
-        self.kp_local = KP_LOCAL_DEFAULT.copy()
         self.joint_limits_lower = JOINT_LIMITS_LOWER.copy()
         self.joint_limits_upper = JOINT_LIMITS_UPPER.copy()
         
         # Load MuJoCo model 
         self.model = mujoco.MjModel.from_xml_path(self.model_path_)
         self.data = mujoco.MjData(self.model)
-        
-        # Simulation frequency and substeps
-        sim_freq = int(1.0 / self.model.opt.timestep)
-        if sim_freq % self.control_freq_ != 0:
-            msg = f"Simulation frequency ({sim_freq} Hz) must be a multiple of control frequency ({self.control_freq_} Hz)."
-            self.get_logger().fatal(msg)
-            raise ValueError(msg)
-        self.n_substeps = sim_freq // self.control_freq_
 
         # Initialize IK solver
         self.ik_solver = IKSolver(
@@ -177,6 +164,7 @@ class LeaderRobotPublisher(Node):
             joint_limits_lower=self.joint_limits_lower,
             joint_limits_upper=self.joint_limits_upper,
             jacobian_max_iter=IK_MAX_ITER,
+            jacobian_step_size= IK_STEP_SIZE,
             position_tolerance=IK_TOLERANCE,
             jacobian_damping=IK_DAMPING,
             max_joint_change=IK_MAX_JOINT_CHANGE,
@@ -189,8 +177,6 @@ class LeaderRobotPublisher(Node):
         self._generator = self._create_generator(self._trajectory_type, self._params)
 
         # State tracking
-        self._q_current = np.zeros(self.n_joints)
-        self._qd_current = np.zeros(self.n_joints)
         self._last_q_desired = np.zeros(self.n_joints)
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints)]
 
@@ -217,8 +203,6 @@ class LeaderRobotPublisher(Node):
 
         # Initialize joint state
         q_initial = INITIAL_JOINT_CONFIG.copy()
-        self._q_current = q_initial.copy()
-        self._qd_current = np.zeros(self.n_joints)
         self._last_q_desired = q_initial.copy()
 
         # Reset MuJoCo simulation
@@ -230,17 +214,23 @@ class LeaderRobotPublisher(Node):
         self.get_logger().info("Simulation reset to initial configuration.")
 
     def timer_callback(self) -> None:
-        """ """
+        """ 
+        Steps:
+        1. Update trajectory time.
+        2. Generate Cartesian target position.
+        3. Solve IK to get desired joint positions.
+        4. Publish joint states.
+        """
     
         self._trajectory_time += self._dt
 
         # Generate Cartesian target and compute control
         cartesian_target = self._generator.compute_position(self._trajectory_time)
 
-        # Solve IK 
+        # Solve IK
         q_desired, ik_success, ik_error = self.ik_solver.solve(
             target_pos=cartesian_target,
-            q_init=self._q_current,
+            q_init=self._last_q_desired.copy(), # Was self._q_current
             body_name=self.ee_body_name,
             tcp_offset=self.tcp_offset,
             enforce_continuity=True,
@@ -252,29 +242,20 @@ class LeaderRobotPublisher(Node):
             )
             q_desired = self._last_q_desired.copy()
 
-        # Apply PD control 
+        # Calculate desired velocity
         qd_desired = (q_desired - self._last_q_desired) / self._dt
         self._last_q_desired = q_desired.copy()
-        q_error = q_desired - self.data.qpos[:self.n_joints]
-        qd_error = qd_desired - self.data.qvel[:self.n_joints]
-        tau_control = self.kp_local * q_error + self.kd_local * qd_error
-        self.data.ctrl[:self.n_joints] = tau_control
-
-        # MuJoCo simulation
-        for _ in range(self.n_substeps):
-            mujoco.mj_step(self.model, self.data)
-
-        # Read actual joint state
-        self._q_current = self.data.qpos[:self.n_joints].copy()
-        self._qd_current = self.data.qvel[:self.n_joints].copy()
         
         # Publish the joint states message
         msg = JointState()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.name = self.joint_names_
-        msg.position = self._q_current.astype(float).tolist()
-        msg.velocity = self._qd_current.astype(float).tolist()
-        msg.effort = tau_control.astype(float).tolist() # Publish the calculated control torque        
+        
+        # Publish the desired state from the IK solver
+        msg.position = q_desired.astype(float).tolist()
+        msg.velocity = qd_desired.astype(float).tolist()
+        msg.effort = []
+        
         self.joint_state_pub_.publish(msg)
 
     # Create trajectory generator

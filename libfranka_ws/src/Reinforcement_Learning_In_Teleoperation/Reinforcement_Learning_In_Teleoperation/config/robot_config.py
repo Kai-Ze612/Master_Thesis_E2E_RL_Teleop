@@ -10,9 +10,13 @@ import numpy as np
 
 # Model paths
 DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
 
 # RL model paths
 DEFAULT_RL_MODEL_PATH_BASE = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Reinforcement_Learning_In_Teleoperation/Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output"
+
+# Checkpoint directory for training outputs
+CHECKPOINT_DIR = "./rl_training_output"
 
 ######################################
 # Franka Panda Robot Parameters, hard coded.
@@ -145,13 +149,13 @@ PPO_MAX_GRAD_NORM = 0.5
 
 # Loss weighting
 PREDICTION_LOSS_WEIGHT = 5.0  # Weight for supervised state prediction loss
-PPO_LOSS_WEIGHT = 1.0          # Weight for PPO loss (actor + critic + entropy)
+PPO_LOSS_WEIGHT = 10.0          # Weight for PPO loss (actor + critic + entropy)
 
 # Training schedule
-PPO_ROLLOUT_STEPS = 5000
+PPO_ROLLOUT_STEPS = 10000
 PPO_NUM_EPOCHS = 10
 PPO_BATCH_SIZE = 128
-PPO_TOTAL_TIMESTEPS = 5_000_000
+PPO_TOTAL_TIMESTEPS = 3_000_000
 
 ######################################
 # Dense Reward Function Weights
@@ -172,14 +176,13 @@ REWARD_ERROR_SCALE_LOW_ERROR = 50   # Scale factor for linear reward
 
 REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 1.5  # Weight for velocity prediction vs position
 
-NUM_ENVIRONMENTS = 5   # Number of parallel environments
+NUM_ENVIRONMENTS = 10   # Number of parallel environments
 ######################################
 # Logging and Checkpointing
 ######################################
 
 LOG_FREQ = 10   # Log metrics every N updates
 SAVE_FREQ = 100  # Save checkpoint every N updates
-CHECKPOINT_DIR = "./rl_training_output"
 
 ######################################
 # Deployment Parameters

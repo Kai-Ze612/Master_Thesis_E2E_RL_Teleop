@@ -28,9 +28,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'remote_node = Reinforcement_Learning_In_Teleoperation.nodes.follower_real_robot:main',
-            'local_node = Reinforcement_Learning_In_Teleoperation.nodes.leader_mujoco_simulator:main',
-            'remote_simulated_node = Reinforcement_Learning_In_Teleoperation.nodes.follower_mujoco_simulator:main'
+            'remote_node = Reinforcement_Learning_In_Teleoperation.nodes.remote_robot:main',
+            'local_node = Reinforcement_Learning_In_Teleoperation.nodes.local_robot_sim:main',
+            'agent_node = Reinforcement_Learning_In_Teleoperation.nodes.agent:main'
         ],
     },
 )
