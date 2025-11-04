@@ -68,29 +68,14 @@ ros2 topic echo --once /local_robot/leader_pose
 ## Run the real robot arm
 1. Start robot with necessary features via bringup, this will load the controllers.
 ```bash
-ros2 launch Reinforcement_Learning_In_Teleoperation teleoperation.launch.py robot_ip:=192.168.03.107
+ros2 launch Reinforcement_Learning_In_Teleoperation remote_agent.launch.py robot_ip:=192.168.03.107
 ```
 
-2. Activate Controller
+2. Start local robot
 ```bash
-ros2 control load_controller joint_tau_controller
-ros2 service call /controller_manager/configure_controller controller_manager_msgs/srv/ConfigureController "{name: joint_tau_controller}"
-ros2 control set_controller_state joint_tau_controller active
+ros2 launch Reinforcement_Learning_In_Teleoperation local_robot.launch.py
 ```
 
-3. Test: Publish Torque Command
-```bash
-ros2 topic pub --rate 1 /local_robot/leader_pose geometry_msgs/msg/PoseStamped '{
-  header: {
-    stamp: {sec: 0, nanosec: 0},
-    frame_id: "panda_link0"
-  },
-  pose: {
-    position: {x: 0.3, y: 0.0, z: 0.6},
-    orientation: {x: 0.0, y: 0.0, z: 0.0, w: 0.0}
-  }
-}'
-```
 ---
 
 

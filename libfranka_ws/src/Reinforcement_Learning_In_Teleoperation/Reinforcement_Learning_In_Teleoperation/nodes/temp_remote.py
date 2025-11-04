@@ -1,10 +1,11 @@
 """
-Remote robot node using ROS2 (Follower) - [DEBUGGING VERSION]
+Remote robot node using ROS2 (Follower).
 
-This node implements:
+The node implements:
 - Subscribes to real robot's joint state
-- Subscribes DIRECTLY to the local robot's desired joint state
+- Subscribes to desired robot's joint state
 - execute Inverse dynamics + PD control law
+- implement RL tau compensation
 - Publishes the command to the real robot
 """
 
@@ -22,7 +23,8 @@ import numpy as np
 from numpy.typing import NDArray
 
 # Custom imports
-# MODIFICATION: We are not importing SAC or torch
+import torch
+from stable_baselines3 import SAC
 from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     DEFAULT_MUJOCO_MODEL_PATH, 
@@ -41,17 +43,13 @@ class RemoteRobotNode(Node):
         self.n_joints_ = N_JOINTS
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
-        
-        # MODIFICATION: Start with VERY SAFE gains for this test
-        self.get_logger().warn("Using SAFE low gains for initial debugging.")
-        self.kp_ = DEFAULT_KP_REMOTE / 5.0 # Divide by 5 for safety
-        self.kd_ = DEFAULT_KD_REMOTE / 5.0 # Divide by 5 for safety
-        
+        self.kp_ = DEFAULT_KP_REMOTE
+        self.kd_ = DEFAULT_KD_REMOTE
         self.torque_limits_ = TORQUE_LIMITS
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
         self.initial_joint_config_ = INITIAL_JOINT_CONFIG
         self.current_q_ = self.initial_joint_config_.copy()
-        self.current_qd_ = np.zeros(self.n_joints_, dtype=np.float32)
+        self.current_dq_ = np.zeros(self.n_joints_, dtype=np.float32)
         
         # Initialize Mujoco model and data
         model_path = DEFAULT_MUJOCO_MODEL_PATH
@@ -61,21 +59,16 @@ class RemoteRobotNode(Node):
         # Latest command from AgentNode
         self.target_q_ = INITIAL_JOINT_CONFIG.copy()
         self.target_qd_ = np.zeros(self.n_joints_)
-        # self.tau_rl_ = np.zeros(self.n_joints_) # No RL torque in this test
-
+        self.tau_rl_ = np.zeros(self.n_joints_)
+        
         # Readiness flag
         self.robot_state_ready_ = False
-        self.target_command_ready_ = False # Renamed from agent_command_ready_
+        self.agent_command_ready_ = False
         
         # ROS2 Interfaces
-        
-        # MODIFICATION: Subscribe directly to the local robot
-        self.target_command_sub_ = self.create_subscription(
-            JointState, 
-            'local_robot/joint_states', # Subscribing to the leader
-            self.target_command_callback, 
-            10
-        )
+        # Subscribe to agent command
+        self.agent_command_sub_ = self.create_subscription(
+            JointState, 'agent/command', self.agent_command_callback, 10)
         
         # Subscribe to real robot joint states
         self.robot_state_sub_ = self.create_subscription(
@@ -89,30 +82,33 @@ class RemoteRobotNode(Node):
         self.control_timer_ = self.create_timer(
             self.dt_, self.control_loop_callback)
         
-        self.get_logger().info("Remote Robot Node (Follower) [DEBUG MODE] initialized.")
-        self.get_logger().warn("This node is in DEBUG mode. It is NOT using the RL agent.")
-
-    def target_command_callback(self, msg: JointState) -> None:
+        self.get_logger().info("Remote Robot Node (Follower) initialized.")
+        
+    def agent_command_callback(self, msg: JointState) -> None:
         """
-        Receives the command DIRECTLY from the local_robot node.
-        - position = target q
-        - velocity = target qd
+        Receives the command from the AgentNode.
+        - position = predicted target q
+        - velocity = predicted target qd
+        - effort = RL torque compensation tau_rl
         """
         try:
+            # Re-order logic from AgentNode
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
             self.target_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
             self.target_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
+            self.tau_rl_ = np.array([msg.effort[name_to_index_map[name]] for name in self.joint_names_])
 
-            if not self.target_command_ready_:
-                self.target_command_ready_ = True
-                self.get_logger().info("First command from Local Robot received.")
+            if not self.agent_command_ready_:
+                self.agent_command_ready_ = True
+                self.get_logger().info("First command from AgentNode received.")
                 
         except (KeyError, IndexError) as e:
-            self.get_logger().warn(f"Error processing target command: {e}")
+            self.get_logger().warn(f"Error processing agent command: {e}")
 
     def robot_state_callback(self, msg: JointState) -> None:
         """Receives the real-time state from the robot hardware."""
         try:
+            # Assuming msg.name is in the correct order or matches joint_names_
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
             self.current_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
             self.current_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
@@ -132,17 +128,21 @@ class RemoteRobotNode(Node):
     ) -> NDArray[np.float64]:
         """Inverse dynamics using MuJoCo's built-in function."""
         
+        # Save current state
         qpos_save = self.mj_data_.qpos.copy()
         qvel_save = self.mj_data_.qvel.copy()
         qacc_save = self.mj_data_.qacc.copy()
 
+        # Set desired state
         self.mj_data_.qpos[:self.n_joints_] = q
         self.mj_data_.qvel[:self.n_joints_] = qd
         self.mj_data_.qacc[:self.n_joints_] = qdd
 
+        # Compute inverse dynamics
         mujoco.mj_inverse(self.mj_model_, self.mj_data_)
         tau = self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
 
+        # Restore original state
         self.mj_data_.qpos[:] = qpos_save
         self.mj_data_.qvel[:] = qvel_save
         self.mj_data_.qacc[:] = qacc_save
@@ -152,10 +152,10 @@ class RemoteRobotNode(Node):
     def control_loop_callback(self) -> None:
         """Main control loop for the remote robot."""
         
-        # Wait until both target and robot are ready
-        if not self.target_command_ready_ or not self.robot_state_ready_:
+        # Wait until both agent and robot are ready
+        if not self.agent_command_ready_ or not self.robot_state_ready_:
             self.get_logger().warn(
-                "Waiting for target command and robot state...",
+                "Waiting for agent command and robot state...",
                 throttle_duration_sec=5.0
             )
             return
@@ -165,23 +165,28 @@ class RemoteRobotNode(Node):
             q_current = self.current_q_
             qd_current = self.current_qd_
             
-            q_target = self.target_q_     # From local_robot
-            qd_target = self.target_qd_   # From local_robot
-            tau_rl = np.zeros(self.n_joints_) # MODIFICATION: No RL torque
+            q_target = self.target_q_     # From agent
+            qd_target = self.target_qd_   # From agent
+            tau_rl = self.tau_rl_       # From agent
             
+            # self.get_logger().info(f"Current State: {q_current}, {qd_current}")
+            # self.get_logger().info(f"Target State: {q_target}, {qd_target}, Tau_RL: {tau_rl}")
+            # self.get_logger().info(f"tau_rl: {tau_rl}")
+           
             # Apply PD Controller
             q_error = q_target - q_current
             qd_error = qd_target - qd_current
-            qdd_desired = self.kp_ * q_error + self.kd_ * qd_error
+            qdd_desired = self.kp_ * q_error + self.kd_ * qd_error # Desired acceleration
             
             # Inverse Dynamics (Baseline Torque)
+            # Computes M(q) * qdd_desired + C(q, qd)
             tau_baseline = self._compute_inverse_dynamics_torque(
                 q=q_current,
                 qd=qd_current,
                 qdd=qdd_desired,
             )
             
-            # Total Command = Baseline (ID+PD) + NO RL Compensation
+            # Total Command = Baseline (ID+PD) + RL Compensation
             tau_command = tau_baseline + tau_rl
 
             # Torque Clipping
@@ -213,8 +218,7 @@ def main(args=None):
     finally:
         if remote_robot_node:
             remote_robot_node.destroy_node()
-        # MODIFICATION: Removed rclpy.shutdown()
-        # rclpy.shutdown()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

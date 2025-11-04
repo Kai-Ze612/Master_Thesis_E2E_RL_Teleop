@@ -165,7 +165,7 @@ class AgentNode(Node):
         self.leader_q_history_.append(q_new)
         self.leader_qd_history_.append(qd_new)
 
-        self.get_logger().info(f"Real-time leader q received: {np.round(q_new, 3)}")
+        # self.get_logger().info(f"Real-time leader q received: {np.round(q_new, 3)}")
         
         # Start flag
         if not self.is_leader_ready_:

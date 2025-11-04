@@ -25,6 +25,10 @@ def generate_launch_description():
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
 
+    # --- Agent Argument ---
+    experiment_config_param_name = 'experiment_config'
+    experiment_config = LaunchConfiguration(experiment_config_param_name)
+
     # --- Setup Robot Description & Controllers (from Franka) ---
     franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots', 'real',
                                      'panda_arm.urdf.xacro')
@@ -41,7 +45,7 @@ def generate_launch_description():
             FindPackageShare('franka_bringup'),
             'config',
             'real',
-            'single_controllers.yaml', 
+            'single_controllers.yaml', # This file contains 'joint_tau_controller'
         ]
     )
 
@@ -56,7 +60,6 @@ def generate_launch_description():
         use_rviz_parameter_name,
         default_value='false',
         description='Visualize the robot in Rviz'))
-    # ... (other franka args) ...
     ld.add_action(DeclareLaunchArgument(
         use_fake_hardware_parameter_name,
         default_value='false',
@@ -71,8 +74,16 @@ def generate_launch_description():
         default_value='false',
         description='Use Franka Gripper as an end-effector.'))
 
+    # Agent Argument
+    ld.add_action(DeclareLaunchArgument(
+        experiment_config_param_name,
+        default_value='3', # '3' for HIGH_DELAY
+        description='Delay config for the agent (1=LOW, 2=MEDIUM, 3=HIGH)'
+    ))
 
     # --- Add Franka Hardware Nodes ---
+    
+    # Publishes the /robot_description topic
     ld.add_action(Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -81,6 +92,7 @@ def generate_launch_description():
         parameters=[{'robot_description': robot_description}],
     ))
     
+    # Merges arm and gripper states into /joint_states
     ld.add_action(Node(
         package='joint_state_publisher',
         executable='joint_state_publisher',
@@ -90,6 +102,7 @@ def generate_launch_description():
              'rate': 30}],
     ))
 
+    # Main ros2_control hardware interface
     ld.add_action(Node(
         package='franka_control2',
         executable='franka_control2_node',
@@ -115,10 +128,11 @@ def generate_launch_description():
         condition=UnlessCondition(use_fake_hardware),
     ))
 
+    # MODIFICATION: Spawner for the *correct* torque controller
     ld.add_action(Node(
         package='controller_manager',
         executable='spawner',
-        arguments=['joint_tau_controller'], # This is your torque controller
+        arguments=['joint_tau_controller'], # Use the controller from your YAML
         output='screen',
     ))
 
@@ -138,14 +152,22 @@ def generate_launch_description():
         condition=IfCondition(use_rviz)
     ))
 
-    # --- Add Your (Simplified) Remote Node ---
+    # --- Add Your Agent and Remote Nodes ---
 
-    # MODIFICATION: Agent Node is commented out
-    # ld.add_action(Node(
-    #     package=my_package_name,
-    #     executable='agent_node',
-    #     ...
-    # ))
+    # Node 2: Agent (The "Brain")
+    ld.add_action(Node(
+        package=my_package_name,
+        executable='agent_node',
+        name='agent_node',
+        output='screen',
+        parameters=[{
+            'experiment_config': experiment_config
+        }],
+        remappings=[
+            # Connects the agent's input to the robot's /joint_states topic
+            ('/remote_robot/joint_states', '/joint_states')
+        ]
+    ))
 
     # Node 3: Remote Robot (The "Body")
     ld.add_action(Node(
@@ -154,11 +176,9 @@ def generate_launch_description():
         name='remote_robot_node',
         output='screen',
         remappings=[
-            # MODIFICATION: Subscribe to local_robot directly
-            ('remote_robot/joint_states', '/joint_states'),
-            ('/local_robot/joint_states', '/local_robot/joint_states'), # New subscription
+            # This remapping is still correct:
+            ('/remote_robot/joint_states', '/joint_states')
         ]
-        # The incorrect remapping is now gone
     ))
 
     return ld
