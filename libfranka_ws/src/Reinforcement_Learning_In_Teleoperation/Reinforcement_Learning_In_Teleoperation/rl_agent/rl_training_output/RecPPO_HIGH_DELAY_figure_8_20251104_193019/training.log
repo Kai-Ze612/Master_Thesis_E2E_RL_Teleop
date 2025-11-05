@@ -1,0 +1,70 @@
+2025-11-04 19:30:19 [INFO] __main__ - Run Name: RecPPO_HIGH_DELAY_figure_8_20251104_193019
+2025-11-04 19:30:19 [INFO] __main__ - Output Directory: ./rl_training_output/RecPPO_HIGH_DELAY_figure_8_20251104_193019
+2025-11-04 19:30:19 [INFO] __main__ - Training Configuration:
+2025-11-04 19:30:19 [INFO] __main__ -   Delay Config: HIGH_DELAY
+2025-11-04 19:30:19 [INFO] __main__ -   Trajectory Type: figure_8
+2025-11-04 19:30:19 [INFO] __main__ -   Randomize Trajectory: False
+2025-11-04 19:30:19 [INFO] __main__ -   Total Timesteps: 3,000,000
+2025-11-04 19:30:19 [INFO] __main__ -   Random Seed: 50
+2025-11-04 19:30:19 [INFO] __main__ - 
+2025-11-04 19:30:19 [INFO] __main__ - Setting random seed: 50
+2025-11-04 19:30:19 [INFO] __main__ - Random seeds set for NumPy, PyTorch, and CUDA
+2025-11-04 19:30:19 [INFO] __main__ - 
+2025-11-04 19:30:28 [INFO] __main__ -   Vectorized Environment: SubprocVecEnv
+2025-11-04 19:30:28 [INFO] __main__ -   Number of Envs: 10
+2025-11-04 19:30:28 [INFO] __main__ -   Observation Space: (134,)
+2025-11-04 19:30:28 [INFO] __main__ -   Action Space: (7,)
+2025-11-04 19:30:28 [INFO] __main__ - 
+2025-11-04 19:30:28 [INFO] __main__ - Initializing Recurrent-PPO trainer...
+2025-11-04 19:30:29 [INFO] __main__ -   Trainer: RecurrentPPOTrainer
+2025-11-04 19:30:29 [INFO] __main__ -   Policy Parameters: 7,665,565
+2025-11-04 19:30:29 [INFO] __main__ -   Checkpoint Directory: ./rl_training_output/RecPPO_HIGH_DELAY_figure_8_20251104_193019
+2025-11-04 19:30:29 [INFO] __main__ - 
+2025-11-04 19:30:29 [INFO] __main__ - ======================================================================
+2025-11-04 19:30:29 [INFO] __main__ - Starting Training
+2025-11-04 19:30:29 [INFO] __main__ - ======================================================================
+2025-11-04 19:30:29 [INFO] __main__ - 
+2025-11-04 19:30:29 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Tensorboard login: http://localhost:6006/
+2025-11-04 22:44:36 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-11-04 22:44:36 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - Update: 10/300 | Timesteps: 100,000 | Elapsed: 3:14:06
+2025-11-04 22:44:36 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-11-04 22:44:36 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Avg Rollout Reward: -0.009
+2025-11-04 22:44:36 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Actor Loss: -0.0029 | Critic Loss: 1.9553
+2025-11-04 22:44:36 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Prediction Loss: 0.097060
+2025-11-04 22:44:36 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Entropy: 6.3262 | Approx KL: 0.00552
+2025-11-04 22:44:36 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Collect Time: 120.62s | Update Time: 1075.95s | FPS: 8
+2025-11-05 01:59:24 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-11-05 01:59:24 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - Update: 20/300 | Timesteps: 200,000 | Elapsed: 6:28:54
+2025-11-05 01:59:24 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-11-05 01:59:24 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Avg Rollout Reward: -1.484
+2025-11-05 01:59:24 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Actor Loss: -0.0021 | Critic Loss: 1.3288
+2025-11-05 01:59:24 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Prediction Loss: 0.097309
+2025-11-05 01:59:24 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Entropy: 6.3844 | Approx KL: 0.00663
+2025-11-05 01:59:24 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Collect Time: 107.22s | Update Time: 1052.50s | FPS: 8
+2025-11-05 05:11:15 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-11-05 05:11:15 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - Update: 30/300 | Timesteps: 300,000 | Elapsed: 9:40:45
+2025-11-05 05:11:15 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-11-05 05:11:15 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Avg Rollout Reward: -0.621
+2025-11-05 05:11:15 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Actor Loss: -0.0043 | Critic Loss: 2.0154
+2025-11-05 05:11:15 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Prediction Loss: 0.094291
+2025-11-05 05:11:15 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Entropy: 6.4424 | Approx KL: 0.00750
+2025-11-05 05:11:15 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Collect Time: 106.49s | Update Time: 1036.26s | FPS: 8
+2025-11-05 08:24:04 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-11-05 08:24:04 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - Update: 40/300 | Timesteps: 400,000 | Elapsed: 12:53:34
+2025-11-05 08:24:04 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-11-05 08:24:04 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Avg Rollout Reward: -0.368
+2025-11-05 08:24:04 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Actor Loss: -0.0003 | Critic Loss: 1.7970
+2025-11-05 08:24:04 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Prediction Loss: 0.091370
+2025-11-05 08:24:04 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Entropy: 6.5019 | Approx KL: 0.00505
+2025-11-05 08:24:04 [INFO] Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_training_algorithm -   Collect Time: 103.81s | Update Time: 1055.49s | FPS: 8
+2025-11-05 09:52:56 [WARNING] __main__ - 
+2025-11-05 09:52:56 [WARNING] __main__ - ======================================================================
+2025-11-05 09:52:56 [WARNING] __main__ - Training Interrupted by User
+2025-11-05 09:52:56 [WARNING] __main__ - ======================================================================
+2025-11-05 09:52:56 [WARNING] __main__ - Saving interrupted model...
+2025-11-05 09:52:57 [INFO] __main__ - 
+2025-11-05 09:52:57 [INFO] __main__ - Cleaning up...
