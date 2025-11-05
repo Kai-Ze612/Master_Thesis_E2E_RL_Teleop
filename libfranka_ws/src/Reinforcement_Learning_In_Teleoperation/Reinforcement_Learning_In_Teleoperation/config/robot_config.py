@@ -49,8 +49,8 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 JOINT_LIMIT_MARGIN = 0.05  # radians
 
 # Local robot PD gains (joint-specific)
-KP_LOCAL = np.array([600.0, 600.0, 600.0, 600.0, 300.0, 150.0, 60.0], dtype=np.float32)
-KD_LOCAL = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 30.0, 15.0], dtype=np.float32)
+KP_LOCAL = np.array([150.0, 150.0, 120.0, 100.0, 75.0, 50.0, 20.0], dtype=np.float32)
+KD_LOCAL = np.array([30.0, 30.0, 20.0, 20.0, 10.0, 10.0, 5.0], dtype=np.float32)
 
 ######################################
 # Control Parameters.
@@ -61,7 +61,7 @@ KD_LOCAL = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 30.0, 15.0], dtype=np.float32
 DEFAULT_CONTROL_FREQ = 500 # match the sim freq
 
 # Default publish frequency for robot state (Hz)
-DEFAULT_PUBLISH_FREQ = 100
+DEFAULT_PUBLISH_FREQ = 500
 
 # Remote robot PD gains, setting softer because of stable under delay
 DEFAULT_KP_REMOTE = np.array([150.0, 150.0, 120.0, 100.0, 75.0, 50.0, 20.0], dtype=np.float32)
@@ -86,7 +86,7 @@ IK_CONTINUITY_GAIN = 0.5
 TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.5], dtype=np.float32)
 
 # Default trajectory scale (meters)
-TRAJECTORY_SCALE = np.array([0.1, 0.3], dtype=np.float32)
+TRAJECTORY_SCALE = np.array([0.2, 0.3], dtype=np.float32)
 
 # Default frequency (Hz)
 TRAJECTORY_FREQUENCY = 0.1

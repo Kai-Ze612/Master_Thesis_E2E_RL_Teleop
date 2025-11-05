@@ -138,8 +138,8 @@ libpanda_identification.so: /opt/ros/humble/lib/x86_64-linux-gnu/libhpp-fcl.so
 libpanda_identification.so: /usr/lib/x86_64-linux-gnu/libboost_filesystem.so
 libpanda_identification.so: /usr/lib/x86_64-linux-gnu/libboost_serialization.so
 libpanda_identification.so: /usr/lib/x86_64-linux-gnu/libboost_chrono.so.1.74.0
-libpanda_identification.so: /usr/lib/x86_64-linux-gnu/liboctomap.so.1.9.7
-libpanda_identification.so: /usr/lib/x86_64-linux-gnu/liboctomath.so.1.9.7
+libpanda_identification.so: /opt/ros/humble/lib/x86_64-linux-gnu/liboctomap.so.1.9.8
+libpanda_identification.so: /opt/ros/humble/lib/x86_64-linux-gnu/liboctomath.so.1.9.8
 libpanda_identification.so: CMakeFiles/panda_identification.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_hardware/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX shared library libpanda_identification.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/panda_identification.dir/link.txt --verbose=$(VERBOSE)

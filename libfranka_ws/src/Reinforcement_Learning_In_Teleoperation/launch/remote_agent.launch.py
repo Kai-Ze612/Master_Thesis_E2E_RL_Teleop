@@ -1,3 +1,9 @@
+"""
+Launch file for remote robot node and agent node.
+
+The agent is located at remote robot side, which means agent and remote robot should be launched together.
+"""
+
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -12,20 +18,19 @@ def generate_launch_description():
     
     my_package_name = 'Reinforcement_Learning_In_Teleoperation'
 
-    # --- Franka Hardware Arguments ---
+    # Franka hardware parameters
     robot_ip_parameter_name = 'robot_ip'
     load_gripper_parameter_name = 'load_gripper'
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
     use_rviz_parameter_name = 'use_rviz'
-
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
     use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
 
-    # --- Setup Robot Description & Controllers (from Franka) ---
+    # Setup Robot Description & Controllers (from Franka)
     franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots', 'real',
                                      'panda_arm.urdf.xacro')
     robot_description = Command(
@@ -41,14 +46,14 @@ def generate_launch_description():
             FindPackageShare('franka_bringup'),
             'config',
             'real',
-            'single_controllers.yaml', 
+            'single_controllers.yaml', # This file contains 'joint_tau_controller'
         ]
     )
 
-    # --- Start Launch Description ---
+    # Start Launch Description
     ld = LaunchDescription()
 
-    # --- Add All Launch Arguments ---
+    # Add All Launch Arguments
     ld.add_action(DeclareLaunchArgument(
         robot_ip_parameter_name,
         description='Hostname or IP address of the robot.'))
@@ -56,7 +61,6 @@ def generate_launch_description():
         use_rviz_parameter_name,
         default_value='false',
         description='Visualize the robot in Rviz'))
-    # ... (other franka args) ...
     ld.add_action(DeclareLaunchArgument(
         use_fake_hardware_parameter_name,
         default_value='false',
@@ -70,9 +74,7 @@ def generate_launch_description():
         load_gripper_parameter_name,
         default_value='false',
         description='Use Franka Gripper as an end-effector.'))
-
-
-    # --- Add Franka Hardware Nodes ---
+    
     ld.add_action(Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -118,7 +120,7 @@ def generate_launch_description():
     ld.add_action(Node(
         package='controller_manager',
         executable='spawner',
-        arguments=['joint_tau_controller'], # This is your torque controller
+        arguments=['joint_tau_controller'], # Use the controller from your YAML
         output='screen',
     ))
 
@@ -138,27 +140,16 @@ def generate_launch_description():
         condition=IfCondition(use_rviz)
     ))
 
-    # --- Add Your (Simplified) Remote Node ---
-
-    # MODIFICATION: Agent Node is commented out
-    # ld.add_action(Node(
-    #     package=my_package_name,
-    #     executable='agent_node',
-    #     ...
-    # ))
-
-    # Node 3: Remote Robot (The "Body")
     ld.add_action(Node(
         package=my_package_name,
         executable='remote_node',
         name='remote_robot_node',
         output='screen',
         remappings=[
-            # MODIFICATION: Subscribe to local_robot directly
-            ('remote_robot/joint_states', '/joint_states'),
-            ('/local_robot/joint_states', '/local_robot/joint_states'), # New subscription
+            # Subscribe to the actual hardware joint states topic
+            ('remote_robot/joint_states', '/franka/joint_states'),
+            ('local_robot/joint_states', '/local_robot/joint_states'),
         ]
-        # The incorrect remapping is now gone
     ))
 
     return ld

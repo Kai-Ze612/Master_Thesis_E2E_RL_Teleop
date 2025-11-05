@@ -1,3 +1,9 @@
+"""
+Launch file for remote robot node and agent node.
+
+The agent is located at remote robot side, which means agent and remote robot should be launched together.
+"""
+
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -12,24 +18,19 @@ def generate_launch_description():
     
     my_package_name = 'Reinforcement_Learning_In_Teleoperation'
 
-    # --- Franka Hardware Arguments ---
+    # Franka hardware parameters
     robot_ip_parameter_name = 'robot_ip'
     load_gripper_parameter_name = 'load_gripper'
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
     use_rviz_parameter_name = 'use_rviz'
-
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
     use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
 
-    # --- Agent Argument ---
-    experiment_config_param_name = 'experiment_config'
-    experiment_config = LaunchConfiguration(experiment_config_param_name)
-
-    # --- Setup Robot Description & Controllers (from Franka) ---
+    # Setup Robot Description & Controllers (from Franka)
     franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots', 'real',
                                      'panda_arm.urdf.xacro')
     robot_description = Command(
@@ -49,10 +50,10 @@ def generate_launch_description():
         ]
     )
 
-    # --- Start Launch Description ---
+    # Start Launch Description
     ld = LaunchDescription()
 
-    # --- Add All Launch Arguments ---
+    # Add All Launch Arguments
     ld.add_action(DeclareLaunchArgument(
         robot_ip_parameter_name,
         description='Hostname or IP address of the robot.'))
@@ -73,17 +74,7 @@ def generate_launch_description():
         load_gripper_parameter_name,
         default_value='false',
         description='Use Franka Gripper as an end-effector.'))
-
-    # Agent Argument
-    ld.add_action(DeclareLaunchArgument(
-        experiment_config_param_name,
-        default_value='3', # '3' for HIGH_DELAY
-        description='Delay config for the agent (1=LOW, 2=MEDIUM, 3=HIGH)'
-    ))
-
-    # --- Add Franka Hardware Nodes ---
     
-    # Publishes the /robot_description topic
     ld.add_action(Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -92,7 +83,6 @@ def generate_launch_description():
         parameters=[{'robot_description': robot_description}],
     ))
     
-    # Merges arm and gripper states into /joint_states
     ld.add_action(Node(
         package='joint_state_publisher',
         executable='joint_state_publisher',
@@ -102,7 +92,6 @@ def generate_launch_description():
              'rate': 30}],
     ))
 
-    # Main ros2_control hardware interface
     ld.add_action(Node(
         package='franka_control2',
         executable='franka_control2_node',
@@ -128,7 +117,6 @@ def generate_launch_description():
         condition=UnlessCondition(use_fake_hardware),
     ))
 
-    # MODIFICATION: Spawner for the *correct* torque controller
     ld.add_action(Node(
         package='controller_manager',
         executable='spawner',
@@ -152,32 +140,15 @@ def generate_launch_description():
         condition=IfCondition(use_rviz)
     ))
 
-    # --- Add Your Agent and Remote Nodes ---
-
-    # Node 2: Agent (The "Brain")
-    ld.add_action(Node(
-        package=my_package_name,
-        executable='agent_node',
-        name='agent_node',
-        output='screen',
-        parameters=[{
-            'experiment_config': experiment_config
-        }],
-        remappings=[
-            # Connects the agent's input to the robot's /joint_states topic
-            ('/remote_robot/joint_states', '/joint_states')
-        ]
-    ))
-
-    # Node 3: Remote Robot (The "Body")
     ld.add_action(Node(
         package=my_package_name,
         executable='remote_node',
         name='remote_robot_node',
         output='screen',
         remappings=[
-            # This remapping is still correct:
-            ('/remote_robot/joint_states', '/joint_states')
+            # Subscribe to the actual hardware joint states topic
+            ('remote_robot/joint_states', '/franka/joint_states'),
+            ('local_robot/joint_states', '/local_robot/joint_states'),
         ]
     ))
 

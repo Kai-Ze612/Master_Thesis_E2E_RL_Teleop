@@ -312,7 +312,7 @@ def main(args=None):
     finally:
         if leader_node:
             leader_node.destroy_node()
-        rclpy.shutdown()
+        # rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

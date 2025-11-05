@@ -493,8 +493,8 @@ libfranka_mj_hardware.so: /opt/ros/humble/lib/x86_64-linux-gnu/libhpp-fcl.so
 libfranka_mj_hardware.so: /usr/lib/x86_64-linux-gnu/libboost_chrono.so.1.74.0
 libfranka_mj_hardware.so: /usr/lib/x86_64-linux-gnu/libboost_filesystem.so
 libfranka_mj_hardware.so: /usr/lib/x86_64-linux-gnu/libboost_serialization.so
-libfranka_mj_hardware.so: /usr/lib/x86_64-linux-gnu/liboctomap.so.1.9.7
-libfranka_mj_hardware.so: /usr/lib/x86_64-linux-gnu/liboctomath.so.1.9.7
+libfranka_mj_hardware.so: /opt/ros/humble/lib/x86_64-linux-gnu/liboctomap.so.1.9.8
+libfranka_mj_hardware.so: /opt/ros/humble/lib/x86_64-linux-gnu/liboctomath.so.1.9.8
 libfranka_mj_hardware.so: CMakeFiles/franka_mj_hardware.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_hardware/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX shared library libfranka_mj_hardware.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/franka_mj_hardware.dir/link.txt --verbose=$(VERBOSE)
