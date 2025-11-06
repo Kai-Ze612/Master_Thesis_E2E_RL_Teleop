@@ -1,0 +1,12 @@
+2025-11-06 18:25:46 [INFO] __main__ - Run Name: RecPPO_LOW_DELAY_figure_8_20251106_182546
+2025-11-06 18:25:46 [INFO] __main__ - Output Directory: ./rl_training_output/RecPPO_LOW_DELAY_figure_8_20251106_182546
+2025-11-06 18:25:46 [INFO] __main__ - Training Configuration:
+2025-11-06 18:25:46 [INFO] __main__ -   Delay Config: LOW_DELAY
+2025-11-06 18:25:46 [INFO] __main__ -   Trajectory Type: figure_8
+2025-11-06 18:25:46 [INFO] __main__ -   Randomize Trajectory: False
+2025-11-06 18:25:46 [INFO] __main__ -   Total Timesteps: 3,000,000
+2025-11-06 18:25:46 [INFO] __main__ -   Random Seed: 50
+2025-11-06 18:25:46 [INFO] __main__ - 
+2025-11-06 18:25:46 [INFO] __main__ - Setting random seed: 50
+2025-11-06 18:25:47 [INFO] __main__ - Random seeds set for NumPy, PyTorch, and CUDA
+2025-11-06 18:25:47 [INFO] __main__ - 

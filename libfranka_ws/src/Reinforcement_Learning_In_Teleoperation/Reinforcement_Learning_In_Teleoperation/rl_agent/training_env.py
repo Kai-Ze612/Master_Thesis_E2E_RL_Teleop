@@ -88,7 +88,7 @@ class TeleoperationEnvWithDelay(gym.Env):
 
         # Safety limits
         self.max_joint_error = MAX_JOINT_ERROR_TERMINATION  # RL termination threshold
-        self.joint_limit_margin = JOINT_LIMIT_MARGIN 
+        self.joint_limit_margin = JOINT_LIMIT_MARGIN
 
         # Franka Panda robot parameters
         self.n_joints = N_JOINTS
@@ -480,18 +480,16 @@ class TeleoperationEnvWithDelay(gym.Env):
             r_pos_prediction = np.exp(-pos_scale * pos_pred_error**2)
             r_pos_tracking = np.exp(-track_scale * tracking_pos_error**2)
             
-            # Velocity rewards - CRITICAL FIX: 5× STRONGER
+            # Velocity rewards
             vel_pred_error = np.linalg.norm(predicted_qd - true_target_qd)
-            r_vel_prediction = np.exp(-pos_scale * 5.0 * vel_pred_error**2)  # Changed from 1.0 to 5.0
+            r_vel_prediction = np.exp(-pos_scale * 2.0 * vel_pred_error**2)
             
             tracking_vel_error = np.linalg.norm(predicted_qd - remote_qd)
-            r_vel_tracking = np.exp(-track_scale * 5.0 * tracking_vel_error**2)  # Changed from 1.0 to 5.0
+            r_vel_tracking = np.exp(-track_scale * 2.0 * tracking_vel_error**2)
             
             # Normalized arithmetic mean
-            r_prediction = (r_pos_prediction + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_prediction) / \
-                        (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
-            r_tracking = (r_pos_tracking + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_tracking) / \
-                        (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
+            r_prediction = (r_pos_prediction + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_prediction) / (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
+            r_tracking = (r_pos_tracking + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_tracking) / (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
             
             return {
                 'r_prediction': r_prediction,
@@ -507,14 +505,15 @@ class TeleoperationEnvWithDelay(gym.Env):
         """
         
         components = self._calculate_reward_components()
-        total_reward = components['r_tracking']
+        total_reward = (REWARD_TRACKING_WEIGHT * components['r_tracking'] + 
+                        REWARD_PREDICTION_WEIGHT * components['r_prediction'])
         
         # Add small penalty for large actions to encourage smoother control
         action_penalty = 0.01 * np.sum(action**2)
         total_reward -= action_penalty
         
         # Logging (every 1000 steps)
-        if self.current_step % 1000 == 0:
+        if self.current_step % 500 == 0:
             r_prediction = components['r_prediction']
             r_tracking = components['r_tracking']
             
@@ -551,8 +550,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         """
         Termination occurs if:
             1. Joint limits are approached (within margin)
-            2. Joint error is too high (> max_joint_error)
-            3. Joint error is NaN (numerical instability)
+            # 2. Joint error is too high (> max_joint_error) [REMOVED FOR DEBUGGING]
+            # 3. Joint error is NaN (numerical instability) [REMOVED FOR DEBUGGING]
         """
         
         # Check joint limits
@@ -561,10 +560,12 @@ class TeleoperationEnvWithDelay(gym.Env):
             np.any(remote_q >= self.joint_limits_upper - self.joint_limit_margin)
         )
         
-        # Check for instability or excessive error
-        high_error = np.isnan(joint_error) or joint_error > self.max_joint_error
+        # Check for instability (still a good idea to keep)
+        if np.isnan(joint_error):
+             return True, -10.0 # Terminate on NaN
 
-        terminated = at_limits or high_error
+        # If the joints hit their limits
+        terminated = at_limits 
         penalty = -10.0 if terminated else 0.0
         
         return terminated, penalty

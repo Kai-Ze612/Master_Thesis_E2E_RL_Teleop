@@ -376,21 +376,13 @@ class RecurrentPPOTrainer:
                     elif isinstance(hidden_state, torch.Tensor): # Assuming tensor for GRU
                         hidden_state = hidden_state.clone()
                         hidden_state[:, i, :] = 0.0
-
-                    # Note: VecEnv handles resetting the actual environment state internally
-                    # `next_obs_batch` already contains the reset observation for env i
-            # ----------------------------------------------
-
-            # Update current observation batch for the next loop iteration (redundant if obs aren't used next loop)
-            # current_obs_batch = next_obs_batch
-
-        # --- Verify buffer has data ---
-        # Use the len() dunder method of the buffer
+                        
+        # Verify the data 
         if len(self.buffer) == 0:
              logger.error("Buffer is empty after collection! This should not happen.")
              return -np.inf # Signal error
 
-        # --- Calculate last value for GAE (needs batching) ---
+        # Calculate last values for GAE
         try:
             # Need the observations corresponding to the *next* state after the loop finished
             # We already have next_obs_batch from the last step of the loop
@@ -412,28 +404,14 @@ class RecurrentPPOTrainer:
                     hidden_state
                 )
 
-            # --- More robust GAE: Use last_values only for non-terminated envs ---
-            # We need the 'dones' from the last step of the loop (`dones_batch`)
             last_values_np = last_values_t.cpu().numpy().flatten()
-            # If an env was 'done' at the last step, its next value is 0 for GAE calculation
-            # We pass the calculated values, GAE handles the 'done' flag internally
-            # For the buffer's compute_returns_and_advantages, it needs a *single* value if the
-            # whole rollout didn't end. This is tricky with VecEnv.
-            # Option 1: Pass the mean value (simple approximation)
-            # last_value_for_buffer = last_values_np.mean()
-            # Option 2: Pass all values and modify buffer (complex)
-            # Option 3: Assume the *buffer* handles dones correctly and pass the value
-            #           of the *next state* after the last buffer entry. If the LAST step
-            #           in the buffer was done, the corresponding last_value doesn't matter.
-            #           Let's assume the buffer handles dones in GAE and pass the mean.
             last_value_for_buffer = last_values_np.mean()
-
 
         except Exception as e:
             logger.error(f"Error getting last value for GAE: {e}", exc_info=True)
             return -np.inf # Signal error
 
-        # --- Compute Advantages and Returns ---
+        # Compute Advantages and Returns
         try:
             # Pass the single (approximated) last value
             self.advantages, self.returns = self.buffer.compute_returns_and_advantages(
@@ -442,7 +420,6 @@ class RecurrentPPOTrainer:
         except Exception as e:
             logger.error(f"Error computing GAE: {e}", exc_info=True)
             return -np.inf
-
 
         avg_episode_reward = np.mean(episode_rewards_list) if episode_rewards_list else np.nan
         return avg_episode_reward
