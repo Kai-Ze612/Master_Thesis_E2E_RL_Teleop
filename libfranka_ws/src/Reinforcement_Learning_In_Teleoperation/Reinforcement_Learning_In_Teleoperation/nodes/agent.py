@@ -134,6 +134,7 @@ class AgentNode(Node):
         # Flag of starting both robots
         self.is_leader_ready_ = False
         self.is_remote_ready_ = False
+        self.leader_messages_received_ = 0
         
         # Consolidate to one publisher, as used in the control loop
         self.tau_pub_ = self.create_publisher(
@@ -184,10 +185,17 @@ class AgentNode(Node):
             self.leader_q_history_.append(q_new)
             self.leader_qd_history_.append(qd_new)
 
+            # --- THIS IS THE MISSING LINE ---
+            self.leader_messages_received_ += 1
+            
             # Start flag
             if not self.is_leader_ready_:
-                self.is_leader_ready_ = True
-                self.get_logger().info("Local robot state received. Local robot is ready.")
+                # Wait until the buffer has at least one full sequence
+                if self.leader_messages_received_ > self.rnn_seq_len_:
+                    self.is_leader_ready_ = True
+                    self.get_logger().info(
+                        f"Local robot history buffer is full ({self.rnn_seq_len_} steps). Agent is ready."
+                    )
         
         except (KeyError, IndexError) as e:
             self.get_logger().warn(
@@ -247,10 +255,14 @@ class AgentNode(Node):
         """
         Main control loop running at control_freq_
         """
-        
+       
         if not self.is_leader_ready_ or not self.is_remote_ready_:
             if not self.is_leader_ready_:
-                self.get_logger().warn("Waiting for leader data...", throttle_duration_sec=5.0)
+                self.get_logger().warn(
+                    f"Waiting for leader history to fill... "
+                    f"({self.leader_messages_received_}/{self.rnn_seq_len_})",
+                    throttle_duration_sec=2.0
+                )
             if not self.is_remote_ready_:
                 self.get_logger().warn("Waiting for remote data...", throttle_duration_sec=5.0)
             return

@@ -14,7 +14,7 @@ Store data:
 
 import numpy as np
 import torch
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 class RolloutBuffer:
  

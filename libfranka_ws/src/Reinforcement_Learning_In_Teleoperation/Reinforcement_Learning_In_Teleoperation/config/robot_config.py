@@ -83,7 +83,7 @@ IK_CONTINUITY_GAIN = 0.5
 ######################################
 
 # Default trajectory center (meters)
-TRAJECTORY_CENTER = np.array([0.3, 0.0, 0.5], dtype=np.float32)
+TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.6], dtype=np.float32)
 
 # Default trajectory scale (meters)
 TRAJECTORY_SCALE = np.array([0.1, 0.3], dtype=np.float32)
@@ -124,7 +124,7 @@ OBS_DIM = (
 STATE_BUFFER_LENGTH = 256
 
 # RNN (LSTM) architecture for state prediction
-RNN_HIDDEN_DIM = 256
+RNN_HIDDEN_DIM = 512
 RNN_NUM_LAYERS = 4
 RNN_SEQUENCE_LENGTH = STATE_BUFFER_LENGTH  # Must match buffer length
 
@@ -137,13 +137,13 @@ PPO_ACTIVATION = 'relu'
 ######################################
 
 # Learning
-PPO_LEARNING_RATE = 1e-5
-PPO_GAMMA = 0.9
+PPO_LEARNING_RATE = 1e-6
+PPO_GAMMA = 0.99
 PPO_GAE_LAMBDA = 0.95
 
 # PPO-specific
 PPO_CLIP_EPSILON = 0.2
-PPO_ENTROPY_COEF = 0.02
+PPO_ENTROPY_COEF = 0.01
 PPO_VALUE_COEF = 0.5
 PPO_MAX_GRAD_NORM = 0.5
 
@@ -152,7 +152,7 @@ PREDICTION_LOSS_WEIGHT = 5.0  # Weight for supervised state prediction loss
 PPO_LOSS_WEIGHT = 10.0          # Weight for PPO loss (actor + critic + entropy)
 
 # Training schedule
-PPO_ROLLOUT_STEPS = 5000
+PPO_ROLLOUT_STEPS = 10000
 PPO_NUM_EPOCHS = 10
 PPO_BATCH_SIZE = 128
 PPO_TOTAL_TIMESTEPS = 3_000_000
@@ -162,12 +162,12 @@ PPO_TOTAL_TIMESTEPS = 3_000_000
 ######################################
 
 # Reward component weights
-REWARD_PREDICTION_WEIGHT = 20   # Weight for state prediction accuracy
+REWARD_PREDICTION_WEIGHT = 1.0   # Weight for state prediction accuracy
 REWARD_TRACKING_WEIGHT = 1.0    # Weight for tracking performance
 
 # Reward scaling factors
 REWARD_TRACKING_SCALE = 0.2  # Same as REWARD_ERROR_SCALE
-REWARD_ACTION_PENALTY = 0.01
+REWARD_ACTION_PENALTY = 0.1
 
 # Reward scaling
 REWARD_ERROR_SCALE_HIGH_ERROR = 10  # Scale factor for exponential reward
@@ -190,7 +190,7 @@ SAVE_FREQ = 100  # Save checkpoint every N updates
 
 MAX_INFERENCE_TIME = 0.9 * (1.0 / DEFAULT_CONTROL_FREQ)  # 90% of control cycle time for safety
 
-DEPLOYMENT_HISTORY_BUFFER_SIZE = 1000  # Must be > max_delay_steps + RNN sequence length
+DEPLOYMENT_HISTORY_BUFFER_SIZE = 500  # Must be > max_delay_steps + RNN sequence length
 
 WARM_UP_DURATION = 5.0  # Duration to warm up the action buffer
 

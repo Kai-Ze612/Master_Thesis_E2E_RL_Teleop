@@ -1,22 +1,3 @@
-## Initial Start
-Run the following commands after each start
-
-```bash
-cd /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws
-```
-
-```bash
-source setup_environment.sh
-```
-
----
-## Initial Position Return
-```bash
-cd ~/Libraries/libfranka/build/examples
-./communication_test 192.168.03.107
-```
-
----
 ## Building Packages
 
 1. Build the packages
@@ -35,14 +16,47 @@ colcon build --packages-up-to mujoco_ros
 ```bash
 colcon build --symlink-install --packages-skip mujoco_ros mujoco_ros_msgs
 ```
-Reminder: [colcon_methods.md](/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/ROS2_Instruction/colcon_methods.md)
+
+symlink-install method is only for python script, the built files will connect with the original python files automatically, after modifying python file, we don't need to rebuild everytime.
+
+If we build with CPP, we have to rebuild after evertime change, this is the difference.
 
 ```bash
 source ./install/setup.bash
 ```
 
----
+## Initial Start
+Run the following commands after each start
 
+```bash
+cd /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws
+```
+
+```bash
+source setup_environment.sh
+```
+
+### Initial Position Return
+```bash
+cd ~/Libraries/libfranka/build/examples
+./communication_test 192.168.03.108
+```
+
+----
+
+## Run the real robot arm
+1. Start robot with necessary features via bringup, this will load the controllers.
+```bash
+ros2 launch Reinforcement_Learning_In_Teleoperation remote_agent.launch.py robot_ip:=192.168.03.108
+```
+
+2. Start local robot
+```bash
+ros2 launch Reinforcement_Learning_In_Teleoperation local_robot.launch.py
+```
+
+
+---
 ## Run the simulation robot arm
 1. Launch Simulator
 ```bash 
@@ -62,21 +76,6 @@ ros2 topic pub --once local_robot/cartesian_commands geometry_msgs/msg/Point '{x
 ```bash
 ros2 topic echo --once /local_robot/leader_pose
 ```
-
----
-
-## Run the real robot arm
-1. Start robot with necessary features via bringup, this will load the controllers.
-```bash
-ros2 launch Reinforcement_Learning_In_Teleoperation remote_agent.launch.py robot_ip:=192.168.03.107
-```
-
-2. Start local robot
-```bash
-ros2 launch Reinforcement_Learning_In_Teleoperation local_robot.launch.py
-```
-
----
 
 
 ---

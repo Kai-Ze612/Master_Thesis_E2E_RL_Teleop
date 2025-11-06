@@ -10,9 +10,13 @@ import numpy as np
 
 # Model paths
 DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
 
 # RL model paths
 DEFAULT_RL_MODEL_PATH_BASE = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Reinforcement_Learning_In_Teleoperation/Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output"
+
+# Checkpoint directory for training outputs
+CHECKPOINT_DIR = "./rl_training_output"
 
 ######################################
 # Franka Panda Robot Parameters, hard coded.
@@ -45,8 +49,8 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 JOINT_LIMIT_MARGIN = 0.05  # radians
 
 # Local robot PD gains (joint-specific)
-KP_LOCAL = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
-KD_LOCAL = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0], dtype=np.float32)
+KP_LOCAL = np.array([150.0, 150.0, 120.0, 120.0, 75.0, 50.0, 20.0], dtype=np.float32)
+KD_LOCAL = np.array([20.0, 20.0, 20.0, 20.0, 10.0, 10.0, 5.0], dtype=np.float32)
 
 ######################################
 # Control Parameters.
@@ -57,11 +61,11 @@ KD_LOCAL = np.array([50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0], dtype=np.float32
 DEFAULT_CONTROL_FREQ = 500 # match the sim freq
 
 # Default publish frequency for robot state (Hz)
-DEFAULT_PUBLISH_FREQ = 100
+DEFAULT_PUBLISH_FREQ = 500
 
 # Remote robot PD gains, setting softer because of stable under delay
-DEFAULT_KP_REMOTE = np.array([300.0, 300.0, 300.0, 300.0, 125.0, 75.0, 25.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([30.0, 30.0, 30.0, 30.0, 20.0, 20.0, 5.0], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([150.0, 130.0, 100.0, 100.0, 100.0, 30.0, 10.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([15.0, 15.0, 15.0, 10.0, 5.0, 5.0, 2.0], dtype=np.float32)
 
 ######################################
 # IK Solver Parameters
@@ -120,7 +124,7 @@ OBS_DIM = (
 STATE_BUFFER_LENGTH = 256
 
 # RNN (LSTM) architecture for state prediction
-RNN_HIDDEN_DIM = 512
+RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 4
 RNN_SEQUENCE_LENGTH = STATE_BUFFER_LENGTH  # Must match buffer length
 
@@ -145,13 +149,13 @@ PPO_MAX_GRAD_NORM = 0.5
 
 # Loss weighting
 PREDICTION_LOSS_WEIGHT = 5.0  # Weight for supervised state prediction loss
-PPO_LOSS_WEIGHT = 1.0          # Weight for PPO loss (actor + critic + entropy)
+PPO_LOSS_WEIGHT = 10.0          # Weight for PPO loss (actor + critic + entropy)
 
 # Training schedule
 PPO_ROLLOUT_STEPS = 5000
 PPO_NUM_EPOCHS = 10
 PPO_BATCH_SIZE = 128
-PPO_TOTAL_TIMESTEPS = 5_000_000
+PPO_TOTAL_TIMESTEPS = 3_000_000
 
 ######################################
 # Dense Reward Function Weights
@@ -179,7 +183,6 @@ NUM_ENVIRONMENTS = 5   # Number of parallel environments
 
 LOG_FREQ = 10   # Log metrics every N updates
 SAVE_FREQ = 100  # Save checkpoint every N updates
-CHECKPOINT_DIR = "./rl_training_output"
 
 ######################################
 # Deployment Parameters
@@ -189,11 +192,13 @@ MAX_INFERENCE_TIME = 0.9 * (1.0 / DEFAULT_CONTROL_FREQ)  # 90% of control cycle 
 
 DEPLOYMENT_HISTORY_BUFFER_SIZE = 1000  # Must be > max_delay_steps + RNN sequence length
 
+WARM_UP_DURATION = 5.0  # Duration to warm up the action buffer
+
 ######################################
 # Early Stopping Configuration
 ######################################
 
-ENABLE_EARLY_STOPPING = False           # Set to True to enable early stopping
+ENABLE_EARLY_STOPPING = True           # Set to True to enable early stopping
 EARLY_STOPPING_PATIENCE = 10           # Number of checks without improvement before stopping
 EARLY_STOPPING_MIN_DELTA = 1.0         # Minimum reward improvement to be considered significant
 EARLY_STOPPING_CHECK_FREQ = 10         # Check for improvement every N updates

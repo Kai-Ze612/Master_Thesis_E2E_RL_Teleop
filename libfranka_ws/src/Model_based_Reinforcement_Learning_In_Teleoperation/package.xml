@@ -3,7 +3,7 @@
 <package format="3">
   <name>Model_based_Reinforcement_Learning_In_Teleoperation</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Train model based RL</description>
   <maintainer email="ge62meq@mytum.de">kai</maintainer>
   <license>TODO: License declaration</license>
 
