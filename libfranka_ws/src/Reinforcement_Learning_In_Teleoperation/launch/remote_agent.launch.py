@@ -14,6 +14,8 @@ from launch.substitutions import Command, FindExecutable, LaunchConfiguration, P
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
+
 def generate_launch_description():
     
     my_package_name = 'Reinforcement_Learning_In_Teleoperation'
@@ -30,6 +32,11 @@ def generate_launch_description():
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
 
+    # RL agent arguments
+    experiment_config_name = 'experiment_config'
+    default_experiment_config = str(ExperimentConfig.HIGH_DELAY.value) # Default to 3
+    experiment_config = LaunchConfiguration(experiment_config_name)
+    
     # Setup Robot Description & Controllers (from Franka)
     franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots', 'real',
                                      'panda_arm.urdf.xacro')
@@ -74,6 +81,12 @@ def generate_launch_description():
         load_gripper_parameter_name,
         default_value='false',
         description='Use Franka Gripper as an end-effector.'))
+    
+    ld.add_action(DeclareLaunchArgument(
+        experiment_config_name,
+        default_value=default_experiment_config,
+        description='Experiment config (1=LOW, 2=MEDIUM, 3=HIGH delay)'
+    ))
     
     ld.add_action(Node(
         package='robot_state_publisher',
@@ -120,11 +133,10 @@ def generate_launch_description():
     ld.add_action(Node(
         package='controller_manager',
         executable='spawner',
-        arguments=['joint_tau_controller'], # Use the controller from your YAML
+        arguments=['joint_tau_controller'],
         output='screen',
     ))
 
-    # ... (Gripper and RViz nodes) ...
     ld.add_action(IncludeLaunchDescription(
         PythonLaunchDescriptionSource([PathJoinSubstitution(
             [FindPackageShare('franka_gripper'), 'launch', 'gripper.launch.py'])]),
@@ -140,6 +152,24 @@ def generate_launch_description():
         condition=IfCondition(use_rviz)
     ))
 
+    # Agent node
+    ld.add_action(Node(
+        package=my_package_name,
+        executable='agent_node',
+        name='agent_node',
+        output='screen',
+        parameters=[{
+            'experiment_config': experiment_config
+        }],
+        remappings=[
+            # Subscribe to the actual local robot
+            ('local_robot/joint_states', '/local_robot/joint_states'),
+            # Subscribe to the multiplexed hardware state
+            ('remote_robot/joint_states', '/joint_states'),
+        ]
+    ))
+    
+    #  Remote node
     ld.add_action(Node(
         package=my_package_name,
         executable='remote_node',
@@ -148,7 +178,10 @@ def generate_launch_description():
         remappings=[
             # Subscribe to the actual hardware joint states topic
             ('remote_robot/joint_states', '/franka/joint_states'),
-            ('local_robot/joint_states', '/local_robot/joint_states'),
+            
+            # Publish torque commands to the hardware controller
+            ('joint_tau/torques_desired', '/joint_tau/torques_desired')
+            
         ]
     ))
 

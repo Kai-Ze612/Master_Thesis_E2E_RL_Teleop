@@ -24,7 +24,8 @@ import os
 # ROS2 imports
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import JointState, Float64MultiArray
+from sensor_msgs.msg import JointState
+from std_msgs.msg import Float64MultiArray 
 
 # Custom imports
 from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
@@ -336,6 +337,8 @@ def main(args=None):
     finally:
         if agent_node:
             agent_node.destroy_node()
+    
+    if rclpy.ok():
         rclpy.shutdown()
 
 if __name__ == '__main__':

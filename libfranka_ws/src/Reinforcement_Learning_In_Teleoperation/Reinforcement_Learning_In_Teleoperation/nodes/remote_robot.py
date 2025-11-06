@@ -1,7 +1,13 @@
 """
 The script is the remote robot, using ROS2 node
 
-The remote robot subscribes to agent published predicted trajectory and compensation tau
+Pipelines:
+1. subscribe to 'agent/predicted_target' (JointState) for desired joint positions and velocities
+2. subscribe to 'agent/compensation_tau' (Float64MultiArray) for torque compensation
+3. PD control loop with gravity compensation to determine torque baseline
+4. adding torque baseline with compensation tau from agent
+5. adding action delay
+6. publish to '/joint_tau/torques_desired' (Float64MultiArray) for robot control
 """
 
 # ROS2 imports
@@ -16,8 +22,10 @@ import mujoco
 # Python imports
 import numpy as np
 from numpy.typing import NDArray
+from collections import deque
 
 # Custom imports
+from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
 from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     DEFAULT_MUJOCO_MODEL_PATH, 
@@ -28,6 +36,8 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     DEFAULT_KP_REMOTE,
     TCP_OFFSET,
     EE_BODY_NAME,
+    DEPLOYMENT_HISTORY_BUFFER_SIZE, 
+    WARM_UP_DURATION,
 )
 
 class RemoteRobotNode(Node):
@@ -39,8 +49,8 @@ class RemoteRobotNode(Node):
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
         self.tcp_offset_ = TCP_OFFSET
-        self.kp_ = DEFAULT_KP_REMOTE
-        self.kd_ = DEFAULT_KD_REMOTE
+        self.kp_ = DEFAULT_KP_REMOTE / 50
+        self.kd_ = DEFAULT_KD_REMOTE / 50
         self.torque_limits_ = TORQUE_LIMITS
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
         self.initial_joint_config_ = INITIAL_JOINT_CONFIG
@@ -59,38 +69,78 @@ class RemoteRobotNode(Node):
         # Initialize target joint states and velocities
         self.target_q_ = INITIAL_JOINT_CONFIG.copy()
         self.target_qd_ = np.zeros(self.n_joints_)
+        self.current_tau_rl_ = np.zeros(self.n_joints_)
 
+        # Action delay
+        self.default_experiment_config_ = ExperimentConfig.HIGH_DELAY.value
+        self.declare_parameter('experiment_config', self.default_experiment_config_)
+        self.experiment_config_int_ = self.get_parameter('experiment_config').value
+        try:
+            self.delay_config_ = ExperimentConfig(self.experiment_config_int_)
+        except ValueError:
+            self.get_logger().fatal(f"Invalid 'experiment_config' int: {self.experiment_config_int_}")
+            raise
+
+        self.action_delay_simulator_ = DelaySimulator(
+            control_freq=self.control_freq_,
+            config=self.delay_config_,
+            seed=50 # Fixed seed for reproducibility
+        )
+        
+        # Pre-fill action buffer to avoid initial empty buffer issues
+        self.torque_command_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
+        self._prefill_action_buffer()
+        
         # State flags
         self.robot_state_ready_ = False
-        self.target_command_ready_ = False 
+        self.target_command_ready_ = False
+        self.tau_rl_ready_ = False
+        self.local_state_ready_ = False
         
         # ROS2 Interfaces
+        
+        # Subscriber to target joint commands from agent
         self.target_command_sub_ = self.create_subscription(
-            JointState, 
-            'local_robot/joint_states', 
-            self.target_command_callback, 
-            10
+            JointState, 'agent/predict_target', self.target_command_callback, 10
         )
         
-        self.robot_state_sub_ = self.create_subscription(
-            JointState, '/franka/joint_states', self.robot_state_callback, 10)
+        # Subscription to the AGENT's compensation torque
+        self.tau_rl_sub_ = self.create_subscription(
+            Float64MultiArray, 'agent/tau_rl', self.tau_rl_callback, 10
+        )
         
-        controller_command_topic = '/joint_tau/torques_desired'
-        self.get_logger().info(f"Publishing torque commands to ABSOLUTE topic: {controller_command_topic}")
+        #  Subscription to the REAL ROBOT's state (real time)
+        self.robot_state_sub_ = self.create_subscription(
+            JointState,  'remote_robot/joint_states', self.robot_state_callback, 10
+        )
+        
+        # Subscribe to local robot state in real time for debugging
+        self.local_robot_state_sub_ = self.create_subscription(
+            JointState, 'local_robot/joint_states', self.local_robot_state_callback, 10
+        )
+        
+        # Publisher to the ROBOT CONTROLLER
+        controller_command_topic = 'joint_tau/torques_desired' # Will be remapped by launch file
+        self.get_logger().info(f"Publishing torque commands to RELATIVE topic: {controller_command_topic}")
         
         self.torque_command_pub_ = self.create_publisher(
-            Float64MultiArray, 
-            controller_command_topic,
-            10
-        )
+            Float64MultiArray,  controller_command_topic, 10)
         
         self.control_timer_ = self.create_timer(
             self.dt_, self.control_loop_callback)
         
-        self.get_logger().info("Remote Robot Node (Follower) [PD+Gravity+EE_POS] initialized.")
-        self.get_logger().info(f"Kp = {self.kp_}, Kd = {self.kd_}")
+        self.get_logger().info("Remote Robot Node initialized.")
+    
+    def _prefill_action_buffer(self) -> None:
+        """Prefill the action history buffer with zeros."""
+        num_prefill_steps = int(WARM_UP_DURATION * self.control_freq_)
+        zeros_action = np.zeros(self.n_joints_)
+        for _ in range(num_prefill_steps):
+            self.torque_command_history_.append(zeros_action)
+        self.get_logger().info(f"Pre-filled action buffer with {num_prefill_steps} zero actions.")
 
     def target_command_callback(self, msg: JointState) -> None:
+        """Callback for the AGENT's predicted target state."""
         try:
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
             self.target_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
@@ -98,18 +148,20 @@ class RemoteRobotNode(Node):
 
             if not self.target_command_ready_:
                 self.target_command_ready_ = True
-                self.get_logger().info("First command from Local Robot received.")
-
-            self.get_logger().info(
-                f"Target q: [{self.target_q_[0]:.3f}, {self.target_q_[1]:.3f}, {self.target_q_[2]:.3f}, "
-                f"{self.target_q_[3]:.3f}, {self.target_q_[4]:.3f}, {self.target_q_[5]:.3f}, {self.target_q_[6]:.3f}]",
-                throttle_duration_sec=2.0
-            )
+                self.get_logger().info("First command from Agent (predict_target) received.")
 
         except (KeyError, IndexError) as e:
             self.get_logger().warn(f"Error processing target command: {e}")
 
+    def tau_rl_callback(self, msg: Float64MultiArray) -> None:
+        """Callback for the AGENT's compensation torque."""
+        self.current_tau_rl_ = np.array(msg.data, dtype=np.float32)
+        if not self.tau_rl_ready_:
+            self.tau_rl_ready_ = True
+            self.get_logger().info("First command from Agent (tau_rl) received.")
+
     def robot_state_callback(self, msg: JointState) -> None:
+        """Callback for the REAL ROBOT's current state."""
         try:
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
             self.current_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
@@ -118,13 +170,22 @@ class RemoteRobotNode(Node):
             if not self.robot_state_ready_:
                 self.robot_state_ready_ = True
                 self.get_logger().info("First hardware state from Remote Robot received.")
-                self.get_logger().info(
-                    f"Initial q: [{self.current_q_[0]:.3f}, {self.current_q_[1]:.3f}, {self.current_q_[2]:.3f}, "
-                    f"{self.current_q_[3]:.3f}, {self.current_q_[4]:.3f}, {self.current_q_[5]:.3f}, {self.current_q_[6]:.3f}]"
-                )
         except (KeyError, IndexError) as e:
             self.get_logger().warn(f"Error processing robot state: {e}")
-
+            
+    def local_robot_state_callback(self, msg: JointState) -> None:
+        """Callback for the LOCAL ROBOT's current state."""
+        try:
+            name_to_index_map = {name: i for i, name in enumerate(msg.name)}
+            self.current_local_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
+            self.current_local_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
+            
+            if not self.local_state_ready_:
+                self.local_state_ready_ = True
+                self.get_logger().info("First state from Local Robot received.")
+        except (KeyError, IndexError) as e:
+            self.get_logger().warn(f"Error processing LOCAL robot state: {e}")
+        
     def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
         """Normalize an angle or array of angles to the range [-pi, pi]."""
         return (angle + np.pi) % (2 * np.pi) - np.pi
@@ -178,89 +239,80 @@ class RemoteRobotNode(Node):
     
     def control_loop_callback(self) -> None:
         
+        # Wait for all required data
         if not self.robot_state_ready_:
-            self.get_logger().warn(
-                "Waiting for robot state... Cannot compute G-Comp.",
+             self.get_logger().warn(
+                "Waiting for Robot State...",
                 throttle_duration_sec=5.0
             )
-            return
-        
-        if not self.target_command_ready_:
+             return
+
+        # Wait for agent commands
+        if not self.target_command_ready_ or not self.tau_rl_ready_:
             self.get_logger().warn(
-                "Target command not yet received. Publishing G-Comp + PD to hold initial position.",
+                "Waiting for Agent Commands (predict_target, tau_rl)... Publishing G-Comp + PD to hold.",
                 throttle_duration_sec=5.0
             )
+            # Use default hold targets if agent isn't ready
+            q_target = self.target_q_ 
+            qd_target = self.target_qd_
+            tau_rl = self.current_tau_rl_ # This will be zeros until first msg
+        else:
+            # Agent is ready, use its commands
+            q_target = self.target_q_ 
+            qd_target = self.target_qd_
+            tau_rl = self.current_tau_rl_
         
+        # Start the control loop
         try:
             q_current = self.current_q_
             qd_current = self.current_qd_
-            q_target = self.target_q_ 
             
-            qd_target_for_damping = np.zeros(self.n_joints_) 
-            tau_rl = np.zeros(self.n_joints_) 
-            
-            # Compute control components
+            # PD Calculation
             tau_gravity = self._compute_gravity_compensation(q_current)
-            q_error_unnorm = q_target - q_current
-            q_error = self._normalize_angle(q_error_unnorm)
-            qd_error = qd_target_for_damping - qd_current
+            q_error = self._normalize_angle(q_target - q_current)
+            qd_error = qd_target - qd_current
             tau_pd = self.kp_ * q_error + self.kd_ * qd_error
             
+            # Final Torque Command
             tau_command = tau_gravity + tau_pd + tau_rl
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
-            # Compute end-effector position
-            ee_pos = self._compute_tcp_position(q_current)
-            
-            # Check for NaN
-            if np.isnan(tau_clipped).any():
-                self.get_logger().error("NaN detected in torque command! Not publishing.")
-                return 
-            
-            # Display end-effector position (always, no throttling)
-            self.get_logger().info(
-                f"EE Position: X={ee_pos[0]:.4f}, Y={ee_pos[1]:.4f}, Z={ee_pos[2]:.4f}",
-                throttle_duration_sec=0.5
-            )
-            
-            # Detailed logging (throttled)
-            self.get_logger().info(
-                f"Current q: [{q_current[0]:.3f}, {q_current[1]:.3f}, {q_current[2]:.3f}, "
-                f"{q_current[3]:.3f}, {q_current[4]:.3f}, {q_current[5]:.3f}, {q_current[6]:.3f}]",
-                throttle_duration_sec=2.0
-            )
-            
-            self.get_logger().info(
-                f"q_error: [{q_error[0]:.3f}, {q_error[1]:.3f}, {q_error[2]:.3f}, "
-                f"{q_error[3]:.3f}, {q_error[4]:.3f}, {q_error[5]:.3f}, {q_error[6]:.3f}]",
-                throttle_duration_sec=2.0
-            )
-            
-            self.get_logger().info(
-                f"Tau_gravity: [{tau_gravity[0]:.2f}, {tau_gravity[1]:.2f}, {tau_gravity[2]:.2f}, "
-                f"{tau_gravity[3]:.2f}, {tau_gravity[4]:.2f}, {tau_gravity[5]:.2f}, {tau_gravity[6]:.2f}]",
-                throttle_duration_sec=2.0
-            )
-            
-            self.get_logger().info(
-                f"Tau_PD: [{tau_pd[0]:.2f}, {tau_pd[1]:.2f}, {tau_pd[2]:.2f}, "
-                f"{tau_pd[3]:.2f}, {tau_pd[4]:.2f}, {tau_pd[5]:.2f}, {tau_pd[6]:.2f}]",
-                throttle_duration_sec=2.0
-            )
-            
-            self.get_logger().info(
-                f"Tau_total: [{tau_clipped[0]:.2f}, {tau_clipped[1]:.2f}, {tau_clipped[2]:.2f}, "
-                f"{tau_clipped[3]:.2f}, {tau_clipped[4]:.2f}, {tau_clipped[5]:.2f}, {tau_clipped[6]:.2f}]",
-                throttle_duration_sec=1.0
-            )
+            # ACTION DELAY
+            # Store the calculated (non-delayed) command
+            self.torque_command_history_.append(tau_clipped)
 
-            # Publish Command to Hardware
+            # Get the delay steps from the simulator
+            history_len = len(self.torque_command_history_)
+            action_delay_steps = self.action_delay_simulator_.get_action_delay_steps()
+
+            # Get the delayed command from history
+            delayed_action_idx = -(action_delay_steps + 1)
+            safe_idx = np.clip(delayed_action_idx, -history_len, -1)
+            torque_to_publish = self.torque_command_history_[safe_idx]
+            
+            # Publish the DELAYED Command to Hardware
             msg = Float64MultiArray()
-            msg.data = tau_clipped.tolist()
+            msg.data = torque_to_publish.tolist()
             self.torque_command_pub_.publish(msg)
 
+            # print out q actual and q predicted for monitoring
+            local_q_for_logging = np.zeros(self.n_joints_)
+            if self.local_state_ready_:
+                local_q_for_logging = self.current_local_q_
+
+            # Format vectors for printing
+            q_pred_str = np.round(q_target, 2) # Agent's prediction
+            q_local_str = np.round(local_q_for_logging, 2) # Local robot's actual state
+
+            self.get_logger().info(
+                f"Q_Pred (Agent): {q_pred_str}\n"
+                f"Q_Actual (Local): {q_local_str}",
+                throttle_duration_sec=2.0 # Throttled to 2 seconds for readability
+            )
+
         except Exception as e:
-            self.get_logger().error(f"Error in remote control loop: {e}")
+            self.get_logger().error(f"Error in control loop: {e}")
             import traceback
             traceback.print_exc()
 
@@ -276,7 +328,6 @@ def main(args=None):
     finally:
         if remote_robot_node:
             remote_robot_node.destroy_node()
-        # rclpy.shutdown() # Removed to prevent crash on exit
 
 if __name__ == '__main__':
     main()

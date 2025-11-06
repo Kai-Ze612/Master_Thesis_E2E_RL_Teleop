@@ -86,7 +86,7 @@ IK_CONTINUITY_GAIN = 0.5
 TRAJECTORY_CENTER = np.array([0.3, 0.0, 0.5], dtype=np.float32)
 
 # Default trajectory scale (meters)
-TRAJECTORY_SCALE = np.array([0.2, 0.3], dtype=np.float32)
+TRAJECTORY_SCALE = np.array([0.1, 0.3], dtype=np.float32)
 
 # Default frequency (Hz)
 TRAJECTORY_FREQUENCY = 0.1
@@ -124,7 +124,7 @@ OBS_DIM = (
 STATE_BUFFER_LENGTH = 256
 
 # RNN (LSTM) architecture for state prediction
-RNN_HIDDEN_DIM = 512
+RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 4
 RNN_SEQUENCE_LENGTH = STATE_BUFFER_LENGTH  # Must match buffer length
 
@@ -152,7 +152,7 @@ PREDICTION_LOSS_WEIGHT = 5.0  # Weight for supervised state prediction loss
 PPO_LOSS_WEIGHT = 10.0          # Weight for PPO loss (actor + critic + entropy)
 
 # Training schedule
-PPO_ROLLOUT_STEPS = 10000
+PPO_ROLLOUT_STEPS = 5000
 PPO_NUM_EPOCHS = 10
 PPO_BATCH_SIZE = 128
 PPO_TOTAL_TIMESTEPS = 3_000_000
@@ -176,7 +176,7 @@ REWARD_ERROR_SCALE_LOW_ERROR = 50   # Scale factor for linear reward
 
 REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 1.5  # Weight for velocity prediction vs position
 
-NUM_ENVIRONMENTS = 10   # Number of parallel environments
+NUM_ENVIRONMENTS = 5   # Number of parallel environments
 ######################################
 # Logging and Checkpointing
 ######################################
@@ -191,6 +191,8 @@ SAVE_FREQ = 100  # Save checkpoint every N updates
 MAX_INFERENCE_TIME = 0.9 * (1.0 / DEFAULT_CONTROL_FREQ)  # 90% of control cycle time for safety
 
 DEPLOYMENT_HISTORY_BUFFER_SIZE = 1000  # Must be > max_delay_steps + RNN sequence length
+
+WARM_UP_DURATION = 5.0  # Duration to warm up the action buffer
 
 ######################################
 # Early Stopping Configuration
