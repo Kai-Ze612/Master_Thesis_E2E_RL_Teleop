@@ -5,6 +5,15 @@ In this deployment, the agent node is considered to be on the remote side.
 
 This implies that the communication between the agent and the remote robot is in real-time,
 while the communication it receives from the local robot is delayed."
+
+Pipeline:
+1. Receive local robot joint states (with delay simulation)
+2. Receive remote robot joint states (real-time)
+3. Construct observation with delayed local robot history
+4. Query RL agent for action
+5. Get predicted target and torque compensation
+6. Publish desired trajectory point to agent/predict_targret
+7. Publish torque compensation to agent/tau_rl
 """
 
 import numpy as np
@@ -15,7 +24,7 @@ import os
 # ROS2 imports
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import JointState, Float64MultiArray
 
 # Custom imports
 from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
@@ -126,8 +135,12 @@ class AgentNode(Node):
         self.is_remote_ready_ = False
         
         # Consolidate to one publisher, as used in the control loop
-        self.command_pub_ = self.create_publisher(
-            JointState, 'agent/command', 10
+        self.tau_pub_ = self.create_publisher(
+            Float64MultiArray, 'agent/tau_rl', 100
+        )
+        
+        self.desired_q_pub_ = self.create_publisher(
+            JointState, 'agent/predict_target', 100
         )
 
         self.local_robot_state_subscriber_ = self.create_subscription(
@@ -144,7 +157,6 @@ class AgentNode(Node):
         
         self.get_logger().info("Agent Node initialized. Waiting for data from robots...")
 
-
     def _prefill_buffers(self) -> None:
         """Prefill the history buffers with the initial robot state."""
         q_init = INITIAL_JOINT_CONFIG.copy()
@@ -159,18 +171,27 @@ class AgentNode(Node):
         
     def local_robot_state_callback(self, msg: JointState) -> None:
         """Callback for local robot state updates."""
-        q_new = np.array(msg.position[:N_JOINTS], dtype=np.float32)
-        qd_new = np.array(msg.velocity[:N_JOINTS], dtype=np.float32)
-        
-        self.leader_q_history_.append(q_new)
-        self.leader_qd_history_.append(qd_new)
+        # Re-order joint states to match target_joint_names_
+        try:
+            name_to_index_map = {name: i for i, name in enumerate(msg.name)}
+            pos = [msg.position[name_to_index_map[name]] for name in self.target_joint_names_]
+            vel = [msg.velocity[name_to_index_map[name]] for name in self.target_joint_names_]
 
-        # self.get_logger().info(f"Real-time leader q received: {np.round(q_new, 3)}")
+            q_new = np.array(pos, dtype=np.float32)
+            qd_new = np.array(vel, dtype=np.float32)
+            
+            self.leader_q_history_.append(q_new)
+            self.leader_qd_history_.append(qd_new)
+
+            # Start flag
+            if not self.is_leader_ready_:
+                self.is_leader_ready_ = True
+                self.get_logger().info("Local robot state received. Local robot is ready.")
         
-        # Start flag
-        if not self.is_leader_ready_:
-            self.is_leader_ready_ = True
-            self.get_logger().info("Local robot state received. Local robot is ready.")
+        except (KeyError, IndexError) as e:
+            self.get_logger().warn(
+                f"Error re-ordering LOCAL state: {e}. Skipping message."
+            )
         
     def remote_robot_state_callback(self, msg: JointState) -> None:
         """Callback for remote robot state updates."""
@@ -190,7 +211,7 @@ class AgentNode(Node):
             self.get_logger().warn(
                 f"Error re-ordering remote state: {e}. Skipping message."
             )
-            
+    
     def _get_delayed_leader_sequence(self) -> np.ndarray:
         """Get delayed target sequence for state predictor (LSTM) input."""
 
@@ -250,7 +271,6 @@ class AgentNode(Node):
 
             with torch.no_grad():
                 action_t, _, _, predicted_target_t, new_hidden_state = self.policy_.get_action(
-                    # Modification: Pass the correctly shaped sequence
                     delayed_sequence=delay_seq_t,
                     remote_state=remote_obs_t,
                     hidden_state=self.lstm_hidden_state_,
@@ -259,29 +279,47 @@ class AgentNode(Node):
                 
             self.lstm_hidden_state_ = new_hidden_state
             
+            # Extract predictions
             predicted_q = predicted_target_t.cpu().numpy().flatten()[:N_JOINTS]
             predicted_qd = predicted_target_t.cpu().numpy().flatten()[N_JOINTS:]
-            tau_comp = action_t.cpu().numpy().flatten()
+            tau_rl = action_t.cpu().numpy().flatten()
             
-            msg = JointState()
-            msg.header.stamp = self.get_clock().now().to_msg()
-            msg.name = self.target_joint_names_
+            # Publish predicted target (JointState: position + velocity)
+            self.publish_predicted_target(predicted_q, predicted_qd)
             
-            # The "position" and "velocity" fields are the agent's *predicted target*
-            msg.position = predicted_q.tolist()
-            msg.velocity = predicted_qd.tolist()
+            # Publish torque compensation (Float64MultiArray: 7D vector)
+            self.publish_tau_compensation(tau_rl)
             
-            # The "effort" field is the agent's *torque compensation*
-            msg.effort = tau_comp.tolist()
-            
-            # Publish command
-            self.command_pub_.publish(msg)
+            # Optional: Log for debugging
+            self.get_logger().info(
+                f"Agent output - Predicted q: {np.round(predicted_q, 3)}, "
+                f"Tau RL: {np.round(tau_rl, 2)}",
+                throttle_duration_sec=2.0
+            )
             
         except Exception as e:
             self.get_logger().error(f"Error in control loop: {e}")
             import traceback
             traceback.print_exc()
 
+    def publish_predicted_target(self, q: np.ndarray, qd: np.ndarray) -> None:
+        """Publish predicted target joint state."""
+        msg = JointState()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.name = self.target_joint_names_
+        msg.position = q.tolist()
+        msg.velocity = qd.tolist()
+        msg.effort = []  # Empty for predicted targets
+        
+        self.desired_q_pub_.publish(msg)
+
+    def publish_tau_compensation(self, tau_rl: np.ndarray) -> None:
+        """Publish torque compensation as Float64MultiArray."""
+        msg = Float64MultiArray()
+        msg.data = tau_rl.tolist()
+        
+        self.tau_pub_.publish(msg)
+    
 def main(args=None):
     rclpy.init(args=args)
     agent_node = None

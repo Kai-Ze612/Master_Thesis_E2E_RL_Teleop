@@ -18,6 +18,7 @@
   <depend>franka_msgs</depend>
   <depend>franka_semantic_components</depend>
   <depend>multi_mode_control_msgs</depend>
+  <depend>effort_controllers</depend>
 
   <!-- Message dependencies for Joint Tau Controller -->
   <build_depend>std_msgs</build_depend>

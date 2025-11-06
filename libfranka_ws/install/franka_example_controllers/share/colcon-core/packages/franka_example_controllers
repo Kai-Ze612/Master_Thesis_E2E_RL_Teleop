@@ -1,1 +1,1 @@
-controller_interface:franka_msgs:franka_semantic_components:multi_mode_control_msgs:pluginlib:rclcpp:rclcpp_lifecycle:std_msgs
+controller_interface:effort_controllers:franka_msgs:franka_semantic_components:multi_mode_control_msgs:pluginlib:rclcpp:rclcpp_lifecycle:std_msgs

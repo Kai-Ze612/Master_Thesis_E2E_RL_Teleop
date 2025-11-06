@@ -1,8 +1,10 @@
 """
 The script is the local robot, using ROS2 node. This is a virtual trajectory generator.
 
-Trajectory generator creates various trajectories points and utilizes inverse kinematics solver to convert them into joint space for the local robot to follow.
-The joint states are then published to /local_robot/joint_states topic for the remote robot to execute.
+Pipineline:
+1. trajectory generation in Cartesian space
+2. inverse kinematics to get joint space commands
+3. publish joint states to /local_robot/joint_states topic
 """
 
 # python imports
@@ -10,7 +12,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
 import numpy as np
 from numpy.typing import NDArray
 import mujoco
@@ -138,10 +139,11 @@ class LeaderRobotPublisher(Node):
         super().__init__('leader_robot_publisher')
 
         # ROS2 parameters
-        self.publish_freq_ = self.declare_parameter('publish_freq', DEFAULT_PUBLISH_FREQ).value
+        self.publish_freq_ = DEFAULT_PUBLISH_FREQ
         self.timer_period_ = 1.0 / self.publish_freq_
         self._dt = self.timer_period_
 
+        # Make trajectory parameters configurable via ROS2 params
         traj_type_str = self.declare_parameter('trajectory_type', TrajectoryType.FIGURE_8.value).value
         self._trajectory_type = TrajectoryType(traj_type_str)                
         self._randomize_params = self.declare_parameter('randomize_params', False).value
@@ -154,7 +156,7 @@ class LeaderRobotPublisher(Node):
         self.joint_limits_lower = JOINT_LIMITS_LOWER.copy()
         self.joint_limits_upper = JOINT_LIMITS_UPPER.copy()
         
-        # Load MuJoCo model 
+        # Load MuJoCo model for IK
         self.model = mujoco.MjModel.from_xml_path(self.model_path_)
         self.data = mujoco.MjData(self.model)
 
@@ -175,7 +177,7 @@ class LeaderRobotPublisher(Node):
         self._trajectory_time = 0.0
         self._params = TrajectoryParameters() # Start with default params
         self._generator = self._create_generator(self._trajectory_type, self._params)
-
+        
         # State tracking
         self._last_q_desired = np.zeros(self.n_joints)
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints)]
@@ -214,7 +216,7 @@ class LeaderRobotPublisher(Node):
         self.get_logger().info("Simulation reset to initial configuration.")
 
     def timer_callback(self) -> None:
-        """ 
+        """
         Steps:
         1. Update trajectory time.
         2. Generate Cartesian target position.

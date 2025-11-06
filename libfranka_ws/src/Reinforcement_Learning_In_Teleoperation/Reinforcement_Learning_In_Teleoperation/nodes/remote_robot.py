@@ -1,8 +1,7 @@
 """
-Remote robot node using ROS2 (Follower) - [WITH EE POSITION DISPLAY]
+The script is the remote robot, using ROS2 node
 
-MODIFICATION:
-- Added real-time end-effector position computation and display
+The remote robot subscribes to agent published predicted trajectory and compensation tau
 """
 
 # ROS2 imports
@@ -28,63 +27,40 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     DEFAULT_KD_REMOTE,
     DEFAULT_KP_REMOTE,
     TCP_OFFSET,
+    EE_BODY_NAME,
 )
-
-def normalize_angle(angle: np.ndarray) -> np.ndarray:
-    """Normalize an angle or array of angles to the range [-pi, pi]."""
-    return (angle + np.pi) % (2 * np.pi) - np.pi
-
 
 class RemoteRobotNode(Node):
     def __init__(self):
         super().__init__('remote_robot_node')
         
-        # Initialize parameters
+        # Initialize parameters from config.py
         self.n_joints_ = N_JOINTS
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
-        
-        self.get_logger().warn("Using MODERATELY-SAFE gains (Gains / 2.0).")
-        self.get_logger().warn("Controller is: PD + Gravity Compensation.")
-        self.get_logger().warn(
-            "Velocity feed-forward (qd_target) is DISABLED."
-            " 'Kd' term will only be used for damping (0 - qd_current)."
-        )
         self.tcp_offset_ = TCP_OFFSET
-        
-        self.kp_ = DEFAULT_KP_REMOTE / 2.0
-        self.kd_ = DEFAULT_KD_REMOTE / 2.0
-        
+        self.kp_ = DEFAULT_KP_REMOTE
+        self.kd_ = DEFAULT_KD_REMOTE
         self.torque_limits_ = TORQUE_LIMITS
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
         self.initial_joint_config_ = INITIAL_JOINT_CONFIG
+        self.ee_body_name_ = EE_BODY_NAME
+        
+        # Initialize remote robot current joint states and velocities
         self.current_q_ = self.initial_joint_config_.copy()
         self.current_qd_ = np.zeros(self.n_joints_, dtype=np.float32)
-        
+
+        # Initialize Mujoco model and data
         model_path = DEFAULT_MUJOCO_MODEL_PATH
         self.mj_model_ = mujoco.MjModel.from_xml_path(model_path)
         self.mj_data_ = mujoco.MjData(self.mj_model_)
+        self.ee_body_id_ = self.mj_model_.body(name=self.ee_body_name_).id
         
-        # Get end-effector body ID (panda_link8 or panda_hand)
-        try:
-            self.ee_body_id_ = mujoco.mj_name2id(
-                self.mj_model_, mujoco.mjtObj.mjOBJ_BODY, "panda_link8"
-            )
-        except:
-            try:
-                self.ee_body_id_ = mujoco.mj_name2id(
-                    self.mj_model_, mujoco.mjtObj.mjOBJ_BODY, "panda_hand"
-                )
-            except:
-                self.get_logger().error("Could not find end-effector body ID!")
-                self.ee_body_id_ = -1
-        
-        if self.ee_body_id_ >= 0:
-            self.get_logger().info(f"End-effector body ID: {self.ee_body_id_}")
-        
+        # Initialize target joint states and velocities
         self.target_q_ = INITIAL_JOINT_CONFIG.copy()
         self.target_qd_ = np.zeros(self.n_joints_)
 
+        # State flags
         self.robot_state_ready_ = False
         self.target_command_ready_ = False 
         
@@ -149,7 +125,10 @@ class RemoteRobotNode(Node):
         except (KeyError, IndexError) as e:
             self.get_logger().warn(f"Error processing robot state: {e}")
 
-    
+    def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
+        """Normalize an angle or array of angles to the range [-pi, pi]."""
+        return (angle + np.pi) % (2 * np.pi) - np.pi
+        
     def _compute_gravity_compensation(self, q: NDArray[np.float64]) -> NDArray[np.float64]:
         """Computes the torque needed to counteract gravity."""
         
@@ -172,8 +151,6 @@ class RemoteRobotNode(Node):
 
     def _compute_tcp_position(self, q: NDArray[np.float64]) -> NDArray[np.float64]:
         """Compute TCP (Tool Center Point) position using forward kinematics."""
-        if self.ee_body_id_ < 0:
-            return np.zeros(3)
         
         # Save current state
         qpos_save = self.mj_data_.qpos.copy()
@@ -224,8 +201,9 @@ class RemoteRobotNode(Node):
             
             # Compute control components
             tau_gravity = self._compute_gravity_compensation(q_current)
-            q_error = normalize_angle(q_target - q_current)
-            qd_error = qd_target_for_damping - qd_current 
+            q_error_unnorm = q_target - q_current
+            q_error = self._normalize_angle(q_error_unnorm)
+            qd_error = qd_target_for_damping - qd_current
             tau_pd = self.kp_ * q_error + self.kd_ * qd_error
             
             tau_command = tau_gravity + tau_pd + tau_rl

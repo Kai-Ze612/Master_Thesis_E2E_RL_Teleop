@@ -49,8 +49,8 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 JOINT_LIMIT_MARGIN = 0.05  # radians
 
 # Local robot PD gains (joint-specific)
-KP_LOCAL = np.array([150.0, 150.0, 120.0, 100.0, 75.0, 50.0, 20.0], dtype=np.float32)
-KD_LOCAL = np.array([30.0, 30.0, 20.0, 20.0, 10.0, 10.0, 5.0], dtype=np.float32)
+KP_LOCAL = np.array([150.0, 150.0, 120.0, 120.0, 75.0, 50.0, 20.0], dtype=np.float32)
+KD_LOCAL = np.array([20.0, 20.0, 20.0, 20.0, 10.0, 10.0, 5.0], dtype=np.float32)
 
 ######################################
 # Control Parameters.
@@ -64,8 +64,8 @@ DEFAULT_CONTROL_FREQ = 500 # match the sim freq
 DEFAULT_PUBLISH_FREQ = 500
 
 # Remote robot PD gains, setting softer because of stable under delay
-DEFAULT_KP_REMOTE = np.array([150.0, 150.0, 120.0, 100.0, 75.0, 50.0, 20.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([30.0, 30.0, 20.0, 20.0, 10.0, 10.0, 5.0], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([150.0, 130.0, 100.0, 100.0, 100.0, 30.0, 10.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([15.0, 15.0, 15.0, 10.0, 5.0, 5.0, 2.0], dtype=np.float32)
 
 ######################################
 # IK Solver Parameters
@@ -83,7 +83,7 @@ IK_CONTINUITY_GAIN = 0.5
 ######################################
 
 # Default trajectory center (meters)
-TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.5], dtype=np.float32)
+TRAJECTORY_CENTER = np.array([0.3, 0.0, 0.5], dtype=np.float32)
 
 # Default trajectory scale (meters)
 TRAJECTORY_SCALE = np.array([0.2, 0.3], dtype=np.float32)
