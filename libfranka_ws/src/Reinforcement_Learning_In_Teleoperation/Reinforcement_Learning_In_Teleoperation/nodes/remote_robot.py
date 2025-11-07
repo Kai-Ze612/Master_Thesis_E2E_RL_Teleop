@@ -49,8 +49,8 @@ class RemoteRobotNode(Node):
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
         self.tcp_offset_ = TCP_OFFSET
-        self.kp_ = DEFAULT_KP_REMOTE / 50
-        self.kd_ = DEFAULT_KD_REMOTE / 50
+        self.kp_ = DEFAULT_KP_REMOTE / 5
+        self.kd_ = DEFAULT_KD_REMOTE / 5
         self.torque_limits_ = TORQUE_LIMITS
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
         self.initial_joint_config_ = INITIAL_JOINT_CONFIG

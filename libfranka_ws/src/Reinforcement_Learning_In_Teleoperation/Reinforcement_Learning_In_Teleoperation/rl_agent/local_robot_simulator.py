@@ -42,6 +42,7 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     TRAJECTORY_CENTER,
     TRAJECTORY_SCALE,
     TRAJECTORY_FREQUENCY,
+    WARM_UP_DURATION,
 )
 
 class TrajectoryType(Enum):
@@ -194,6 +195,8 @@ class LocalRobotSimulator(gym.Env):
         # PD gains for local robot
         kp_local: NDArray[np.float64] = KP_LOCAL,
         kd_local: NDArray[np.float64] = KD_LOCAL,
+        # Warm up before start
+        warm_up_duration: float = WARM_UP_DURATION,
     ) -> None:
         super().__init__()
         
@@ -204,6 +207,10 @@ class LocalRobotSimulator(gym.Env):
         self._control_freq = control_freq
         self._randomize_params = randomize_params
 
+        # Warm-up time before starting trajectory
+        self._warm_up_duration = warm_up_duration
+        self._start_pos = np.zeros(3)
+        
         # PD gains for local robot
         self.kd_local = kd_local.copy()
         self.kp_local = kp_local.copy()
@@ -337,6 +344,9 @@ class LocalRobotSimulator(gym.Env):
         # Get trajectory start position
         trajectory_start_pos = self._generator.compute_position(self._trajectory_time)
         
+        # Store the state position
+        self._start_pos = trajectory_start_pos.copy()
+        
         # Info dictionary
         info = {
             "trajectory_type": self._trajectory_type.value,
@@ -368,8 +378,15 @@ class LocalRobotSimulator(gym.Env):
 
         self._trajectory_time += self._dt
 
-        # Target Position
-        cartesian_target = self._generator.compute_position(self._trajectory_time)
+        # Add wait logic
+        if self._trajectory_time < self._warm_up_duration:
+            # Hold at the start position for the wait duration
+            cartesian_target = self._start_pos.copy()
+        else:
+            # After wait, compute position relative to the *start* of the movement
+            # This ensures the trajectory starts from t=0 *after* the wait
+            movement_time = self._trajectory_time - self._warm_up_duration
+            cartesian_target = self._generator.compute_position(movement_time)
 
         # IK Solver
         q_desired, ik_success, ik_error = self.ik_solver.solve(
@@ -443,4 +460,8 @@ class LocalRobotSimulator(gym.Env):
 
     def get_position_at_time(self, t: float) -> NDArray[np.float64]:
         """Query Cartesian position at arbitrary time point."""
-        return self._generator.compute_position(t)
+        if t < self._warm_up_duration:
+            return self._start_pos.copy()
+        else:
+            movement_time = t - self._warm_up_duration
+            return self._generator.compute_position(movement_time)

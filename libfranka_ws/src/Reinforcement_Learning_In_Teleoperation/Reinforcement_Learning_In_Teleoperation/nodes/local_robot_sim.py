@@ -41,6 +41,7 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     TRAJECTORY_CENTER,
     TRAJECTORY_SCALE,
     TRAJECTORY_FREQUENCY,
+    WARM_UP_DURATION,
 )
 
 class TrajectoryType(Enum):
@@ -156,6 +157,10 @@ class LeaderRobotPublisher(Node):
         self.joint_limits_lower = JOINT_LIMITS_LOWER.copy()
         self.joint_limits_upper = JOINT_LIMITS_UPPER.copy()
         
+        # Warm up before starting trajectory
+        self._warm_up_duration = WARM_UP_DURATION
+        self._start_pos = np.zeros(3)
+        
         # Load MuJoCo model for IK
         self.model = mujoco.MjModel.from_xml_path(self.model_path_)
         self.data = mujoco.MjData(self.model)
@@ -203,6 +208,9 @@ class LeaderRobotPublisher(Node):
         # Reset trajectory time
         self._trajectory_time = 0.0
 
+        trajectory_start_pos = self._generator.compute_position(0.0)
+        self._start_pos = trajectory_start_pos.copy()
+        
         # Initialize joint state
         q_initial = INITIAL_JOINT_CONFIG.copy()
         self._last_q_desired = q_initial.copy()
@@ -227,7 +235,13 @@ class LeaderRobotPublisher(Node):
         self._trajectory_time += self._dt
 
         # Generate Cartesian target and compute control
-        cartesian_target = self._generator.compute_position(self._trajectory_time)
+        if self._trajectory_time < self._warm_up_duration:
+            # Hold at the start position for the warm-up duration
+            cartesian_target = self._start_pos.copy()
+        else:
+            # After warm-up, compute position relative to the *start* of the movement
+            movement_time = self._trajectory_time - self._warm_up_duration
+            cartesian_target = self._generator.compute_position(movement_time)
 
         # Solve IK
         q_desired, ik_success, ik_error = self.ik_solver.solve(

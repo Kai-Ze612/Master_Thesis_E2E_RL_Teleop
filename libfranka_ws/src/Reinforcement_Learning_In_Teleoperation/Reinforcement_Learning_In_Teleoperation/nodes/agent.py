@@ -63,7 +63,7 @@ class AgentNode(Node):
         
         #################################################################################
         # Only for testing
-        self.agent_path_ = os.path.join(DEFAULT_RL_MODEL_PATH_BASE, "config_3_test_1", "final_policy.pth")
+        self.agent_path_ = os.path.join(DEFAULT_RL_MODEL_PATH_BASE, "config_1_test_1", "best_policy_earlystop.pth")
         
         # Modification: Use a try...except block for robust loading
         try:

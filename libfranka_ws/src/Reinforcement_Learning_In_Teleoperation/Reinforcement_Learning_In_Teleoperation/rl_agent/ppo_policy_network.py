@@ -191,7 +191,7 @@ class RecurrentPPOPolicy(nn.Module):
         predicted_target, new_hidden_state = self.predict_state(delayed_sequence, hidden_state)
 
         # PPO policy using predicted target and current remote state
-        policy_input = torch.cat([predicted_target, remote_state], dim=-1) # End-to-End
+        policy_input = torch.cat([predicted_target.detach(), remote_state], dim=-1) # End-to-End
 
         # Pass through shared policy backbone
         policy_features = self.policy_backbone(policy_input)
