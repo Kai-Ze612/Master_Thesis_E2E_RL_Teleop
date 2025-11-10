@@ -22,8 +22,8 @@ from numpy.typing import NDArray
 import gymnasium as gym
 import mujoco
 
-from Reinforcement_Learning_In_Teleoperation.utils.inverse_kinematics import IKSolver
-from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+from Model_based_Reinforcement_Learning_In_Teleoperation.utils.inverse_kinematics import IKSolver
+from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     DEFAULT_MUJOCO_MODEL_PATH,
     N_JOINTS,
     EE_BODY_NAME,

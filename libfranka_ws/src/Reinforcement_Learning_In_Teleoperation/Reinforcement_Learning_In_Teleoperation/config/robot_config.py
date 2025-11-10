@@ -121,7 +121,7 @@ OBS_DIM = (
 ######################################
 
 # State prediction buffer length
-STATE_BUFFER_LENGTH = 128
+STATE_BUFFER_LENGTH = 256
 
 # RNN (LSTM) architecture for state prediction
 RNN_HIDDEN_DIM = 256
@@ -148,11 +148,11 @@ PPO_VALUE_COEF = 0.5
 PPO_MAX_GRAD_NORM = 0.5
 
 # Loss weighting
-PREDICTION_LOSS_WEIGHT = 1.0  # Weight for supervised state prediction loss
+PREDICTION_LOSS_WEIGHT = 0  # Weight for supervised state prediction loss
 PPO_LOSS_WEIGHT = 1.0          # Weight for PPO loss (actor + critic + entropy)
 
 # Training schedule
-PPO_ROLLOUT_STEPS = 5000
+PPO_ROLLOUT_STEPS = 10000
 PPO_NUM_EPOCHS = 10
 PPO_BATCH_SIZE = 128
 PPO_TOTAL_TIMESTEPS = 3_000_000
@@ -176,7 +176,7 @@ REWARD_ERROR_SCALE_LOW_ERROR = 50   # Scale factor for linear reward
 
 REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 1.5  # Weight for velocity prediction vs position
 
-NUM_ENVIRONMENTS = 5   # Number of parallel environments
+NUM_ENVIRONMENTS = 10   # Number of parallel environments
 ######################################
 # Logging and Checkpointing
 ######################################
@@ -192,7 +192,7 @@ MAX_INFERENCE_TIME = 0.9 * (1.0 / DEFAULT_CONTROL_FREQ)  # 90% of control cycle 
 
 DEPLOYMENT_HISTORY_BUFFER_SIZE = 500  # Must be > max_delay_steps + RNN sequence length
 
-WARM_UP_DURATION = 3.0  # Duration to warm up the action buffer
+WARM_UP_DURATION = 1.0  # Duration to warm up the action buffer
 
 ######################################
 # Early Stopping Configuration
