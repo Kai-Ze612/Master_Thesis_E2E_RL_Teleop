@@ -22,10 +22,10 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_si
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm import SACTrainer
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     PPO_TOTAL_TIMESTEPS, # We can rename this, but still use the value
-    CHECKPOINT_DIR,
+    CHECKPOINT_DIR_RL,
+    CHECKPOINT_DIR_LSTM,
     NUM_ENVIRONMENTS
 )
-
 
 def setup_logging(output_dir: str) -> logging.Logger:
     """Configure logging to file and console."""

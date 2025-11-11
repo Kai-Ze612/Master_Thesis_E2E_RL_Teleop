@@ -17,14 +17,16 @@ from typing import Dict, List, Optional, Tuple
 import time
 import json
 from copy import deepcopy
-from stable_baselines3.common.vec_env import VecEnv
+from collections import deque
+
+from stable_baselines3.common.vec_env import VecEnv 
 
 from torch.utils.tensorboard import SummaryWriter
 
-# Custom imports
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import (
     StateEstimator, Actor, Critic
 )
+
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS, 
     DEFAULT_CONTROL_FREQ,
@@ -40,18 +42,22 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_START_STEPS,
     LOG_FREQ, 
     SAVE_FREQ, 
-    CHECKPOINT_DIR,
+    CHECKPOINT_DIR_LSTM,
+    CHECKPOINT_DIR_RL,
     NUM_ENVIRONMENTS
 )
 
 logger = logging.getLogger(__name__)
 
-
-# ... (ReplayBuffer class from your previous file, unchanged) ...
 class ReplayBuffer:
     """
-    Off-policy replay buffer for model-based SAC.
+    to store all collected experience for SAC training.
+    
+    pipeline:
+    1. Add experience
+    2. Sample mini-batches for training
     """
+    
     def __init__(self, buffer_size: int, device: torch.device):
         self.buffer_size = buffer_size
         self.device = device
@@ -74,7 +80,7 @@ class ReplayBuffer:
         self.remote_states[self.ptr] = remote_state
         self.actions[self.ptr] = action
         self.rewards[self.ptr] = reward
-        self.true_targets[self.ptr] = true_target # Still collect this, for validation
+        self.true_targets[self.ptr] = true_target
         self.next_delayed_sequences[self.ptr] = next_delayed_seq
         self.next_remote_states[self.ptr] = next_remote_state
         self.dones[self.ptr] = done
@@ -100,7 +106,6 @@ class SACTrainer:
     
     def __init__(self, 
                  env: VecEnv,
-                 # --- MODIFICATION: Add new arguments ---
                  pretrained_estimator_path: Optional[str] = None
                  ):
         """Initialize the Model-Based SAC Trainer."""
@@ -108,45 +113,23 @@ class SACTrainer:
         self.env = env
         self.num_envs = env.num_envs
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        logger.info(f"Using device: {self.device}")
-
-        # --- MODIFICATION: Initialize and load StateEstimator ---
-        self.state_estimator = StateEstimator().to(self.device)
         
-        if pretrained_estimator_path:
-            if not os.path.exists(pretrained_estimator_path):
-                logger.error(f"Pretrained estimator weights not found at: {pretrained_estimator_path}")
-                raise FileNotFoundError(f"File not found: {pretrained_estimator_path}")
-                
-            logger.info(f"Loading pretrained estimator weights from: {pretrained_estimator_path}")
-            try:
-                # Load the state dict
-                weights = torch.load(pretrained_estimator_path, map_location=self.device)
-                self.state_estimator.load_state_dict(weights['state_estimator_state_dict'])
-                logger.info("Estimator weights loaded successfully.")
-            except Exception as e:
-                logger.error(f"Error loading estimator weights: {e}")
-                raise
-        else:
-            logger.warning("No pretrained estimator path provided. Using randomly initialized weights.")
-            # This is the "joint training" path, but we will still freeze it
-            # We assume for this workflow that the user *wants* to freeze it.
-            # A more complex script would have a 'freeze_estimator' flag.
-            
-        # --- MODIFICATION: Freeze the estimator ---
-        logger.info("Freezing StateEstimator parameters.")
+        # Load LSTM State Estimator
+        self.state_estimator = StateEstimator().to(self.device)
+        weights = torch.load(pretrained_estimator_path, map_location=self.device)
+        self.state_estimator.load_state_dict(weights['state_estimator_state_dict'])
         self.state_estimator.eval() # Set to evaluation mode
         for param in self.state_estimator.parameters():
-            param.requires_grad = False
+            param.requires_grad = False  # Freeze parameters
 
-        # --- Initialize Actor/Critic (unchanged) ---
+        # Initialize Actor and Critic Networks
         self.actor = Actor().to(self.device)
         self.critic = Critic().to(self.device)
         self.critic_target = deepcopy(self.critic).to(self.device)
         for param in self.critic_target.parameters():
             param.requires_grad = False
 
-        # --- MODIFICATION: Remove Estimator Optimizer ---
+        # Initialize Actor and Critic Optimizers
         self.actor_optimizer = torch.optim.Adam(
             self.actor.parameters(), lr=SAC_LEARNING_RATE
         )
@@ -163,19 +146,19 @@ class SACTrainer:
         self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
         self.alpha_optimizer = torch.optim.Adam([self.log_alpha], lr=ALPHA_LEARNING_RATE)
         
-        # Replay Buffer (unchanged)
+        # Replay Buffer
         self.replay_buffer = ReplayBuffer(SAC_BUFFER_SIZE, self.device)
 
-        # Training state (unchanged)
+        # Training state
         self.total_timesteps = 0
         self.num_updates = 0
-        self.checkpoint_dir = CHECKPOINT_DIR
+        self.checkpoint_dir = CHECKPOINT_DIR_RL
         self.tb_writer: Optional[SummaryWriter] = None
         self.training_start_time = None
         self.hidden_states = self.state_estimator.init_hidden_state(self.num_envs, self.device)
 
-    # ... (_init_tensorboard, _log_metrics, alpha, select_action methods are unchanged) ...
     def _init_tensorboard(self):
+        """Initialize TensorBoard writer."""
         tb_dir = os.path.join(self.checkpoint_dir, "tensorboard_sac")
         os.makedirs(tb_dir, exist_ok=True)
         self.tb_writer = SummaryWriter(log_dir=tb_dir, flush_secs=120)
@@ -189,8 +172,6 @@ class SACTrainer:
             self.tb_writer.add_scalars('losses', {
                 'actor_loss': metrics.get('actor_loss', 0.0),
                 'critic_loss': metrics.get('critic_loss', 0.0),
-                # MODIFICATION: Remove estimator loss
-                # 'estimator_loss': metrics.get('estimator_loss', 0.0),
                 'alpha_loss': metrics.get('alpha_loss', 0.0),
             }, step)
 
@@ -203,8 +184,6 @@ class SACTrainer:
                       remote_state_batch: np.ndarray,
                       deterministic: bool = False
                      ) -> Tuple[np.ndarray, np.ndarray]:
-        # This function requires no changes, as it already uses
-        # self.state_estimator in no_grad mode.
         with torch.no_grad():
             delayed_seq_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)
             remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)
@@ -232,8 +211,6 @@ class SACTrainer:
         # Sample from replay buffer
         batch = self.replay_buffer.sample(SAC_BATCH_SIZE)
         
-        # --- 1. Update State Estimator (Supervised) ---
-        # --- MODIFICATION: THIS BLOCK IS REMOVED ---
         # The estimator is frozen, so we do not update it.
         # We can, however, log its current performance.
         with torch.no_grad():
@@ -241,8 +218,6 @@ class SACTrainer:
             estimator_loss = F.mse_loss(predicted_targets, batch['true_targets'])
             metrics['estimator_loss (frozen)'] = estimator_loss.item()
         
-        
-        # --- 2. Update Critic (SAC Q-Function) ---
         with torch.no_grad():
             # Get predicted states (from frozen estimator)
             predicted_state_t, _ = self.state_estimator(batch['delayed_sequences'])
@@ -274,14 +249,11 @@ class SACTrainer:
         self.critic_optimizer.step()
         metrics['critic_loss'] = critic_loss.item()
         
-        
-        # --- 3. Update Actor (and Alpha) ---
+        # Update Actor Network
         for param in self.critic.parameters():
             param.requires_grad = False
             
-        # Get new actions and log_probs
-        # Note: actor_state_t does not have gradients from the estimator,
-        # which is correct as the estimator is frozen.
+        # Get actions and log_probs from current actor
         actions_t, log_probs_t, _ = self.actor.sample(actor_state_t)
         
         q1_policy, q2_policy = self.critic(actor_state_t, actions_t)
@@ -298,7 +270,7 @@ class SACTrainer:
         for param in self.critic.parameters():
             param.requires_grad = True
             
-        # --- 4. Update Alpha (Temperature) ---
+        # Update Alpha (Temperature)
         alpha_loss = -(self.log_alpha * (log_probs_t + self.target_entropy).detach()).mean()
         
         self.alpha_optimizer.zero_grad()
@@ -307,7 +279,7 @@ class SACTrainer:
         metrics['alpha_loss'] = alpha_loss.item()
         metrics['alpha'] = self.alpha
         
-        # --- 5. Update Target Networks ---
+        # Update Target Networks
         with torch.no_grad():
             for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
                 target_param.data.mul_(1.0 - SAC_TAU)
@@ -315,8 +287,8 @@ class SACTrainer:
                 
         return metrics
         
-    # ... (train method is unchanged, it will just call the modified update_policy) ...
     def train(self, total_timesteps: int):
+        """ The main training loop for Model-Based SAC. """
         self._init_tensorboard()
         self.training_start_time = datetime.now()
         start_time = self.training_start_time
@@ -326,8 +298,7 @@ class SACTrainer:
         completed_episode_rewards = deque(maxlen=100)
         logger.info("Starting training...")
 
-        for t in range(int(total_timesteps // self.num_envs)):
-            # --- 1. Collect Data ---
+        for t in range(int(total_timesteps // self.num_envs)): # collecting data
             delayed_buffers_list = self.env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
             remote_states_list = self.env.env_method("get_remote_state")
             true_targets_list = self.env.env_method("get_true_current_target")
@@ -378,13 +349,13 @@ class SACTrainer:
                     episode_rewards[i] = 0.0
                     episode_lengths[i] = 0
             
-            # --- 2. Update Policy ---
+            # Update policy after collecting sufficient data
             if self.total_timesteps >= SAC_START_STEPS:
                 for _ in range(int(SAC_UPDATES_PER_STEP * self.num_envs)):
                     metrics = self.update_policy()
                     self.num_updates += 1
 
-            # --- 3. Logging ---
+            # Logging
             if (t + 1) % (LOG_FREQ * 10) == 0:
                 elapsed_time = datetime.now() - start_time
                 avg_reward = np.mean(completed_episode_rewards) if completed_episode_rewards else 0.0
@@ -397,7 +368,7 @@ class SACTrainer:
                     logger.info(f"  Alpha: {self.alpha:.4f} | Alpha Loss: {metrics.get('alpha_loss', 0):.4f}")
                 self._log_metrics(metrics, avg_reward)
 
-            # --- 4. Save Checkpoint ---
+            # Save checkpoint
             if (t + 1) % (SAVE_FREQ * 10) == 0:
                 self.save_checkpoint(f"policy_step_{self.total_timesteps}.pth")
 
@@ -406,9 +377,9 @@ class SACTrainer:
         if self.tb_writer:
             self.tb_writer.close()
 
-    # --- MODIFICATION: Save/Load Checkpoint ---
-    # We no longer need to save/load the estimator_optimizer
     def save_checkpoint(self, filename: str):
+        """Save the current model checkpoint."""
+        
         path = os.path.join(self.checkpoint_dir, filename)
         os.makedirs(self.checkpoint_dir, exist_ok=True)
         

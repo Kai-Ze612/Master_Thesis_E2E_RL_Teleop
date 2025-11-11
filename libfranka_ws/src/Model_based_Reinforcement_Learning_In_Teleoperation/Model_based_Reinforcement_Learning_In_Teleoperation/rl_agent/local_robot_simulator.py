@@ -51,15 +51,17 @@ class TrajectoryType(Enum):
     SQUARE = "square"
     LISSAJOUS_COMPLEX = "lissajous_complex" 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True) # Make immutable
 class TrajectoryParams:
     """Trajectory initial parameters."""
     center: NDArray[np.float64] = field(
         default_factory=lambda: TRAJECTORY_CENTER.copy()
-    )
+    ) # Make center mutable and get it a default value by using default_factory
+    
     scale: NDArray[np.float64] = field(
         default_factory=lambda: TRAJECTORY_SCALE.copy()
     )
+    
     frequency: float = TRAJECTORY_FREQUENCY
     initial_phase: float = 0.0
 
@@ -70,7 +72,7 @@ class TrajectoryParams:
         assert self.scale.shape == (2,), "Scale must be a 2D vector."
         assert self.frequency > 0, "Frequency must be positive."
 
-class TrajectoryGenerator(ABC):
+class TrajectoryGenerator(ABC): # Define the interface
     """This class is only position computation for the remote robot"""
 
     def __init__(self,
@@ -98,7 +100,7 @@ class TrajectoryGenerator(ABC):
         return (t * self._params.frequency * 2 * np.pi + 
                 self._params.initial_phase)
 
-class SquareTrajectoryGenerator(TrajectoryGenerator):
+class SquareTrajectoryGenerator(TrajectoryGenerator): # import the custom interface
     """Square trajectory in XY plane with smooth corners."""
     def compute_position(self, t: float) -> NDArray[np.float64]:
         """Generate square pattern in XY plane.
@@ -136,7 +138,7 @@ class SquareTrajectoryGenerator(TrajectoryGenerator):
         dy = self._params.scale[1] * position_2d[1]
         
         return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
-    
+
 class LissajousComplexGenerator(TrajectoryGenerator):
     """Complex Lissajous curve with 3:4 frequency ratio and phase shift."""
     
@@ -179,7 +181,7 @@ class Figure8TrajectoryGenerator(TrajectoryGenerator):
         return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
 
 class LocalRobotSimulator(gym.Env):
-
+    """The main trajectory generator class"""
     def __init__(
         self,
         model_path: str = DEFAULT_MUJOCO_MODEL_PATH,
