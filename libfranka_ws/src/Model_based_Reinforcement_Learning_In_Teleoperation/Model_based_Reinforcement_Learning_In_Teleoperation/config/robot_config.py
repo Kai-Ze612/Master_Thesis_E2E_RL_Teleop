@@ -27,7 +27,7 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 JOINT_LIMIT_MARGIN = 0.05
 KP_LOCAL = np.array([150.0, 150.0, 120.0, 120.0, 75.0, 50.0, 20.0], dtype=np.float32)
 KD_LOCAL = np.array([20.0, 20.0, 20.0, 20.0, 10.0, 10.0, 5.0], dtype=np.float32)
-WARM_UP_DURATION = 1.0 
+WARM_UP_DURATION = 1.0
 
 ######################################
 # Control Parameters
@@ -57,11 +57,15 @@ TRAJECTORY_FREQUENCY = 0.1
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 1e-3
+ESTIMATOR_LEARNING_RATE = 3e-3
 ESTIMATOR_BATCH_SIZE = 256
 ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_WARMUP_STEPS = 5000
 ESTIMATOR_TOTAL_UPDATES = 50000
+ESTIMATOR_VAL_STEPS = 5000
+ESTIMATOR_VAL_FREQ = 1000
+ESTIMATOR_PATIENCE = 10
+ESTIMATOR_LR_PATIENCE = 5
 
 ######################################
 # RL Environment Parameters

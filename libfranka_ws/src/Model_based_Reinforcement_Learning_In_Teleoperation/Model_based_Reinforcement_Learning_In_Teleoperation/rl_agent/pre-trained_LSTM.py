@@ -7,6 +7,7 @@ pipelines:
 3. Train the StateEstimator LSTM in a supervised learning. (min MSE loss)
 """
 
+# Python imports 
 import os
 import sys
 import torch
@@ -17,12 +18,15 @@ from datetime import datetime
 from collections import deque
 import torch.nn.functional as F
 from typing import Dict, Tuple
+import multiprocessing
 
 # Stable Baselines3 imports
 from stable_baselines3.common.vec_env import SubprocVecEnv, VecEnv, DummyVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 
+# PyTorch imports
 from torch.utils.tensorboard import SummaryWriter
+from torch.optim.lr_scheduler import ReduceLROnPlateau  # Learning rate scheduler
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.training_env import TeleoperationEnvWithDelay
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
@@ -38,8 +42,10 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     ESTIMATOR_TOTAL_UPDATES,
     NUM_ENVIRONMENTS,
     CHECKPOINT_DIR_LSTM,
-    DEFAULT_CONTROL_FREQ,
-    WARM_UP_DURATION,
+    ESTIMATOR_VAL_STEPS,
+    ESTIMATOR_VAL_FREQ,
+    ESTIMATOR_PATIENCE,
+    ESTIMATOR_LR_PATIENCE,
 )
 
 
@@ -48,23 +54,24 @@ class PretrainReplayBuffer:
     
     def __init__(self, buffer_size: int, device: torch.device):
         
+        # Initialize parameters
         self.buffer_size = buffer_size
         self.device = device
-        self.ptr = 0
+        self.ptr = 0  # Initial pointer
         self.size = 0
         
         self.seq_len = RNN_SEQUENCE_LENGTH
-        self.state_dim = N_JOINTS * 2
+        self.state_dim = N_JOINTS * 2  # target_q and target_qd
         
         self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
         self.true_targets = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
 
     def add(self, delayed_seq: np.ndarray, true_target: np.ndarray) -> None:
         """Add a single (delayed_sequence, true_target) pair to the buffer."""
-        self.delayed_sequences[self.ptr] = delayed_seq
-        self.true_targets[self.ptr] = true_target
+        self.delayed_sequences[self.ptr] = delayed_seq  # Training data
+        self.true_targets[self.ptr] = true_target  # Groundtruth data
         
-        self.ptr = (self.ptr + 1) % self.buffer_size
+        self.ptr = (self.ptr + 1) % self.buffer_size  # pointer moves to the next slot
         self.size = min(self.size + 1, self.buffer_size)
 
     def sample(self, batch_size: int) -> Dict[str, torch.Tensor]:
@@ -124,6 +131,27 @@ def collect_data_from_envs(env: VecEnv, num_envs: int) -> Tuple[np.ndarray, np.n
             "  - get_true_current_target() -> np.ndarray"
         )
 
+# --- NEW FUNCTION ---
+def evaluate_model(model: StateEstimator, val_buffer: PretrainReplayBuffer, batch_size: int, num_batches: int = 50) -> float:
+    """
+    Calculate the average loss on the validation buffer.
+    """
+    model.eval()  # Set model to evaluation mode
+    total_loss = 0.0
+    
+    if len(val_buffer) < batch_size:
+        return float('inf') # Not enough data to validate
+
+    with torch.no_grad():  # Disable gradient calculation
+        for _ in range(num_batches):
+            batch = val_buffer.sample(batch_size)
+            predicted_targets, _ = model(batch['delayed_sequences'])
+            loss = F.mse_loss(predicted_targets, batch['true_targets'])
+            total_loss += loss.item()
+            
+    model.train()  # Set model back to training mode
+    return total_loss / num_batches
+
 
 def pretrain_estimator(args: argparse.Namespace) -> None:
     """Main pre-training function for the State Estimator LSTM."""
@@ -136,13 +164,13 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     
     logger = setup_logging(output_dir)
     
-    # Log essential configuration
+    # --- MODIFIED: Log more hyperparameters ---
     logger.info("="*80)
     logger.info("LSTM STATE ESTIMATOR PRE-TRAINING")
     logger.info("="*80)
     logger.info(f"Configuration:")
     logger.info(f"  Delay Config: {args.config.name}")
-    logger.info(f"  Trajectory: {args.trajectory_type.value}")
+    logger.info(f"  Train Trajectory: {args.trajectory_type.value}")
     logger.info(f"  Device: {'cuda' if torch.cuda.is_available() else 'cpu'}")
     logger.info(f"  Environments: {NUM_ENVIRONMENTS}")
     logger.info(f"  Sequence Length: {RNN_SEQUENCE_LENGTH}")
@@ -152,13 +180,18 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     logger.info(f"  Buffer Size: {ESTIMATOR_BUFFER_SIZE}")
     logger.info(f"  Total Updates: {ESTIMATOR_TOTAL_UPDATES}")
     logger.info(f"  Warmup Steps: {ESTIMATOR_WARMUP_STEPS}")
+    logger.info(f"  Validation Frequency: {ESTIMATOR_VAL_FREQ} steps")
+    logger.info(f"  Early Stopping Patience: {ESTIMATOR_PATIENCE} checks")
+    logger.info(f"  LR Scheduler Patience: {ESTIMATOR_LR_PATIENCE} checks")
     logger.info("="*80)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     tb_writer = SummaryWriter(log_dir=os.path.join(output_dir, "tensorboard"))
     
-    # Create vectorized environments
-    def make_env():
+    # --- MODIFIED: Create separate Train and Validation environments ---
+    
+    # 1. Create Training environments
+    def make_train_env():
         return TeleoperationEnvWithDelay(
             delay_config=args.config,
             trajectory_type=args.trajectory_type,
@@ -166,49 +199,87 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
             seed=args.seed
         )
     
-    env = make_vec_env(
-        make_env,
+    train_env = make_vec_env(
+        make_train_env,
         n_envs=NUM_ENVIRONMENTS,
         seed=args.seed,
-        vec_env_cls= DummyVecEnv
+        vec_env_cls= SubprocVecEnv if NUM_ENVIRONMENTS > 1 else DummyVecEnv
+    )
+    
+    # 2. Create Validation environment (use the SAME trajectory for overfitting test)
+    val_traj = args.trajectory_type
+    logger.info(f"  Validation Trajectory: {val_traj.value} (Overfitting test)")
+    
+    def make_val_env():
+        return TeleoperationEnvWithDelay(
+            delay_config=args.config,
+            trajectory_type=val_traj, # Use a different trajectory
+            randomize_trajectory=False,
+            seed=args.seed + 1 # Use a different seed
+        )
+    
+    val_env = make_vec_env(
+        make_val_env,
+        n_envs=1,
+        vec_env_cls=DummyVecEnv # Simpler, just for data collection
     )
     
     # Initialize State Estimator and optimizer
     state_estimator = StateEstimator().to(device)
     optimizer = torch.optim.Adam(state_estimator.parameters(), lr=ESTIMATOR_LEARNING_RATE)
     
-    # Initialize replay buffer
+    # --- NEW: Add Learning Rate Scheduler ---
+    scheduler = ReduceLROnPlateau(
+        optimizer, 'min', 
+        factor=0.5, 
+        patience=ESTIMATOR_LR_PATIENCE,
+    )
+    
+    # Initialize replay buffers
     replay_buffer = PretrainReplayBuffer(ESTIMATOR_BUFFER_SIZE, device)
+    val_buffer = PretrainReplayBuffer(ESTIMATOR_VAL_STEPS * NUM_ENVIRONMENTS, device) # Size it to fit validation data
     
-    obs = env.reset()
-    
-    for warmup_step in range(ESTIMATOR_WARMUP_STEPS):
-        delayed_seq_batch, true_target_batch = collect_data_from_envs(env, NUM_ENVIRONMENTS)
-        
+    # --- MODIFIED: Fill Training Buffer ---
+    logger.info("Filling training buffer...")
+    obs = train_env.reset()
+    for _ in range(ESTIMATOR_WARMUP_STEPS):
+        delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, NUM_ENVIRONMENTS)
         for i in range(NUM_ENVIRONMENTS):
             replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
         
-        random_actions = np.array([env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
-        obs, rewards, dones, infos = env.step(random_actions)
-    
-    logger.info(f"Buffer filled: {len(replay_buffer)} samples")
+        random_actions = np.array([train_env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
+        obs, rewards, dones, infos = train_env.step(random_actions)
+    logger.info(f"Training buffer filled: {len(replay_buffer)} samples")
 
-    # Training
+    # --- NEW: Fill Validation Buffer ---
+    logger.info("Filling validation buffer...")
+    val_obs = val_env.reset()
+    for _ in range(ESTIMATOR_VAL_STEPS):
+        delayed_seq, true_target = collect_data_from_envs(val_env, 1) # n_envs=1
+        val_buffer.add(delayed_seq[0], true_target[0])
+        
+        random_action = np.array([val_env.action_space.sample()])
+        val_obs, _, _, _ = val_env.step(random_action)
+    logger.info(f"Validation buffer filled: {len(val_buffer)} samples")
+    val_env.close() # We don't need this env anymore
+    
+    # --- MODIFIED: Training Loop ---
+    logger.info("Starting training...")
     state_estimator.train()
     
-    best_loss = float('inf')
+    best_val_loss = float('inf')
     loss_history = deque(maxlen=100)
+    patience_counter = 0
     
     for update in range(ESTIMATOR_TOTAL_UPDATES):
         
-        # Collect and add data
-        delayed_seq_batch, true_target_batch = collect_data_from_envs(env, NUM_ENVIRONMENTS)
-        
+        # Collect and add data (from training env)
+        delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, NUM_ENVIRONMENTS)
         for i in range(NUM_ENVIRONMENTS):
             replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
         
-        random_actions = np.array([env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
-        obs, rewards, dones, infos = env.step(random_actions)
+        random_actions = np.array([train_env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
+        obs, rewards, dones, infos = train_env.step(random_actions)
         
         # Training step
         batch = replay_buffer.sample(ESTIMATOR_BATCH_SIZE)
@@ -222,51 +293,113 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         
         loss_history.append(loss.item())
         
-        # Logging
-        if update % 1000 == 0:
-            avg_loss = np.mean(loss_history) if len(loss_history) > 0 else loss.item()
+        # --- MODIFIED: Validation and Logging ---
+        if update % ESTIMATOR_VAL_FREQ == 0:
+            avg_train_loss = np.mean(loss_history) if len(loss_history) > 0 else loss.item()
             
-            tb_writer.add_scalar('loss/mse', loss.item(), update)
-            tb_writer.add_scalar('loss/avg_100', avg_loss, update)
+            # --- NEW: Run Validation ---
+            val_loss = evaluate_model(state_estimator, val_buffer, ESTIMATOR_BATCH_SIZE)
             
-            logger.info(f"Update {update}/{ESTIMATOR_TOTAL_UPDATES}: Loss={loss.item():.6f}, Avg={avg_loss:.6f}")
+            tb_writer.add_scalar('loss/train_avg_100', avg_train_loss, update)
+            tb_writer.add_scalar('loss/validation_mse', val_loss, update)
+            tb_writer.add_scalar('hyperparameters/learning_rate', optimizer.param_groups[0]['lr'], update)
+            
+            logger.info(f"Update {update}/{ESTIMATOR_TOTAL_UPDATES}: TrainLoss={avg_train_loss:.6f}, ValLoss={val_loss:.6f}")
+            
+            # --- NEW: Scheduler and Early Stopping Logic ---
+            scheduler.step(val_loss)
+            
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                patience_counter = 0
+                logger.info(f"  -> New best validation loss. Saving model to {output_dir}")
+                torch.save({
+                    'state_estimator_state_dict': state_estimator.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': best_val_loss,
+                    'update': update,
+                }, os.path.join(output_dir, "estimator_best.pth"))
+            else:
+                patience_counter += 1
+                
+            if patience_counter >= ESTIMATOR_PATIENCE:
+                logger.info(f"Validation loss has not improved for {ESTIMATOR_PATIENCE} checks. Early stopping.")
+                break
+    
+    train_env.close()
+    
+    # --- NEW: Final Test Step ---
+    logger.info("="*80)
+    logger.info("Training complete. Loading best model for final test.")
+    
+    # 1. Create Test environment (use the SAME trajectory for overfitting test)
+    test_traj = args.trajectory_type
         
-        # Save best model
-        if loss.item() < best_loss:
-            best_loss = loss.item()
-            torch.save({
-                'state_estimator_state_dict': state_estimator.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'loss': best_loss,
-                'update': update,
-            }, os.path.join(output_dir, "estimator_best.pth"))
+    logger.info(f"  Test Trajectory: {test_traj.value} (Overfitting test)")
     
-    # Save final model
-    final_avg_loss = np.mean(loss_history) if len(loss_history) > 0 else loss.item()
+    def make_test_env():
+        return TeleoperationEnvWithDelay(
+            delay_config=args.config,
+            trajectory_type=test_traj,
+            randomize_trajectory=False,
+            seed=args.seed + 2 # Use a third seed
+        )
     
+    test_env = make_vec_env(make_test_env, n_envs=1, vec_env_cls=DummyVecEnv)
+    
+    # 2. Fill a test buffer
+    test_buffer = PretrainReplayBuffer(ESTIMATOR_VAL_STEPS, device)
+    logger.info("Filling test buffer...")
+    test_obs = test_env.reset()
+    for _ in range(ESTIMATOR_VAL_STEPS):
+        delayed_seq, true_target = collect_data_from_envs(test_env, 1)
+        test_buffer.add(delayed_seq[0], true_target[0])
+        random_action = np.array([test_env.action_space.sample()])
+        test_obs, _, _, _ = test_env.step(random_action)
+    logger.info(f"Test buffer filled: {len(test_buffer)} samples")
+    test_env.close()
+
+    # 3. Load best model and evaluate
+    best_model_path = os.path.join(output_dir, "estimator_best.pth")
+    if os.path.exists(best_model_path):
+        checkpoint = torch.load(best_model_path, map_location=device)
+        state_estimator.load_state_dict(checkpoint['state_estimator_state_dict'])
+        
+        final_test_loss = evaluate_model(state_estimator, test_buffer, ESTIMATOR_BATCH_SIZE)
+        
+        logger.info("="*80)
+        logger.info("FINAL TEST RESULTS")
+        logger.info(f"  Best Validation Loss: {best_val_loss:.6f}")
+        logger.info(f"  Final Test Loss: {final_test_loss:.6f}")
+        logger.info(f"  Output: {output_dir}")
+        logger.info("="*80)
+        
+        tb_writer.add_hparams(
+            {
+                "lr": ESTIMATOR_LEARNING_RATE,
+                "batch_size": ESTIMATOR_BATCH_SIZE,
+                "config": args.config.name,
+                "trajectory": args.trajectory_type.value,
+            },
+            {
+                "hparam/best_validation_loss": best_val_loss,
+                "hparam/final_test_loss": final_test_loss,
+            },
+        )
+    else:
+        logger.error("No 'estimator_best.pth' found. Cannot run final test.")
+
+    
+    # Save final model (last state, regardless of performance)
     torch.save({
         'state_estimator_state_dict': state_estimator.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
-        'final_loss': loss.item(),
-        'final_avg_loss': final_avg_loss,
-        'best_loss': best_loss,
-        'config': {
-            'delay_config': args.config.name,
-            'trajectory_type': args.trajectory_type.value,
-            'learning_rate': ESTIMATOR_LEARNING_RATE,
-            'batch_size': ESTIMATOR_BATCH_SIZE,
-            'total_updates': ESTIMATOR_TOTAL_UPDATES,
-        }
-    }, os.path.join(output_dir, "estimator_final.pth"))
+        'final_loss': loss.item() if 'loss' in locals() else -1.0,
+        'final_avg_loss': np.mean(loss_history) if len(loss_history) > 0 else -1.0,
+        'best_val_loss': best_val_loss,
+    }, os.path.join(output_dir, "estimator_final_state.pth"))
     
-    logger.info("="*80)
-    logger.info("Training Complete")
-    logger.info(f"Best Loss: {best_loss:.6f}")
-    logger.info(f"Final Loss: {loss.item():.6f}")
-    logger.info(f"Output: {output_dir}")
-    logger.info("="*80)
     
-    env.close()
     tb_writer.close()
 
 
@@ -301,6 +434,8 @@ def parse_arguments() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method('spawn', force=True)
+    
     args = parse_arguments()
     
     try:
