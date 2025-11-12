@@ -1,21 +1,16 @@
 """
 MuJoCo-based simulator for the remote robot (follower).
 
-This module implements:
-- Adaptive PD control, when delay is high, PD gains are decreased, when delay is low, PD gains are increased.
-- We use MuJoco's built-in inverse dynamics function to compute the baseline torque.
-- RL agent learns torque compensation
-- Interpolation using NN predictor to predict missing trajectory points due to delay. 
-
-1. Torque compensation:
-    inverse kinematics + RL compensation
-2. Trajectory interpolation:
-    NN predictor
-3. Adaptive PD control:
-    Adaptive PD control
+Pipelines:
+1. subscribe to predicted local robot state
+2. subscribe to torque compensation from RL
+3. PD control with inverse dynamics to compute required torques
+4. final tau = baseline tau + torque compensation
+5. step the MuJoCo simulation
 """
 
 from __future__ import annotations
+from cmath import tau
 from typing import Tuple
 
 import mujoco
@@ -36,15 +31,16 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
 )
 
 class RemoteRobotSimulator:
+    """MuJoCo-based simulator for the remote robot (follower)."""
     def __init__(
         self,
     ):
-       
         # Initialize MuJoCo model and data
         self.model_path = DEFAULT_MUJOCO_MODEL_PATH
         self.model = mujoco.MjModel.from_xml_path(self.model_path)
         self.data = mujoco.MjData(self.model)
 
+        # Robot configuration
         self.n_joints: int = N_JOINTS
         self.ee_body_name: str = EE_BODY_NAME
 
@@ -76,7 +72,7 @@ class RemoteRobotSimulator:
         self.last_q_target = np.zeros(self.n_joints)
 
     def reset(
-        self, 
+        self,
         initial_qpos: NDArray[np.float64]
     ) -> None:
         """Reset the simulation to initial joint configuration."""
@@ -88,23 +84,16 @@ class RemoteRobotSimulator:
 
         self.last_q_target = initial_qpos.copy()
 
-    def compute_inverse_dynamics_torque(
+    def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
+        """Normalize an angle or array of angles to the range [-pi, pi]."""
+        return (angle + np.pi) % (2 * np.pi) - np.pi
+    
+    def compute_gravity_compensation(
         self,
         q: NDArray[np.float64],
-        qd: NDArray[np.float64],
-        qdd: NDArray[np.float64],
     ) -> NDArray[np.float64]:
-        """Inverse dynamics using MuJoCo's built-in function.
-        
-        Args:
-            q: Desired joint positions (7,)
-            qd: Desired joint velocities (7,)
-            qdd: Desired joint accelerations (7,)
-            
-        Returns:
-            tau: Required joint torques (7,)
-        """
-        
+        """Gravity compensation torque for given joint positions."""
+    
         # Save current state
         qpos_save = self.data.qpos.copy()
         qvel_save = self.data.qvel.copy()
@@ -112,20 +101,21 @@ class RemoteRobotSimulator:
 
         # Set desired state
         self.data.qpos[:self.n_joints] = q
-        self.data.qvel[:self.n_joints] = qd
-        self.data.qacc[:self.n_joints] = qdd
+        self.data.qvel[:self.n_joints] = 0.0
+        self.data.qacc[:self.n_joints] = 0.0
 
-        # Compute inverse dynamics using MuJoCo's built-in function
         mujoco.mj_inverse(self.model, self.data)
-        tau = self.data.qfrc_inverse[:self.n_joints].copy()
+        tau_gravity = self.data.qfrc_inverse[:self.n_joints].copy()
 
         # Restore original state
         self.data.qpos[:] = qpos_save
         self.data.qvel[:] = qvel_save
         self.data.qacc[:] = qacc_save
+        
+        # Reset the data state after restoring
         mujoco.mj_forward(self.model, self.data)
 
-        return tau
+        return tau_gravity
 
     def step(
         self,
@@ -138,21 +128,25 @@ class RemoteRobotSimulator:
         qd_current = self.data.qvel[:self.n_joints].copy()
         q_target = target_q
        
+        # Calculate the target velocity
         q_target_old = self.last_q_target.copy()
         qd_target = (q_target - q_target_old) / self.dt
         self.last_q_target = q_target.copy()
 
-        q_error = q_target - q_current
+        # Calculate desired acceleration using PD control
+        q_error = self._normalize_angle(q_target - q_current) # Normalize angle error
         qd_error = qd_target - qd_current
         qdd_desired = self.kp * q_error + self.kd * qd_error
 
-        tau_baseline = self.compute_inverse_dynamics_torque(
-            q=q_current,
-            qd=qd_current,
-            qdd=qdd_desired,
-        )
+        # Compute baseline torque using inverse dynamics
+        tau_gravity = self.compute_gravity_compensation(q_current)
+        tau_pd = self.kp * q_error + self.kd * qd_error
+        tau_baseline = tau_gravity + tau_pd
         
+        # Applying RL compensation
         tau_total = tau_baseline + torque_compensation
+        
+        # Apply safety torque limits
         tau_clipped = np.clip(tau_total, -self.torque_limits, self.torque_limits)
         limits_hit = np.any(tau_total != tau_clipped)
         

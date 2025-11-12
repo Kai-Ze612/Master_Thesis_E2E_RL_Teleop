@@ -5,7 +5,6 @@ pipelines:
 1. Collect data by running the TeleoperationEnvWithDelay environment with a random policy.
 2. Store (delayed_sequence, true_target) pairs in a replay buffer.
 3. Train the StateEstimator LSTM in a supervised learning. (min MSE loss)
-
 """
 
 import os
@@ -278,26 +277,9 @@ def parse_arguments() -> argparse.Namespace:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     
-    parser.add_argument(
-        "--config", 
-        type=str, 
-        default="2", 
-        choices=['1', '2', '3', '4'], 
-        help="Delay configuration preset."
-    )
-    parser.add_argument(
-        "--trajectory-type", 
-        type=str, 
-        default="figure_8", 
-        choices=[t.value for t in TrajectoryType], 
-        help="Reference trajectory type."
-    )
-    parser.add_argument(
-        "--seed", 
-        type=int, 
-        default=42, 
-        help="Random seed."
-    )
+    parser.add_argument("--config", type=str, default="3", choices=['1', '2', '3', '4'], help="Delay configuration preset.")
+    parser.add_argument("--trajectory-type", type=str, default="figure_8", choices=[t.value for t in TrajectoryType], help="Reference trajectory type.")
+    parser.add_argument("--seed", type=int, default=50, help="Random seed.")
     
     args = parser.parse_args()
     
