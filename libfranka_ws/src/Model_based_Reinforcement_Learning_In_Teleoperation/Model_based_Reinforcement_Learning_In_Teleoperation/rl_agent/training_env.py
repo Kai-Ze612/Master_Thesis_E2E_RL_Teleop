@@ -1,12 +1,14 @@
 """
 Gymnasium Training environment.
 
-The environment is 
-
-Integrated with:
-- DelaySimulator for setting network delay patterns.
-- LocalRobotSimulator: create target joint positions and velocities.
-- RemoteRobotSimulator: subscribe to RL output predicited targets and velocities, apply inverse dynamics and torque compensation.
+Pipeline:
+1. LocalRobotSimulator: generates target trajectory (joint positions + velocities).
+2. DelaySimulator: adding observation delays in receiving target from LocalRobotSimulator
+3. LSTM State Estimator (pre-trained, frozen): receives the delay observation sequence and predicts the current target state.
+4. RL Agent: based on the predicted target, outputs torque compensation action.
+5. Apply PD control + torque compensation on RemoteRobotSimulator.
+6. Adding action delays before applying to RemoteRobotSimulator.
+7. Calculate reward based on true target from LocalRobotSimulator and current remote robot state.
 """
 
 # RL library imports
@@ -23,13 +25,14 @@ import matplotlib.pyplot as plt
 # Custom imports
 from .local_robot_simulator import LocalRobotSimulator, TrajectoryType
 from .remote_robot_simulator import RemoteRobotSimulator
-from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import (
+from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import (
     DelaySimulator,
     ExperimentConfig
 )
 
 # Configuration imports
-from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+    N_JOINTS,
     INITIAL_JOINT_CONFIG,
     JOINT_LIMITS_LOWER,
     JOINT_LIMITS_UPPER,
@@ -244,7 +247,7 @@ class TeleoperationEnvWithDelay(gym.Env):
             # The torque compensation is the immediate RL action (input 'action')
             torque_compensation_for_remote = action
         else:
-            # Fallback for the very first step before the agent predicts (should not happen in VecEnv)
+            # Fallback for the very first step before the agent predicts (e.g. during pre-training)
             target_q_for_remote = self.initial_qpos.copy() # Use a safe, static target
             torque_compensation_for_remote = np.zeros(N_JOINTS)
         
@@ -264,8 +267,10 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.hist_total_reward.append(reward)
         
         # Calculate individual tracking/prediction rewards to store them
-        r_prediction_weighted = REWARD_PREDICTION_WEIGHT * self._calculate_reward_components()['r_prediction']
-        r_tracking_weighted = REWARD_TRACKING_WEIGHT * self._calculate_reward_components()['r_tracking']
+        # --- MODIFICATION: Use .get() for safety, though we fixed the root cause ---
+        reward_components = self._calculate_reward_components()
+        r_prediction_weighted = REWARD_PREDICTION_WEIGHT * reward_components.get('r_prediction', 0.0)
+        r_tracking_weighted = REWARD_TRACKING_WEIGHT * reward_components.get('r_tracking', 0.0)
 
         self.hist_prediction_reward.append(r_prediction_weighted)
         self.hist_tracking_reward.append(r_tracking_weighted)
@@ -403,7 +408,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Handle empty history
         if history_len == 0:
             initial_state = np.concatenate([self.initial_qpos, np.zeros(self.n_joints)])
-            return np.tile(initial_state, buffer_length).astype(np.float32)
+            return np.tile(initial_state, (buffer_length, 1)).flatten().astype(np.float32) # Fix: tile shape
 
         # Get current observation delay
         obs_delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
@@ -456,6 +461,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         else:
             return REWARD_ERROR_SCALE_LOW_ERROR
 
+    # ----------------- MODIFIED FUNCTION -----------------
     def _calculate_reward_components(self) -> Dict[str, float]:
         r_prediction = 0.0
         r_tracking = 0.0
@@ -463,41 +469,61 @@ class TeleoperationEnvWithDelay(gym.Env):
         remote_q, remote_qd = self.remote_robot.get_joint_state()
         
         if self._last_predicted_target is not None:
+            # --- This block runs during SAC training ---
+            
+            # Get the ground truth current target
             true_target = self.get_true_current_target()
             true_target_q = true_target[:N_JOINTS]
             true_target_qd = true_target[N_JOINTS:]
+            
+            # Get the LSTM's prediction
             predicted_q = self._last_predicted_target[:N_JOINTS]
             predicted_qd = self._last_predicted_target[N_JOINTS:]
 
-            # Adaptive scaling
+            # --- PREDICTION REWARD (for logging, not RL) ---
+            # This part measures how good the LSTM's prediction is.
             pos_pred_error = np.linalg.norm(predicted_q - true_target_q)
             pos_scale = self._get_adaptive_position_scale(pos_pred_error)
-            
-            tracking_pos_error = np.linalg.norm(predicted_q - remote_q)
-            track_scale = self._get_adaptive_position_scale(tracking_pos_error)
-            
-            # Position rewards
-            r_pos_prediction = np.exp(-pos_scale * pos_pred_error**2)
-            r_pos_tracking = np.exp(-track_scale * tracking_pos_error**2)
-            
-            # Velocity rewards - CRITICAL FIX: 5× STRONGER
             vel_pred_error = np.linalg.norm(predicted_qd - true_target_qd)
-            r_vel_prediction = np.exp(-pos_scale * 5.0 * vel_pred_error**2)  # Changed from 1.0 to 5.0
             
-            tracking_vel_error = np.linalg.norm(predicted_qd - remote_qd)
-            r_vel_tracking = np.exp(-track_scale * 5.0 * tracking_vel_error**2)  # Changed from 1.0 to 5.0
+            # We use pos_scale for both, assuming velocity error scales similarly
+            r_pos_prediction = np.exp(-pos_scale * pos_pred_error**2)
+            r_vel_prediction = np.exp(-pos_scale * REWARD_VEL_PREDICTION_WEIGHT_FACTOR * vel_pred_error**2) 
             
-            # Normalized arithmetic mean
-            r_prediction = (r_pos_prediction + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_prediction) / \
-                        (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
-            r_tracking = (r_pos_tracking + REWARD_VEL_PREDICTION_WEIGHT_FACTOR * r_vel_tracking) / \
-                        (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
+            r_prediction = (r_pos_prediction + r_vel_prediction) / (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
+            
+            # --- TRACKING REWARD (for RL) ---
+            #
+            # LOGIC FIX: Calculate error against the TRUE target (true_target_q), 
+            # not the predicted one (predicted_q).
+            # This rewards the RL agent for *actually tracking the leader*,
+            # even if the LSTM's prediction is slightly off.
+            #
+            tracking_pos_error = np.linalg.norm(true_target_q - remote_q)
+            tracking_vel_error = np.linalg.norm(true_target_qd - remote_qd)
+            
+            # Use a scale based on the *actual* tracking error
+            track_scale = self._get_adaptive_position_scale(tracking_pos_error)
+
+            r_pos_tracking = np.exp(-track_scale * tracking_pos_error**2)
+            r_vel_tracking = np.exp(-track_scale * REWARD_VEL_PREDICTION_WEIGHT_FACTOR * tracking_vel_error**2) 
+            
+            r_tracking = (r_pos_tracking + r_vel_tracking) / (1.0 + REWARD_VEL_PREDICTION_WEIGHT_FACTOR)
             
             return {
                 'r_prediction': r_prediction,
                 'r_tracking': r_tracking
             }
-        
+
+        # --- CRASH FIX ---
+        # This block runs during pre-training (when _last_predicted_target is None)
+        # It returns a default dictionary, preventing the 'NoneType' error.
+        return {
+            'r_prediction': 0.0,
+            'r_tracking': 0.0
+        }
+    # ----------------- END OF MODIFIED FUNCTION -----------------
+            
     def _calculate_reward(
         self,
         action: np.ndarray,  # tau_compensation
@@ -507,7 +533,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         """
         
         components = self._calculate_reward_components()
-        total_reward = components['r_tracking']
+        # --- MODIFICATION: Use .get() for safety ---
+        total_reward = components.get('r_tracking', 0.0)
         
         # Add small penalty for large actions to encourage smoother control
         action_penalty = 0.01 * np.sum(action**2)
@@ -515,8 +542,9 @@ class TeleoperationEnvWithDelay(gym.Env):
         
         # Logging (every 1000 steps)
         if self.current_step % 1000 == 0:
-            r_prediction = components['r_prediction']
-            r_tracking = components['r_tracking']
+            # --- MODIFICATION: Use .get() for safety ---
+            r_prediction = components.get('r_prediction', 0.0)
+            r_tracking = components.get('r_tracking', 0.0)
             
             if self._last_predicted_target is not None:
                 true_target = self.get_true_current_target()
@@ -528,18 +556,20 @@ class TeleoperationEnvWithDelay(gym.Env):
                 
                 pred_pos_error = np.linalg.norm(predicted_q - true_target_q)
                 pred_vel_error = np.linalg.norm(predicted_qd - true_target_qd)
-                track_pos_error = np.linalg.norm(predicted_q - remote_q)
-                track_vel_error = np.linalg.norm(predicted_qd - remote_qd)
+                
+                # --- LOGIC FIX: Log the correct tracking error ---
+                track_pos_error = np.linalg.norm(true_target_q - remote_q)
+                track_vel_error = np.linalg.norm(true_target_qd - remote_qd)
                 
                 print(f"\n[Reward Debug - Step {self.current_step}]")
                 print(f"  RNN Prediction Accuracy (NOT part of RL reward):")
                 print(f"    Pos Error: {pred_pos_error*1000:.1f}mm → Component: {r_prediction:.3f}")
                 print(f"    Vel Error: {pred_vel_error:.3f} rad/s")
-                print(f"  RL Tracking Performance (to predicted goal):")
+                print(f"  RL Tracking Performance (to TRUE goal):")
                 print(f"    Pos Error: {track_pos_error*1000:.1f}mm → Component: {r_tracking:.3f}")
                 print(f"    Vel Error: {track_vel_error:.3f} rad/s")
                 print(f"    Weighted Tracking: {REWARD_TRACKING_WEIGHT * r_tracking:.3f}")
-                print(f"  TOTAL RL REWARD: {total_reward:.3f}")
+                print(f"    TOTAL RL REWARD: {total_reward:.3f}")
 
         return total_reward
     

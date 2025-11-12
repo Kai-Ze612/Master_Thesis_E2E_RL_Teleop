@@ -1,0 +1,59 @@
+[0.058s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_moveit_config -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config
+[0.407s] -- The C compiler identification is GNU 11.4.0
+[0.598s] -- The CXX compiler identification is GNU 11.4.0
+[0.626s] -- Detecting C compiler ABI info
+[1.006s] -- Detecting C compiler ABI info - done
+[1.018s] -- Check for working C compiler: /usr/bin/cc - skipped
+[1.018s] -- Detecting C compile features
+[1.018s] -- Detecting C compile features - done
+[1.040s] -- Detecting CXX compiler ABI info
+[1.407s] -- Detecting CXX compiler ABI info - done
+[1.434s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[1.437s] -- Detecting CXX compile features
+[1.440s] -- Detecting CXX compile features - done
+[1.468s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[2.547s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[2.950s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[3.140s] -- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[3.792s] -- Added test 'flake8' to check Python code syntax and style conventions
+[3.807s] -- Added test 'lint_cmake' to check CMake code style
+[3.826s] -- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257
+[3.838s] -- Added test 'xmllint' to check XML markup files
+[3.862s] -- Configuring done
+[3.897s] -- Generating done
+[3.900s] -- Build files have been written to: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config
+[3.961s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/garmi_packages/garmi_moveit_config -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config
+[3.962s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config -- -j9 -l9
+[4.809s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config -- -j9 -l9
+[4.810s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake --install /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config
+[4.934s] -- Install configuration: ""
+[4.934s] -- Execute custom install script
+[4.935s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/config/kinematics.yaml
+[4.935s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/config/ompl_planning.yaml
+[4.947s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/config/sim_garmi_controllers.yaml
+[5.021s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/config/sim_garmi_ros_controllers.yaml
+[5.051s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/launch/sim_garmi_moveit.launch.py
+[5.071s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/srdf/base.xacro
+[5.098s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/srdf/garmi.srdf.xacro
+[5.116s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/srdf/garmi_arm.xacro
+[5.153s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/srdf/garmi_arm_hand.xacro
+[5.209s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/srdf/garmi_group_definition.xacro
+[5.240s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/srdf/garmi_hand.xacro
+[5.282s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/srdf/head.xacro
+[5.318s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/rviz/garmi_moveit.rviz
+[5.434s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/ament_index/resource_index/package_run_dependencies/garmi_moveit_config
+[5.471s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/ament_index/resource_index/parent_prefix_path/garmi_moveit_config
+[5.506s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/environment/ament_prefix_path.sh
+[5.531s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/environment/ament_prefix_path.dsv
+[5.547s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/environment/path.sh
+[5.564s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/environment/path.dsv
+[5.602s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/local_setup.bash
+[5.691s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/local_setup.sh
+[5.743s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/local_setup.zsh
+[5.792s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/local_setup.dsv
+[5.827s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/package.dsv
+[5.857s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/ament_index/resource_index/packages/garmi_moveit_config
+[5.898s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/cmake/garmi_moveit_configConfig.cmake
+[5.926s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/cmake/garmi_moveit_configConfig-version.cmake
+[5.941s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/garmi_moveit_config/share/garmi_moveit_config/package.xml
+[5.962s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake --install /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/garmi_moveit_config

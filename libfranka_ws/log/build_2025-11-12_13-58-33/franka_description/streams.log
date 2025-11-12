@@ -1,0 +1,154 @@
+[0.032s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description
+[0.605s] -- The C compiler identification is GNU 11.4.0
+[0.605s] -- The CXX compiler identification is GNU 11.4.0
+[0.605s] -- Detecting C compiler ABI info
+[0.605s] -- Detecting C compiler ABI info - done
+[0.605s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.605s] -- Detecting C compile features
+[0.605s] -- Detecting C compile features - done
+[0.605s] -- Detecting CXX compiler ABI info
+[0.649s] -- Detecting CXX compiler ABI info - done
+[0.665s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.666s] -- Detecting CXX compile features
+[0.666s] -- Detecting CXX compile features - done
+[0.673s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[1.012s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[1.114s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[1.160s] -- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[2.015s] -- Added test 'copyright' to check source files copyright and LICENSE
+[2.037s] -- Added test 'flake8' to check Python code syntax and style conventions
+[2.040s] -- Added test 'lint_cmake' to check CMake code style
+[2.050s] -- Added test 'pep257' to check Python code against some of the docstring style conventions in PEP 257
+[2.057s] -- Added test 'xmllint' to check XML markup files
+[2.061s] -- Configuring done
+[2.081s] -- Generating done
+[2.083s] -- Build files have been written to: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description
+[2.101s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description
+[2.101s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description -- -j9 -l9
+[2.233s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description -- -j9 -l9
+[2.277s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake --install /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description
+[2.633s] -- Install configuration: ""
+[2.633s] -- Execute custom install script
+[2.634s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//launch/visualize_franka.launch.py
+[2.634s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/common/hand.urdf.xacro
+[2.634s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/common/hand.xacro
+[2.634s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/common/panda_arm.xacro
+[2.634s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/mixed/mixed_dual_panda_arm.urdf.xacro
+[2.634s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/mixed/mixed_quad_panda_arm.urdf.xacro
+[2.634s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/real/dual_panda_arm.ros2_control.xacro
+[2.634s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/real/dual_panda_arm.urdf.xacro
+[2.648s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/real/panda_arm.ros2_control.xacro
+[2.708s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/real/panda_arm.urdf.xacro
+[2.757s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/sim/dual_panda_arm_sim.ros2_control.xacro
+[2.806s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/sim/dual_panda_arm_sim.urdf.xacro
+[2.902s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/sim/panda_arm_sim.ros2_control.xacro
+[2.929s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//robots/sim/panda_arm_sim.urdf.xacro
+[2.962s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/finger.dae
+[3.003s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/hand.dae
+[3.039s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/link0.dae
+[3.131s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/link1.dae
+[3.197s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/link2.dae
+[3.207s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/link3.dae
+[3.222s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/link4.dae
+[3.243s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/link5.dae
+[3.263s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/link6.dae
+[3.297s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/link7.dae
+[3.338s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//meshes/visual/meshes.blend
+[3.380s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//rviz/visualize_dual_franka.rviz
+[3.412s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//rviz/visualize_franka.rviz
+[3.440s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/TEMPLATE_panda.xml
+[3.454s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/finger_0.obj
+[3.479s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/finger_1.obj
+[3.531s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/hand.stl
+[3.531s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/hand_0.obj
+[3.551s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/hand_1.obj
+[3.570s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/hand_2.obj
+[3.617s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/hand_3.obj
+[3.637s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/hand_4.obj
+[3.654s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0.stl
+[3.669s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_0.obj
+[3.684s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_1.obj
+[3.752s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_10.obj
+[3.792s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_11.obj
+[3.835s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_2.obj
+[3.901s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_3.obj
+[3.930s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_4.obj
+[3.953s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_5.obj
+[4.001s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_7.obj
+[4.024s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_8.obj
+[4.037s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link0_9.obj
+[4.049s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link1.obj
+[4.076s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link1.stl
+[4.097s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link2.obj
+[4.111s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link2.stl
+[4.130s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link3.stl
+[4.151s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link3_0.obj
+[4.213s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link3_1.obj
+[4.244s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link3_2.obj
+[4.264s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link3_3.obj
+[4.304s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link4.stl
+[4.350s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link4_0.obj
+[4.405s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link4_1.obj
+[4.454s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link4_2.obj
+[4.509s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link4_3.obj
+[4.633s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link5_0.obj
+[4.672s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link5_1.obj
+[4.765s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link5_2.obj
+[4.817s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link5_collision_0.obj
+[4.915s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link5_collision_1.obj
+[4.977s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link5_collision_2.obj
+[5.057s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6.stl
+[5.119s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_0.obj
+[5.217s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_1.obj
+[5.273s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_10.obj
+[5.322s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_11.obj
+[5.365s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_12.obj
+[5.399s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_13.obj
+[5.433s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_14.obj
+[5.481s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_15.obj
+[5.549s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_16.obj
+[5.654s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_2.obj
+[5.729s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_3.obj
+[5.772s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_4.obj
+[5.826s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_5.obj
+[5.855s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_6.obj
+[5.925s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_7.obj
+[5.969s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_8.obj
+[6.053s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link6_9.obj
+[6.133s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link7.stl
+[6.218s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link7_0.obj
+[6.329s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link7_1.obj
+[6.413s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link7_2.obj
+[6.490s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link7_3.obj
+[6.545s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link7_4.obj
+[6.575s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link7_5.obj
+[6.608s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link7_6.obj
+[6.676s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/assets/link7_7.obj
+[6.744s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/dual_scene.xml
+[6.790s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/dual_scene_ng.xml
+[6.825s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/mj_dual.xml
+[6.865s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/mj_dual_ng.xml
+[6.935s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/objects.xml
+[6.970s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/panda.xml
+[7.007s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/panda_ng.xml
+[7.051s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/panda_torque_only.xml
+[7.081s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/scene.xml
+[7.108s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/scene_ng.xml
+[7.140s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/scene_torque_only.xml
+[7.178s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description//mujoco/franka/viewer.ipynb
+[7.231s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/ament_index/resource_index/package_run_dependencies/franka_description
+[7.310s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/ament_index/resource_index/parent_prefix_path/franka_description
+[7.384s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/environment/ament_prefix_path.sh
+[7.428s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/environment/ament_prefix_path.dsv
+[7.484s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/environment/path.sh
+[7.525s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/environment/path.dsv
+[7.566s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/local_setup.bash
+[7.629s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/local_setup.sh
+[7.672s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/local_setup.zsh
+[7.708s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/local_setup.dsv
+[7.745s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/package.dsv
+[7.786s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/ament_index/resource_index/packages/franka_description
+[7.829s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/cmake/franka_descriptionConfig.cmake
+[7.873s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/cmake/franka_descriptionConfig-version.cmake
+[7.923s] -- Symlinking: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/franka_description/share/franka_description/package.xml
+[8.002s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/opt/ros/humble /usr/bin/cmake --install /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_description

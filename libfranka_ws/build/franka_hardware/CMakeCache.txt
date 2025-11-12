@@ -972,7 +972,7 @@ FIND_PACKAGE_MESSAGE_DETAILS_FastRTPS:INTERNAL=[/opt/ros/humble/include][/opt/ro
 //Details about finding OpenSSL
 FIND_PACKAGE_MESSAGE_DETAILS_OpenSSL:INTERNAL=[/usr/lib/x86_64-linux-gnu/libcrypto.so][/usr/include][c ][v3.0.2()]
 //Details about finding Python3
-FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/usr/bin/python3][/usr/include/python3.10][/home/kai/.local/lib/python3.10/site-packages/numpy/_core/include][cfound components: Interpreter Development.Module NumPy ][v3.10.12()]
+FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/usr/bin/python3][/usr/include/python3.10][/home/kai/.local/lib/python3.10/site-packages/numpy/core/include][cfound components: Interpreter Development.Module NumPy ][v3.10.12()]
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //ADVANCED property for variable: OPENGL_EGL_INCLUDE_DIR
@@ -1065,7 +1065,7 @@ _Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;10;12;64;;cpython-310-x86_64-l
 _Python3_INTERPRETER_SIGNATURE:INTERNAL=0f3e53742e142b1d9e50e4ca5b901dd8
 _Python3_NUMPY_SIGNATURE:INTERNAL=2c9f54926079e6790283292d6d849f51
 //Path to a file.
-_Python3_NumPy_INCLUDE_DIR:INTERNAL=/home/kai/.local/lib/python3.10/site-packages/numpy/_core/include
+_Python3_NumPy_INCLUDE_DIR:INTERNAL=/home/kai/.local/lib/python3.10/site-packages/numpy/core/include
 //Index for unique symlink install targets
 __AMENT_CMAKE_SYMLINK_INSTALL_TARGETS_INDEX:INTERNAL=1
 __pkg_config_arguments__OPENSSL:INTERNAL=QUIET;openssl

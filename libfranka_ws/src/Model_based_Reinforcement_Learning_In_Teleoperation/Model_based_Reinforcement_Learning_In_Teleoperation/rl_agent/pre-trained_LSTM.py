@@ -20,7 +20,7 @@ import torch.nn.functional as F
 from typing import Dict, Tuple
 
 # Stable Baselines3 imports
-from stable_baselines3.common.vec_env import SubprocVecEnv, VecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv, VecEnv, DummyVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 
 from torch.utils.tensorboard import SummaryWriter
@@ -171,7 +171,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         make_env,
         n_envs=NUM_ENVIRONMENTS,
         seed=args.seed,
-        vec_env_cls=SubprocVecEnv
+        vec_env_cls= DummyVecEnv
     )
     
     # Initialize State Estimator and optimizer
@@ -181,13 +181,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     # Initialize replay buffer
     replay_buffer = PretrainReplayBuffer(ESTIMATOR_BUFFER_SIZE, device)
     
-    # Robot warmup
-    robot_warmup_steps = int(WARM_UP_DURATION * DEFAULT_CONTROL_FREQ)
-    
     obs = env.reset()
-    for step in range(robot_warmup_steps):
-        random_actions = np.array([env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
-        env.step(random_actions)
     
     for warmup_step in range(ESTIMATOR_WARMUP_STEPS):
         delayed_seq_batch, true_target_batch = collect_data_from_envs(env, NUM_ENVIRONMENTS)
@@ -197,11 +191,6 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         
         random_actions = np.array([env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
         obs, rewards, dones, infos = env.step(random_actions)
-        
-        if np.any(dones):
-            for _ in range(robot_warmup_steps):
-                random_actions = np.array([env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
-                env.step(random_actions)
     
     logger.info(f"Buffer filled: {len(replay_buffer)} samples")
 
@@ -221,11 +210,6 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         
         random_actions = np.array([env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
         obs, rewards, dones, infos = env.step(random_actions)
-        
-        if np.any(dones):
-            for _ in range(robot_warmup_steps):
-                random_actions = np.array([env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
-                env.step(random_actions)
         
         # Training step
         batch = replay_buffer.sample(ESTIMATOR_BATCH_SIZE)
