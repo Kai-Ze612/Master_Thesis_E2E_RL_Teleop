@@ -21,13 +21,13 @@ from stable_baselines3.common.vec_env import VecEnv
 
 from torch.utils.tensorboard import SummaryWriter
 
-from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import (
-    StateEstimator, Actor, Critic
-)
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import StateEstimator, Actor, Critic
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.training_env import TeleoperationEnvWithDelay
+from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import TrajectoryType
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    N_JOINTS, 
-    DEFAULT_CONTROL_FREQ,
+    N_JOINTS,
     RNN_SEQUENCE_LENGTH,
     SAC_LEARNING_RATE,
     ALPHA_LEARNING_RATE,
@@ -39,12 +39,12 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_UPDATES_PER_STEP,
     SAC_START_STEPS,
     LOG_FREQ, 
-    CHECKPOINT_DIR_LSTM,
     CHECKPOINT_DIR_RL,
-    NUM_ENVIRONMENTS,
     SAC_VAL_FREQ,
     SAC_VAL_EPISODES,
-    SAC_EARLY_STOPPING_PATIENCE
+    SAC_EARLY_STOPPING_PATIENCE,
+    OBS_DIM,
+    MAX_EPISODE_STEPS
 )
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,8 @@ class ReplayBuffer:
         self.seq_len = RNN_SEQUENCE_LENGTH
         self.state_dim = N_JOINTS * 2
         self.action_dim = N_JOINTS
+        
+        # Pre-allocate memory
         self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
         self.remote_states = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
         self.actions = np.zeros((buffer_size, self.action_dim), dtype=np.float32)
@@ -76,6 +78,7 @@ class ReplayBuffer:
         self.dones = np.zeros((buffer_size, 1), dtype=np.float32)
 
     def add(self, delayed_seq, remote_state, action, reward, true_target, next_delayed_seq, next_remote_state, done):
+        """Add a single experience to the replay buffer"""
         self.delayed_sequences[self.ptr] = delayed_seq
         self.remote_states[self.ptr] = remote_state
         self.actions[self.ptr] = action
@@ -84,10 +87,12 @@ class ReplayBuffer:
         self.next_delayed_sequences[self.ptr] = next_delayed_seq
         self.next_remote_states[self.ptr] = next_remote_state
         self.dones[self.ptr] = done
+        
         self.ptr = (self.ptr + 1) % self.buffer_size
         self.size = min(self.size + 1, self.buffer_size)
 
     def sample(self, batch_size: int) -> Dict[str, torch.Tensor]:
+        """Sample a batch of experiences from the replay buffer"""
         indices = np.random.randint(0, self.size, size=batch_size)
         batch = {
             'delayed_sequences': torch.tensor(self.delayed_sequences[indices], device=self.device),
@@ -103,22 +108,34 @@ class ReplayBuffer:
 
 
 class SACTrainer:
+    """Soft actor-critic (SAC) training algorithm with pre-trained LSTM state estimator."""
     
     def __init__(self, 
                  env: VecEnv,
-                 pretrained_estimator_path: Optional[str] = None
+                 pretrained_estimator_path: Optional[str] = None,
+                 val_delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY
                  ):
+        
         """Initialize the Model-Based SAC Trainer."""
         
         self.env = env
         self.num_envs = env.num_envs
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
+        # create validation environment
+        self.val_env = TeleoperationEnvWithDelay(
+            delay_config=val_delay_config,
+            trajectory_type=TrajectoryType.FIGURE_8,
+            randomize_trajectory=False,  # NO randomization for validation!
+            render_mode=None
+        )
+        
         # Load LSTM State Estimator
         self.state_estimator = StateEstimator().to(self.device)
         weights = torch.load(pretrained_estimator_path, map_location=self.device)
         self.state_estimator.load_state_dict(weights['state_estimator_state_dict'])
-        self.state_estimator.eval() # Set to evaluation mode
+        # freeze the estimator
+        self.state_estimator.eval()
         for param in self.state_estimator.parameters():
             param.requires_grad = False  # Freeze parameters
 
@@ -155,8 +172,16 @@ class SACTrainer:
         self.checkpoint_dir = CHECKPOINT_DIR_RL
         self.tb_writer: Optional[SummaryWriter] = None
         self.training_start_time = None
+        
+        # Initialize persistent hidden states for stateful LSTM inference
         self.hidden_states = self.state_estimator.init_hidden_state(self.num_envs, self.device)
 
+        # Validation parameters and Early Stopping
+        self.best_validation_reward = -np.inf
+        self.validation_rewards_history = deque(maxlen=100)
+        self.patience_counter = 0
+        self.early_stop_triggered = False
+        
     def _init_tensorboard(self):
         """Initialize TensorBoard writer."""
         tb_dir = os.path.join(self.checkpoint_dir, "tensorboard_sac")
@@ -164,17 +189,22 @@ class SACTrainer:
         self.tb_writer = SummaryWriter(log_dir=tb_dir, flush_secs=120)
         logger.info(f"Tensorboard logs at: {tb_dir}")
 
-    def _log_metrics(self, metrics: Dict[str, float], avg_reward: float):
+    def _log_metrics(self, metrics: Dict[str, float], avg_reward: float, val_reward: Optional[float] = None):
+        """Log metrics to TensorBoard"""
         step = self.num_updates
         if self.tb_writer:
             self.tb_writer.add_scalar('train/avg_episode_reward', avg_reward, self.total_timesteps)
+            if val_reward is not None:
+                self.tb_writer.add_scalar('validation/avg_episode_reward', val_reward, self.total_timesteps)
+                self.tb_writer.add_scalar('validation/best_reward', self.best_validation_reward, self.total_timesteps)
             self.tb_writer.add_scalar('train/alpha', metrics.get('alpha', 0.0), step)
             self.tb_writer.add_scalars('losses', {
                 'actor_loss': metrics.get('actor_loss', 0.0),
                 'critic_loss': metrics.get('critic_loss', 0.0),
                 'alpha_loss': metrics.get('alpha_loss', 0.0),
             }, step)
-
+            self.tb_writer.add_scalar('train/estimator_loss_frozen', metrics.get('estimator_loss (frozen)', 0.0), step)
+    
     @property
     def alpha(self) -> float:
         return self.log_alpha.exp().detach().item()
@@ -184,27 +214,110 @@ class SACTrainer:
                       remote_state_batch: np.ndarray,
                       deterministic: bool = False
                      ) -> Tuple[np.ndarray, np.ndarray]:
+       
         with torch.no_grad():
-            delayed_seq_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)
-            remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)
-
-            predicted_state_t, new_hidden_state = self.state_estimator(
-                delayed_seq_t, self.hidden_states
+            # stateful LSTM Inference
+            current_obs_only = delayed_seq_batch[:, -1:, :]
+            
+            # Convert to tensor
+            current_obs_t = torch.tensor(
+                current_obs_only, 
+                dtype=torch.float32, 
+                device=self.device
             )
+            remote_state_t = torch.tensor(
+                remote_state_batch, 
+                dtype=torch.float32, 
+                device=self.device
+            )
+            
+            #LSTM step
+            predicted_state_t, new_hidden_state = self.state_estimator(
+                current_obs_t,           # ← Single timestep (NOT full 128!)
+                self.hidden_states       # ← Persistent memory from previous step
+            )
+            
+            # Update persistent hidden state for next inference call
             self.hidden_states = new_hidden_state
             
             actor_input_t = torch.cat([predicted_state_t, remote_state_t], dim=1)
             
+            # Actor outputs action distribution
             action_t, _, _ = self.actor.sample(actor_input_t, deterministic)
             
+            # Convert to numpy for environment
             actions_np = action_t.cpu().numpy()
             predicted_states_np = predicted_state_t.cpu().numpy()
             
             return actions_np, predicted_states_np
-
+    
+    def validate(self) -> float:
+        """ Perform validation over several episodes and return average reward. """
+        
+        validation_rewards = []
+        
+        # Initialize validation environment
+        val_obs, _ = self.val_env.reset()
+        val_hidden_states = self.state_estimator.init_hidden_state(1, self.device)
+        
+        for episode in range(SAC_VAL_EPISODES):
+            episode_reward = 0.0
+            val_obs, _ = self.val_env.reset()
+            val_hidden_states = self.state_estimator.init_hidden_state(1, self.device)
+            
+            for step in range(MAX_EPISODE_STEPS):
+                # Get delayed buffer for LSTM
+                delayed_buffer = self.val_env.get_delayed_target_buffer(RNN_SEQUENCE_LENGTH)
+                remote_state = self.val_env.get_remote_state()
+                
+                # Reshape for batch inference
+                delayed_seq_batch = delayed_buffer.reshape(1, RNN_SEQUENCE_LENGTH, N_JOINTS * 2)
+                remote_state_batch = remote_state.reshape(1, N_JOINTS * 2)
+                
+                # Get deterministic action (no exploration)
+                with torch.no_grad():
+                    # Process through LSTM
+                    current_obs_only = delayed_seq_batch[:, -1:, :]
+                    current_obs_t = torch.tensor(current_obs_only, dtype=torch.float32, device=self.device)
+                    remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)
+                    
+                    predicted_state_t, val_hidden_states = self.state_estimator(current_obs_t, val_hidden_states)
+                    actor_input_t = torch.cat([predicted_state_t, remote_state_t], dim=1)
+                    action_t, _, _ = self.actor.sample(actor_input_t, deterministic=True)
+                    action = action_t.cpu().numpy()[0]
+                
+                # Set predicted target and step environment
+                self.val_env.set_predicted_target(predicted_state_t.cpu().numpy()[0])
+                val_obs, reward, done, truncated, info = self.val_env.step(action)
+                
+                episode_reward += reward
+                
+                if done or truncated:
+                    break
+            
+            validation_rewards.append(episode_reward)
+            logger.info(f"  Episode {episode + 1}/{SAC_VAL_EPISODES}: Reward = {episode_reward:.4f}")
+        
+        avg_validation_reward = np.mean(validation_rewards)
+        std_validation_reward = np.std(validation_rewards)
+        
+        logger.info(f"\nValidation Results:")
+        logger.info(f"  Average Reward: {avg_validation_reward:.4f}")
+        logger.info(f"  Std Dev: {std_validation_reward:.4f}")
+        logger.info(f"  Min: {np.min(validation_rewards):.4f}")
+        logger.info(f"  Max: {np.max(validation_rewards):.4f}")
+        
+        return avg_validation_reward
+            
     def update_policy(self) -> Dict[str, float]:
         """
         Perform one SAC update step (Estimator is frozen).
+        
+        Pipeline:
+        1. critic network update (Q learning)
+        2. actor network update (policy learning)
+        3. temperature parameter (entropy tuning)
+        4. target network update
         """
         metrics = {}
         
@@ -241,7 +354,7 @@ class SACTrainer:
         # Get current Q-values from *current* critic
         current_q1, current_q2 = self.critic(actor_state_t, batch['actions'])
         
-        # Critic loss
+        # MSE loss between current Q and target Q (bellman equation)
         critic_loss = F.mse_loss(current_q1, q_target) + F.mse_loss(current_q2, q_target)
         
         self.critic_optimizer.zero_grad()
@@ -256,10 +369,11 @@ class SACTrainer:
         # Get actions and log_probs from current actor
         actions_t, log_probs_t, _ = self.actor.sample(actor_state_t)
         
+        # Get Q-values from sampled actions
         q1_policy, q2_policy = self.critic(actor_state_t, actions_t)
         q_policy_min = torch.min(q1_policy, q2_policy)
         
-        # Actor loss
+        # Actor loss: maximize (Q - α*log_π) = minimize (α*log_π - Q)
         actor_loss = (self.alpha * log_probs_t - q_policy_min).mean()
         
         self.actor_optimizer.zero_grad()
@@ -267,6 +381,7 @@ class SACTrainer:
         self.actor_optimizer.step()
         metrics['actor_loss'] = actor_loss.item()
         
+        # Unfreeze critic parameters
         for param in self.critic.parameters():
             param.requires_grad = True
             
@@ -289,56 +404,105 @@ class SACTrainer:
         
     def train(self, total_timesteps: int):
         """ The main training loop for Model-Based SAC. """
+        
         self._init_tensorboard()
         self.training_start_time = datetime.now()
         start_time = self.training_start_time
+        
+        logger.info("="*70)
+        logger.info("Starting SAC Training")
+        logger.info("="*70)
+        logger.info(f"Configuration:")
+        logger.info(f"  Environments: {self.num_envs}")
+        logger.info(f"  Total timesteps: {total_timesteps:,}")
+        logger.info(f"  Learning rate (Actor/Critic): {SAC_LEARNING_RATE}")
+        logger.info(f"  Gamma (discount): {SAC_GAMMA}")
+        logger.info(f"  Tau (soft update): {SAC_TAU}")
+        logger.info(f"  Batch size: {SAC_BATCH_SIZE}")
+        logger.info(f"  Buffer size: {SAC_BUFFER_SIZE:,}")
+        logger.info(f"  Start steps (random): {SAC_START_STEPS:,}")
+        logger.info(f"  Device: {self.device}")
+        logger.info(f"  Observation dim: {OBS_DIM}D (112: current 14D + history 70D + pred 14D + error 14D)")
+        logger.info(f"  Actor input dim: 28D (predicted state 14D + remote state 14D)")
+        logger.info("")
+        
+        # Initialize environment
         self.env.reset()
         episode_rewards = np.zeros(self.num_envs, dtype=np.float32)
         episode_lengths = np.zeros(self.num_envs, dtype=np.int32)
         completed_episode_rewards = deque(maxlen=100)
-        logger.info("Starting training...")
+        
+        logger.info("Training loop starting...")
+        logger.info("")
 
-        for t in range(int(total_timesteps // self.num_envs)): # collecting data
+        for t in range(int(total_timesteps // self.num_envs)):
+            # --- Data Collectrion Phase
+            # Get delayed observation sequences from all environments
             delayed_buffers_list = self.env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
             remote_states_list = self.env.env_method("get_remote_state")
             true_targets_list = self.env.env_method("get_true_current_target")
-            delayed_seq_batch = np.array([buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2) for buf in delayed_buffers_list])
+            
+            # Convert to numpy arrays with correct shapes
+            delayed_seq_batch = np.array([
+                buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2) 
+                for buf in delayed_buffers_list
+            ])
             remote_state_batch = np.array(remote_states_list)
             true_target_batch = np.array(true_targets_list)
 
+
+            # --- Action selction phase
             if self.total_timesteps < SAC_START_STEPS:
+                # Exploration phase: random actions
                 actions_batch = np.array([self.env.action_space.sample() for _ in range(self.num_envs)])
                 predicted_state_batch = np.zeros_like(remote_state_batch)
             else:
+                # Exploitation phase: use learned policy
                 actions_batch, predicted_state_batch = self.select_action(
                     delayed_seq_batch, remote_state_batch
                 )
 
+            # Set predicted targets in environments (for reward calculation)
             for i in range(self.num_envs):
                 self.env.env_method("set_predicted_target", predicted_state_batch[i], indices=[i])
             
+            # --- Environment Step
             _, rewards_batch, dones_batch, infos_batch = self.env.step(actions_batch)
             
+            # Get next state observations
             next_delayed_buffers_list = self.env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
             next_remote_states_list = self.env.env_method("get_remote_state")
-            next_delayed_seq_batch = np.array([buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2) for buf in next_delayed_buffers_list])
+            next_delayed_seq_batch = np.array([
+                buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2) 
+                for buf in next_delayed_buffers_list
+            ])
             next_remote_state_batch = np.array(next_remote_states_list)
             
+            # --- Store Experience in Replay Buffer
             for i in range(self.num_envs):
                 self.replay_buffer.add(
-                    delayed_seq_batch[i], remote_state_batch[i], actions_batch[i],
-                    rewards_batch[i], true_target_batch[i],
-                    next_delayed_seq_batch[i], next_remote_state_batch[i],
+                    delayed_seq_batch[i], 
+                    remote_state_batch[i], 
+                    actions_batch[i],
+                    rewards_batch[i], 
+                    true_target_batch[i],
+                    next_delayed_seq_batch[i], 
+                    next_remote_state_batch[i],
                     dones_batch[i]
                 )
 
+            # --- Update Training Statistics
             self.total_timesteps += self.num_envs
             episode_rewards += rewards_batch
             episode_lengths += 1
 
+            # Handle episode termination
             for i in range(self.num_envs):
                 if dones_batch[i]:
+                    # Track completed episode reward
                     completed_episode_rewards.append(episode_rewards[i])
+                    
+                    # Reset hidden state for this environment (stateful LSTM)
                     if isinstance(self.hidden_states, tuple):
                         h, c = self.hidden_states
                         h[:, i, :] = 0.0
@@ -346,40 +510,99 @@ class SACTrainer:
                         self.hidden_states = (h, c)
                     else:
                         self.hidden_states[:, i, :] = 0.0
+                    
+                    # Reset episode tracking
                     episode_rewards[i] = 0.0
                     episode_lengths[i] = 0
             
-            # Update policy after collecting sufficient data
+            # --- Policy Update Phase (after collecting sufficient data)
             if self.total_timesteps >= SAC_START_STEPS:
                 for _ in range(int(SAC_UPDATES_PER_STEP * self.num_envs)):
                     metrics = self.update_policy()
                     self.num_updates += 1
 
+            # --- Validation and Early Stopping Check
+            validation_reward = None
+            if (t + 1) % (SAC_VAL_FREQ // self.num_envs) == 0 and self.total_timesteps >= SAC_START_STEPS:
+                validation_reward = self.validate()
+                self.validation_rewards_history.append(validation_reward)
+                
+                # Early stopping logic
+                if validation_reward > self.best_validation_reward:
+                    # New best!
+                    self.best_validation_reward = validation_reward
+                    self.patience_counter = 0
+                    self.save_checkpoint("best_policy.pth")
+                    logger.info(f"✓ NEW BEST! Validation reward: {validation_reward:.4f}")
+                    logger.info(f"  Saved: best_policy.pth")
+                else:
+                    # No improvement
+                    self.patience_counter += 1
+                    logger.info(f"⚠ No improvement for {self.patience_counter}/{SAC_EARLY_STOPPING_PATIENCE} checks")
+                    
+                    # Check early stopping
+                    if self.patience_counter >= SAC_EARLY_STOPPING_PATIENCE:
+                        logger.info("")
+                        logger.info("="*70)
+                        logger.info("🛑 EARLY STOPPING TRIGGERED!")
+                        logger.info("="*70)
+                        logger.info(f"Best validation reward: {self.best_validation_reward:.4f}")
+                        logger.info(f"Stopped at timestep: {self.total_timesteps:,}")
+                        logger.info(f"Using best checkpoint: best_policy.pth")
+                        self.early_stop_triggered = True
+                        break
+
             # Logging
             if (t + 1) % (LOG_FREQ * 10) == 0:
                 elapsed_time = datetime.now() - start_time
                 avg_reward = np.mean(completed_episode_rewards) if completed_episode_rewards else 0.0
+                
                 logger.info(f"\n{'─'*70}")
-                logger.info(f"Timesteps: {self.total_timesteps:,} | Updates: {self.num_updates:,} | Elapsed: {str(elapsed_time).split('.')[0]}")
-                logger.info(f"  Avg Reward (last 100): {avg_reward:.3f}")
+                logger.info(f"Training Progress:")
+                logger.info(f"  Timesteps: {self.total_timesteps:,} / {total_timesteps:,}")
+                logger.info(f"  Updates: {self.num_updates:,}")
+                logger.info(f"  Elapsed Time: {str(elapsed_time).split('.')[0]}")
+                logger.info(f"  Avg Episode Reward (train): {avg_reward:.4f}")
+                
                 if self.total_timesteps >= SAC_START_STEPS:
-                    logger.info(f"  Estimator Loss (Frozen): {metrics.get('estimator_loss (frozen)', 0):.6f}")
-                    logger.info(f"  Actor Loss: {metrics.get('actor_loss', 0):.4f} | Critic Loss: {metrics.get('critic_loss', 0):.4f}")
-                    logger.info(f"  Alpha: {self.alpha:.4f} | Alpha Loss: {metrics.get('alpha_loss', 0):.4f}")
-                self._log_metrics(metrics, avg_reward)
+                    logger.info(f"\nLosses & Metrics:")
+                    logger.info(f"  Actor Loss: {metrics.get('actor_loss', 0):.4f}")
+                    logger.info(f"  Critic Loss: {metrics.get('critic_loss', 0):.4f}")
+                    logger.info(f"  Alpha: {self.alpha:.4f}")
+                
+                logger.info(f"{'─'*70}")
+                
+                self._log_metrics(metrics, avg_reward, validation_reward)
 
-        logger.info("Training completed. Saving final models.")
+        # --- Training Complete
+        logger.info("")
+        logger.info("="*70)
+        logger.info("Training Completed")
+        logger.info("="*70)
+        logger.info(f"Total timesteps: {self.total_timesteps:,}")
+        logger.info(f"Total updates: {self.num_updates:,}")
+        elapsed_time = datetime.now() - self.training_start_time
+        logger.info(f"Total training time: {str(elapsed_time).split('.')[0]}")
+        logger.info(f"Best validation reward: {self.best_validation_reward:.4f}")
+        logger.info(f"Early stopping triggered: {self.early_stop_triggered}")
+        logger.info("")
+        logger.info("Checkpoints saved:")
+        logger.info(f"  best_policy.pth (validation peak)")
+        logger.info(f"  final_policy.pth (last state)")
+        logger.info("")
+        
         self.save_checkpoint("final_policy.pth")
+        
         if self.tb_writer:
             self.tb_writer.close()
 
     def save_checkpoint(self, filename: str):
-        """Save the current model checkpoint."""
+        """Save current model checkpoint"""
         
         path = os.path.join(self.checkpoint_dir, filename)
         os.makedirs(self.checkpoint_dir, exist_ok=True)
         
-        torch.save({
+        checkpoint = {
             'state_estimator_state_dict': self.state_estimator.state_dict(),
             'actor_state_dict': self.actor.state_dict(),
             'critic_state_dict': self.critic.state_dict(),
@@ -390,33 +613,47 @@ class SACTrainer:
             'alpha_optimizer_state_dict': self.alpha_optimizer.state_dict(),
             'total_timesteps': self.total_timesteps,
             'num_updates': self.num_updates,
-        }, path)
-        logger.info(f"Checkpoint saved to: {path}")
+            'best_validation_reward': self.best_validation_reward,
+        }
+        
+        torch.save(checkpoint, path)
+        logger.info(f"Checkpoint saved: {path}")
 
     def load_checkpoint(self, path: str):
+        """Load model checkpoint"""
+        
         if not os.path.exists(path):
-            logger.error(f"Checkpoint file not found: {path}")
+            logger.error(f"Checkpoint not found: {path}")
             return
+        
+        try:
+            checkpoint = torch.load(path, map_location=self.device)
             
-        checkpoint = torch.load(path, map_location=self.device)
-        
-        self.state_estimator.load_state_dict(checkpoint['state_estimator_state_dict'])
-        self.actor.load_state_dict(checkpoint['actor_state_dict'])
-        self.critic.load_state_dict(checkpoint['critic_state_dict'])
-        self.critic_target.load_state_dict(checkpoint['critic_target_state_dict'])
-        
-        self.actor_optimizer.load_state_dict(checkpoint['actor_optimizer_state_dict'])
-        self.critic_optimizer.load_state_dict(checkpoint['critic_optimizer_state_dict'])
-        
-        self.log_alpha = checkpoint['log_alpha']
-        self.alpha_optimizer.load_state_dict(checkpoint['alpha_optimizer_state_dict'])
-        
-        self.total_timesteps = checkpoint.get('total_timesteps', 0)
-        self.num_updates = checkpoint.get('num_updates', 0)
-        
-        # Ensure estimator is frozen after loading
-        self.state_estimator.eval()
-        for param in self.state_estimator.parameters():
-            param.requires_grad = False
+            self.state_estimator.load_state_dict(checkpoint['state_estimator_state_dict'])
+            self.actor.load_state_dict(checkpoint['actor_state_dict'])
+            self.critic.load_state_dict(checkpoint['critic_state_dict'])
+            self.critic_target.load_state_dict(checkpoint['critic_target_state_dict'])
             
-        logger.info(f"Checkpoint loaded from: {path}")
+            self.actor_optimizer.load_state_dict(checkpoint['actor_optimizer_state_dict'])
+            self.critic_optimizer.load_state_dict(checkpoint['critic_optimizer_state_dict'])
+            
+            self.log_alpha = checkpoint['log_alpha']
+            self.alpha_optimizer.load_state_dict(checkpoint['alpha_optimizer_state_dict'])
+            
+            self.total_timesteps = checkpoint.get('total_timesteps', 0)
+            self.num_updates = checkpoint.get('num_updates', 0)
+            self.best_validation_reward = checkpoint.get('best_validation_reward', -np.inf)
+            
+            # Ensure LSTM stays frozen after loading
+            self.state_estimator.eval()
+            for param in self.state_estimator.parameters():
+                param.requires_grad = False
+            
+            logger.info(f"Checkpoint loaded: {path}")
+            logger.info(f"  Total timesteps: {self.total_timesteps:,}")
+            logger.info(f"  Total updates: {self.num_updates:,}")
+            logger.info(f"  Best validation reward: {self.best_validation_reward:.4f}")
+            
+        except Exception as e:
+            logger.error(f"Failed to load checkpoint: {e}")
+            raise
