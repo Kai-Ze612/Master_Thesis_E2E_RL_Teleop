@@ -55,16 +55,16 @@ TRAJECTORY_SCALE = np.array([0.1, 0.3], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1
 
 ######################################
-# pre-trained LSTM hyperparameters
+# pre-trained LSTM hyperparameters - OPTIMIZED
 ######################################
-ESTIMATOR_LEARNING_RATE = 3e-3
-ESTIMATOR_BATCH_SIZE = 256
-ESTIMATOR_BUFFER_SIZE = 200000
-ESTIMATOR_WARMUP_STEPS = 5000
-ESTIMATOR_TOTAL_UPDATES = 50000
-ESTIMATOR_VAL_STEPS = 5000
-ESTIMATOR_VAL_FREQ = 1000
-ESTIMATOR_PATIENCE = 10
+ESTIMATOR_LEARNING_RATE = 1e-3  # Reduced from 3e-3 for more stable training
+ESTIMATOR_BATCH_SIZE = 128      # Reduced from 256 - better for smaller sequence length
+ESTIMATOR_BUFFER_SIZE = 100000  # Reduced from 200k - sufficient for pre-training
+ESTIMATOR_WARMUP_STEPS = 2000   # Reduced from 5000 - faster warmup with smaller seq len
+ESTIMATOR_TOTAL_UPDATES = 30000 # Reduced from 50k - faster pre-training
+ESTIMATOR_VAL_STEPS = 2000      # Reduced proportionally
+ESTIMATOR_VAL_FREQ = 500        # More frequent validation
+ESTIMATOR_PATIENCE = 15         # Increased patience for better convergence
 ESTIMATOR_LR_PATIENCE = 5
 
 ######################################
@@ -88,22 +88,23 @@ OBS_DIM = (
 ######################################
 # Model Architecture Parameters
 ######################################
-STATE_BUFFER_LENGTH = 256 # This is still used by the env
-RNN_HIDDEN_DIM = 256
-RNN_NUM_LAYERS = 4
+# OPTIMIZED: Reduced sequence length for faster, more stable training
+STATE_BUFFER_LENGTH = 64 # Reduced from 256 - still captures ~128ms of history at 500Hz
+RNN_HIDDEN_DIM = 128      # Reduced from 256 - sufficient for 7-DOF robot
+RNN_NUM_LAYERS = 2        # Reduced from 4 - simpler is often better
 RNN_SEQUENCE_LENGTH = STATE_BUFFER_LENGTH # Input sequence for LSTM
 
 # SAC MLP architecture
-SAC_MLP_HIDDEN_DIMS = [512, 256]
+SAC_MLP_HIDDEN_DIMS = [256, 256]  # Simplified from [512, 256]
 SAC_ACTIVATION = 'relu'
 
 ######################################
 # Model-Based SAC Training Hyperparameters
 ######################################
 
-# Learning Rates
+# Learning Rates - OPTIMIZED
 SAC_LEARNING_RATE = 3e-4        # LR for Actor and Critic
-ESTIMATOR_LEARNING_RATE = 1e-4  # Separate LR for LSTM State Estimator
+ESTIMATOR_LEARNING_RATE = 3e-4  # Increased from 1e-4 for faster LSTM training
 ALPHA_LEARNING_RATE = 3e-4      # LR for temperature auto-tuning
 
 # SAC Parameters
@@ -116,30 +117,30 @@ SAC_TARGET_ENTROPY = 'auto'     # Target entropy for temperature tuning
 LOG_STD_MIN = -20
 LOG_STD_MAX = 2
 
-# Training Schedule
-SAC_BUFFER_SIZE = 1_000_000     # Replay buffer size
+# Training Schedule - OPTIMIZED
+SAC_BUFFER_SIZE = 100_000       # Reduced from 1M - more suitable for robot control
 SAC_BATCH_SIZE = 256            # Minibatch size for updates
-SAC_START_STEPS = 5000          # Timesteps to collect with random actions
+SAC_START_STEPS = 2500          # Reduced from 5000 - start learning earlier
 SAC_UPDATES_PER_STEP = 1.0      # Number of updates per env step (1.0 means 1 update per step)
-PPO_TOTAL_TIMESTEPS = 3_000_000 # Renamed, but used by train_agent.py
+PPO_TOTAL_TIMESTEPS = 1_000_000 # Reduced from 3M for faster initial testing
 
 # Loss Weighting
 # Weight for supervised state prediction loss (applied in SACTrainer)
 PREDICTION_LOSS_WEIGHT = 5.0    
 
 ######################################
-# Dense Reward Function Weights
+# Dense Reward Function Weights - OPTIMIZED
 ######################################
-REWARD_PREDICTION_WEIGHT = 20
-REWARD_TRACKING_WEIGHT = 1.0
+REWARD_PREDICTION_WEIGHT = 0.0  # Disabled - prediction is not part of RL reward
+REWARD_TRACKING_WEIGHT = 1.0    # Main reward signal
 REWARD_TRACKING_SCALE = 0.2
-REWARD_ACTION_PENALTY = 0.01
-REWARD_ERROR_SCALE_HIGH_ERROR = 10
-REWARD_ERROR_SCALE_MID_ERROR = 25
-REWARD_ERROR_SCALE_LOW_ERROR = 50
-REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 1.5
+REWARD_ACTION_PENALTY = 0.001   # Reduced from 0.01 - less aggressive penalty
+REWARD_ERROR_SCALE_HIGH_ERROR = 5   # Reduced for smoother gradients
+REWARD_ERROR_SCALE_MID_ERROR = 15   # Reduced for smoother gradients
+REWARD_ERROR_SCALE_LOW_ERROR = 30   # Reduced from 50 for smoother gradients
+REWARD_VEL_PREDICTION_WEIGHT_FACTOR = 1.0  # Reduced from 1.5 - equal weighting
 
-NUM_ENVIRONMENTS = 5
+NUM_ENVIRONMENTS = 4  # Reduced from 5 for more stable training
 
 ######################################
 # Logging and Checkpointing

@@ -104,20 +104,33 @@ class ReplayBuffer:
 
 class SACTrainer:
     
-    def __init__(self, 
+    def __init__(self,
                  env: VecEnv,
                  pretrained_estimator_path: Optional[str] = None
                  ):
         """Initialize the Model-Based SAC Trainer."""
-        
+
         self.env = env
         self.num_envs = env.num_envs
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        
+
         # Load LSTM State Estimator
         self.state_estimator = StateEstimator().to(self.device)
-        weights = torch.load(pretrained_estimator_path, map_location=self.device)
-        self.state_estimator.load_state_dict(weights['state_estimator_state_dict'])
+
+        # Auto-find best LSTM model if path not provided
+        if pretrained_estimator_path is None:
+            pretrained_estimator_path = self._find_best_lstm_model()
+
+        if pretrained_estimator_path and os.path.exists(pretrained_estimator_path):
+            logger.info(f"Loading pre-trained LSTM from: {pretrained_estimator_path}")
+            weights = torch.load(pretrained_estimator_path, map_location=self.device)
+            self.state_estimator.load_state_dict(weights['state_estimator_state_dict'])
+            logger.info("Pre-trained LSTM loaded successfully")
+        else:
+            logger.warning(f"No pre-trained LSTM found at: {pretrained_estimator_path}")
+            logger.warning("Initializing LSTM with random weights - training may be unstable!")
+            logger.warning("Please run LSTM pre-training first for better results.")
+
         self.state_estimator.eval() # Set to evaluation mode
         for param in self.state_estimator.parameters():
             param.requires_grad = False  # Freeze parameters
@@ -156,6 +169,28 @@ class SACTrainer:
         self.tb_writer: Optional[SummaryWriter] = None
         self.training_start_time = None
         self.hidden_states = self.state_estimator.init_hidden_state(self.num_envs, self.device)
+
+    def _find_best_lstm_model(self) -> Optional[str]:
+        """Auto-find the best pre-trained LSTM model."""
+        import glob
+
+        # Search in common locations
+        search_paths = [
+            os.path.join(CHECKPOINT_DIR_LSTM, "*/estimator_best.pth"),
+            os.path.join("./lstm_training_output", "*/estimator_best.pth"),
+            os.path.join(os.path.dirname(__file__), "lstm_training_output", "*/estimator_best.pth"),
+        ]
+
+        all_models = []
+        for pattern in search_paths:
+            all_models.extend(glob.glob(pattern))
+
+        if not all_models:
+            return None
+
+        # Return the most recent model
+        all_models.sort(key=os.path.getmtime, reverse=True)
+        return all_models[0]
 
     def _init_tensorboard(self):
         """Initialize TensorBoard writer."""

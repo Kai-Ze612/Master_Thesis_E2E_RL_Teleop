@@ -101,7 +101,7 @@ def train_agent(args: argparse.Namespace) -> None:
     run_name = f"ModelBasedSAC_{config_name}_{trajectory_name}_{timestamp}"
         
     # Determine base output directory
-    base_output_dir = CHECKPOINT_DIR
+    base_output_dir = CHECKPOINT_DIR_RL
     output_dir = os.path.join(base_output_dir, run_name)
     
     try:
@@ -253,7 +253,7 @@ def parse_arguments() -> argparse.Namespace:
     
     parser = argparse.ArgumentParser(
         description="Train a Model-Based (LSTM+SAC) agent for delayed teleoperation.", # MODIFIED
-        formatter_class=arg.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     
     # Experiment configuration group

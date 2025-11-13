@@ -535,9 +535,10 @@ class TeleoperationEnvWithDelay(gym.Env):
         components = self._calculate_reward_components()
         # --- MODIFICATION: Use .get() for safety ---
         total_reward = components.get('r_tracking', 0.0)
-        
+
         # Add small penalty for large actions to encourage smoother control
-        action_penalty = 0.01 * np.sum(action**2)
+        from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import REWARD_ACTION_PENALTY
+        action_penalty = REWARD_ACTION_PENALTY * np.sum(action**2)
         total_reward -= action_penalty
         
         # Logging (every 1000 steps)
