@@ -211,12 +211,8 @@ def train_agent(args: argparse.Namespace) -> None:
         logger.warning("="*70)
         logger.warning("Saving interrupted model...")
         
-        interrupt_path = os.path.join(trainer.checkpoint_dir, "interrupted_policy.pth")
-        try:
-            trainer.save_checkpoint(interrupt_path)
-            logger.info(f"Interrupted model saved to: {interrupt_path}")
-        except Exception as save_e:
-            logger.error(f"Could not save interrupted model: {save_e}")
+        trainer.save_checkpoint("interrupted_policy.pth")
+        logger.info(f"Interrupted model saved to: {trainer.checkpoint_dir}")
     
     except Exception as e:
         logger.error("")
@@ -225,12 +221,8 @@ def train_agent(args: argparse.Namespace) -> None:
         logger.error("="*70)
         logger.error(f"Error: {e}", exc_info=True)
         
-        crash_path = os.path.join(trainer.checkpoint_dir, "crash_policy.pth")
-        try:
-            trainer.save_checkpoint(crash_path)
-            logger.info(f"Crash model saved to: {crash_path}")
-        except Exception as save_e:
-            logger.error(f"Could not save crash model: {save_e}")
+        trainer.save_checkpoint("crash_policy.pth")
+        logger.info(f"Crash model saved to: {trainer.checkpoint_dir}")
     
     finally:
         logger.info("")
@@ -305,7 +297,6 @@ def parse_arguments() -> argparse.Namespace:
 
 def main():
     """Main entry point."""
-    # --- MODIFICATION: Add set_start_method to prevent CUDA hangs ---
     multiprocessing.set_start_method('spawn', force=True)
     try:
         args = parse_arguments()

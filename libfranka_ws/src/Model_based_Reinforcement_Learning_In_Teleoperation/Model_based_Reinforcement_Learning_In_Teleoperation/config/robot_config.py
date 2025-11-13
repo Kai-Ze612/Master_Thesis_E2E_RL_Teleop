@@ -57,7 +57,7 @@ TRAJECTORY_FREQUENCY = 0.1
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 1e-3
+ESTIMATOR_LEARNING_RATE = 3e-4
 ESTIMATOR_BATCH_SIZE = 256
 ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_WARMUP_STEPS = 5000
@@ -98,8 +98,7 @@ SAC_MLP_HIDDEN_DIMS = [512, 256]
 SAC_ACTIVATION = 'relu'
 
 # Learning Rates
-SAC_LEARNING_RATE = 3e-4        # LR for Actor and Critic
-ESTIMATOR_LEARNING_RATE = 1e-4  # Separate LR for LSTM State Estimator
+SAC_LEARNING_RATE = 1e-4        # LR for Actor and Critic
 ALPHA_LEARNING_RATE = 3e-4      # LR for temperature auto-tuning
 
 # SAC Parameters

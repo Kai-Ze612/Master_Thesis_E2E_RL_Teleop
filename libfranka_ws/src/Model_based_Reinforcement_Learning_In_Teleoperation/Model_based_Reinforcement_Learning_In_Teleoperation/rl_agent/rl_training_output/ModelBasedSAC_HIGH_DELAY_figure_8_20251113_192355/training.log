@@ -1,0 +1,35 @@
+2025-m-13 19:23:55 [INFO] __main__ - Run Name: ModelBasedSAC_HIGH_DELAY_figure_8_20251113_192355
+2025-m-13 19:23:55 [INFO] __main__ - Output Directory: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251113_192355
+2025-m-13 19:23:55 [INFO] __main__ - Training Configuration:
+2025-m-13 19:23:55 [INFO] __main__ -   Delay Config: HIGH_DELAY
+2025-m-13 19:23:55 [INFO] __main__ -   Trajectory Type: figure_8
+2025-m-13 19:23:55 [INFO] __main__ -   Randomize Trajectory: False
+2025-m-13 19:23:55 [INFO] __main__ -   Total Timesteps: 3,000,000
+2025-m-13 19:23:55 [INFO] __main__ -   Random Seed: 50
+2025-m-13 19:23:55 [INFO] __main__ -   Pre-trained LSTM: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251113_082812/estimator_best.pth
+2025-m-13 19:23:55 [INFO] __main__ - 
+2025-m-13 19:23:55 [INFO] __main__ - Setting random seed: 50
+2025-m-13 19:23:55 [INFO] __main__ - Random seeds set for NumPy, PyTorch, and CUDA
+2025-m-13 19:23:55 [INFO] __main__ - 
+2025-m-13 19:24:01 [INFO] __main__ -   Vectorized Environment: SubprocVecEnv
+2025-m-13 19:24:01 [INFO] __main__ -   Number of Envs: 5
+2025-m-13 19:24:01 [INFO] __main__ -   Observation Space (Env): (134,)
+2025-m-13 19:24:01 [INFO] __main__ -   Action Space (Env): (7,)
+2025-m-13 19:24:01 [INFO] __main__ - 
+2025-m-13 19:24:01 [INFO] __main__ - Initializing Model-Based SAC trainer...
+2025-m-13 19:24:03 [INFO] __main__ -   Trainer: SACTrainer
+2025-m-13 19:24:03 [INFO] __main__ -   Checkpoint Directory: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251113_192355
+2025-m-13 19:24:03 [INFO] __main__ - 
+2025-m-13 19:24:03 [INFO] __main__ - ======================================================================
+2025-m-13 19:24:03 [INFO] __main__ - Starting Training
+2025-m-13 19:24:03 [INFO] __main__ - ======================================================================
+2025-m-13 19:24:03 [INFO] __main__ - 
+2025-m-13 19:24:03 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Tensorboard logs at: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251113_192355/tensorboard_sac
+2025-m-13 19:24:03 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Starting training...
+2025-m-13 19:24:50 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-m-13 19:24:50 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Timesteps: 5,000 | Updates: 5 | Elapsed: 0:00:47
+2025-m-13 19:24:50 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Reward (last 100): -11.130
+2025-m-13 19:24:50 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Estimator Loss (Frozen): 0.196821
+2025-m-13 19:24:50 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Actor Loss: -2.9569 | Critic Loss: 209.5099
+2025-m-13 19:24:50 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Alpha: 0.9985 | Alpha Loss: -0.0138

@@ -27,6 +27,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_net
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS, 
+    DEFAULT_CONTROL_FREQ,
     RNN_SEQUENCE_LENGTH,
     SAC_LEARNING_RATE,
     ALPHA_LEARNING_RATE,
@@ -38,8 +39,12 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_UPDATES_PER_STEP,
     SAC_START_STEPS,
     LOG_FREQ, 
-    SAVE_FREQ, 
+    CHECKPOINT_DIR_LSTM,
     CHECKPOINT_DIR_RL,
+    NUM_ENVIRONMENTS,
+    SAC_VAL_FREQ,
+    SAC_VAL_EPISODES,
+    SAC_EARLY_STOPPING_PATIENCE
 )
 
 logger = logging.getLogger(__name__)
@@ -362,10 +367,6 @@ class SACTrainer:
                     logger.info(f"  Actor Loss: {metrics.get('actor_loss', 0):.4f} | Critic Loss: {metrics.get('critic_loss', 0):.4f}")
                     logger.info(f"  Alpha: {self.alpha:.4f} | Alpha Loss: {metrics.get('alpha_loss', 0):.4f}")
                 self._log_metrics(metrics, avg_reward)
-
-            # Save checkpoint
-            if (t + 1) % (SAVE_FREQ * 10) == 0:
-                self.save_checkpoint(f"policy_step_{self.total_timesteps}.pth")
 
         logger.info("Training completed. Saving final models.")
         self.save_checkpoint("final_policy.pth")
