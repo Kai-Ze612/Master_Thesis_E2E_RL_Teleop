@@ -57,7 +57,7 @@ TRAJECTORY_FREQUENCY = 0.1
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 3e-3
+ESTIMATOR_LEARNING_RATE = 1e-3
 ESTIMATOR_BATCH_SIZE = 256
 ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_WARMUP_STEPS = 5000
@@ -66,6 +66,10 @@ ESTIMATOR_VAL_STEPS = 5000
 ESTIMATOR_VAL_FREQ = 1000
 ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
+
+RNN_HIDDEN_DIM = 512
+RNN_NUM_LAYERS = 4
+RNN_SEQUENCE_LENGTH = 128 # Input sequence for LSTM
 
 ######################################
 # RL Environment Parameters
@@ -86,20 +90,12 @@ OBS_DIM = (
 )  # Total: 134 dimensions
 
 ######################################
-# Model Architecture Parameters
+# SAC Hyperparameters
 ######################################
-STATE_BUFFER_LENGTH = 256 # This is still used by the env
-RNN_HIDDEN_DIM = 256
-RNN_NUM_LAYERS = 4
-RNN_SEQUENCE_LENGTH = STATE_BUFFER_LENGTH # Input sequence for LSTM
 
 # SAC MLP architecture
 SAC_MLP_HIDDEN_DIMS = [512, 256]
 SAC_ACTIVATION = 'relu'
-
-######################################
-# Model-Based SAC Training Hyperparameters
-######################################
 
 # Learning Rates
 SAC_LEARNING_RATE = 3e-4        # LR for Actor and Critic
@@ -111,7 +107,6 @@ SAC_GAMMA = 0.99                # Discount factor
 SAC_TAU = 0.005                 # Polyak averaging coefficient
 SAC_TARGET_ENTROPY = 'auto'     # Target entropy for temperature tuning
 
-
 # Action distribution numerical stability
 LOG_STD_MIN = -20
 LOG_STD_MAX = 2
@@ -121,7 +116,12 @@ SAC_BUFFER_SIZE = 1_000_000     # Replay buffer size
 SAC_BATCH_SIZE = 256            # Minibatch size for updates
 SAC_START_STEPS = 5000          # Timesteps to collect with random actions
 SAC_UPDATES_PER_STEP = 1.0      # Number of updates per env step (1.0 means 1 update per step)
-PPO_TOTAL_TIMESTEPS = 3_000_000 # Renamed, but used by train_agent.py
+SAC_TOTAL_TIMESTEPS = 3_000_000 # Renamed, but used by train_agent.py
+
+# Add these to your config/robot_config.py
+SAC_VAL_FREQ = 25000                # How many timesteps between each evaluation
+SAC_VAL_EPISODES = 10               # Number of episodes to run for each evaluation
+SAC_EARLY_STOPPING_PATIENCE = 10    # Stop after this many checks with no improvement
 
 # Loss Weighting
 # Weight for supervised state prediction loss (applied in SACTrainer)

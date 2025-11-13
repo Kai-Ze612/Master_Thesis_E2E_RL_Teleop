@@ -17,18 +17,15 @@ from gymnasium import spaces  # in order to define the action and observation sp
 
 # Python standard libraries
 import numpy as np
-from collections import deque  # better for list function with fixed max length and faster appends/pops
+from collections import deque
 from typing import Tuple, Dict, Any, Optional
 import warnings
 import matplotlib.pyplot as plt
 
 # Custom imports
-from .local_robot_simulator import LocalRobotSimulator, TrajectoryType
-from .remote_robot_simulator import RemoteRobotSimulator
-from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import (
-    DelaySimulator,
-    ExperimentConfig
-)
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import LocalRobotSimulator, TrajectoryType
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.remote_robot_simulator import RemoteRobotSimulator
+from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
 
 # Configuration imports
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
@@ -91,7 +88,7 @@ class TeleoperationEnvWithDelay(gym.Env):
 
         # Safety limits
         self.max_joint_error = MAX_JOINT_ERROR_TERMINATION  # RL termination threshold
-        self.joint_limit_margin = JOINT_LIMIT_MARGIN 
+        self.joint_limit_margin = JOINT_LIMIT_MARGIN
 
         # Franka Panda robot parameters
         self.n_joints = N_JOINTS

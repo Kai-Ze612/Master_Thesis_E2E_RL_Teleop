@@ -1,15 +1,16 @@
 """
 The main training script, the primary entry point for training a
-Model-Based (LSTM+SAC) agent.
+Model-Based(LSTM) RL agent(SAC algorithm).
 """
 
 import os
 import sys
 from datetime import datetime
 import logging
-import argparse
 import torch
 import numpy as np
+import argparse
+import multiprocessing
 
 # stable-baselines3 imports
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -21,7 +22,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator i
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import TrajectoryType
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm import SACTrainer
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    PPO_TOTAL_TIMESTEPS, # We can rename this, but still use the value
+    SAC_TOTAL_TIMESTEPS,
     CHECKPOINT_DIR_RL,
     CHECKPOINT_DIR_LSTM,
     NUM_ENVIRONMENTS
@@ -35,7 +36,7 @@ def setup_logging(output_dir: str) -> logging.Logger:
     # Create formatters
     detailed_formatter = logging.Formatter(
         '%(asctime)s [%(levelname)s] %(name)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        datefmt='%Y-m-%d %H:%M:%S'
     )
     
     # File handler (detailed logging)
@@ -97,11 +98,10 @@ def train_agent(args: argparse.Namespace) -> None:
     config_name = args.config.name
     trajectory_name = args.trajectory_type.value
     
-    # MODIFICATION: Update run name
     run_name = f"ModelBasedSAC_{config_name}_{trajectory_name}_{timestamp}"
         
-    # Determine base output directory
-    base_output_dir = CHECKPOINT_DIR
+    # --- MODIFICATION: Fixed undefined variable CHECKPOINT_DIR ---
+    base_output_dir = CHECKPOINT_DIR_RL
     output_dir = os.path.join(base_output_dir, run_name)
     
     try:
@@ -120,6 +120,8 @@ def train_agent(args: argparse.Namespace) -> None:
     logger.info(f"  Randomize Trajectory: {args.randomize_trajectory}")
     logger.info(f"  Total Timesteps: {args.timesteps:,}")
     logger.info(f"  Random Seed: {args.seed if args.seed is not None else 'None (random)'}")
+    # --- MODIFICATION: Log the path to the loaded LSTM ---
+    logger.info(f"  Pre-trained LSTM: {args.lstm_path}")
     logger.info("")
     
     # Set Random Seeds
@@ -165,17 +167,19 @@ def train_agent(args: argparse.Namespace) -> None:
             env.close()
         sys.exit(1)
    
-    # MODIFICATION: Trainer Initialization
+    # Trainer Initialization
     logger.info("Initializing Model-Based SAC trainer...")
     trainer = None
     
     try:
-        trainer = SACTrainer(env=env)
+        # --- MODIFICATION: Pass the pre-trained LSTM path to the trainer ---
+        trainer = SACTrainer(
+            env=env,
+            pretrained_estimator_path=args.lstm_path
+        )
         trainer.checkpoint_dir = output_dir # Pass the run-specific dir
         
         logger.info(f"  Trainer: SACTrainer")
-        # You can add a parameter count to SACTrainer if needed
-        # logger.info(f"  Policy Parameters: {trainer.policy.count_parameters():,}") 
         logger.info(f"  Checkpoint Directory: {output_dir}")
         logger.info("")
         
@@ -207,7 +211,6 @@ def train_agent(args: argparse.Namespace) -> None:
         logger.warning("="*70)
         logger.warning("Saving interrupted model...")
         
-        # MODIFICATION: Save checkpoint
         interrupt_path = os.path.join(trainer.checkpoint_dir, "interrupted_policy.pth")
         try:
             trainer.save_checkpoint(interrupt_path)
@@ -222,7 +225,6 @@ def train_agent(args: argparse.Namespace) -> None:
         logger.error("="*70)
         logger.error(f"Error: {e}", exc_info=True)
         
-        # MODIFICATION: Save checkpoint
         crash_path = os.path.join(trainer.checkpoint_dir, "crash_policy.pth")
         try:
             trainer.save_checkpoint(crash_path)
@@ -247,13 +249,13 @@ def train_agent(args: argparse.Namespace) -> None:
         else:
             logger.info("Training ended prematurely.")
 
-# (parse_arguments function remains largely unchanged)
 def parse_arguments() -> argparse.Namespace:
     """Make parse arguments."""
     
+    # --- MODIFICATION: Fixed typo 'arg' -> 'argparse' ---
     parser = argparse.ArgumentParser(
-        description="Train a Model-Based (LSTM+SAC) agent for delayed teleoperation.", # MODIFIED
-        formatter_class=arg.ArgumentDefaultsHelpFormatter
+        description="Train a Model-Based (LSTM+SAC) agent for delayed teleoperation.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     
     # Experiment configuration group
@@ -261,10 +263,17 @@ def parse_arguments() -> argparse.Namespace:
     exp_group.add_argument("--config", type=str, default="2", choices=['1', '2', '3', '4'], help="Delay configuration preset (1=LOW, 2=MEDIUM, 3=HIGH, 4=EXTREME)")
     exp_group.add_argument("--trajectory-type", type=str.lower, default="figure_8", choices=[t.value for t in TrajectoryType], help="Reference trajectory type (figure_8, square, lissajous_complex)")
     exp_group.add_argument("--randomize-trajectory", action="store_true", help="Randomize trajectory parameters during training for better generalization")
-    # MODIFICATION: Use the same total timesteps variable name
-    exp_group.add_argument("--timesteps", type=int, default=PPO_TOTAL_TIMESTEPS, help="Total training timesteps")
-    exp_group.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility (None for random seed)")
+    exp_group.add_argument("--timesteps", type=int, default=SAC_TOTAL_TIMESTEPS, help="Total training timesteps")
+    exp_group.add_argument("--seed", type=int, default=None, help="Random reproducibility seed (None for random seed)")
     exp_group.add_argument("--render", type=str.lower, default=None, choices=['human', 'rgb_array', 'none'], help="Rendering mode for visualization ('human' opens a live plot).")
+    
+    # --- MODIFICATION: Add argument to load the LSTM model ---
+    exp_group.add_argument(
+        "--lstm-path",
+        type=str,
+        required=True,
+        help="Path to the pre-trained LSTM model file (e.g., .../estimator_best.pth)."
+    )
     
     args = parser.parse_args()
     
@@ -296,6 +305,8 @@ def parse_arguments() -> argparse.Namespace:
 
 def main():
     """Main entry point."""
+    # --- MODIFICATION: Add set_start_method to prevent CUDA hangs ---
+    multiprocessing.set_start_method('spawn', force=True)
     try:
         args = parse_arguments()
         train_agent(args)

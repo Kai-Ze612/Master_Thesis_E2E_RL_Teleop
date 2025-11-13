@@ -14,12 +14,10 @@ import os
 from datetime import datetime
 import logging
 from typing import Dict, List, Optional, Tuple
-import time
-import json
 from copy import deepcopy
 from collections import deque
 
-from stable_baselines3.common.vec_env import VecEnv 
+from stable_baselines3.common.vec_env import VecEnv
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -29,7 +27,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_net
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS, 
-    DEFAULT_CONTROL_FREQ,
     RNN_SEQUENCE_LENGTH,
     SAC_LEARNING_RATE,
     ALPHA_LEARNING_RATE,
@@ -42,9 +39,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_START_STEPS,
     LOG_FREQ, 
     SAVE_FREQ, 
-    CHECKPOINT_DIR_LSTM,
     CHECKPOINT_DIR_RL,
-    NUM_ENVIRONMENTS
 )
 
 logger = logging.getLogger(__name__)

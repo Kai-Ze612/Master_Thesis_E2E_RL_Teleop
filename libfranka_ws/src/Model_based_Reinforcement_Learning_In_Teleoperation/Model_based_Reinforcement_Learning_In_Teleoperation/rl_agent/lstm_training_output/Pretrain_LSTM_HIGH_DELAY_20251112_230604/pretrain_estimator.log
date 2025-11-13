@@ -28,3 +28,33 @@
 2025-11-12 23:19:36 [INFO] Update 1000/50000: TrainLoss=0.056981, ValLoss=0.055315
 2025-11-12 23:19:36 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251112_230604
 2025-11-12 23:30:51 [INFO] Update 2000/50000: TrainLoss=0.058199, ValLoss=0.057984
+2025-11-12 23:42:41 [INFO] Update 3000/50000: TrainLoss=0.055054, ValLoss=0.062504
+2025-11-12 23:54:07 [INFO] Update 4000/50000: TrainLoss=0.054991, ValLoss=0.056478
+2025-11-13 00:05:56 [INFO] Update 5000/50000: TrainLoss=0.055307, ValLoss=0.057292
+2025-11-13 00:17:41 [INFO] Update 6000/50000: TrainLoss=0.053755, ValLoss=0.054252
+2025-11-13 00:17:41 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251112_230604
+2025-11-13 00:29:21 [INFO] Update 7000/50000: TrainLoss=0.054792, ValLoss=0.055721
+2025-11-13 00:40:13 [INFO] Update 8000/50000: TrainLoss=0.053175, ValLoss=0.053672
+2025-11-13 00:40:13 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251112_230604
+2025-11-13 00:50:43 [INFO] Update 9000/50000: TrainLoss=0.053630, ValLoss=0.054927
+2025-11-13 01:00:36 [INFO] Update 10000/50000: TrainLoss=0.052481, ValLoss=0.056431
+2025-11-13 01:10:14 [INFO] Update 11000/50000: TrainLoss=0.052990, ValLoss=0.055097
+2025-11-13 01:19:53 [INFO] Update 12000/50000: TrainLoss=0.052022, ValLoss=0.055849
+2025-11-13 01:29:31 [INFO] Update 13000/50000: TrainLoss=0.054403, ValLoss=0.056664
+2025-11-13 01:39:09 [INFO] Update 14000/50000: TrainLoss=0.052255, ValLoss=0.056873
+2025-11-13 01:48:46 [INFO] Update 15000/50000: TrainLoss=0.052350, ValLoss=0.056302
+2025-11-13 01:58:23 [INFO] Update 16000/50000: TrainLoss=0.053292, ValLoss=0.058136
+2025-11-13 02:08:00 [INFO] Update 17000/50000: TrainLoss=0.052763, ValLoss=0.054531
+2025-11-13 02:17:39 [INFO] Update 18000/50000: TrainLoss=0.051944, ValLoss=0.054478
+2025-11-13 02:17:39 [INFO] Validation loss has not improved for 10 checks. Early stopping.
+2025-11-13 02:17:39 [INFO] ================================================================================
+2025-11-13 02:17:39 [INFO] Training complete. Loading best model for final test.
+2025-11-13 02:17:39 [INFO]   Test Trajectory: figure_8 (Overfitting test)
+2025-11-13 02:17:42 [INFO] Filling test buffer...
+2025-11-13 02:18:19 [INFO] Test buffer filled: 5000 samples
+2025-11-13 02:18:30 [INFO] ================================================================================
+2025-11-13 02:18:30 [INFO] FINAL TEST RESULTS
+2025-11-13 02:18:30 [INFO]   Best Validation Loss: 0.053672
+2025-11-13 02:18:30 [INFO]   Final Test Loss: 0.053066
+2025-11-13 02:18:30 [INFO]   Output: ./lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251112_230604
+2025-11-13 02:18:30 [INFO] ================================================================================

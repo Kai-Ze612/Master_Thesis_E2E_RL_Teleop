@@ -63,13 +63,14 @@ class PretrainReplayBuffer:
         self.seq_len = RNN_SEQUENCE_LENGTH
         self.state_dim = N_JOINTS * 2  # target_q and target_qd
         
-        self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
-        self.true_targets = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
+        self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32) # dim: (buffer_size, seq_len, state_dim)
+        self.true_targets = np.zeros((buffer_size, self.state_dim), dtype=np.float32) # dim: (buffer_size, state_dim)
 
     def add(self, delayed_seq: np.ndarray, true_target: np.ndarray) -> None:
         """Add a single (delayed_sequence, true_target) pair to the buffer."""
         self.delayed_sequences[self.ptr] = delayed_seq  # Training data
         self.true_targets[self.ptr] = true_target  # Groundtruth data
+        # The pointer is to match the positions in both buffers
         
         self.ptr = (self.ptr + 1) % self.buffer_size  # pointer moves to the next slot
         self.size = min(self.size + 1, self.buffer_size)
@@ -111,27 +112,18 @@ def collect_data_from_envs(env: VecEnv, num_envs: int) -> Tuple[np.ndarray, np.n
         delayed_seq_batch: shape (num_envs, seq_len, state_dim)
         true_target_batch: shape (num_envs, state_dim)
     """
-    try:
-        delayed_buffers_list = env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
-        true_targets_list = env.env_method("get_true_current_target")
-        
-        delayed_seq_batch = np.array([
-            buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2) 
-            for buf in delayed_buffers_list
-        ])
-        true_target_batch = np.array(true_targets_list)
-        
-        return delayed_seq_batch, true_target_batch
+    delayed_buffers_list = env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
+    true_targets_list = env.env_method("get_true_current_target")
     
-    except AttributeError as e:
-        raise RuntimeError(
-            f"Environment method not found: {e}\n"
-            "Please ensure TeleoperationEnvWithDelay implements:\n"
-            "  - get_delayed_target_buffer(length: int) -> np.ndarray\n"
-            "  - get_true_current_target() -> np.ndarray"
-        )
+    delayed_seq_batch = np.array([
+        buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2) 
+        for buf in delayed_buffers_list
+    ])
+    true_target_batch = np.array(true_targets_list)
+    
+    return delayed_seq_batch, true_target_batch
 
-# --- NEW FUNCTION ---
+
 def evaluate_model(model: StateEstimator, val_buffer: PretrainReplayBuffer, batch_size: int, num_batches: int = 50) -> float:
     """
     Calculate the average loss on the validation buffer.
@@ -164,7 +156,6 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     
     logger = setup_logging(output_dir)
     
-    # --- MODIFIED: Log more hyperparameters ---
     logger.info("="*80)
     logger.info("LSTM STATE ESTIMATOR PRE-TRAINING")
     logger.info("="*80)
@@ -188,9 +179,8 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     tb_writer = SummaryWriter(log_dir=os.path.join(output_dir, "tensorboard"))
     
-    # --- MODIFIED: Create separate Train and Validation environments ---
     
-    # 1. Create Training environments
+    # Create training environment
     def make_train_env():
         return TeleoperationEnvWithDelay(
             delay_config=args.config,
@@ -206,17 +196,14 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         vec_env_cls= SubprocVecEnv if NUM_ENVIRONMENTS > 1 else DummyVecEnv
     )
     
-    # 2. Create Validation environment (use the SAME trajectory for overfitting test)
-    val_traj = args.trajectory_type
-    logger.info(f"  Validation Trajectory: {val_traj.value} (Overfitting test)")
-    
+    # Create validation environment
     def make_val_env():
         return TeleoperationEnvWithDelay(
             delay_config=args.config,
-            trajectory_type=val_traj, # Use a different trajectory
+            trajectory_type=args.trajectory_type,
             randomize_trajectory=False,
-            seed=args.seed + 1 # Use a different seed
-        )
+            seed=args.seed + 1  # Different seed than training
+        ) 
     
     val_env = make_vec_env(
         make_val_env,
@@ -228,7 +215,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     state_estimator = StateEstimator().to(device)
     optimizer = torch.optim.Adam(state_estimator.parameters(), lr=ESTIMATOR_LEARNING_RATE)
     
-    # --- NEW: Add Learning Rate Scheduler ---
+    # Initialize learning rate scheduler
     scheduler = ReduceLROnPlateau(
         optimizer, 'min', 
         factor=0.5, 
@@ -239,7 +226,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     replay_buffer = PretrainReplayBuffer(ESTIMATOR_BUFFER_SIZE, device)
     val_buffer = PretrainReplayBuffer(ESTIMATOR_VAL_STEPS * NUM_ENVIRONMENTS, device) # Size it to fit validation data
     
-    # --- MODIFIED: Fill Training Buffer ---
+    # Filling training buffer 
     logger.info("Filling training buffer...")
     obs = train_env.reset()
     for _ in range(ESTIMATOR_WARMUP_STEPS):
@@ -251,7 +238,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         obs, rewards, dones, infos = train_env.step(random_actions)
     logger.info(f"Training buffer filled: {len(replay_buffer)} samples")
 
-    # --- NEW: Fill Validation Buffer ---
+    # Filling validation buffer
     logger.info("Filling validation buffer...")
     val_obs = val_env.reset()
     for _ in range(ESTIMATOR_VAL_STEPS):
@@ -263,7 +250,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     logger.info(f"Validation buffer filled: {len(val_buffer)} samples")
     val_env.close() # We don't need this env anymore
     
-    # --- MODIFIED: Training Loop ---
+    # Training loop
     logger.info("Starting training...")
     state_estimator.train()
     
@@ -293,11 +280,11 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         
         loss_history.append(loss.item())
         
-        # --- MODIFIED: Validation and Logging ---
+        # Validation and logging
         if update % ESTIMATOR_VAL_FREQ == 0:
             avg_train_loss = np.mean(loss_history) if len(loss_history) > 0 else loss.item()
             
-            # --- NEW: Run Validation ---
+            # Run validation
             val_loss = evaluate_model(state_estimator, val_buffer, ESTIMATOR_BATCH_SIZE)
             
             tb_writer.add_scalar('loss/train_avg_100', avg_train_loss, update)
@@ -306,7 +293,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
             
             logger.info(f"Update {update}/{ESTIMATOR_TOTAL_UPDATES}: TrainLoss={avg_train_loss:.6f}, ValLoss={val_loss:.6f}")
             
-            # --- NEW: Scheduler and Early Stopping Logic ---
+            # Scheduler and Early Stopping Logic
             scheduler.step(val_loss)
             
             if val_loss < best_val_loss:
@@ -328,26 +315,20 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     
     train_env.close()
     
-    # --- NEW: Final Test Step ---
-    logger.info("="*80)
-    logger.info("Training complete. Loading best model for final test.")
-    
-    # 1. Create Test environment (use the SAME trajectory for overfitting test)
-    test_traj = args.trajectory_type
-        
-    logger.info(f"  Test Trajectory: {test_traj.value} (Overfitting test)")
+    # Test the best model on a separate test set    
+    # Create test environment
     
     def make_test_env():
         return TeleoperationEnvWithDelay(
             delay_config=args.config,
-            trajectory_type=test_traj,
+            trajectory_type=args.trajectory_type,
             randomize_trajectory=False,
             seed=args.seed + 2 # Use a third seed
         )
     
     test_env = make_vec_env(make_test_env, n_envs=1, vec_env_cls=DummyVecEnv)
     
-    # 2. Fill a test buffer
+    # Fill a test buffer
     test_buffer = PretrainReplayBuffer(ESTIMATOR_VAL_STEPS, device)
     logger.info("Filling test buffer...")
     test_obs = test_env.reset()
@@ -359,7 +340,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     logger.info(f"Test buffer filled: {len(test_buffer)} samples")
     test_env.close()
 
-    # 3. Load best model and evaluate
+    # Load best model and evaluate
     best_model_path = os.path.join(output_dir, "estimator_best.pth")
     if os.path.exists(best_model_path):
         checkpoint = torch.load(best_model_path, map_location=device)

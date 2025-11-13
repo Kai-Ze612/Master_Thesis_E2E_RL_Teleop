@@ -27,7 +27,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     LOG_STD_MAX,
 )
 
-# LSTM State Estimator
+# LSTM State Estimator Architecture
 class StateEstimator(nn.Module):
     """
     LSTM-based state estimator.
