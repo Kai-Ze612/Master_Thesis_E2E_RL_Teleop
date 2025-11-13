@@ -1,6 +1,5 @@
 """
-The main training script, the primary entry point for training a
-Model-Based(LSTM) RL agent(SAC algorithm).
+The main training script for Model-Based Reinforcement Learning (LSTM + SAC) agent
 """
 
 import os
@@ -25,8 +24,12 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_TOTAL_TIMESTEPS,
     CHECKPOINT_DIR_RL,
     CHECKPOINT_DIR_LSTM,
-    NUM_ENVIRONMENTS
+    NUM_ENVIRONMENTS,
+    OBS_DIM,
+    REMOTE_HISTORY_LEN,
+    LSTM_MODEL_PATH,
 )
+
 
 def setup_logging(output_dir: str) -> logging.Logger:
     """Configure logging to file and console."""
@@ -60,15 +63,20 @@ def setup_logging(output_dir: str) -> logging.Logger:
     
     return logger
 
-# (validate_environment function remains unchanged)
+
 def validate_environment(env: TeleoperationEnvWithDelay, logger: logging.Logger) -> bool:
-    """Checking Custom Environment"""
+    """Validate Custom Environment."""
     try:
         # Check observation space
         obs, info = env.reset()
         expected_obs_shape = env.observation_space.shape
         if obs.shape != expected_obs_shape:
             logger.error(f"Observation shape mismatch: got {obs.shape}, expected {expected_obs_shape}")
+            return False
+        
+        # NEW: Verify observation dimension is exactly 112D
+        if obs.shape[0] != 112:
+            logger.error(f"Observation dimension should be 112D, got {obs.shape[0]}D")
             return False
         
         # Check action space
@@ -82,7 +90,9 @@ def validate_environment(env: TeleoperationEnvWithDelay, logger: logging.Logger)
             logger.error(f"Next observation shape mismatch: got {next_obs.shape}, expected {expected_obs_shape}")
             return False
         
-        logger.info("Environment validation passed")
+        logger.info("Environment validation passed ✓")
+        logger.info(f"  Observation dimension: {obs.shape[0]}D")
+        logger.info(f"  Action dimension: {env.action_space.shape}")
         return True
         
     except Exception as e:
@@ -99,8 +109,8 @@ def train_agent(args: argparse.Namespace) -> None:
     trajectory_name = args.trajectory_type.value
     
     run_name = f"ModelBasedSAC_{config_name}_{trajectory_name}_{timestamp}"
-        
-    # --- MODIFICATION: Fixed undefined variable CHECKPOINT_DIR ---
+    
+    # Output directory
     base_output_dir = CHECKPOINT_DIR_RL
     output_dir = os.path.join(base_output_dir, run_name)
     
@@ -112,31 +122,26 @@ def train_agent(args: argparse.Namespace) -> None:
     
     # Setup Logging
     logger = setup_logging(output_dir)
-    logger.info(f"Run Name: {run_name}")
-    logger.info(f"Output Directory: {output_dir}")
     logger.info("Training Configuration:")
     logger.info(f"  Delay Config: {args.config.name}")
     logger.info(f"  Trajectory Type: {args.trajectory_type.value}")
     logger.info(f"  Randomize Trajectory: {args.randomize_trajectory}")
     logger.info(f"  Total Timesteps: {args.timesteps:,}")
     logger.info(f"  Random Seed: {args.seed if args.seed is not None else 'None (random)'}")
-    # --- MODIFICATION: Log the path to the loaded LSTM ---
-    logger.info(f"  Pre-trained LSTM: {args.lstm_path}")
     logger.info("")
     
     # Set Random Seeds
     if args.seed is not None:
-        logger.info(f"Setting random seed: {args.seed}")
         np.random.seed(args.seed)
         torch.manual_seed(args.seed)
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(args.seed)
-        logger.info("Random seeds set for NumPy, PyTorch, and CUDA")
-        logger.info("")
 
     # Environment setup
     N_env = NUM_ENVIRONMENTS 
     
+    # Create Vectorized Environment
+    logger.info("Creating vectorized environment...")
     env = None
     try:
         def make_env():
@@ -155,10 +160,12 @@ def train_agent(args: argparse.Namespace) -> None:
             vec_env_cls=SubprocVecEnv
         )
 
-        logger.info(f"  Vectorized Environment: {env.__class__.__name__}")
-        logger.info(f"  Number of Envs: {env.num_envs}")
-        logger.info(f"  Observation Space (Env): {env.observation_space.shape}")
-        logger.info(f"  Action Space (Env): {env.action_space.shape}")
+        logger.info("Observation Structure (112D):")
+        logger.info(f"  - Remote state: 14D (position 7D + velocity 7D)")
+        logger.info(f"  - Remote history: 70D (5 timesteps × 14D)")
+        logger.info(f"  - LSTM prediction: 14D (position 7D + velocity 7D)")
+        logger.info(f"  - Current error: 14D (position error 7D + velocity error 7D)")
+        logger.info(f"  - Total: {OBS_DIM}D")
         logger.info("")
 
     except Exception as e:
@@ -170,18 +177,20 @@ def train_agent(args: argparse.Namespace) -> None:
     # Trainer Initialization
     logger.info("Initializing Model-Based SAC trainer...")
     trainer = None
+    lstm_model_path = LSTM_MODEL_PATH
+    
+    # check LSTM model path
+    if not os.path.isfile(lstm_model_path):
+        logger.error(f"LSTM model file not found at: {lstm_model_path}")
+        env.close()
+        sys.exit(1)
     
     try:
-        # --- MODIFICATION: Pass the pre-trained LSTM path to the trainer ---
         trainer = SACTrainer(
             env=env,
-            pretrained_estimator_path=args.lstm_path
+            pretrained_estimator_path=lstm_model_path
         )
-        trainer.checkpoint_dir = output_dir # Pass the run-specific dir
-        
-        logger.info(f"  Trainer: SACTrainer")
-        logger.info(f"  Checkpoint Directory: {output_dir}")
-        logger.info("")
+        trainer.checkpoint_dir = output_dir  # Pass the run-specific dir
         
     except Exception as e:
         logger.error(f"Failed to initialize trainer: {e}", exc_info=True)
@@ -244,7 +253,6 @@ def train_agent(args: argparse.Namespace) -> None:
 def parse_arguments() -> argparse.Namespace:
     """Make parse arguments."""
     
-    # --- MODIFICATION: Fixed typo 'arg' -> 'argparse' ---
     parser = argparse.ArgumentParser(
         description="Train a Model-Based (LSTM+SAC) agent for delayed teleoperation.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -259,18 +267,10 @@ def parse_arguments() -> argparse.Namespace:
     exp_group.add_argument("--seed", type=int, default=None, help="Random reproducibility seed (None for random seed)")
     exp_group.add_argument("--render", type=str.lower, default=None, choices=['human', 'rgb_array', 'none'], help="Rendering mode for visualization ('human' opens a live plot).")
     
-    # --- MODIFICATION: Add argument to load the LSTM model ---
-    exp_group.add_argument(
-        "--lstm-path",
-        type=str,
-        required=True,
-        help="Path to the pre-trained LSTM model file (e.g., .../estimator_best.pth)."
-    )
-    
     args = parser.parse_args()
     
+    # Map config string to ExperimentConfig enum
     config_options = list(ExperimentConfig)
-    
     if len(config_options) < 4:
         raise ValueError(f"Config mapping needs 4 options, but ExperimentConfig only has {len(config_options)}")
         
@@ -280,9 +280,9 @@ def parse_arguments() -> argparse.Namespace:
         '3': config_options[2], # e.g., HIGH_DELAY
         '4': config_options[3]  # e.g., EXTREME_DELAY
     }
-    
     args.config = CONFIG_MAP[args.config]
-        
+    
+    # Map trajectory type string to TrajectoryType enum
     args.trajectory_type = next(
         t for t in TrajectoryType 
         if t.value.lower() == args.trajectory_type.lower()

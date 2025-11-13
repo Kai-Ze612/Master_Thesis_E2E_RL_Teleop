@@ -13,6 +13,8 @@ DEFAULT_RL_MODEL_PATH_BASE = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/I
 RL_MODEL_PATH = "./rl_training_output/sac_model.pt"
 LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/lstm_model/estimator_best.pth"
 
+CHECKPOINT_DIR_RL = "./rl_training_output"
+CHECKPOINT_DIR_LSTM = "./lstm_training_output"
 ######################################
 # Franka Panda Robot Parameters
 ######################################
