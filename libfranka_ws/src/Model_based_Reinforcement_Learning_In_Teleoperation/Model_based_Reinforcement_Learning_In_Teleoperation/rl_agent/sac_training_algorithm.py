@@ -28,7 +28,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_net
 )
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    N_JOINTS, 
+    N_JOINTS,
     DEFAULT_CONTROL_FREQ,
     RNN_SEQUENCE_LENGTH,
     SAC_LEARNING_RATE,
@@ -40,8 +40,11 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_TARGET_ENTROPY,
     SAC_UPDATES_PER_STEP,
     SAC_START_STEPS,
-    LOG_FREQ, 
-    SAVE_FREQ, 
+    SAC_VAL_FREQ,
+    SAC_VAL_EPISODES,
+    SAC_EARLY_STOPPING_PATIENCE,
+    LOG_FREQ,
+    SAVE_FREQ,
     CHECKPOINT_DIR_LSTM,
     CHECKPOINT_DIR_RL,
     NUM_ENVIRONMENTS
@@ -170,6 +173,11 @@ class SACTrainer:
         self.training_start_time = None
         self.hidden_states = self.state_estimator.init_hidden_state(self.num_envs, self.device)
 
+        # Early stopping tracking
+        self.best_eval_reward = -np.inf
+        self.eval_patience_counter = 0
+        self.eval_history = []
+
     def _find_best_lstm_model(self) -> Optional[str]:
         """Auto-find the best pre-trained LSTM model."""
         import glob
@@ -234,8 +242,114 @@ class SACTrainer:
             
             actions_np = action_t.cpu().numpy()
             predicted_states_np = predicted_state_t.cpu().numpy()
-            
+
             return actions_np, predicted_states_np
+
+    def evaluate(self, num_episodes: int = SAC_VAL_EPISODES, deterministic: bool = True) -> Dict[str, float]:
+        """
+        Evaluate the current policy over multiple episodes.
+
+        Args:
+            num_episodes: Number of episodes to evaluate
+            deterministic: Whether to use deterministic actions
+
+        Returns:
+            Dictionary with evaluation metrics
+        """
+        logger.info(f"Starting evaluation for {num_episodes} episodes...")
+
+        # Import here to avoid circular dependency
+        from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.training_env import TeleoperationEnvWithDelay
+        from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
+
+        # Create a single evaluation environment (no vectorization for cleaner evaluation)
+        eval_env = TeleoperationEnvWithDelay(
+            delay_config=ExperimentConfig.MEDIUM_DELAY,  # Use same config as training
+            trajectory_type=self.env.env_method("get_trajectory_type")[0] if hasattr(self.env, 'env_method') else None,
+            randomize_trajectory=False,  # Fixed trajectory for fair comparison
+            render_mode=None
+        )
+
+        episode_rewards = []
+        episode_lengths = []
+        episode_tracking_errors = []
+        episode_prediction_errors = []
+
+        for ep in range(num_episodes):
+            obs, info = eval_env.reset()
+            episode_reward = 0
+            episode_length = 0
+            tracking_errors = []
+            prediction_errors = []
+
+            # Reset hidden state for new episode
+            eval_hidden_state = self.state_estimator.init_hidden_state(1, self.device)
+
+            done = False
+            while not done:
+                # Get delayed sequence and remote state
+                delayed_seq = eval_env.get_delayed_target_buffer(RNN_SEQUENCE_LENGTH)
+                delayed_seq = delayed_seq.reshape(1, RNN_SEQUENCE_LENGTH, N_JOINTS * 2)
+                remote_state = eval_env.get_remote_state().reshape(1, -1)
+
+                # Select action
+                with torch.no_grad():
+                    delayed_seq_t = torch.tensor(delayed_seq, dtype=torch.float32, device=self.device)
+                    remote_state_t = torch.tensor(remote_state, dtype=torch.float32, device=self.device)
+
+                    predicted_state_t, eval_hidden_state = self.state_estimator(
+                        delayed_seq_t, eval_hidden_state
+                    )
+
+                    actor_input_t = torch.cat([predicted_state_t, remote_state_t], dim=1)
+                    action_t, _, _ = self.actor.sample(actor_input_t, deterministic)
+                    action = action_t.cpu().numpy()[0]
+
+                # Set predicted target before step
+                eval_env.set_predicted_target(predicted_state_t.cpu().numpy()[0])
+
+                # Take step
+                obs, reward, terminated, truncated, info = eval_env.step(action)
+                done = terminated or truncated
+
+                episode_reward += reward
+                episode_length += 1
+
+                # Track errors
+                if 'real_time_joint_error' in info:
+                    tracking_errors.append(info['real_time_joint_error'])
+                if 'prediction_error' in info and not np.isnan(info['prediction_error']):
+                    prediction_errors.append(info['prediction_error'])
+
+            episode_rewards.append(episode_reward)
+            episode_lengths.append(episode_length)
+
+            if tracking_errors:
+                episode_tracking_errors.append(np.mean(tracking_errors))
+            if prediction_errors:
+                episode_prediction_errors.append(np.mean(prediction_errors))
+
+        eval_env.close()
+
+        # Calculate statistics
+        eval_metrics = {
+            'eval/mean_reward': np.mean(episode_rewards),
+            'eval/std_reward': np.std(episode_rewards),
+            'eval/min_reward': np.min(episode_rewards),
+            'eval/max_reward': np.max(episode_rewards),
+            'eval/mean_length': np.mean(episode_lengths),
+            'eval/mean_tracking_error': np.mean(episode_tracking_errors) if episode_tracking_errors else 0.0,
+            'eval/mean_prediction_error': np.mean(episode_prediction_errors) if episode_prediction_errors else 0.0,
+        }
+
+        logger.info(f"Evaluation complete:")
+        logger.info(f"  Mean Reward: {eval_metrics['eval/mean_reward']:.3f} ± {eval_metrics['eval/std_reward']:.3f}")
+        logger.info(f"  Mean Episode Length: {eval_metrics['eval/mean_length']:.1f}")
+        logger.info(f"  Mean Tracking Error: {eval_metrics['eval/mean_tracking_error']*1000:.2f}mm")
+        if episode_prediction_errors:
+            logger.info(f"  Mean Prediction Error: {eval_metrics['eval/mean_prediction_error']*1000:.2f}mm")
+
+        return eval_metrics
 
     def update_policy(self) -> Dict[str, float]:
         """
@@ -402,6 +516,56 @@ class SACTrainer:
                     logger.info(f"  Actor Loss: {metrics.get('actor_loss', 0):.4f} | Critic Loss: {metrics.get('critic_loss', 0):.4f}")
                     logger.info(f"  Alpha: {self.alpha:.4f} | Alpha Loss: {metrics.get('alpha_loss', 0):.4f}")
                 self._log_metrics(metrics, avg_reward)
+
+            # Evaluation and Early Stopping
+            if self.total_timesteps > 0 and self.total_timesteps % SAC_VAL_FREQ == 0:
+                logger.info(f"\n{'='*70}")
+                logger.info(f"EVALUATION at Timestep {self.total_timesteps:,}")
+                logger.info(f"{'='*70}")
+
+                # Run evaluation
+                eval_metrics = self.evaluate(num_episodes=SAC_VAL_EPISODES)
+
+                # Log to tensorboard
+                if self.tb_writer:
+                    for key, value in eval_metrics.items():
+                        self.tb_writer.add_scalar(key, value, self.total_timesteps)
+
+                # Track evaluation history
+                self.eval_history.append({
+                    'timestep': self.total_timesteps,
+                    'mean_reward': eval_metrics['eval/mean_reward']
+                })
+
+                # Check for improvement
+                current_eval_reward = eval_metrics['eval/mean_reward']
+                if current_eval_reward > self.best_eval_reward:
+                    self.best_eval_reward = current_eval_reward
+                    self.eval_patience_counter = 0
+
+                    # Save best model
+                    best_model_path = os.path.join(self.checkpoint_dir, "best_policy.pth")
+                    logger.info(f"  🎉 New best evaluation reward: {self.best_eval_reward:.3f}")
+                    logger.info(f"  💾 Saving best model to: {best_model_path}")
+                    self.save_checkpoint("best_policy.pth")
+                else:
+                    self.eval_patience_counter += 1
+                    logger.info(f"  ⚠️  No improvement for {self.eval_patience_counter}/{SAC_EARLY_STOPPING_PATIENCE} evaluations")
+                    logger.info(f"  Best reward so far: {self.best_eval_reward:.3f}")
+
+                    # Check early stopping
+                    if self.eval_patience_counter >= SAC_EARLY_STOPPING_PATIENCE:
+                        logger.info(f"\n{'='*70}")
+                        logger.info("EARLY STOPPING TRIGGERED")
+                        logger.info(f"No improvement for {SAC_EARLY_STOPPING_PATIENCE} consecutive evaluations")
+                        logger.info(f"Best evaluation reward: {self.best_eval_reward:.3f}")
+                        logger.info(f"{'='*70}\n")
+
+                        # Save final model before stopping
+                        self.save_checkpoint("early_stopped_policy.pth")
+                        break
+
+                logger.info(f"{'='*70}\n")
 
             # Save checkpoint
             if (t + 1) % (SAVE_FREQ * 10) == 0:

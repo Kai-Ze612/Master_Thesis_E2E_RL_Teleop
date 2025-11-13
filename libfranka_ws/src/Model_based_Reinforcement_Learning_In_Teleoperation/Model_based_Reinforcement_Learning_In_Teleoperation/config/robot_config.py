@@ -124,6 +124,11 @@ SAC_START_STEPS = 2500          # Reduced from 5000 - start learning earlier
 SAC_UPDATES_PER_STEP = 1.0      # Number of updates per env step (1.0 means 1 update per step)
 PPO_TOTAL_TIMESTEPS = 1_000_000 # Reduced from 3M for faster initial testing
 
+# Evaluation and Early Stopping
+SAC_VAL_FREQ = 25000                # Evaluate every N timesteps
+SAC_VAL_EPISODES = 10               # Number of episodes per evaluation
+SAC_EARLY_STOPPING_PATIENCE = 10    # Stop if no improvement for this many evaluations
+
 # Loss Weighting
 # Weight for supervised state prediction loss (applied in SACTrainer)
 PREDICTION_LOSS_WEIGHT = 5.0    
