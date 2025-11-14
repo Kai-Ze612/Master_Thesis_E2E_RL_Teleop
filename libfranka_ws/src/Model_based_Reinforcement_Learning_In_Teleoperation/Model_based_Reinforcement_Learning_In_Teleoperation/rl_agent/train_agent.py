@@ -263,7 +263,7 @@ def parse_arguments() -> argparse.Namespace:
     exp_group.add_argument("--randomize-trajectory", action="store_true", help="Randomize trajectory parameters during training for better generalization")
     exp_group.add_argument("--timesteps", type=int, default=SAC_TOTAL_TIMESTEPS, help="Total training timesteps")
     exp_group.add_argument("--seed", type=int, default=None, help="Random reproducibility seed (None for random seed)")
-    exp_group.add_argument("--render", type=str.lower, default='human', choices=['human', 'rgb_array', 'none'], help="Rendering mode for visualization ('human' opens a live plot).")
+    exp_group.add_argument("--render", type=str.lower, default=None, choices=['human', 'rgb_array', 'none'], help="Rendering mode for visualization ('human' opens a live plot).")
     
     args = parser.parse_args()
     

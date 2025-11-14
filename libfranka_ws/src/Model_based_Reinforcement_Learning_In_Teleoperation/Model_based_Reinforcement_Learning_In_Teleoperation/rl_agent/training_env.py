@@ -42,7 +42,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     OBS_DIM,
     REMOTE_HISTORY_LEN,
     TRACKING_ERROR_SCALE,
-    VELOCITY_TRACKING_WEIGHT,
     VELOCITY_ERROR_SCALE,
     ACTION_PENALTY_WEIGHT,
     RNN_SEQUENCE_LENGTH,
@@ -124,6 +123,18 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Store predicted target from policy
         self._last_predicted_target: Optional[np.ndarray] = None
         
+        # Get leader's warmup steps
+        self.leader_warmup_steps = int(
+            self.leader._warm_up_duration / (1.0 / self.control_freq)
+        )
+        
+        # Get steps to fill the LSTM buffer
+        self.buffer_fill_steps = RNN_SEQUENCE_LENGTH 
+        
+        # Total warmup is SUM of both
+        self.total_warmup_phase_steps = self.leader_warmup_steps + self.buffer_fill_steps
+        self.steps_remaining_in_warmup = 0
+
         # Action and observation spaces setup
         self.action_space = spaces.Box(
             low=-MAX_TORQUE_COMPENSATION.copy(),
@@ -146,6 +157,10 @@ class TeleoperationEnvWithDelay(gym.Env):
         super().reset(seed=seed)
         
         self.current_step = 0
+        
+        # Reset the warmup counter
+        self.steps_remaining_in_warmup = self.total_warmup_phase_steps
+        
         self.episode_count += 1
         self._last_predicted_target = None  # Clear predicted target
 
@@ -211,12 +226,51 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Get delay input for remote robot
         delayed_q = self._get_delayed_q()
 
+        # Warmup phase logic
+        if self.steps_remaining_in_warmup > 0:
+            self.steps_remaining_in_warmup -= 1
+            
+            # Run baseline PD controller on the *delayed* target
+            target_q_for_remote = delayed_q 
+            torque_compensation_for_remote = np.zeros(N_JOINTS)
+            
+            # Clear any potential garbage prediction
+            self._last_predicted_target = None
+            
+            # Apply to remote robot
+            step_info = self.remote_robot.step(
+                target_q=target_q_for_remote,      
+                torque_compensation=torque_compensation_for_remote,
+            )
+            
+            # Get remote state (to populate observation buffer)
+            remote_q, remote_qd = self.remote_robot.get_joint_state()
+            
+            # During warmup, reward is 0 and we cannot terminate
+            reward = 0.0
+            terminated = False
+            truncated = self.current_step >= self.max_episode_steps
+            
+            if self.render_mode == "human":
+                self.render()
+                
+            return (
+                self._get_observation(),
+                reward,
+                terminated,
+                truncated,
+                self._get_info()
+            )
+
+        # RL learning steps, runs after warmup phase
         # Determine target for remote robot based on last predicted target
         if self._last_predicted_target is not None:
             target_q_for_remote = self._last_predicted_target[:N_JOINTS]
             torque_compensation_for_remote = action
         else:
-            target_q_for_remote = self.initial_qpos.copy()
+            # Fallback (e.g., during SAC_START_STEPS, but after warmup)
+            # Use baseline PD controller on delayed target
+            target_q_for_remote = delayed_q 
             torque_compensation_for_remote = np.zeros(N_JOINTS)
         
         # Apply target and torque compensation to remote robot
@@ -253,8 +307,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Check for termination BEFORE printing, so we can log it
         terminated, term_penalty = self._check_termination(joint_error, remote_q)
 
-        # --- [DEBUG] PRINT BLOCK ---
-        # MODIFIED: Print on step 1, every 100 steps thereafter, OR on termination
+        # Print out information for debugging
         if (self.current_step % 100 == 1) or (terminated):
             # Use numpy formatting for cleaner output
             np.set_printoptions(precision=4, suppress=True, linewidth=120)
@@ -283,7 +336,6 @@ class TeleoperationEnvWithDelay(gym.Env):
 
             print(f"{'-'*40}")
             np.set_printoptions() # Reset to default
-        # --- END [DEBUG] ---
 
         if terminated:
             reward += term_penalty
@@ -435,14 +487,14 @@ class TeleoperationEnvWithDelay(gym.Env):
         
         # PRIMARY OBJECTIVE: Position Tracking
         tracking_error_q = np.linalg.norm(true_target_q - remote_q)
-        r_pos = np.exp(-TRACKING_ERROR_SCALE * tracking_error_q**2)
+        r_pos = -TRACKING_ERROR_SCALE * (tracking_error_q**2)
         
         # SECONDARY OBJECTIVE: Velocity Tracking
         tracking_error_qd = np.linalg.norm(true_target_qd - remote_qd)
-        r_vel = np.exp(-VELOCITY_ERROR_SCALE * tracking_error_qd**2)
+        r_vel = -VELOCITY_ERROR_SCALE * (tracking_error_qd**2)
         
-        # Combine: 95% position, 5% velocity
-        r_tracking = (1.0 - VELOCITY_TRACKING_WEIGHT) * r_pos + VELOCITY_TRACKING_WEIGHT * r_vel
+        # Combine:
+        r_tracking = r_pos + r_vel
         
         # TERTIARY OBJECTIVE: Smooth Control
         action_penalty = ACTION_PENALTY_WEIGHT * np.mean(np.abs(action))
@@ -521,6 +573,11 @@ class TeleoperationEnvWithDelay(gym.Env):
             info_dict['prediction_error'] = np.nan
 
         info_dict['current_delay_steps'] = self.get_current_observation_delay()
+        
+        # --- [NEW] WARMUP LOGIC ---
+        # Add warmup status to info
+        info_dict['is_in_warmup'] = (self.steps_remaining_in_warmup > 0)
+        # --- END WARMUP LOGIC ---
 
         return info_dict
 

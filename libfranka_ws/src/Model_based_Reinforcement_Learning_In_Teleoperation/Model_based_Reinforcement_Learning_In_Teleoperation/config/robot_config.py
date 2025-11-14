@@ -109,7 +109,7 @@ SAC_LEARNING_RATE = 1e-4        # LR for Actor and Critic
 ALPHA_LEARNING_RATE = 3e-4      # LR for temperature auto-tuning
 
 # SAC Parameters
-SAC_GAMMA = 0.9
+SAC_GAMMA = 0.95
 SAC_TAU = 0.005
 SAC_TARGET_ENTROPY = 'auto'
 
@@ -134,9 +134,8 @@ SAC_EARLY_STOPPING_PATIENCE = 10
 ######################################
 # Reward Function Configuration
 ######################################
-TRACKING_ERROR_SCALE = 5.0       # Gaussian bandwidth for exp(-scale * error²)
-VELOCITY_TRACKING_WEIGHT = 0.05  # Weight for velocity component (0.05 = 5% velocity, 95% position)
-VELOCITY_ERROR_SCALE = 1.0       # Gaussian bandwidth for velocity tracking
+TRACKING_ERROR_SCALE = 100       # Gaussian bandwidth for exp(-scale * error²)
+VELOCITY_ERROR_SCALE = 10       # Gaussian bandwidth for velocity tracking
 
 ACTION_PENALTY_WEIGHT = 0.01  # penalty for large actions
 

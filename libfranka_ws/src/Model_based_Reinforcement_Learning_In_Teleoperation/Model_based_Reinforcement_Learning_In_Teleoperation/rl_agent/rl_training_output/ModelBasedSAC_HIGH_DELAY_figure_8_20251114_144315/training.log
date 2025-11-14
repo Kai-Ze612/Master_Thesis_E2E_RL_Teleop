@@ -1,0 +1,235 @@
+2025-m-14 14:43:15 [INFO] __main__ - Training Configuration:
+2025-m-14 14:43:15 [INFO] __main__ -   Delay Config: HIGH_DELAY
+2025-m-14 14:43:15 [INFO] __main__ -   Trajectory Type: figure_8
+2025-m-14 14:43:15 [INFO] __main__ -   Randomize Trajectory: False
+2025-m-14 14:43:15 [INFO] __main__ -   Total Timesteps: 3,000,000
+2025-m-14 14:43:15 [INFO] __main__ -   Random Seed: 50
+2025-m-14 14:43:15 [INFO] __main__ - 
+2025-m-14 14:43:15 [INFO] __main__ - Creating vectorized environment...
+2025-m-14 14:43:17 [INFO] __main__ - Observation Structure (112D):
+2025-m-14 14:43:17 [INFO] __main__ -   - Remote state: 14D (position 7D + velocity 7D)
+2025-m-14 14:43:17 [INFO] __main__ -   - Remote history: 70D (5 timesteps × 14D)
+2025-m-14 14:43:17 [INFO] __main__ -   - LSTM prediction: 14D (position 7D + velocity 7D)
+2025-m-14 14:43:17 [INFO] __main__ -   - Current error: 14D (position error 7D + velocity error 7D)
+2025-m-14 14:43:17 [INFO] __main__ -   - Total: 112D
+2025-m-14 14:43:17 [INFO] __main__ - 
+2025-m-14 14:43:17 [INFO] __main__ - Initializing Model-Based SAC trainer...
+2025-m-14 14:43:18 [INFO] __main__ - ======================================================================
+2025-m-14 14:43:18 [INFO] __main__ - Starting Training
+2025-m-14 14:43:18 [INFO] __main__ - ======================================================================
+2025-m-14 14:43:18 [INFO] __main__ - 
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Tensorboard logs at: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_144315/tensorboard_sac
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ======================================================================
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Starting SAC Training
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ======================================================================
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Configuration:
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Environments: 10
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Total timesteps: 3,000,000
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Learning rate (Actor/Critic): 0.0001
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Gamma (discount): 0.9
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Tau (soft update): 0.005
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Batch size: 256
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Buffer size: 1,000,000
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Start steps (random): 5,000
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Device: cuda
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Observation dim: 112D (112: current 14D + history 70D + pred 14D + error 14D)
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Actor input dim: 28D (predicted state 14D + remote state 14D)
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Training loop starting...
+2025-m-14 14:43:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Training Progress:
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Timesteps: 10,000 / 3,000,000
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Updates: 5,010
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Elapsed Time: 0:03:46
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Episode Reward (train): 226.8785
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Environment Stats (avg over last 1000 steps):
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Real-Time Error (q): 71.441 mm
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Prediction Error (LSTM): 17.552 mm
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Delay (steps): 109.85
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Losses & Metrics:
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Actor Loss: -15.9060
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Critic Loss: 2.8381
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Alpha: 0.2217
+2025-m-14 14:47:05 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Training Progress:
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Timesteps: 20,000 / 3,000,000
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Updates: 15,010
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Elapsed Time: 0:11:13
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Episode Reward (train): 226.8546
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Environment Stats (avg over last 1000 steps):
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Real-Time Error (q): 66.582 mm
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Prediction Error (LSTM): 11.304 mm
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Delay (steps): 110.42
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Losses & Metrics:
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Actor Loss: -4.2643
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Critic Loss: 0.1542
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Alpha: 0.0141
+2025-m-14 14:54:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-m-14 14:58:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 1/10: Reward = 189.3133
+2025-m-14 14:58:24 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 2/10: Reward = 191.1060
+2025-m-14 14:58:26 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 3/10: Reward = 190.5298
+2025-m-14 14:58:29 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 4/10: Reward = 190.9024
+2025-m-14 14:58:31 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 5/10: Reward = 189.9697
+2025-m-14 14:58:33 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 6/10: Reward = 192.4500
+2025-m-14 14:58:36 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 7/10: Reward = 191.3532
+2025-m-14 14:58:38 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 8/10: Reward = 190.3107
+2025-m-14 14:58:40 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 9/10: Reward = 191.2409
+2025-m-14 14:58:43 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 10/10: Reward = 190.9994
+2025-m-14 14:58:43 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Validation Results:
+2025-m-14 14:58:43 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Average Reward: 190.8175
+2025-m-14 14:58:43 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Std Dev: 0.8109
+2025-m-14 14:58:43 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Min: 189.3133
+2025-m-14 14:58:43 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Max: 192.4500
+2025-m-14 14:58:43 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_144315/best_policy.pth
+2025-m-14 14:58:43 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ✓ NEW BEST! Validation reward: 190.8175
+2025-m-14 14:58:43 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Saved: best_policy.pth
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Training Progress:
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Timesteps: 30,000 / 3,000,000
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Updates: 25,010
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Elapsed Time: 0:19:09
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Episode Reward (train): 225.3159
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Environment Stats (avg over last 1000 steps):
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Real-Time Error (q): 108.531 mm
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Prediction Error (LSTM): 11.582 mm
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Delay (steps): 110.12
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Losses & Metrics:
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Actor Loss: -5.4710
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Critic Loss: 0.1058
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Alpha: 0.0210
+2025-m-14 15:02:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Training Progress:
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Timesteps: 40,000 / 3,000,000
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Updates: 35,010
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Elapsed Time: 0:26:42
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Episode Reward (train): 224.6202
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Environment Stats (avg over last 1000 steps):
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Real-Time Error (q): 89.847 mm
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Prediction Error (LSTM): 11.420 mm
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Delay (steps): 110.02
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Losses & Metrics:
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Actor Loss: -4.3597
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Critic Loss: 0.1659
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Alpha: 0.0162
+2025-m-14 15:10:00 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-m-14 15:17:35 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 1/10: Reward = 222.9922
+2025-m-14 15:17:37 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 2/10: Reward = 218.3597
+2025-m-14 15:17:40 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 3/10: Reward = 222.9366
+2025-m-14 15:17:42 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 4/10: Reward = 222.3307
+2025-m-14 15:17:44 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 5/10: Reward = 221.5913
+2025-m-14 15:17:47 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 6/10: Reward = 222.1573
+2025-m-14 15:17:49 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 7/10: Reward = 220.2454
+2025-m-14 15:17:51 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 8/10: Reward = 226.0940
+2025-m-14 15:17:54 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 9/10: Reward = 221.9328
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 10/10: Reward = 221.6734
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Validation Results:
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Average Reward: 222.0313
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Std Dev: 1.8803
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Min: 218.3597
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Max: 226.0940
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_144315/best_policy.pth
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ✓ NEW BEST! Validation reward: 222.0313
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Saved: best_policy.pth
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Training Progress:
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Timesteps: 50,000 / 3,000,000
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Updates: 45,010
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Elapsed Time: 0:34:37
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Episode Reward (train): 225.1693
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Environment Stats (avg over last 1000 steps):
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Real-Time Error (q): 73.267 mm
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Prediction Error (LSTM): 11.571 mm
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Delay (steps): 110.02
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Losses & Metrics:
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Actor Loss: -5.2427
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Critic Loss: 1.2154
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Alpha: 0.0225
+2025-m-14 15:17:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Training Progress:
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Timesteps: 60,000 / 3,000,000
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Updates: 55,010
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Elapsed Time: 0:45:03
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Episode Reward (train): 225.0597
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Environment Stats (avg over last 1000 steps):
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Real-Time Error (q): 101.030 mm
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Prediction Error (LSTM): 11.622 mm
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Delay (steps): 110.04
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Losses & Metrics:
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Actor Loss: -4.4110
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Critic Loss: 0.0380
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Alpha: 0.0107
+2025-m-14 15:28:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Training Progress:
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Timesteps: 70,000 / 3,000,000
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Updates: 65,010
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Elapsed Time: 0:59:50
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Episode Reward (train): 224.9082
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Environment Stats (avg over last 1000 steps):
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Real-Time Error (q): 88.306 mm
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Prediction Error (LSTM): 11.418 mm
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Delay (steps): 109.83
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Losses & Metrics:
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Actor Loss: -4.6565
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Critic Loss: 0.0681
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Alpha: 0.0134
+2025-m-14 15:43:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-m-14 15:50:45 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 1/10: Reward = 196.6983
+2025-m-14 15:50:54 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 2/10: Reward = 201.0634
+2025-m-14 15:51:04 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 3/10: Reward = 196.5905
+2025-m-14 15:51:13 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 4/10: Reward = 200.0500
+2025-m-14 15:51:23 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 5/10: Reward = 200.2359
+2025-m-14 15:51:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 6/10: Reward = 196.1701
+2025-m-14 15:51:42 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 7/10: Reward = 200.9043
+2025-m-14 15:51:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 8/10: Reward = 198.7214
+2025-m-14 15:52:01 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 9/10: Reward = 200.7805
+2025-m-14 15:52:11 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 10/10: Reward = 196.3344
+2025-m-14 15:52:11 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Validation Results:
+2025-m-14 15:52:11 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Average Reward: 198.7549
+2025-m-14 15:52:11 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Std Dev: 1.9844
+2025-m-14 15:52:11 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Min: 196.1701
+2025-m-14 15:52:11 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Max: 201.0634
+2025-m-14 15:52:11 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ⚠ No improvement for 1/10 checks
+2025-m-14 15:54:01 [WARNING] __main__ - 
+2025-m-14 15:54:01 [WARNING] __main__ - ======================================================================
+2025-m-14 15:54:01 [WARNING] __main__ - Training Interrupted by User
+2025-m-14 15:54:01 [WARNING] __main__ - ======================================================================
+2025-m-14 15:54:01 [WARNING] __main__ - Saving interrupted model...
+2025-m-14 15:54:01 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_144315/interrupted_policy.pth
+2025-m-14 15:54:01 [INFO] __main__ - Interrupted model saved to: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_144315
+2025-m-14 15:54:01 [INFO] __main__ - 
+2025-m-14 15:54:01 [INFO] __main__ - Cleaning up...
+2025-m-14 15:54:01 [INFO] __main__ - Environment closed
+2025-m-14 15:54:01 [INFO] __main__ - 
+2025-m-14 15:54:01 [INFO] __main__ - ======================================================================
+2025-m-14 15:54:01 [INFO] __main__ - Output Directory: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_144315
+2025-m-14 15:54:01 [INFO] __main__ - ======================================================================
+2025-m-14 15:54:01 [INFO] __main__ - Training ended prematurely.
