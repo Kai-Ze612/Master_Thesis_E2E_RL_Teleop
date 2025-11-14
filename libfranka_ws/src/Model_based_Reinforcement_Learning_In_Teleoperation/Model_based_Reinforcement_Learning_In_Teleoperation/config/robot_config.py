@@ -7,11 +7,14 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
 DEFAULT_RL_MODEL_PATH_BASE = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Reinforcement_Learning_In_Teleoperation/Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output"
 
+DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+
 RL_MODEL_PATH = "./rl_training_output/sac_model.pt"
-LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/lstm_model/estimator_best.pth"
+# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/lstm_model/estimator_best.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334/estimator_best.pth"
 
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -55,14 +58,15 @@ IK_CONTINUITY_GAIN = 0.5
 TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.6], dtype=np.float32)
 TRAJECTORY_SCALE = np.array([0.1, 0.3], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1
+TRAJECTORY_RANDOM = True
 
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
 ESTIMATOR_LEARNING_RATE = 3e-4
-ESTIMATOR_BATCH_SIZE = 256
+ESTIMATOR_BATCH_SIZE = 512
 ESTIMATOR_BUFFER_SIZE = 200000
-ESTIMATOR_WARMUP_STEPS = 5000
+ESTIMATOR_WARMUP_STEPS = 20000
 ESTIMATOR_TOTAL_UPDATES = 50000
 ESTIMATOR_VAL_STEPS = 5000
 ESTIMATOR_VAL_FREQ = 1000
@@ -71,7 +75,7 @@ ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 512
 RNN_NUM_LAYERS = 4
-RNN_SEQUENCE_LENGTH = 128 # Input sequence for LSTM
+RNN_SEQUENCE_LENGTH = 256 # Input sequence for LSTM
 
 ######################################
 # RL Environment Parameters
@@ -140,7 +144,8 @@ ACTION_PENALTY_WEIGHT = 0.01  # penalty for large actions
 # Environment Settings
 ######################################
 
-NUM_ENVIRONMENTS = 5 # Number of parallel environments for training
+# NUM_ENVIRONMENTS = 5 # Number of parallel environments for training
+NUM_ENVIRONMENTS = 10
 
 ######################################
 # Logging and Checkpointing

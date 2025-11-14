@@ -14,7 +14,6 @@ venv/
 # Machine Learning / AI
 *.pkl
 *.h5
-*.pth
 *.bin
 *.model
 *.weights

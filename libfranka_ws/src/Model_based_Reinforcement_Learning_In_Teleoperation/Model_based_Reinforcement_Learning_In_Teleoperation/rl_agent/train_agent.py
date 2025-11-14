@@ -23,10 +23,8 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_a
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     SAC_TOTAL_TIMESTEPS,
     CHECKPOINT_DIR_RL,
-    CHECKPOINT_DIR_LSTM,
     NUM_ENVIRONMENTS,
     OBS_DIM,
-    REMOTE_HISTORY_LEN,
     LSTM_MODEL_PATH,
 )
 
@@ -265,7 +263,7 @@ def parse_arguments() -> argparse.Namespace:
     exp_group.add_argument("--randomize-trajectory", action="store_true", help="Randomize trajectory parameters during training for better generalization")
     exp_group.add_argument("--timesteps", type=int, default=SAC_TOTAL_TIMESTEPS, help="Total training timesteps")
     exp_group.add_argument("--seed", type=int, default=None, help="Random reproducibility seed (None for random seed)")
-    exp_group.add_argument("--render", type=str.lower, default=None, choices=['human', 'rgb_array', 'none'], help="Rendering mode for visualization ('human' opens a live plot).")
+    exp_group.add_argument("--render", type=str.lower, default='human', choices=['human', 'rgb_array', 'none'], help="Rendering mode for visualization ('human' opens a live plot).")
     
     args = parser.parse_args()
     
@@ -278,7 +276,7 @@ def parse_arguments() -> argparse.Namespace:
         '1': config_options[0], # e.g., LOW_DELAY
         '2': config_options[1], # e.g., MEDIUM_DELAY
         '3': config_options[2], # e.g., HIGH_DELAY
-        '4': config_options[3]  # e.g., EXTREME_DELAY
+        '4': config_options[3]  # e.g., FULL_RANGE_DELAY
     }
     args.config = CONFIG_MAP[args.config]
     

@@ -1,0 +1,55 @@
+2025-11-14 12:03:34 [INFO] ================================================================================
+2025-11-14 12:03:34 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING
+2025-11-14 12:03:34 [INFO] ================================================================================
+2025-11-14 12:03:34 [INFO] Configuration:
+2025-11-14 12:03:34 [INFO]   Delay Config: HIGH_DELAY
+2025-11-14 12:03:34 [INFO]   Train Trajectory: figure_8
+2025-11-14 12:03:34 [INFO]   Device: cuda
+2025-11-14 12:03:34 [INFO]   Environments: 10
+2025-11-14 12:03:34 [INFO]   Sequence Length: 256
+2025-11-14 12:03:34 [INFO] Hyperparameters:
+2025-11-14 12:03:34 [INFO]   Learning Rate: 0.0003
+2025-11-14 12:03:34 [INFO]   Batch Size: 512
+2025-11-14 12:03:34 [INFO]   Buffer Size: 200000
+2025-11-14 12:03:34 [INFO]   Total Updates: 50000
+2025-11-14 12:03:34 [INFO]   Warmup Steps: 20000
+2025-11-14 12:03:34 [INFO]   Validation Frequency: 1000 steps
+2025-11-14 12:03:34 [INFO]   Early Stopping Patience: 10 checks
+2025-11-14 12:03:34 [INFO]   LR Scheduler Patience: 5 checks
+2025-11-14 12:03:34 [INFO]   Trajectory Randomization during Training: False
+2025-11-14 12:03:34 [INFO]   RNN Hidden Dimension: 512
+2025-11-14 12:03:34 [INFO]   RNN Number of Layers: 4
+2025-11-14 12:03:34 [INFO] ================================================================================
+2025-11-14 12:03:38 [INFO] Filling training buffer...
+2025-11-14 12:05:44 [INFO] Training buffer filled: 200000 samples
+2025-11-14 12:05:44 [INFO] Filling validation buffer...
+2025-11-14 12:05:55 [INFO] Validation buffer filled: 5000 samples
+2025-11-14 12:05:55 [INFO] Starting training...
+2025-11-14 12:05:59 [INFO] Update 0/50000: TrainLoss=0.488887, ValLoss=0.416324
+2025-11-14 12:05:59 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334
+2025-11-14 12:09:47 [INFO] Update 1000/50000: TrainLoss=0.025872, ValLoss=0.031361
+2025-11-14 12:09:47 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334
+2025-11-14 12:13:36 [INFO] Update 2000/50000: TrainLoss=0.025861, ValLoss=0.031842
+2025-11-14 12:17:25 [INFO] Update 3000/50000: TrainLoss=0.026072, ValLoss=0.030392
+2025-11-14 12:17:25 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334
+2025-11-14 12:21:15 [INFO] Update 4000/50000: TrainLoss=0.025685, ValLoss=0.028942
+2025-11-14 12:21:15 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334
+2025-11-14 12:25:03 [INFO] Update 5000/50000: TrainLoss=0.025596, ValLoss=0.032149
+2025-11-14 12:28:51 [INFO] Update 6000/50000: TrainLoss=0.025817, ValLoss=0.031702
+2025-11-14 12:32:39 [INFO] Update 7000/50000: TrainLoss=0.026605, ValLoss=0.030318
+2025-11-14 12:36:26 [INFO] Update 8000/50000: TrainLoss=0.025810, ValLoss=0.033546
+2025-11-14 12:40:09 [INFO] Update 9000/50000: TrainLoss=0.025395, ValLoss=0.031191
+2025-11-14 12:42:43 [INFO] Update 10000/50000: TrainLoss=0.025921, ValLoss=0.031811
+2025-11-14 12:46:01 [INFO] Update 11000/50000: TrainLoss=0.025539, ValLoss=0.032159
+2025-11-14 12:49:50 [INFO] Update 12000/50000: TrainLoss=0.026190, ValLoss=0.031798
+2025-11-14 12:53:37 [INFO] Update 13000/50000: TrainLoss=0.026001, ValLoss=0.031164
+2025-11-14 12:57:25 [INFO] Update 14000/50000: TrainLoss=0.025655, ValLoss=0.032727
+2025-11-14 12:57:25 [INFO] Validation loss has not improved for 10 checks. Early stopping.
+2025-11-14 12:57:25 [INFO] Filling test buffer...
+2025-11-14 12:57:35 [INFO] Test buffer filled: 5000 samples
+2025-11-14 12:57:39 [INFO] ================================================================================
+2025-11-14 12:57:39 [INFO] FINAL TEST RESULTS
+2025-11-14 12:57:39 [INFO]   Best Validation Loss: 0.028942
+2025-11-14 12:57:39 [INFO]   Final Test Loss: 0.030108
+2025-11-14 12:57:39 [INFO]   Output: ./lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334
+2025-11-14 12:57:39 [INFO] ================================================================================

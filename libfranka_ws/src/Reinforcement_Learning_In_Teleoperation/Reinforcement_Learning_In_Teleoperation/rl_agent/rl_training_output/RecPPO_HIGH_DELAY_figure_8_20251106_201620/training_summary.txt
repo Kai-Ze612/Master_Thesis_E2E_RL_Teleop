@@ -1,0 +1,64 @@
+======================================================================
+Configuration
+======================================================================
+
+Environment:
+  Total Timesteps: 30,000,000
+  Num Environments: 20
+  Control Frequency: 500 Hz
+  Rollout Steps: 40000
+
+Model Architecture:
+  RNN Layers: 4
+  RNN Hidden Dim: 512
+  RNN Sequence Len: 256
+  PPO MLP Dims: [512, 256]
+
+PPO Hyperparameters:
+  Learning Rate: 3e-07
+  Num Epochs: 10
+  Batch Size: 128
+  Gamma: 0.9
+  GAE Lambda: 0.95
+  Clip Epsilon: 0.2
+  Entropy Coef: 0.01
+  Value Coef: 0.4
+
+Loss Weights:
+  Prediction Loss Weight: 10.0
+  PPO Loss Weight: 5.0
+
+Reward Function:
+  Prediction Weight: 5.0
+  Tracking Weight: 1.0
+  Vel Weight Factor: 1.5
+  Scale (Low Error): 50
+  Scale (Mid Error): 25
+  Scale (High Error): 10
+
+======================================================================
+Training Summary
+======================================================================
+
+Start Time: 2025-11-06 20:16:24
+End Time: 2025-11-07 06:39:18
+Duration: 10.38 hours (622.9 minutes)
+
+Total Updates: 170
+Total Timesteps: 6,800,000
+
+Reward Statistics:
+  Initial: 2689.638
+  Final: 687.422
+  Best: 4470.828
+  Mean: 1085.137
+  Std: 911.314
+
+Prediction Loss (LSTM):
+  Initial: 0.244871
+  Final: 0.162385
+  Best: 0.071668
+
+Best Reward Achieved (Early Stopping): 3297.217
+
+======================================================================

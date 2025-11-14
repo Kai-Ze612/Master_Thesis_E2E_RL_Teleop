@@ -181,6 +181,10 @@ class SACTrainer:
         self.validation_rewards_history = deque(maxlen=100)
         self.patience_counter = 0
         self.early_stop_triggered = False
+
+        self.real_time_error_history = deque(maxlen=1000)
+        self.prediction_error_history = deque(maxlen=1000)
+        self.delay_steps_history = deque(maxlen=1000)
         
     def _init_tensorboard(self):
         """Initialize TensorBoard writer."""
@@ -189,7 +193,8 @@ class SACTrainer:
         self.tb_writer = SummaryWriter(log_dir=tb_dir, flush_secs=120)
         logger.info(f"Tensorboard logs at: {tb_dir}")
 
-    def _log_metrics(self, metrics: Dict[str, float], avg_reward: float, val_reward: Optional[float] = None):
+    def _log_metrics(self, metrics: Dict[str, float], avg_reward: float, val_reward: Optional[float] = None,
+                     env_stats: Dict[str, float] = {}):
         """Log metrics to TensorBoard"""
         step = self.num_updates
         if self.tb_writer:
@@ -197,6 +202,13 @@ class SACTrainer:
             if val_reward is not None:
                 self.tb_writer.add_scalar('validation/avg_episode_reward', val_reward, self.total_timesteps)
                 self.tb_writer.add_scalar('validation/best_reward', self.best_validation_reward, self.total_timesteps)
+            
+            # NEW: Log detailed env stats to tensorboard
+            if env_stats:
+                self.tb_writer.add_scalar('env/real_time_error_q_mm', env_stats.get('avg_rt_error_mm', np.nan), self.total_timesteps)
+                self.tb_writer.add_scalar('env/prediction_error_lstm_mm', env_stats.get('avg_pred_error_mm', np.nan), self.total_timesteps)
+                self.tb_writer.add_scalar('env/avg_delay_steps', env_stats.get('avg_delay', np.nan), self.total_timesteps)
+            
             self.tb_writer.add_scalar('train/alpha', metrics.get('alpha', 0.0), step)
             self.tb_writer.add_scalars('losses', {
                 'actor_loss': metrics.get('actor_loss', 0.0),
@@ -496,6 +508,11 @@ class SACTrainer:
             episode_rewards += rewards_batch
             episode_lengths += 1
 
+            for info in infos_batch:
+                self.real_time_error_history.append(info.get('real_time_joint_error', np.nan))
+                self.prediction_error_history.append(info.get('prediction_error', np.nan))
+                self.delay_steps_history.append(info.get('current_delay_steps', np.nan))
+
             # Handle episode termination
             for i in range(self.num_envs):
                 if dones_batch[i]:
@@ -544,7 +561,7 @@ class SACTrainer:
                     if self.patience_counter >= SAC_EARLY_STOPPING_PATIENCE:
                         logger.info("")
                         logger.info("="*70)
-                        logger.info("🛑 EARLY STOPPING TRIGGERED!")
+                        logger.info(" EARLY STOPPING TRIGGERED!")
                         logger.info("="*70)
                         logger.info(f"Best validation reward: {self.best_validation_reward:.4f}")
                         logger.info(f"Stopped at timestep: {self.total_timesteps:,}")
@@ -557,12 +574,24 @@ class SACTrainer:
                 elapsed_time = datetime.now() - start_time
                 avg_reward = np.mean(completed_episode_rewards) if completed_episode_rewards else 0.0
                 
+                avg_rt_error_mm = (np.nanmean(self.real_time_error_history) * 1000 
+                                   if len(self.real_time_error_history) > 0 else np.nan)
+                avg_pred_error_mm = (np.nanmean(self.prediction_error_history) * 1000 
+                                     if len(self.prediction_error_history) > 0 else np.nan)
+                avg_delay = (np.nanmean(self.delay_steps_history) 
+                             if len(self.delay_steps_history) > 0 else np.nan)
+                
                 logger.info(f"\n{'─'*70}")
                 logger.info(f"Training Progress:")
                 logger.info(f"  Timesteps: {self.total_timesteps:,} / {total_timesteps:,}")
                 logger.info(f"  Updates: {self.num_updates:,}")
                 logger.info(f"  Elapsed Time: {str(elapsed_time).split('.')[0]}")
                 logger.info(f"  Avg Episode Reward (train): {avg_reward:.4f}")
+                
+                logger.info(f"\nEnvironment Stats (avg over last {len(self.real_time_error_history)} steps):")
+                logger.info(f"  Avg Real-Time Error (q): {avg_rt_error_mm:.3f} mm")
+                logger.info(f"  Avg Prediction Error (LSTM): {avg_pred_error_mm:.3f} mm")
+                logger.info(f"  Avg Delay (steps): {avg_delay:.2f}")
                 
                 if self.total_timesteps >= SAC_START_STEPS:
                     logger.info(f"\nLosses & Metrics:")
@@ -571,6 +600,12 @@ class SACTrainer:
                     logger.info(f"  Alpha: {self.alpha:.4f}")
                 
                 logger.info(f"{'─'*70}")
+                
+                env_stats_dict = {
+                    'avg_rt_error_mm': avg_rt_error_mm,
+                    'avg_pred_error_mm': avg_pred_error_mm,
+                    'avg_delay': avg_delay,
+                }
                 
                 self._log_metrics(metrics, avg_reward, validation_reward)
 

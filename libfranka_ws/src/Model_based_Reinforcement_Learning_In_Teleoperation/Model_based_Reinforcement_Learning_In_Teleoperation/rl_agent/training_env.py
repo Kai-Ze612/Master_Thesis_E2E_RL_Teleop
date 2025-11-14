@@ -234,8 +234,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Update history buffers for plotting
         self.hist_total_reward.append(reward)
         true_target = self.get_true_current_target()
-        true_target_q = true_target[:N_JOINTS]
-        tracking_error_q = np.linalg.norm(true_target_q - remote_q)
+        true_target_q_for_plot = true_target[:N_JOINTS] # Renamed to avoid scope collision
+        tracking_error_q = np.linalg.norm(true_target_q_for_plot - remote_q)
         r_tracking = np.exp(-TRACKING_ERROR_SCALE * tracking_error_q**2)
         self.hist_tracking_reward.append(r_tracking)
         
@@ -245,9 +245,46 @@ class TeleoperationEnvWithDelay(gym.Env):
             joint_error = np.linalg.norm(predicted_q - remote_q)
         else:
             # Fallback: use error from initial position
+            predicted_q = None # For logging
             joint_error = np.linalg.norm(self.initial_qpos - remote_q)
             
+        true_target_q = true_target_q_for_plot # Ground truth
+        
+        # Check for termination BEFORE printing, so we can log it
         terminated, term_penalty = self._check_termination(joint_error, remote_q)
+
+        # --- [DEBUG] PRINT BLOCK ---
+        # MODIFIED: Print on step 1, every 100 steps thereafter, OR on termination
+        if (self.current_step % 100 == 1) or (terminated):
+            # Use numpy formatting for cleaner output
+            np.set_printoptions(precision=4, suppress=True, linewidth=120)
+            
+            print(f"\n[DEBUG] Step: {self.current_step}")
+            print(f"  True Target q: {true_target_q}")
+            if predicted_q is not None:
+                print(f"  Predicted q:   {predicted_q}")
+                pred_error_norm = np.linalg.norm(true_target_q - predicted_q)
+                print(f"  -> Prediction Error (norm): {pred_error_norm * 1000:.3f} mm")
+            else:
+                print(f"  Predicted q:   None (target not set or random phase)")
+            
+            print(f"  Remote Robot q:  {remote_q}")
+            print(f"  -> Tracking Error (norm): {np.linalg.norm(true_target_q - remote_q) * 1000:.3f} mm")
+            print(f"  -> Joint Error (for term): {joint_error:.6f}")
+            
+            if terminated:
+                print(f"  TERMINATION TRIGGERED!")
+                print(f"    Joint Error: {joint_error:.6f} > {self.max_joint_error}")
+                at_limits = (
+                    np.any(remote_q <= self.joint_limits_lower + self.joint_limit_margin) or
+                    np.any(remote_q >= self.joint_limits_upper - self.joint_limit_margin)
+                )
+                print(f"    At Joint Limits: {at_limits}")
+
+            print(f"{'-'*40}")
+            np.set_printoptions() # Reset to default
+        # --- END [DEBUG] ---
+
         if terminated:
             reward += term_penalty
 
@@ -264,7 +301,7 @@ class TeleoperationEnvWithDelay(gym.Env):
             truncated,
             self._get_info()
         )
-
+        
     def _get_observation(self) -> np.ndarray:
         """
         Construct observation for RL agent with optimized structure (112D).

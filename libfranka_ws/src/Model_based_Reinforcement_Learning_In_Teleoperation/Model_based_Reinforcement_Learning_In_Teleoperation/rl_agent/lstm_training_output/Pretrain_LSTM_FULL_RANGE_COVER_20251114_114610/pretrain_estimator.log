@@ -1,0 +1,65 @@
+2025-11-14 11:46:10 [INFO] ================================================================================
+2025-11-14 11:46:10 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING
+2025-11-14 11:46:10 [INFO] ================================================================================
+2025-11-14 11:46:10 [INFO] Configuration:
+2025-11-14 11:46:10 [INFO]   Delay Config: FULL_RANGE_COVER
+2025-11-14 11:46:10 [INFO]   Train Trajectory: figure_8
+2025-11-14 11:46:10 [INFO]   Device: cuda
+2025-11-14 11:46:10 [INFO]   Environments: 10
+2025-11-14 11:46:10 [INFO]   Sequence Length: 256
+2025-11-14 11:46:10 [INFO] Hyperparameters:
+2025-11-14 11:46:10 [INFO]   Learning Rate: 0.0003
+2025-11-14 11:46:10 [INFO]   Batch Size: 512
+2025-11-14 11:46:10 [INFO]   Buffer Size: 200000
+2025-11-14 11:46:10 [INFO]   Total Updates: 50000
+2025-11-14 11:46:10 [INFO]   Warmup Steps: 20000
+2025-11-14 11:46:10 [INFO]   Validation Frequency: 1000 steps
+2025-11-14 11:46:10 [INFO]   Early Stopping Patience: 10 checks
+2025-11-14 11:46:10 [INFO]   LR Scheduler Patience: 5 checks
+2025-11-14 11:46:10 [INFO]   Trajectory Randomization during Training: True
+2025-11-14 11:46:10 [INFO]   RNN Hidden Dimension: 512
+2025-11-14 11:46:10 [INFO]   RNN Number of Layers: 4
+2025-11-14 11:46:10 [INFO] ================================================================================
+2025-11-14 11:46:14 [INFO] Filling training buffer...
+2025-11-14 11:48:09 [INFO] Training buffer filled: 200000 samples
+2025-11-14 11:48:09 [INFO] Filling validation buffer...
+2025-11-14 11:48:18 [INFO] Validation buffer filled: 5000 samples
+2025-11-14 11:48:18 [INFO] Starting training...
+2025-11-14 11:48:20 [INFO] Update 0/50000: TrainLoss=0.493682, ValLoss=0.455994
+2025-11-14 11:48:20 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251114_114610
+2025-11-14 11:49:36 [INFO] Update 1000/50000: TrainLoss=0.031421, ValLoss=0.031814
+2025-11-14 11:49:36 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251114_114610
+2025-11-14 11:50:54 [INFO] Update 2000/50000: TrainLoss=0.030022, ValLoss=0.031585
+2025-11-14 11:50:54 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251114_114610
+2025-11-14 11:52:11 [INFO] Update 3000/50000: TrainLoss=0.029908, ValLoss=0.031251
+2025-11-14 11:52:11 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251114_114610
+2025-11-14 11:53:29 [INFO] Update 4000/50000: TrainLoss=0.030156, ValLoss=0.031756
+2025-11-14 11:54:47 [INFO] Update 5000/50000: TrainLoss=0.029417, ValLoss=0.030675
+2025-11-14 11:54:47 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251114_114610
+2025-11-14 11:56:08 [INFO] Update 6000/50000: TrainLoss=0.029108, ValLoss=0.031450
+2025-11-14 11:57:29 [INFO] Update 7000/50000: TrainLoss=0.029603, ValLoss=0.031424
+2025-11-14 11:58:47 [INFO] Update 8000/50000: TrainLoss=0.029409, ValLoss=0.032335
+2025-11-14 12:00:05 [INFO] Update 9000/50000: TrainLoss=0.028798, ValLoss=0.030473
+2025-11-14 12:00:05 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251114_114610
+2025-11-14 12:01:25 [INFO] Update 10000/50000: TrainLoss=0.029248, ValLoss=0.031170
+2025-11-14 12:03:14 [INFO] Update 11000/50000: TrainLoss=0.029140, ValLoss=0.029432
+2025-11-14 12:03:14 [INFO]   -> New best validation loss. Saving model to ./lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251114_114610
+2025-11-14 12:05:47 [INFO] Update 12000/50000: TrainLoss=0.028858, ValLoss=0.030859
+2025-11-14 12:09:31 [INFO] Update 13000/50000: TrainLoss=0.029371, ValLoss=0.030444
+2025-11-14 12:13:20 [INFO] Update 14000/50000: TrainLoss=0.028970, ValLoss=0.032066
+2025-11-14 12:17:09 [INFO] Update 15000/50000: TrainLoss=0.029120, ValLoss=0.030890
+2025-11-14 12:20:58 [INFO] Update 16000/50000: TrainLoss=0.029192, ValLoss=0.031206
+2025-11-14 12:24:46 [INFO] Update 17000/50000: TrainLoss=0.029104, ValLoss=0.032271
+2025-11-14 12:28:34 [INFO] Update 18000/50000: TrainLoss=0.028631, ValLoss=0.031025
+2025-11-14 12:32:23 [INFO] Update 19000/50000: TrainLoss=0.028230, ValLoss=0.030796
+2025-11-14 12:36:11 [INFO] Update 20000/50000: TrainLoss=0.028709, ValLoss=0.031877
+2025-11-14 12:39:58 [INFO] Update 21000/50000: TrainLoss=0.028494, ValLoss=0.031264
+2025-11-14 12:39:58 [INFO] Validation loss has not improved for 10 checks. Early stopping.
+2025-11-14 12:39:59 [INFO] Filling test buffer...
+2025-11-14 12:40:08 [INFO] Test buffer filled: 5000 samples
+2025-11-14 12:40:12 [INFO] ================================================================================
+2025-11-14 12:40:12 [INFO] FINAL TEST RESULTS
+2025-11-14 12:40:12 [INFO]   Best Validation Loss: 0.029432
+2025-11-14 12:40:12 [INFO]   Final Test Loss: 0.042703
+2025-11-14 12:40:12 [INFO]   Output: ./lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251114_114610
+2025-11-14 12:40:12 [INFO] ================================================================================
