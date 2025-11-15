@@ -14,8 +14,8 @@ DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/li
 
 RL_MODEL_PATH = "./rl_training_output/sac_model.pt"
 # LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/lstm_model/estimator_best.pth"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334/estimator_best.pth"
-
+# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334/estimator_best.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251114_111825/estimator_best.pth"
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
 ######################################
@@ -109,7 +109,7 @@ SAC_LEARNING_RATE = 1e-4        # LR for Actor and Critic
 ALPHA_LEARNING_RATE = 3e-4      # LR for temperature auto-tuning
 
 # SAC Parameters
-SAC_GAMMA = 0.95
+SAC_GAMMA = 0.99
 SAC_TAU = 0.005
 SAC_TARGET_ENTROPY = 'auto'
 

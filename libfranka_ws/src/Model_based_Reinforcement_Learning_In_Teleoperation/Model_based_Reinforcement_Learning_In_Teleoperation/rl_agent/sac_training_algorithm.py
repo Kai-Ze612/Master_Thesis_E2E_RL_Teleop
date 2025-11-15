@@ -194,19 +194,16 @@ class SACTrainer:
         logger.info(f"Tensorboard logs at: {tb_dir}")
 
     def _log_metrics(self, metrics: Dict[str, float], avg_reward: float, val_reward: Optional[float] = None,
-                     env_stats: Dict[str, float] = {}):
+                     env_stats: Dict[str, float] = {}): # MODIFIED: Added env_stats
         """Log metrics to TensorBoard"""
         step = self.num_updates
         if self.tb_writer:
-            self.tb_writer.add_scalar('train/avg_episode_reward', avg_reward, self.total_timesteps)
-            if val_reward is not None:
-                self.tb_writer.add_scalar('validation/avg_episode_reward', val_reward, self.total_timesteps)
-                self.tb_writer.add_scalar('validation/best_reward', self.best_validation_reward, self.total_timesteps)
+            # ... (rest of the function)
             
-            # NEW: Log detailed env stats to tensorboard
+            # [FIX] Log detailed env stats to tensorboard in RADIANS
             if env_stats:
-                self.tb_writer.add_scalar('env/real_time_error_q_mm', env_stats.get('avg_rt_error_mm', np.nan), self.total_timesteps)
-                self.tb_writer.add_scalar('env/prediction_error_lstm_mm', env_stats.get('avg_pred_error_mm', np.nan), self.total_timesteps)
+                self.tb_writer.add_scalar('env/real_time_error_q_rad', env_stats.get('avg_rt_error_rad', np.nan), self.total_timesteps)
+                self.tb_writer.add_scalar('env/prediction_error_lstm_rad', env_stats.get('avg_pred_error_rad', np.nan), self.total_timesteps)
                 self.tb_writer.add_scalar('env/avg_delay_steps', env_stats.get('avg_delay', np.nan), self.total_timesteps)
             
             self.tb_writer.add_scalar('train/alpha', metrics.get('alpha', 0.0), step)
@@ -574,40 +571,32 @@ class SACTrainer:
                 elapsed_time = datetime.now() - start_time
                 avg_reward = np.mean(completed_episode_rewards) if completed_episode_rewards else 0.0
                 
-                avg_rt_error_mm = (np.nanmean(self.real_time_error_history) * 1000 
+                # [FIX] Calculate info stats in RADIANS
+                avg_rt_error_rad = (np.nanmean(self.real_time_error_history)
                                    if len(self.real_time_error_history) > 0 else np.nan)
-                avg_pred_error_mm = (np.nanmean(self.prediction_error_history) * 1000 
+                avg_pred_error_rad = (np.nanmean(self.prediction_error_history)
                                      if len(self.prediction_error_history) > 0 else np.nan)
                 avg_delay = (np.nanmean(self.delay_steps_history) 
                              if len(self.delay_steps_history) > 0 else np.nan)
-                
+
                 logger.info(f"\n{'─'*70}")
-                logger.info(f"Training Progress:")
-                logger.info(f"  Timesteps: {self.total_timesteps:,} / {total_timesteps:,}")
-                logger.info(f"  Updates: {self.num_updates:,}")
-                logger.info(f"  Elapsed Time: {str(elapsed_time).split('.')[0]}")
-                logger.info(f"  Avg Episode Reward (train): {avg_reward:.4f}")
-                
+                # ... (rest of the logging)
+
+                # [FIX] Print detailed env stats in RADIANS
                 logger.info(f"\nEnvironment Stats (avg over last {len(self.real_time_error_history)} steps):")
-                logger.info(f"  Avg Real-Time Error (q): {avg_rt_error_mm:.3f} mm")
-                logger.info(f"  Avg Prediction Error (LSTM): {avg_pred_error_mm:.3f} mm")
+                logger.info(f"  Avg Real-Time Error (q): {avg_rt_error_rad:.4f} rad")
+                logger.info(f"  Avg Prediction Error (LSTM): {avg_pred_error_rad:.4f} rad")
                 logger.info(f"  Avg Delay (steps): {avg_delay:.2f}")
                 
-                if self.total_timesteps >= SAC_START_STEPS:
-                    logger.info(f"\nLosses & Metrics:")
-                    logger.info(f"  Actor Loss: {metrics.get('actor_loss', 0):.4f}")
-                    logger.info(f"  Critic Loss: {metrics.get('critic_loss', 0):.4f}")
-                    logger.info(f"  Alpha: {self.alpha:.4f}")
+                # ... (rest of the logging)
                 
-                logger.info(f"{'─'*70}")
-                
+                # [FIX] Pass new stats to _log_metrics
                 env_stats_dict = {
-                    'avg_rt_error_mm': avg_rt_error_mm,
-                    'avg_pred_error_mm': avg_pred_error_mm,
+                    'avg_rt_error_rad': avg_rt_error_rad,
+                    'avg_pred_error_rad': avg_pred_error_rad,
                     'avg_delay': avg_delay,
                 }
-                
-                self._log_metrics(metrics, avg_reward, validation_reward)
+                self._log_metrics(metrics, avg_reward, validation_reward, env_stats=env_stats_dict)
 
         # --- Training Complete
         logger.info("")

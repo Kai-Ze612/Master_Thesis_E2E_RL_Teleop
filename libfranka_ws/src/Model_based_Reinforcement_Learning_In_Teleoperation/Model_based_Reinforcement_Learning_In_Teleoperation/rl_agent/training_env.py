@@ -283,10 +283,11 @@ class TeleoperationEnvWithDelay(gym.Env):
         remote_q, remote_qd = self.remote_robot.get_joint_state()
 
         # Calculate reward
-        reward = self._calculate_reward(action)
+        reward, r_tracking = self._calculate_reward(action)
 
         # Update history buffers for plotting
         self.hist_total_reward.append(reward)
+        self.hist_tracking_reward.append(r_tracking)
         true_target = self.get_true_current_target()
         true_target_q_for_plot = true_target[:N_JOINTS] # Renamed to avoid scope collision
         tracking_error_q = np.linalg.norm(true_target_q_for_plot - remote_q)
@@ -309,7 +310,6 @@ class TeleoperationEnvWithDelay(gym.Env):
 
         # Print out information for debugging
         if (self.current_step % 100 == 1) or (terminated):
-            # Use numpy formatting for cleaner output
             np.set_printoptions(precision=4, suppress=True, linewidth=120)
             
             print(f"\n[DEBUG] Step: {self.current_step}")
@@ -317,25 +317,15 @@ class TeleoperationEnvWithDelay(gym.Env):
             if predicted_q is not None:
                 print(f"  Predicted q:   {predicted_q}")
                 pred_error_norm = np.linalg.norm(true_target_q - predicted_q)
-                print(f"  -> Prediction Error (norm): {pred_error_norm * 1000:.3f} mm")
+                # [FIX] Change label from "mm" to "rad" and remove * 1000
+                print(f"  -> Prediction Error (norm): {pred_error_norm:.4f} rad")
             else:
                 print(f"  Predicted q:   None (target not set or random phase)")
             
             print(f"  Remote Robot q:  {remote_q}")
-            print(f"  -> Tracking Error (norm): {np.linalg.norm(true_target_q - remote_q) * 1000:.3f} mm")
+            # [FIX] Change label from "mm" to "rad" and remove * 1000
+            print(f"  -> Tracking Error (norm): {np.linalg.norm(true_target_q - remote_q):.4f} rad")
             print(f"  -> Joint Error (for term): {joint_error:.6f}")
-            
-            if terminated:
-                print(f"  TERMINATION TRIGGERED!")
-                print(f"    Joint Error: {joint_error:.6f} > {self.max_joint_error}")
-                at_limits = (
-                    np.any(remote_q <= self.joint_limits_lower + self.joint_limit_margin) or
-                    np.any(remote_q >= self.joint_limits_upper - self.joint_limit_margin)
-                )
-                print(f"    At Joint Limits: {at_limits}")
-
-            print(f"{'-'*40}")
-            np.set_printoptions() # Reset to default
 
         if terminated:
             reward += term_penalty
@@ -475,7 +465,7 @@ class TeleoperationEnvWithDelay(gym.Env):
     def _calculate_reward(
         self,
         action: np.ndarray,  # tau_compensation
-    ) -> float:
+    ) -> Tuple[float, float]: # MODIFIED: Return r_tracking for logging
         """
         Calculate dense reward combining prediction and tracking accuracy.
         """
@@ -485,36 +475,44 @@ class TeleoperationEnvWithDelay(gym.Env):
         true_target_q = true_target[:N_JOINTS]
         true_target_qd = true_target[N_JOINTS:]
         
-        # PRIMARY OBJECTIVE: Position Tracking
-        tracking_error_q = np.linalg.norm(true_target_q - remote_q)
-        r_pos = -TRACKING_ERROR_SCALE * (tracking_error_q**2)
+        # PRIMARY OBJECTIVE: Position Tracking (Per-Joint)
+        tracking_error_q_vec = true_target_q - remote_q
+        r_pos_per_joint = -TRACKING_ERROR_SCALE * (tracking_error_q_vec**2)
+        r_pos = np.sum(r_pos_per_joint) # Sum of individual penalties
         
-        # SECONDARY OBJECTIVE: Velocity Tracking
-        tracking_error_qd = np.linalg.norm(true_target_qd - remote_qd)
-        r_vel = -VELOCITY_ERROR_SCALE * (tracking_error_qd**2)
+        # SECONDARY OBJECTIVE: Velocity Tracking (Per-Joint)
+        tracking_error_qd_vec = true_target_qd - remote_qd
+        r_vel_per_joint = -VELOCITY_ERROR_SCALE * (tracking_error_qd_vec**2)
+        r_vel = np.sum(r_vel_per_joint)
         
         # Combine:
         r_tracking = r_pos + r_vel
         
-        # TERTIARY OBJECTIVE: Smooth Control
-        action_penalty = ACTION_PENALTY_WEIGHT * np.mean(np.abs(action))
+        # TERTIARY OBJECTIVE: Smooth Control (L2 penalty)
+        action_penalty = -ACTION_PENALTY_WEIGHT * np.mean(np.square(action))
         
         # Combine all
-        total_reward = r_tracking - action_penalty
-        
+        total_reward = r_tracking + action_penalty
+
         # Logging
         if self.current_step % 1000 == 0:
+            # [FIX] Log the L2-norm (total error) in RADIANS for info
+            tracking_error_q_norm = np.linalg.norm(tracking_error_q_vec) 
+            tracking_error_qd_norm = np.linalg.norm(tracking_error_qd_vec)
+            
             print(f"\n{'='*70}")
             print(f"[Reward Analysis - Step {self.current_step}]")
             print(f"{'='*70}")
-            print(f"Position Error: {tracking_error_q*1000:.1f}mm → r_pos = {r_pos:.4f}")
-            print(f"Velocity Error: {tracking_error_qd:.3f} rad/s → r_vel = {r_vel:.4f}")
+            # [FIX] Change label from "mm" to "rad"
+            print(f"Position Error (L2-norm): {tracking_error_q_norm:.4f} rad → r_pos = {r_pos:.4f}")
+            print(f"Velocity Error (L2-norm): {tracking_error_qd_norm:.4f} rad/s → r_vel = {r_vel:.4f}")
             print(f"Combined Tracking: {r_tracking:.4f}")
-            print(f"Action Magnitude: {np.mean(np.abs(action)):.4f} Nm → Penalty = {action_penalty:.4f}")
+            print(f"Action Magnitude (RMS): {np.sqrt(np.mean(np.square(action))):.4f} Nm → Penalty = {action_penalty:.4f}")
             print(f"TOTAL REWARD: {total_reward:.4f}")
             print(f"{'='*70}\n")
         
-        return float(np.clip(total_reward, -1.0, 1.0))
+        # [CRITICAL FIX] Do NOT clip the reward.
+        return float(total_reward), float(r_tracking)
     
     def _check_termination(
         self,

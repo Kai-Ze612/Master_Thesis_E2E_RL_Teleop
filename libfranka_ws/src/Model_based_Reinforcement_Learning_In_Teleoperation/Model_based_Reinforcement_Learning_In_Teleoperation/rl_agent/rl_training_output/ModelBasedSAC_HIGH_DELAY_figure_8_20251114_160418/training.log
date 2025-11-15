@@ -55,3 +55,55 @@ Losses & Metrics:
 2025-m-14 16:08:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Critic Loss: 2.7321
 2025-m-14 16:08:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Alpha: 0.2215
 2025-m-14 16:08:09 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+──────────────────────────────────────────────────────────────────────
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Training Progress:
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Timesteps: 20,000 / 3,000,000
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Updates: 15,010
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Elapsed Time: 0:11:25
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Episode Reward (train): -236.0544
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Environment Stats (avg over last 1000 steps):
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Real-Time Error (q): 96.414 mm
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Prediction Error (LSTM): 11.411 mm
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Avg Delay (steps): 110.07
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Losses & Metrics:
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Actor Loss: -1.5311
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Critic Loss: 0.1164
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Alpha: 0.0154
+2025-m-14 16:15:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ──────────────────────────────────────────────────────────────────────
+2025-m-14 16:19:45 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 1/10: Reward = -244.0000
+2025-m-14 16:19:47 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 2/10: Reward = -244.0000
+2025-m-14 16:19:49 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 3/10: Reward = -244.0000
+2025-m-14 16:19:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 4/10: Reward = -244.0000
+2025-m-14 16:19:54 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 5/10: Reward = -244.0000
+2025-m-14 16:19:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 6/10: Reward = -244.0000
+2025-m-14 16:19:59 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 7/10: Reward = -244.0000
+2025-m-14 16:20:01 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 8/10: Reward = -244.0000
+2025-m-14 16:20:03 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 9/10: Reward = -244.0000
+2025-m-14 16:20:06 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 10/10: Reward = -244.0000
+2025-m-14 16:20:06 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Validation Results:
+2025-m-14 16:20:06 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Average Reward: -244.0000
+2025-m-14 16:20:06 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Std Dev: 0.0000
+2025-m-14 16:20:06 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Min: -244.0000
+2025-m-14 16:20:06 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Max: -244.0000
+2025-m-14 16:20:06 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_160418/best_policy.pth
+2025-m-14 16:20:06 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ✓ NEW BEST! Validation reward: -244.0000
+2025-m-14 16:20:06 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Saved: best_policy.pth
+2025-m-14 16:21:46 [WARNING] __main__ - 
+2025-m-14 16:21:46 [WARNING] __main__ - ======================================================================
+2025-m-14 16:21:46 [WARNING] __main__ - Training Interrupted by User
+2025-m-14 16:21:46 [WARNING] __main__ - ======================================================================
+2025-m-14 16:21:46 [WARNING] __main__ - Saving interrupted model...
+2025-m-14 16:21:46 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_160418/interrupted_policy.pth
+2025-m-14 16:21:46 [INFO] __main__ - Interrupted model saved to: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_160418
+2025-m-14 16:21:46 [INFO] __main__ - 
+2025-m-14 16:21:46 [INFO] __main__ - Cleaning up...
+2025-m-14 16:21:46 [INFO] __main__ - Environment closed
+2025-m-14 16:21:46 [INFO] __main__ - 
+2025-m-14 16:21:46 [INFO] __main__ - ======================================================================
+2025-m-14 16:21:46 [INFO] __main__ - Output Directory: ./rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_160418
+2025-m-14 16:21:46 [INFO] __main__ - ======================================================================
+2025-m-14 16:21:46 [INFO] __main__ - Training ended prematurely.

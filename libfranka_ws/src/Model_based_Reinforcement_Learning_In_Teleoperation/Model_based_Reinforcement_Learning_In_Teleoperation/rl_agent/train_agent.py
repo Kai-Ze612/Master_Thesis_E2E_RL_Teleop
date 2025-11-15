@@ -10,6 +10,7 @@ import torch
 import numpy as np
 import argparse
 import multiprocessing
+import wandb
 
 # stable-baselines3 imports
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -160,7 +161,7 @@ def train_agent(args: argparse.Namespace) -> None:
 
         logger.info("Observation Structure (112D):")
         logger.info(f"  - Remote state: 14D (position 7D + velocity 7D)")
-        logger.info(f"  - Remote history: 70D (5 timesteps × 14D)")
+        logger.info(f"  - Remote history: 70D (5 timesteps x 14D)")
         logger.info(f"  - LSTM prediction: 14D (position 7D + velocity 7D)")
         logger.info(f"  - Current error: 14D (position error 7D + velocity error 7D)")
         logger.info(f"  - Total: {OBS_DIM}D")
