@@ -1,0 +1,36 @@
+2025-m-15 11:10:59 [INFO] __main__ - Training Configuration:
+2025-m-15 11:10:59 [INFO] __main__ -   Delay Config: FULL_RANGE_COVER
+2025-m-15 11:10:59 [INFO] __main__ -   Trajectory Type: figure_8
+2025-m-15 11:10:59 [INFO] __main__ -   Randomize Trajectory: True
+2025-m-15 11:10:59 [INFO] __main__ -   Total Timesteps: 3,000,000
+2025-m-15 11:10:59 [INFO] __main__ -   Random Seed: 50
+2025-m-15 11:10:59 [INFO] __main__ - 
+2025-m-15 11:10:59 [INFO] __main__ - --- W&B Hyperparameters ---
+2025-m-15 11:10:59 [INFO] __main__ -   Learning Rate: 0.0005359066101371188
+2025-m-15 11:10:59 [INFO] __main__ -   Gamma: 0.931192935237335
+2025-m-15 11:10:59 [INFO] __main__ -   Tau: 0.0014991008093132269
+2025-m-15 11:10:59 [INFO] __main__ -   Batch Size: 512
+2025-m-15 11:10:59 [INFO] __main__ -   Action Penalty: 0.018739720729345377
+2025-m-15 11:10:59 [INFO] __main__ - -----------------------------
+2025-m-15 11:11:00 [INFO] __main__ - Creating vectorized environment...
+2025-m-15 11:11:01 [ERROR] __main__ - Failed to create vectorized environment: [Errno 104] Connection reset by peer
+Traceback (most recent call last):
+  File "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/train_agent.py", line 176, in train_agent
+    env = make_vec_env(
+          ^^^^^^^^^^^^^
+  File "/home/kaize/venv_thesis/lib/python3.12/site-packages/stable_baselines3/common/env_util.py", line 125, in make_vec_env
+    vec_env = vec_env_cls([make_env(i + start_index) for i in range(n_envs)], **vec_env_kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kaize/venv_thesis/lib/python3.12/site-packages/stable_baselines3/common/vec_env/subproc_vec_env.py", line 127, in __init__
+    observation_space, action_space = self.remotes[0].recv()
+                                      ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 250, in recv
+    buf = self._recv_bytes()
+          ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 430, in _recv_bytes
+    buf = self._recv(4)
+          ^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/multiprocessing/connection.py", line 395, in _recv
+    chunk = read(handle, remaining)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
