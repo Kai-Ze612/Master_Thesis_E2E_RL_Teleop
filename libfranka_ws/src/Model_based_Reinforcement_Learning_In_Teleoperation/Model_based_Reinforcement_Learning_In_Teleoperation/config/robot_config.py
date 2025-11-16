@@ -15,8 +15,9 @@ DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/li
 RL_MODEL_PATH = "./rl_training_output/sac_model.pt"
 # LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/lstm_model/estimator_best.pth"
 # LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334/estimator_best.pth"
-
+# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251115_124015/estimator_best.pth"
 LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251114_111825/estimator_best.pth"
+# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_MEDIUM_DELAY_20251115_124019/estimator_best.pth"
 
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -108,7 +109,7 @@ SAC_ACTIVATION = 'relu'
 
 # Learning Rates
 SAC_LEARNING_RATE = 3e-5        # LR for Actor and Critic
-ALPHA_LEARNING_RATE = 3e-4      # LR for temperature auto-tuning
+ALPHA_LEARNING_RATE = 3e-5      # LR for temperature auto-tuning
 
 # SAC Parameters
 SAC_GAMMA = 0.99
@@ -146,7 +147,7 @@ ACTION_PENALTY_WEIGHT = 0.01  # penalty for large actions
 ######################################
 
 # NUM_ENVIRONMENTS = 5 # Number of parallel environments for training
-NUM_ENVIRONMENTS = 10
+NUM_ENVIRONMENTS = 20
 
 ######################################
 # Logging and Checkpointing

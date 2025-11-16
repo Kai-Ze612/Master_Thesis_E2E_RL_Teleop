@@ -1,0 +1,8 @@
+2025-m-15 22:05:57 [INFO] __main__ - Training Configuration:
+2025-m-15 22:05:57 [INFO] __main__ -   Delay Config: FULL_RANGE_COVER
+2025-m-15 22:05:57 [INFO] __main__ -   Trajectory Type: figure_8
+2025-m-15 22:05:57 [INFO] __main__ -   Randomize Trajectory: True
+2025-m-15 22:05:57 [INFO] __main__ -   Total Timesteps: 3,000,000
+2025-m-15 22:05:57 [INFO] __main__ -   Random Seed: 50
+2025-m-15 22:05:57 [INFO] __main__ - 
+2025-m-15 22:05:57 [INFO] __main__ - Creating vectorized environment...
