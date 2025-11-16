@@ -252,20 +252,19 @@ class RemoteRobotNode(Node):
                 "Waiting for Agent Commands (predict_target, tau_rl)... Publishing G-Comp + PD to hold.",
                 throttle_duration_sec=5.0
             )
-            # Use default hold targets if agent isn't ready
             q_target = self.target_q_ 
-            qd_target = self.target_qd_
-            tau_rl = self.current_tau_rl_ # This will be zeros until first msg
+            tau_rl = self.current_tau_rl_
         else:
-            # Agent is ready, use its commands
             q_target = self.target_q_ 
-            qd_target = self.target_qd_
             tau_rl = self.current_tau_rl_
         
         # Start the control loop
         try:
             q_current = self.current_q_
             qd_current = self.current_qd_
+            
+            qd_target = (q_target - self.last_q_target_) / self.dt_
+            self.last_q_target_ = q_target.copy() # Update state for next step
             
             # PD Calculation
             tau_gravity = self._compute_gravity_compensation(q_current)

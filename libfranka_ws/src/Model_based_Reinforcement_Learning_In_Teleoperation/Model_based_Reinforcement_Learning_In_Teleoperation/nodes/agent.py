@@ -7,13 +7,16 @@ This implies that the communication between the agent and the remote robot is in
 while the communication it receives from the local robot is delayed."
 
 Pipeline:
-1. Receive local robot joint states (with delay simulation)
-2. Receive remote robot joint states (real-time)
-3. Construct observation with delayed local robot history
-4. Query RL agent for action
-5. Get predicted target and torque compensation
-6. Publish desired trajectory point to agent/predict_targret
-7. Publish torque compensation to agent/tau_rl
+1. Receive local robot joint states (delayed) -> Add to leader history buffer.
+2. Receive remote robot joint states (real-time) -> Store current remote state.
+3. In the control loop:
+    a. Get the last delayed observation from the leader history.
+    b. Run the LSTM StateEstimator (statefully) to get the predicted_target.
+    c. Get the current remote_state.
+    d. Concatenate (predicted_target, remote_state) as input for the Actor.
+    e. Run the Actor network to get the torque_compensation (action).
+4. Publish predicted_target to 'agent/predict_target'.
+5. Publish torque_compensation to 'agent/tau_rl'.
 """
 
 import numpy as np
@@ -27,18 +30,17 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray 
 
-# Custom imports
-from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-from Reinforcement_Learning_In_Teleoperation.rl_agent.ppo_policy_network import (
-    RecurrentPPOPolicy, HiddenStateType
+from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import (
+    StateEstimator, Actor
 )
-from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     DEFAULT_CONTROL_FREQ,
     INITIAL_JOINT_CONFIG,
     DEPLOYMENT_HISTORY_BUFFER_SIZE,
-    DEFAULT_RL_MODEL_PATH_BASE,
-    RNN_SEQUENCE_LENGTH
+    RNN_SEQUENCE_LENGTH,
+    RL_MODEL_PATH,
 )
 
 
@@ -52,53 +54,51 @@ class AgentNode(Node):
         
         self.device_ = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
-        # Initialize control frequency and timer period
+        # Control freq parameters
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.timer_period_ = 1.0 / self.control_freq_
-
-        # Initialize Experiment Config
+        
+        # Experiment config
         self.default_experiment_config_ = ExperimentConfig.HIGH_DELAY.value
         self.declare_parameter('experiment_config', self.default_experiment_config_)
         self.experiment_config_int_ = self.get_parameter('experiment_config').value
-        
-        #################################################################################
-        # Only for testing
-        self.agent_path_ = os.path.join(DEFAULT_RL_MODEL_PATH_BASE, "config_1_test_1", "best_policy_earlystop.pth")
-        
-        # Modification: Use a try...except block for robust loading
         try:
-            self.policy_ = RecurrentPPOPolicy.load(self.agent_path_, device=self.device_)
-            self.policy_.eval() # Modification: Add .eval() for deployment
-            self.get_logger().info(f"Loaded RL agent successfully from {self.agent_path_}")
-        except Exception as e:
-            self.get_logger().fatal(f"Failed to load RL agent from {self.agent_path_}: {e}")
-            raise # Stop the node from starting if the model fails to load
-        ###############################################################################################
-        
-        # # Load agent model path based on experiment config
-        # if self.experiment_config_int_ == ExperimentConfig.HIGH_DELAY.value:
-        #     self.agent_path_ = os.path.join(DEFAULT_RL_MODEL_PATH_BASE, "config_3", "final_policy.pth")
-        # elif self.experiment_config_int_ == ExperimentConfig.MEDIUM_DELAY.value:
-        #     self.agent_path_ = os.path.join(DEFAULT_RL_MODEL_PATH_BASE, "config_2", "final_policy.pth")
-        # elif self.experiment_config_int_ == ExperimentConfig.LOW_DELAY.value:
-        #     self.agent_path_ = os.path.join(DEFAULT_RL_MODEL_PATH_BASE, "config_1", "final_policy.pth")
-        # else:
-        #     raise ValueError(f"Invalid experiment config: {self.experiment_config_int_}")
+            self.delay_config_ = ExperimentConfig(self.experiment_config_int_)
+        except ValueError:
+            self.get_logger().fatal(f"Invalid 'experiment_config' int: {self.experiment_config_int_}")
+            raise
+        self.get_logger().info(f"Initialized with delay config: {self.delay_config_.name}")
 
-        # try:
-        #     self.policy_ = RecurrentPPOPolicy.load(self.agent_path_, device=self.device_)
-        #     self.policy_.eval()
-        #     self.get_logger().info(f"Loaded RL agent successfully from {self.agent_path_}")
-        # except Exception as e:
-        #     self.get_logger().fatal(f"Failed to load RL agent from {self.agent_path_}: {e}")
-        #     raise
+        # Load LSTM and trained RL
+        self.sac_model_path_ = RL_MODEL_PATH
         
-        # Store the expected sequence length from the loaded policy
+        # Initialize Models
+        self.state_estimator_ = StateEstimator().to(self.device_)
+        self.actor_ = Actor().to(self.device_)
+
+        # Load weights from the single SAC checkpoint
+        if not os.path.exists(self.sac_model_path_):
+            self.get_logger().fatal(f"SAC model file not found at: {self.sac_model_path_}")
+            raise FileNotFoundError(self.sac_model_path_)
+            
+        self.get_logger().info(f"Loading SAC checkpoint from: {self.sac_model_path_}")
         try:
-             self.rnn_seq_len_ = self.policy_.seq_length
-        except AttributeError:
-             self.rnn_seq_len_ = RNN_SEQUENCE_LENGTH  
-        self.get_logger().info(f"Using RNN Sequence Length: {self.rnn_seq_len_}")
+            # We set weights_only=False because the checkpoint contains numpy data
+            sac_checkpoint = torch.load(self.sac_model_path_, map_location=self.device_, weights_only=False)
+            
+            # Load State Estimator (weights are *inside* the SAC checkpoint)
+            self.state_estimator_.load_state_dict(sac_checkpoint['state_estimator_state_dict'])
+            self.state_estimator_.eval() # Set to evaluation mode
+            self.get_logger().info("  ✓ StateEstimator weights loaded from SAC checkpoint.")
+            
+            # Load Actor
+            self.actor_.load_state_dict(sac_checkpoint['actor_state_dict'])
+            self.actor_.eval() # Set to evaluation mode
+            self.get_logger().info("  ✓ Actor weights loaded from SAC checkpoint.")
+
+        except Exception as e:
+            self.get_logger().fatal(f"Failed to load models from checkpoint: {e}")
+            raise
         
         # Initialize Delay Simulator
         try:
@@ -127,16 +127,17 @@ class AgentNode(Node):
         self.target_joint_names_ = [f'panda_joint{i+1}' for i in range(N_JOINTS)]
         
         # Initialize LSTM hidden states
-        self.lstm_hidden_state_: HiddenStateType = self.policy_.init_hidden_state(
+        self.lstm_hidden_state_ = self.state_estimator_.init_hidden_state(
             batch_size=1, device=self.device_
         )
+        self.rnn_seq_len_ = RNN_SEQUENCE_LENGTH
         
         # Flag of starting both robots
         self.is_leader_ready_ = False
         self.is_remote_ready_ = False
         self.leader_messages_received_ = 0
         
-        # Consolidate to one publisher, as used in the control loop
+        # Publishers
         self.tau_pub_ = self.create_publisher(
             Float64MultiArray, 'agent/tau_rl', 100
         )
@@ -145,6 +146,7 @@ class AgentNode(Node):
             JointState, 'agent/predict_target', 100
         )
 
+        # Subscribers
         self.local_robot_state_subscriber_ = self.create_subscription(
             JointState, 'local_robot/joint_states', self.local_robot_state_callback, 10
         )
@@ -246,16 +248,15 @@ class AgentNode(Node):
             buffer_qd.append(self.leader_qd_history_[safe_idx].copy())
         
         # Stack and concatenate
-        # Create a list of (14,) arrays, then stack into (seq_len, 14)
         sequence = [np.concatenate([q, qd]) for q, qd in zip(buffer_q, buffer_qd)]
-        
+       
         return np.array(sequence, dtype=np.float32)
     
     def control_loop_callback(self) -> None:
         """
         Main control loop running at control_freq_
         """
-       
+        
         if not self.is_leader_ready_ or not self.is_remote_ready_:
             if not self.is_leader_ready_:
                 self.get_logger().warn(
@@ -268,33 +269,46 @@ class AgentNode(Node):
             return
         
         try:
-            # Get the full delayed sequence
-            delayed_leader_sequence = self._get_delayed_leader_sequence() # Shape (seq_len, 14)
+            
+            # Get current delayed observation (Shape: (14,))
+            current_delayed_obs = self._get_delayed_leader_observation()
+            
+            # Get current remote state (Shape: (14,))
             remote_state = np.concatenate([self.current_remote_q_, self.current_remote_qd_])
 
-            # Construct observation tensor with correct sequence length
-            delay_seq_t = torch.tensor(
-                delayed_leader_sequence, dtype=torch.float32
-            ).to(self.device_).reshape(1, self.rnn_seq_len_, -1) # Shape: (1, seq_len, 14)
+            # Convert to Tensors for models
+            current_obs_t = torch.tensor(
+                current_delayed_obs, dtype=torch.float32
+            ).to(self.device_).reshape(1, 1, -1) 
 
-            # Construct remote state tensor
-            remote_obs_t = torch.tensor(
+            # initialize Actor
+            remote_state_t = torch.tensor(
                 remote_state, dtype=torch.float32
-            ).to(self.device_).reshape(1, -1) # Shape: (1, 14)
+            ).to(self.device_).reshape(1, -1)
 
             with torch.no_grad():
-                action_t, _, _, predicted_target_t, new_hidden_state = self.policy_.get_action(
-                    delayed_sequence=delay_seq_t,
-                    remote_state=remote_obs_t,
-                    hidden_state=self.lstm_hidden_state_,
-                    deterministic=True
+                # Run StateEstimator (statefully)
+                predicted_target_t, new_hidden_state = self.state_estimator_(
+                    current_obs_t,
+                    self.lstm_hidden_state_
                 )
                 
-            self.lstm_hidden_state_ = new_hidden_state
+                # Update persistent hidden state
+                self.lstm_hidden_state_ = new_hidden_state
+                
+                # Construct Actor input (Shape: (1, 28))
+                actor_input_t = torch.cat([predicted_target_t, remote_state_t], dim=1)
+                
+                # Run Actor
+                action_t, _, _ = self.actor_.sample(
+                    actor_input_t,
+                    deterministic=True
+                )
             
-            # Extract predictions
-            predicted_q = predicted_target_t.cpu().numpy().flatten()[:N_JOINTS]
-            predicted_qd = predicted_target_t.cpu().numpy().flatten()[N_JOINTS:]
+            # Extract predictions and action
+            predicted_target_np = predicted_target_t.cpu().numpy().flatten()
+            predicted_q = predicted_target_np[:N_JOINTS]
+            predicted_qd = predicted_target_np[N_JOINTS:]
             tau_rl = action_t.cpu().numpy().flatten()
             
             # Publish predicted target (JointState: position + velocity)
@@ -302,13 +316,6 @@ class AgentNode(Node):
             
             # Publish torque compensation (Float64MultiArray: 7D vector)
             self.publish_tau_compensation(tau_rl)
-            
-            # Optional: Log for debugging
-            self.get_logger().info(
-                f"Agent output - Predicted q: {np.round(predicted_q, 3)}, "
-                f"Tau RL: {np.round(tau_rl, 2)}",
-                throttle_duration_sec=2.0
-            )
             
         except Exception as e:
             self.get_logger().error(f"Error in control loop: {e}")
