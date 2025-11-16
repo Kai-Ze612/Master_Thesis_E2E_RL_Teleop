@@ -71,6 +71,10 @@ class RemoteRobotNode(Node):
         self.last_q_target_ = self.initial_joint_config_.copy()
         self.current_tau_rl_ = np.zeros(self.n_joints_)
 
+        # Vairables for storing true local state(for debugging)
+        self.current_local_q_ = INITIAL_JOINT_CONFIG.copy()
+        self.current_local_qd_ = np.zeros(self.n_joints_)
+        
         # Action delay
         self.default_experiment_config_ = ExperimentConfig.HIGH_DELAY.value
         self.declare_parameter('experiment_config', self.default_experiment_config_)
@@ -144,10 +148,12 @@ class RemoteRobotNode(Node):
         try:
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
             self.target_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
+            self.target_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
             
             if not self.target_command_ready_:
                 self.target_command_ready_ = True
                 self.get_logger().info("First command from Agent (predict_target) received.")
+                self.last_q_target_ = self.target_q_.copy()
 
         except (KeyError, IndexError) as e:
             self.get_logger().warn(f"Error processing target command: {e}")
@@ -226,10 +232,10 @@ class RemoteRobotNode(Node):
         flange_mat = self.mj_data_.xmat[self.ee_body_id_].copy().reshape(3, 3)
         
         # Transform TCP offset from flange frame to world frame
-        tcp_offset_world = flange_mat @ self.tcp_offset_  # ✓ Applies TCP offset
+        tcp_offset_world = flange_mat @ self.tcp_offset_
         
         # TCP position in world frame
-        tcp_pos = flange_pos + tcp_offset_world  # ✓ Final TCP position
+        tcp_pos = flange_pos + tcp_offset_world
         
         # Restore state
         self.mj_data_.qpos[:] = qpos_save
@@ -239,12 +245,16 @@ class RemoteRobotNode(Node):
     def control_loop_callback(self) -> None:
         
         # Wait for all required data
-        if not self.robot_state_ready_:
-             self.get_logger().warn(
-                "Waiting for Robot State...",
-                throttle_duration_sec=5.0
+        if not self.robot_state_ready_ or not self.target_command_ready_ or not self.tau_rl_ready_ or not self.local_state_ready_:
+            self.get_logger().warn(
+                f"Waiting for data: "
+                f"RobotState({self.robot_state_ready_}), "
+                f"AgentTarget({self.target_command_ready_}), "
+                f"AgentTau({self.tau_rl_ready_}), "
+                f"LocalState({self.local_state_ready_})",
+                throttle_duration_sec=2.0
             )
-             return
+            return
 
         # Wait for agent commands
         if not self.target_command_ready_ or not self.tau_rl_ready_:
@@ -272,8 +282,10 @@ class RemoteRobotNode(Node):
             qd_error = qd_target - qd_current
             tau_pd = self.kp_ * q_error + self.kd_ * qd_error
             
+            tau_baseline = tau_gravity + tau_pd
+            
             # Final Torque Command
-            tau_command = tau_gravity + tau_pd + tau_rl
+            tau_command = tau_gravity*0 + tau_pd * 0 + tau_rl * 0
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
             # ACTION DELAY
@@ -294,19 +306,18 @@ class RemoteRobotNode(Node):
             msg.data = torque_to_publish.tolist()
             self.torque_command_pub_.publish(msg)
 
-            # print out q actual and q predicted for monitoring
-            local_q_for_logging = np.zeros(self.n_joints_)
-            if self.local_state_ready_:
-                local_q_for_logging = self.current_local_q_
-
-            # Format vectors for printing
-            q_pred_str = np.round(q_target, 2) # Agent's prediction
-            q_local_str = np.round(local_q_for_logging, 2) # Local robot's actual state
-
             self.get_logger().info(
-                f"Q_Pred (Agent): {q_pred_str}\n"
-                f"Q_Actual (Local): {q_local_str}",
-                throttle_duration_sec=2.0 # Throttled to 2 seconds for readability
+                f"\n--- DEBUG (throttled 1s) ---\n"
+                f"True q:     {np.round(self.current_local_q_, 3)}\n"
+                f"True qd:    {np.round(self.current_local_qd_, 3)}\n"
+                f"Predicted q:  {np.round(q_target, 3)}\n"
+                f"Predicted qd: {np.round(self.target_qd_, 3)} (From Agent)\n"
+                f"Remote q:   {np.round(q_current, 3)}\n"
+                f"Remote qd:  {np.round(qd_current, 3)}\n"
+                f"Tau RL:     {np.round(tau_rl, 3)}\n"
+                f"Tau Baseline: {np.round(tau_baseline, 3)}\n"
+                f"---------------------------------",
+                throttle_duration_sec=1.0
             )
 
         except Exception as e:

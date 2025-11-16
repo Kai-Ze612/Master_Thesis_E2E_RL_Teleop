@@ -17,6 +17,11 @@ colcon build --packages-up-to mujoco_ros
 colcon build --symlink-install --packages-skip mujoco_ros mujoco_ros_msgs
 ```
 
+To rebuild:
+```bash
+colcon build --symlink-install --packages-select 
+```
+
 symlink-install method is only for python script, the built files will connect with the original python files automatically, after modifying python file, we don't need to rebuild everytime.
 
 If we build with CPP, we have to rebuild after evertime change, this is the difference.
@@ -39,7 +44,7 @@ source setup_environment.sh
 ### Initial Position Return
 ```bash
 cd ~/Libraries/libfranka/build/examples
-./communication_test 192.168.03.108
+./communication_test 192.168.03.107
 ```
 
 ----
@@ -47,7 +52,7 @@ cd ~/Libraries/libfranka/build/examples
 ## Run the real robot arm
 1. Start robot with necessary features via bringup, this will load the controllers.
 ```bash
-ros2 launch Reinforcement_Learning_In_Teleoperation remote_agent.launch.py robot_ip:=192.168.03.108
+ros2 launch Model_based_Reinforcement_Learning_In_Teleoperation remote_agent.launch.py robot_ip:=192.168.03.107
 ```
 
 2. Start local robot

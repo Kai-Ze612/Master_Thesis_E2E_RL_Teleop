@@ -7,10 +7,8 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-DEFAULT_RL_MODEL_PATH_BASE = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Reinforcement_Learning_In_Teleoperation/Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output"
-
-DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
 
 RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_220018/best_policy.pth"
 LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334/estimator_best.pth"
@@ -39,7 +37,7 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 JOINT_LIMIT_MARGIN = 0.05
 KP_LOCAL = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
 KD_LOCAL = np.array([50.0,  50.0,  50.0,  50.0,  30.0,  25.0,  15.0], dtype=np.float32)
-WARM_UP_DURATION = 1.0
+WARM_UP_DURATION = 2.0
 
 ######################################
 # Control Parameters
@@ -62,7 +60,7 @@ IK_CONTINUITY_GAIN = 0.5
 ######################################
 # Trajectory Generation Parameters
 ######################################
-TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.6], dtype=np.float32)
+TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.5], dtype=np.float32)
 TRAJECTORY_SCALE = np.array([0.1, 0.3], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1
 TRAJECTORY_RANDOM = True

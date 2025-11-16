@@ -41,6 +41,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     DEPLOYMENT_HISTORY_BUFFER_SIZE,
     RNN_SEQUENCE_LENGTH,
     RL_MODEL_PATH,
+    LSTM_MODEL_PATH,
 )
 
 
@@ -71,33 +72,47 @@ class AgentNode(Node):
 
         # Load LSTM and trained RL
         self.sac_model_path_ = RL_MODEL_PATH
-        
+        self.lstm_model_path_ = LSTM_MODEL_PATH
+
         # Initialize Models
         self.state_estimator_ = StateEstimator().to(self.device_)
         self.actor_ = Actor().to(self.device_)
 
-        # Load weights from the single SAC checkpoint
+        # Load State Estimator from PRE-TRAINED file
+        if not os.path.exists(self.lstm_model_path_):
+            self.get_logger().fatal(f"LSTM model file not found at: {self.lstm_model_path_}")
+            raise FileNotFoundError(self.lstm_model_path_)
+        
+        self.get_logger().info(f"Loading PRE-TRAINED LSTM from: {self.lstm_model_path_}")
+        try:
+            # The pre-trained file saved the state_dict directly or in a dict
+            lstm_checkpoint = torch.load(self.lstm_model_path_, map_location=self.device_)
+            if 'state_estimator_state_dict' in lstm_checkpoint:
+                self.state_estimator_.load_state_dict(lstm_checkpoint['state_estimator_state_dict'])
+            else:
+                self.state_estimator_.load_state_dict(lstm_checkpoint) # Assume it's the raw state_dict
+            
+            self.state_estimator_.eval()
+            self.get_logger().info("StateEstimator weights loaded from PRE-TRAINED file.")
+
+        except Exception as e:
+            self.get_logger().fatal(f"Failed to load PRE-TRAINED LSTM: {e}")
+            raise
+
+        # Load Actor from SAC file
         if not os.path.exists(self.sac_model_path_):
             self.get_logger().fatal(f"SAC model file not found at: {self.sac_model_path_}")
             raise FileNotFoundError(self.sac_model_path_)
             
-        self.get_logger().info(f"Loading SAC checkpoint from: {self.sac_model_path_}")
+        self.get_logger().info(f"Loading SAC Actor from: {self.sac_model_path_}")
         try:
-            # We set weights_only=False because the checkpoint contains numpy data
             sac_checkpoint = torch.load(self.sac_model_path_, map_location=self.device_, weights_only=False)
-            
-            # Load State Estimator (weights are *inside* the SAC checkpoint)
-            self.state_estimator_.load_state_dict(sac_checkpoint['state_estimator_state_dict'])
-            self.state_estimator_.eval() # Set to evaluation mode
-            self.get_logger().info("  ✓ StateEstimator weights loaded from SAC checkpoint.")
-            
-            # Load Actor
             self.actor_.load_state_dict(sac_checkpoint['actor_state_dict'])
-            self.actor_.eval() # Set to evaluation mode
-            self.get_logger().info("  ✓ Actor weights loaded from SAC checkpoint.")
+            self.actor_.eval()
+            self.get_logger().info("Actor weights loaded from SAC checkpoint.")
 
         except Exception as e:
-            self.get_logger().fatal(f"Failed to load models from checkpoint: {e}")
+            self.get_logger().fatal(f"Failed to load ACTOR from SAC checkpoint: {e}")
             raise
         
         # Initialize Delay Simulator
@@ -122,15 +137,17 @@ class AgentNode(Node):
         self.current_remote_q_ = None
         self.current_remote_qd_ = None
         
-        self._prefill_buffers()
+        
 
         self.target_joint_names_ = [f'panda_joint{i+1}' for i in range(N_JOINTS)]
         
         # Initialize LSTM hidden states
-        self.lstm_hidden_state_ = self.state_estimator_.init_hidden_state(
-            batch_size=1, device=self.device_
-        )
+        # self.lstm_hidden_state_ = self.state_estimator_.init_hidden_state(
+        #     batch_size=1, device=self.device_
+        # )
+        
         self.rnn_seq_len_ = RNN_SEQUENCE_LENGTH
+        self._prefill_buffers()
         
         # Flag of starting both robots
         self.is_leader_ready_ = False
@@ -165,13 +182,13 @@ class AgentNode(Node):
         """Prefill the history buffers with the initial robot state."""
         q_init = INITIAL_JOINT_CONFIG.copy()
         qd_init = np.zeros(N_JOINTS)
-        for _ in range(DEPLOYMENT_HISTORY_BUFFER_SIZE):
+        num_prefill = max(DEPLOYMENT_HISTORY_BUFFER_SIZE, self.rnn_seq_len_ + 200)
+        for _ in range(num_prefill):
             self.leader_q_history_.append(q_init)
             self.leader_qd_history_.append(qd_init)
-
-        # Set initial remote state
         self.current_remote_q_ = q_init
         self.current_remote_qd_ = qd_init
+        self.get_logger().info(f"Prefilled leader history with {num_prefill} initial states.")
         
     def local_robot_state_callback(self, msg: JointState) -> None:
         """Callback for local robot state updates."""
@@ -223,9 +240,11 @@ class AgentNode(Node):
                 f"Error re-ordering remote state: {e}. Skipping message."
             )
     
-    def _get_delayed_leader_sequence(self) -> np.ndarray:
-        """Get delayed target sequence for state predictor (LSTM) input."""
-
+    def _get_delayed_leader_observation(self) -> np.ndarray:
+        """
+        Get delayed target sequence for state predictor (LSTM) input.
+        This is for STATELESS inference, matching sac_training_algorithm.py.
+        """
         history_len = len(self.leader_q_history_)
         
         # Get current observation delay
@@ -242,14 +261,14 @@ class AgentNode(Node):
         
         # Iterate from oldest to most recent (FORWARD in time)
         for i in range(oldest_idx, most_recent_delayed_idx + 1):
-            # Clip to valid range [-history_len, -1]
             safe_idx = np.clip(i, -history_len, -1)
             buffer_q.append(self.leader_q_history_[safe_idx].copy())
             buffer_qd.append(self.leader_qd_history_[safe_idx].copy())
         
         # Stack and concatenate
         sequence = [np.concatenate([q, qd]) for q, qd in zip(buffer_q, buffer_qd)]
-       
+        
+        # Returns shape (rnn_seq_len, 14) e.g., (256, 14)
         return np.array(sequence, dtype=np.float32)
     
     def control_loop_callback(self) -> None:
@@ -258,63 +277,42 @@ class AgentNode(Node):
         """
         
         if not self.is_leader_ready_ or not self.is_remote_ready_:
-            if not self.is_leader_ready_:
-                self.get_logger().warn(
-                    f"Waiting for leader history to fill... "
-                    f"({self.leader_messages_received_}/{self.rnn_seq_len_})",
-                    throttle_duration_sec=2.0
-                )
-            if not self.is_remote_ready_:
-                self.get_logger().warn("Waiting for remote data...", throttle_duration_sec=5.0)
             return
         
-        try:
+        try:            
+            # 1. Get the FULL delayed sequence (Shape: (256, 14))
+            delayed_leader_sequence = self._get_delayed_leader_observation()
             
-            # Get current delayed observation (Shape: (14,))
-            current_delayed_obs = self._get_delayed_leader_observation()
-            
-            # Get current remote state (Shape: (14,))
+            # 2. Get current remote state (Shape: (14,))
             remote_state = np.concatenate([self.current_remote_q_, self.current_remote_qd_])
 
-            # Convert to Tensors for models
-            current_obs_t = torch.tensor(
-                current_delayed_obs, dtype=torch.float32
-            ).to(self.device_).reshape(1, 1, -1) 
+            # 3. Convert to Tensors for models
+            #    Estimator expects: (batch, seq_len, features) -> (1, 256, 14)
+            full_seq_t = torch.tensor(
+                delayed_leader_sequence, dtype=torch.float32
+            ).to(self.device_).reshape(1, self.rnn_seq_len_, -1) 
 
-            # initialize Actor
             remote_state_t = torch.tensor(
                 remote_state, dtype=torch.float32
-            ).to(self.device_).reshape(1, -1)
+            ).to(self.device_).reshape(1, -1) # Shape: (1, 14)
 
             with torch.no_grad():
-                # Run StateEstimator (statefully)
-                predicted_target_t, new_hidden_state = self.state_estimator_(
-                    current_obs_t,
-                    self.lstm_hidden_state_
+                predicted_target_t, _ = self.state_estimator_(
+                    full_seq_t
                 )
                 
-                # Update persistent hidden state
-                self.lstm_hidden_state_ = new_hidden_state
-                
-                # Construct Actor input (Shape: (1, 28))
                 actor_input_t = torch.cat([predicted_target_t, remote_state_t], dim=1)
-                
-                # Run Actor
                 action_t, _, _ = self.actor_.sample(
                     actor_input_t,
                     deterministic=True
                 )
-            
-            # Extract predictions and action
+
             predicted_target_np = predicted_target_t.cpu().numpy().flatten()
             predicted_q = predicted_target_np[:N_JOINTS]
             predicted_qd = predicted_target_np[N_JOINTS:]
             tau_rl = action_t.cpu().numpy().flatten()
             
-            # Publish predicted target (JointState: position + velocity)
             self.publish_predicted_target(predicted_q, predicted_qd)
-            
-            # Publish torque compensation (Float64MultiArray: 7D vector)
             self.publish_tau_compensation(tau_rl)
             
         except Exception as e:

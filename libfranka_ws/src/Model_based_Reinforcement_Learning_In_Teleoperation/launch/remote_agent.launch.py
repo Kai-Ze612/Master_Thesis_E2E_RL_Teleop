@@ -18,7 +18,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator i
 
 def generate_launch_description():
     
-    my_package_name = 'Reinforcement_Learning_In_Teleoperation'
+    my_package_name = 'Model_based_Reinforcement_Learning_In_Teleoperation'
 
     # Franka hardware parameters
     robot_ip_parameter_name = 'robot_ip'
