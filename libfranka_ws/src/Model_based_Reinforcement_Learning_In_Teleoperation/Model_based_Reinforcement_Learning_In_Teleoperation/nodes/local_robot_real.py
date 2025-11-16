@@ -16,7 +16,9 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 
 # custom imports
-from Reinforcement_Learning_In_Teleoperation.config.robot_config import N_JOINTS
+from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+    N_JOINTS,
+)
 
 class LocalRobotReal(Node):
     

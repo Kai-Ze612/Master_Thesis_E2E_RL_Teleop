@@ -154,3 +154,12 @@ NUM_ENVIRONMENTS = 20
 ######################################
 LOG_FREQ = 100   # Log metrics every N *env steps*
 SAVE_FREQ = 1000  # Save checkpoint every N *env steps*
+
+######################################
+# Deployment Parameters
+######################################
+
+MAX_INFERENCE_TIME = 0.9 * (1.0 / DEFAULT_CONTROL_FREQ)  # 90% of control cycle time for safety
+
+DEPLOYMENT_HISTORY_BUFFER_SIZE = 500  # Must be > max_delay_steps + RNN sequence length
+

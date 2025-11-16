@@ -25,8 +25,8 @@ from numpy.typing import NDArray
 from collections import deque
 
 # Custom imports
-from Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
+from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     DEFAULT_MUJOCO_MODEL_PATH, 
     DEFAULT_CONTROL_FREQ,
@@ -36,7 +36,7 @@ from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     DEFAULT_KP_REMOTE,
     TCP_OFFSET,
     EE_BODY_NAME,
-    DEPLOYMENT_HISTORY_BUFFER_SIZE, 
+    DEPLOYMENT_HISTORY_BUFFER_SIZE,
     WARM_UP_DURATION,
 )
 
@@ -49,8 +49,8 @@ class RemoteRobotNode(Node):
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
         self.tcp_offset_ = TCP_OFFSET
-        self.kp_ = DEFAULT_KP_REMOTE / 5
-        self.kd_ = DEFAULT_KD_REMOTE / 5
+        self.kp_ = DEFAULT_KP_REMOTE
+        self.kd_ = DEFAULT_KD_REMOTE
         self.torque_limits_ = TORQUE_LIMITS
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
         self.initial_joint_config_ = INITIAL_JOINT_CONFIG
@@ -68,7 +68,7 @@ class RemoteRobotNode(Node):
         
         # Initialize target joint states and velocities
         self.target_q_ = INITIAL_JOINT_CONFIG.copy()
-        self.target_qd_ = np.zeros(self.n_joints_)
+        self.last_q_target_ = self.initial_joint_config_.copy()
         self.current_tau_rl_ = np.zeros(self.n_joints_)
 
         # Action delay
@@ -144,8 +144,7 @@ class RemoteRobotNode(Node):
         try:
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
             self.target_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
-            self.target_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
-
+            
             if not self.target_command_ready_:
                 self.target_command_ready_ = True
                 self.get_logger().info("First command from Agent (predict_target) received.")

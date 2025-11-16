@@ -22,8 +22,8 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 
 # Custom imports
-from Reinforcement_Learning_In_Teleoperation.utils.inverse_kinematics import IKSolver
-from Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+from Model_based_Reinforcement_Learning_In_Teleoperation.utils.inverse_kinematics import IKSolver
+from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     DEFAULT_MUJOCO_MODEL_PATH,
     N_JOINTS,
     EE_BODY_NAME,
