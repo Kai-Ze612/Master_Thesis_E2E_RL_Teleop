@@ -1,0 +1,102 @@
+2025-11-17 18:59:13 [INFO] ================================================================================
+2025-11-17 18:59:13 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING (SIMPLIFIED)
+2025-11-17 18:59:13 [INFO] ================================================================================
+2025-11-17 18:59:13 [INFO] Configuration:
+2025-11-17 18:59:13 [INFO]   Delay Config: High Delay
+2025-11-17 18:59:13 [INFO]   Device: cuda
+2025-11-17 18:59:13 [INFO]   Sequence Length: 64
+2025-11-17 18:59:13 [INFO] Hyperparameters:
+2025-11-17 18:59:13 [INFO]   Learning Rate: 0.0001
+2025-11-17 18:59:13 [INFO]   Batch Size: 512
+2025-11-17 18:59:13 [INFO]   Buffer Size: 200000
+2025-11-17 18:59:13 [INFO]   Total Updates: 200000
+2025-11-17 18:59:13 [INFO] ================================================================================
+2025-11-17 18:59:14 [INFO] Initializing simulators...
+2025-11-17 18:59:14 [INFO] Filling training buffer (target: 100000 samples)...
+2025-11-17 18:59:18 [INFO]   Episode 5: Collected 4685/100000 samples
+2025-11-17 18:59:21 [INFO]   Episode 10: Collected 9370/100000 samples
+2025-11-17 18:59:25 [INFO]   Episode 15: Collected 14055/100000 samples
+2025-11-17 18:59:28 [INFO]   Episode 20: Collected 18740/100000 samples
+2025-11-17 18:59:32 [INFO]   Episode 25: Collected 23425/100000 samples
+2025-11-17 18:59:36 [INFO]   Episode 30: Collected 28110/100000 samples
+2025-11-17 18:59:39 [INFO]   Episode 35: Collected 32795/100000 samples
+2025-11-17 18:59:43 [INFO]   Episode 40: Collected 37480/100000 samples
+2025-11-17 18:59:46 [INFO]   Episode 45: Collected 42165/100000 samples
+2025-11-17 18:59:50 [INFO]   Episode 50: Collected 46850/100000 samples
+2025-11-17 18:59:53 [INFO]   Episode 55: Collected 51535/100000 samples
+2025-11-17 18:59:57 [INFO]   Episode 60: Collected 56220/100000 samples
+2025-11-17 19:00:00 [INFO]   Episode 65: Collected 60905/100000 samples
+2025-11-17 19:00:04 [INFO]   Episode 70: Collected 65590/100000 samples
+2025-11-17 19:00:07 [INFO]   Episode 75: Collected 70275/100000 samples
+2025-11-17 19:00:11 [INFO]   Episode 80: Collected 74960/100000 samples
+2025-11-17 19:00:14 [INFO]   Episode 85: Collected 79645/100000 samples
+2025-11-17 19:00:18 [INFO]   Episode 90: Collected 84330/100000 samples
+2025-11-17 19:00:21 [INFO]   Episode 95: Collected 89015/100000 samples
+2025-11-17 19:00:25 [INFO]   Episode 100: Collected 93700/100000 samples
+2025-11-17 19:00:29 [INFO]   Episode 105: Collected 98385/100000 samples
+2025-11-17 19:00:30 [INFO] Training buffer filled: 100000 samples
+2025-11-17 19:00:30 [INFO] Filling validation buffer (target: 5000 samples)...
+2025-11-17 19:00:33 [INFO] Validation buffer filled: 5000 samples
+2025-11-17 19:00:33 [INFO] Starting training loop...
+2025-11-17 19:00:34 [INFO] Update 0/200000: TrainLoss=0.385804, ValLoss=0.460643
+2025-11-17 19:00:34 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:00:56 [INFO] Update 1000/200000: TrainLoss=0.005240, ValLoss=0.043118
+2025-11-17 19:00:56 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:01:19 [INFO] Update 2000/200000: TrainLoss=0.004400, ValLoss=0.046092
+2025-11-17 19:01:41 [INFO] Update 3000/200000: TrainLoss=0.004191, ValLoss=0.045697
+2025-11-17 19:02:03 [INFO] Update 4000/200000: TrainLoss=0.004082, ValLoss=0.044422
+2025-11-17 19:02:25 [INFO] Update 5000/200000: TrainLoss=0.003950, ValLoss=0.042945
+2025-11-17 19:02:25 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:02:48 [INFO] Update 6000/200000: TrainLoss=0.004029, ValLoss=0.042117
+2025-11-17 19:02:48 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:03:10 [INFO] Update 7000/200000: TrainLoss=0.004055, ValLoss=0.040328
+2025-11-17 19:03:10 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:03:33 [INFO] Update 8000/200000: TrainLoss=0.003900, ValLoss=0.042553
+2025-11-17 19:03:55 [INFO] Update 9000/200000: TrainLoss=0.004152, ValLoss=0.035072
+2025-11-17 19:03:55 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:04:18 [INFO] Update 10000/200000: TrainLoss=0.004060, ValLoss=0.038196
+2025-11-17 19:04:40 [INFO] Update 11000/200000: TrainLoss=0.004075, ValLoss=0.040870
+2025-11-17 19:05:03 [INFO] Update 12000/200000: TrainLoss=0.004082, ValLoss=0.037367
+2025-11-17 19:05:25 [INFO] Update 13000/200000: TrainLoss=0.003987, ValLoss=0.035281
+2025-11-17 19:05:48 [INFO] Update 14000/200000: TrainLoss=0.003962, ValLoss=0.034611
+2025-11-17 19:05:48 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:06:10 [INFO] Update 15000/200000: TrainLoss=0.003993, ValLoss=0.032189
+2025-11-17 19:06:10 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:06:33 [INFO] Update 16000/200000: TrainLoss=0.004041, ValLoss=0.032643
+2025-11-17 19:06:56 [INFO] Update 17000/200000: TrainLoss=0.003951, ValLoss=0.032860
+2025-11-17 19:07:18 [INFO] Update 18000/200000: TrainLoss=0.004009, ValLoss=0.031979
+2025-11-17 19:07:18 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:07:41 [INFO] Update 19000/200000: TrainLoss=0.004170, ValLoss=0.029339
+2025-11-17 19:07:41 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:08:03 [INFO] Update 20000/200000: TrainLoss=0.004153, ValLoss=0.029078
+2025-11-17 19:08:03 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:08:26 [INFO] Update 21000/200000: TrainLoss=0.004165, ValLoss=0.029364
+2025-11-17 19:08:48 [INFO] Update 22000/200000: TrainLoss=0.004151, ValLoss=0.030377
+2025-11-17 19:09:11 [INFO] Update 23000/200000: TrainLoss=0.004117, ValLoss=0.029600
+2025-11-17 19:09:33 [INFO] Update 24000/200000: TrainLoss=0.004142, ValLoss=0.028002
+2025-11-17 19:09:33 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:09:56 [INFO] Update 25000/200000: TrainLoss=0.004105, ValLoss=0.030436
+2025-11-17 19:10:19 [INFO] Update 26000/200000: TrainLoss=0.004212, ValLoss=0.029415
+2025-11-17 19:10:41 [INFO] Update 27000/200000: TrainLoss=0.004175, ValLoss=0.028340
+2025-11-17 19:11:04 [INFO] Update 28000/200000: TrainLoss=0.004214, ValLoss=0.026782
+2025-11-17 19:11:04 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:11:26 [INFO] Update 29000/200000: TrainLoss=0.004243, ValLoss=0.028538
+2025-11-17 19:11:49 [INFO] Update 30000/200000: TrainLoss=0.004321, ValLoss=0.027880
+2025-11-17 19:12:11 [INFO] Update 31000/200000: TrainLoss=0.004279, ValLoss=0.025316
+2025-11-17 19:12:11 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 19:12:34 [INFO] Update 32000/200000: TrainLoss=0.004400, ValLoss=0.027171
+2025-11-17 19:12:56 [INFO] Update 33000/200000: TrainLoss=0.004329, ValLoss=0.028181
+2025-11-17 19:13:19 [INFO] Update 34000/200000: TrainLoss=0.004375, ValLoss=0.026637
+2025-11-17 19:13:41 [INFO] Update 35000/200000: TrainLoss=0.004371, ValLoss=0.025884
+2025-11-17 19:14:04 [INFO] Update 36000/200000: TrainLoss=0.004525, ValLoss=0.027201
+2025-11-17 19:14:26 [INFO] Update 37000/200000: TrainLoss=0.004537, ValLoss=0.027514
+2025-11-17 19:14:49 [INFO] Update 38000/200000: TrainLoss=0.004552, ValLoss=0.027532
+2025-11-17 19:15:11 [INFO] Update 39000/200000: TrainLoss=0.004530, ValLoss=0.029595
+2025-11-17 19:15:34 [INFO] Update 40000/200000: TrainLoss=0.004736, ValLoss=0.028430
+2025-11-17 19:15:57 [INFO] Update 41000/200000: TrainLoss=0.004564, ValLoss=0.028849
+2025-11-17 19:15:57 [INFO] Early stopping triggered after 10 checks without improvement.
+2025-11-17 19:15:57 [INFO] ================================================================================
+2025-11-17 19:15:57 [INFO] TRAINING COMPLETED
+2025-11-17 19:15:57 [INFO] Best Validation Loss: 0.025316
+2025-11-17 19:15:57 [INFO] Output Directory: ./lstm_training_output_simplified/LSTM_Simplified_3_20251117_185913
+2025-11-17 19:15:57 [INFO] ================================================================================

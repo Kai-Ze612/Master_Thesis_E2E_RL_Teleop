@@ -39,7 +39,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 # These should match your actual config
 N_JOINTS = 7
-RNN_SEQUENCE_LENGTH = 128
+RNN_SEQUENCE_LENGTH = 64
 RNN_HIDDEN_DIM = 512
 RNN_NUM_LAYERS = 4
 ESTIMATOR_LEARNING_RATE = 1e-4
@@ -406,7 +406,7 @@ def pretrain_estimator_simple(
     
     # Initialize simulators
     logger.info("Initializing simulators...")
-    train_sim = LocalRobotSimulator(trajectory_type=trajectory_type, randomize_params=False)
+    train_sim = LocalRobotSimulator(trajectory_type=trajectory_type, randomize_params=True)
     val_sim = LocalRobotSimulator(trajectory_type=trajectory_type, randomize_params=False)
     
     # ========================================================================
