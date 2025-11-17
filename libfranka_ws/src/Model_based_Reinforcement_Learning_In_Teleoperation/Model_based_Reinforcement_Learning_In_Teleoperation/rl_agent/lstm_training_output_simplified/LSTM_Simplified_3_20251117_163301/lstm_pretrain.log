@@ -1,0 +1,28 @@
+2025-11-17 16:33:02 [INFO] ================================================================================
+2025-11-17 16:33:02 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING (SIMPLIFIED)
+2025-11-17 16:33:02 [INFO] ================================================================================
+2025-11-17 16:33:02 [INFO] Configuration:
+2025-11-17 16:33:02 [INFO]   Delay Config: High Delay
+2025-11-17 16:33:02 [INFO]   Device: cuda
+2025-11-17 16:33:02 [INFO]   Sequence Length: 256
+2025-11-17 16:33:02 [INFO] Hyperparameters:
+2025-11-17 16:33:02 [INFO]   Learning Rate: 0.0001
+2025-11-17 16:33:02 [INFO]   Batch Size: 512
+2025-11-17 16:33:02 [INFO]   Buffer Size: 200000
+2025-11-17 16:33:02 [INFO]   Total Updates: 50000
+2025-11-17 16:33:02 [INFO] ================================================================================
+2025-11-17 16:33:02 [INFO] Initializing simulators...
+2025-11-17 16:33:03 [INFO] Filling training buffer (target: 5500 samples)...
+2025-11-17 16:33:06 [INFO]   Episode 5: Collected 3725/5500 samples
+2025-11-17 16:33:08 [INFO] Training buffer filled: 5500 samples
+2025-11-17 16:33:08 [INFO] Filling validation buffer (target: 5000 samples)...
+2025-11-17 16:33:13 [INFO] Validation buffer filled: 5000 samples
+2025-11-17 16:33:13 [INFO] Starting training loop...
+2025-11-17 16:33:15 [INFO] Update 0/50000: TrainLoss=0.242877, ValLoss=0.221910
+2025-11-17 16:33:15 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:34:31 [INFO] Update 1000/50000: TrainLoss=0.001570, ValLoss=0.013906
+2025-11-17 16:34:31 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:35:47 [INFO] Update 2000/50000: TrainLoss=0.001113, ValLoss=0.011653
+2025-11-17 16:35:47 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:37:03 [INFO] Update 3000/50000: TrainLoss=0.001073, ValLoss=0.009829
+2025-11-17 16:37:03 [INFO]   -> New best validation loss. Saving model.
