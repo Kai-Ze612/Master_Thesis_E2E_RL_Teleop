@@ -26,3 +26,36 @@
 2025-11-17 16:35:47 [INFO]   -> New best validation loss. Saving model.
 2025-11-17 16:37:03 [INFO] Update 3000/50000: TrainLoss=0.001073, ValLoss=0.009829
 2025-11-17 16:37:03 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:38:20 [INFO] Update 4000/50000: TrainLoss=0.001097, ValLoss=0.008811
+2025-11-17 16:38:20 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:39:36 [INFO] Update 5000/50000: TrainLoss=0.001015, ValLoss=0.008156
+2025-11-17 16:39:36 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:40:52 [INFO] Update 6000/50000: TrainLoss=0.001138, ValLoss=0.007888
+2025-11-17 16:40:52 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:42:08 [INFO] Update 7000/50000: TrainLoss=0.001249, ValLoss=0.007312
+2025-11-17 16:42:08 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:43:24 [INFO] Update 8000/50000: TrainLoss=0.001241, ValLoss=0.007258
+2025-11-17 16:43:24 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:44:40 [INFO] Update 9000/50000: TrainLoss=0.001136, ValLoss=0.007419
+2025-11-17 16:45:55 [INFO] Update 10000/50000: TrainLoss=0.001159, ValLoss=0.007144
+2025-11-17 16:45:55 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:47:11 [INFO] Update 11000/50000: TrainLoss=0.001085, ValLoss=0.006958
+2025-11-17 16:47:11 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:48:27 [INFO] Update 12000/50000: TrainLoss=0.001103, ValLoss=0.006618
+2025-11-17 16:48:27 [INFO]   -> New best validation loss. Saving model.
+2025-11-17 16:49:43 [INFO] Update 13000/50000: TrainLoss=0.001067, ValLoss=0.007864
+2025-11-17 16:50:59 [INFO] Update 14000/50000: TrainLoss=0.001098, ValLoss=0.007205
+2025-11-17 16:52:14 [INFO] Update 15000/50000: TrainLoss=0.001137, ValLoss=0.006665
+2025-11-17 16:53:30 [INFO] Update 16000/50000: TrainLoss=0.001131, ValLoss=0.007585
+2025-11-17 16:54:46 [INFO] Update 17000/50000: TrainLoss=0.001037, ValLoss=0.007016
+2025-11-17 16:56:01 [INFO] Update 18000/50000: TrainLoss=0.001092, ValLoss=0.007205
+2025-11-17 16:57:17 [INFO] Update 19000/50000: TrainLoss=0.001017, ValLoss=0.008169
+2025-11-17 16:58:33 [INFO] Update 20000/50000: TrainLoss=0.001044, ValLoss=0.008564
+2025-11-17 16:59:49 [INFO] Update 21000/50000: TrainLoss=0.001038, ValLoss=0.008184
+2025-11-17 17:01:04 [INFO] Update 22000/50000: TrainLoss=0.001033, ValLoss=0.008038
+2025-11-17 17:01:04 [INFO] Early stopping triggered after 10 checks without improvement.
+2025-11-17 17:01:04 [INFO] ================================================================================
+2025-11-17 17:01:04 [INFO] TRAINING COMPLETED
+2025-11-17 17:01:04 [INFO] Best Validation Loss: 0.006618
+2025-11-17 17:01:04 [INFO] Output Directory: ./lstm_training_output_simplified/LSTM_Simplified_3_20251117_163301
+2025-11-17 17:01:04 [INFO] ================================================================================
