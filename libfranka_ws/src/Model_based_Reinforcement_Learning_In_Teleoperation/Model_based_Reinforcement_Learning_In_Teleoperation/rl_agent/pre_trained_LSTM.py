@@ -1,14 +1,10 @@
 """
 Pre-training script for the State Estimator (LSTM).
 
-MODIFIED: This script will now save the warmup data to a CSV and exit.
-
-Test Data collection
-
 pipelines:
 1. Collect data by running the TeleoperationEnvWithDelay environment with a random policy.
 2. Store (delayed_sequence, true_target) pairs in a replay buffer.
-3. <<< SAVE BUFFER TO CSV AND EXIT >>>
+3. Train the StateEstimator LSTM in a supervised learning. (min MSE loss)
 """
 
 # Python imports 
@@ -23,7 +19,6 @@ from collections import deque
 import torch.nn.functional as F
 from typing import Dict, Tuple
 import multiprocessing
-import pandas as pd # <<< MODIFICATION: Import pandas
 
 # Stable Baselines3 imports
 from stable_baselines3.common.vec_env import SubprocVecEnv, VecEnv, DummyVecEnv
@@ -33,34 +28,28 @@ from stable_baselines3.common.env_util import make_vec_env
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import ReduceLROnPlateau  # Learning rate scheduler
 
-# <<< MODIFICATION: Ensure all necessary components are imported >>>
-try:
-    from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.training_env import TeleoperationEnvWithDelay
-    from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
-    from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import TrajectoryType
-    from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import StateEstimator
-    from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-        N_JOINTS,
-        RNN_SEQUENCE_LENGTH,
-        ESTIMATOR_LEARNING_RATE,
-        ESTIMATOR_BATCH_SIZE,
-        ESTIMATOR_BUFFER_SIZE,
-        ESTIMATOR_WARMUP_STEPS,
-        ESTIMATOR_TOTAL_UPDATES,
-        NUM_ENVIRONMENTS,
-        CHECKPOINT_DIR_LSTM,
-        ESTIMATOR_VAL_STEPS,
-        ESTIMATOR_VAL_FREQ,
-        ESTIMATOR_PATIENCE,
-        ESTIMATOR_LR_PATIENCE,
-        TRAJECTORY_RANDOM,
-        RNN_HIDDEN_DIM,
-        RNN_NUM_LAYERS,
-    )
-except ImportError as e:
-    print(f"Error importing project modules: {e}")
-    print("Please ensure this script is run from a directory where modules are accessible.")
-    sys.exit(1)
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.training_env import TeleoperationEnvWithDelay
+from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import TrajectoryType
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import StateEstimator
+from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+    N_JOINTS,
+    RNN_SEQUENCE_LENGTH,
+    ESTIMATOR_LEARNING_RATE,
+    ESTIMATOR_BATCH_SIZE,
+    ESTIMATOR_BUFFER_SIZE,
+    ESTIMATOR_WARMUP_STEPS,
+    ESTIMATOR_TOTAL_UPDATES,
+    NUM_ENVIRONMENTS,
+    CHECKPOINT_DIR_LSTM,
+    ESTIMATOR_VAL_STEPS,
+    ESTIMATOR_VAL_FREQ,
+    ESTIMATOR_PATIENCE,
+    ESTIMATOR_LR_PATIENCE,
+    TRAJECTORY_RANDOM,
+    RNN_HIDDEN_DIM,
+    RNN_NUM_LAYERS,
+)
 
 
 class PretrainReplayBuffer:
@@ -171,7 +160,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     logger = setup_logging(output_dir)
     
     logger.info("="*80)
-    logger.info("LSTM STATE ESTIMATOR PRE-TRAINING (DATA COLLECTION ONLY)") # <<< MODIFICATION
+    logger.info("LSTM STATE ESTIMATOR PRE-TRAINING")
     logger.info("="*80)
     logger.info(f"Configuration:")
     logger.info(f"  Delay Config: {args.config.name}")
@@ -194,6 +183,8 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     logger.info("="*80)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    tb_writer = SummaryWriter(log_dir=os.path.join(output_dir, "tensorboard"))
+    
     
     # Create training environment
     def make_train_env():
@@ -211,13 +202,71 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         vec_env_cls= SubprocVecEnv if NUM_ENVIRONMENTS > 1 else DummyVecEnv
     )
     
+    # Create validation environment
+    def make_val_env():
+        return TeleoperationEnvWithDelay(
+            delay_config=args.config,
+            trajectory_type=args.trajectory_type,
+            randomize_trajectory=TRAJECTORY_RANDOM,
+            seed=args.seed + 1  # Different seed than training
+        ) 
+    
+    val_env = make_vec_env(
+        make_val_env,
+        n_envs=1,
+        vec_env_cls=DummyVecEnv # Simpler, just for data collection
+    )
+    
+    # Initialize State Estimator and optimizer
+    state_estimator = StateEstimator().to(device)
+    optimizer = torch.optim.Adam(state_estimator.parameters(), lr=ESTIMATOR_LEARNING_RATE)
+    
+    # Initialize learning rate scheduler
+    scheduler = ReduceLROnPlateau(
+        optimizer, 'min', 
+        factor=0.5, 
+        patience=ESTIMATOR_LR_PATIENCE,
+    )
+    
     # Initialize replay buffers
     replay_buffer = PretrainReplayBuffer(ESTIMATOR_BUFFER_SIZE, device)
+    val_buffer = PretrainReplayBuffer(ESTIMATOR_VAL_STEPS * NUM_ENVIRONMENTS, device) # Size it to fit validation data
     
     # Filling training buffer 
     logger.info("Filling training buffer...")
     obs = train_env.reset()
-    for step in range(ESTIMATOR_WARMUP_STEPS):
+    for _ in range(ESTIMATOR_WARMUP_STEPS):
+        delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, NUM_ENVIRONMENTS)
+        for i in range(NUM_ENVIRONMENTS):
+            replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
+        
+        random_actions = np.array([train_env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
+        obs, rewards, dones, infos = train_env.step(random_actions)
+    logger.info(f"Training buffer filled: {len(replay_buffer)} samples")
+
+    # Filling validation buffer
+    logger.info("Filling validation buffer...")
+    val_obs = val_env.reset()
+    for _ in range(ESTIMATOR_VAL_STEPS):
+        delayed_seq, true_target = collect_data_from_envs(val_env, 1) # n_envs=1
+        val_buffer.add(delayed_seq[0], true_target[0])
+        
+        random_action = np.array([val_env.action_space.sample()])
+        val_obs, _, _, _ = val_env.step(random_action)
+    logger.info(f"Validation buffer filled: {len(val_buffer)} samples")
+    val_env.close() # We don't need this env anymore
+    
+    # Training loop
+    logger.info("Starting training...")
+    state_estimator.train()
+    
+    best_val_loss = float('inf')
+    loss_history = deque(maxlen=100)
+    patience_counter = 0
+    
+    for update in range(ESTIMATOR_TOTAL_UPDATES):
+        
+        # Collect and add data (from training env)
         delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, NUM_ENVIRONMENTS)
         for i in range(NUM_ENVIRONMENTS):
             replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
@@ -225,67 +274,120 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         random_actions = np.array([train_env.action_space.sample() for _ in range(NUM_ENVIRONMENTS)])
         obs, rewards, dones, infos = train_env.step(random_actions)
         
-        if step % 1000 == 0:
-            logger.info(f"Collection step {step}/{ESTIMATOR_WARMUP_STEPS}...")
+        # Training step
+        batch = replay_buffer.sample(ESTIMATOR_BATCH_SIZE)
+        predicted_targets, _ = state_estimator(batch['delayed_sequences'])
+        loss = F.mse_loss(predicted_targets, batch['true_targets'])
+        
+        optimizer.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(state_estimator.parameters(), 1.0)
+        optimizer.step()
+        
+        loss_history.append(loss.item())
+        
+        # Validation and logging
+        if update % ESTIMATOR_VAL_FREQ == 0:
+            avg_train_loss = np.mean(loss_history) if len(loss_history) > 0 else loss.item()
             
-    logger.info(f"Training buffer filled: {len(replay_buffer)} samples")
+            # Run validation
+            val_loss = evaluate_model(state_estimator, val_buffer, ESTIMATOR_BATCH_SIZE)
+            
+            tb_writer.add_scalar('loss/train_avg_100', avg_train_loss, update)
+            tb_writer.add_scalar('loss/validation_mse', val_loss, update)
+            tb_writer.add_scalar('hyperparameters/learning_rate', optimizer.param_groups[0]['lr'], update)
+            
+            logger.info(f"Update {update}/{ESTIMATOR_TOTAL_UPDATES}: TrainLoss={avg_train_loss:.6f}, ValLoss={val_loss:.6f}")
+            
+            # Scheduler and Early Stopping Logic
+            scheduler.step(val_loss)
+            
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                patience_counter = 0
+                logger.info(f"  -> New best validation loss. Saving model to {output_dir}")
+                torch.save({
+                    'state_estimator_state_dict': state_estimator.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': best_val_loss,
+                    'update': update,
+                }, os.path.join(output_dir, "estimator_best.pth"))
+            else:
+                patience_counter += 1
+                
+            if patience_counter >= ESTIMATOR_PATIENCE:
+                logger.info(f"Validation loss has not improved for {ESTIMATOR_PATIENCE} checks. Early stopping.")
+                break
+   
     train_env.close()
-
-    # <<< MODIFICATION: Save buffer to CSV and exit >>>
-    logger.info("Saving collected data to CSV...")
     
-    try:
-        # Get all collected data from the buffer
-        n_samples = replay_buffer.size
-        state_dim = replay_buffer.state_dim
-        seq_len = replay_buffer.seq_len
+    # Test the best model on a separate test set    
+    # Create test environment
+    
+    def make_test_env():
+        return TeleoperationEnvWithDelay(
+            delay_config=args.config,
+            trajectory_type=args.trajectory_type,
+            randomize_trajectory=False,
+            seed=args.seed + 2 # Use a third seed
+        )
+    
+    test_env = make_vec_env(make_test_env, n_envs=1, vec_env_cls=DummyVecEnv)
+    
+    # Fill a test buffer
+    test_buffer = PretrainReplayBuffer(ESTIMATOR_VAL_STEPS, device)
+    logger.info("Filling test buffer...")
+    test_obs = test_env.reset()
+    for _ in range(ESTIMATOR_VAL_STEPS):
+        delayed_seq, true_target = collect_data_from_envs(test_env, 1)
+        test_buffer.add(delayed_seq[0], true_target[0])
+        random_action = np.array([test_env.action_space.sample()])
+        test_obs, _, _, _ = test_env.step(random_action)
+    logger.info(f"Test buffer filled: {len(test_buffer)} samples")
+    test_env.close()
+
+    # Load best model and evaluate
+    best_model_path = os.path.join(output_dir, "estimator_best.pth")
+    if os.path.exists(best_model_path):
+        checkpoint = torch.load(best_model_path, map_location=device)
+        state_estimator.load_state_dict(checkpoint['state_estimator_state_dict'])
         
-        # Get data, ensuring we only take what was filled
-        delayed_seq_data = replay_buffer.delayed_sequences[:n_samples]
-        true_target_data = replay_buffer.true_targets[:n_samples]
-        
-        # Flatten the sequence data: (n_samples, seq_len, state_dim) -> (n_samples, seq_len * state_dim)
-        flattened_seq = delayed_seq_data.reshape(n_samples, seq_len * state_dim)
-        
-        # Create column names
-        # Create descriptive column names
-        q_qd = ['q', 'qd']
-        seq_cols = [
-            f"seq_t{t}_j{j}_{v}" 
-            for t in range(seq_len) 
-            for j in range(N_JOINTS) 
-            for v in q_qd
-        ]
-        target_cols = [
-            f"target_j{j}_{v}" 
-            for j in range(N_JOINTS) 
-            for v in q_qd
-        ]
-        
-        # Create pandas DataFrames
-        df_seq = pd.DataFrame(flattened_seq, columns=seq_cols)
-        df_target = pd.DataFrame(true_target_data, columns=target_cols)
-        
-        # Combine into one large DataFrame
-        df_combined = pd.concat([df_seq, df_target], axis=1)
-        
-        # Save to CSV
-        csv_path = os.path.join(output_dir, "collected_warmup_data.csv")
-        df_combined.to_csv(csv_path, index=False)
+        final_test_loss = evaluate_model(state_estimator, test_buffer, ESTIMATOR_BATCH_SIZE)
         
         logger.info("="*80)
-        logger.info(f"Successfully saved {n_samples} data points to:")
-        logger.info(f"{csv_path}")
-        logger.info("Script will now exit.")
+        logger.info("FINAL TEST RESULTS")
+        logger.info(f"  Best Validation Loss: {best_val_loss:.6f}")
+        logger.info(f"  Final Test Loss: {final_test_loss:.6f}")
+        logger.info(f"  Output: {output_dir}")
         logger.info("="*80)
         
-    except Exception as e:
-        logger.error(f"Failed to save data to CSV: {e}")
-        
-    finally:
-        # Exit script regardless of save success
-        sys.exit(0)
-    # <<< END OF MODIFICATION >>>
+        tb_writer.add_hparams(
+            {
+                "lr": ESTIMATOR_LEARNING_RATE,
+                "batch_size": ESTIMATOR_BATCH_SIZE,
+                "config": args.config.name,
+                "trajectory": args.trajectory_type.value,
+            },
+            {
+                "hparam/best_validation_loss": best_val_loss,
+                "hparam/final_test_loss": final_test_loss,
+            },
+        )
+    else:
+        logger.error("No 'estimator_best.pth' found. Cannot run final test.")
+
+    
+    # Save final model (last state, regardless of performance)
+    torch.save({
+        'state_estimator_state_dict': state_estimator.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'final_loss': loss.item() if 'loss' in locals() else -1.0,
+        'final_avg_loss': np.mean(loss_history) if len(loss_history) > 0 else -1.0,
+        'best_val_loss': best_val_loss,
+    }, os.path.join(output_dir, "estimator_final_state.pth"))
+    
+    
+    tb_writer.close()
 
 
 def parse_arguments() -> argparse.Namespace:

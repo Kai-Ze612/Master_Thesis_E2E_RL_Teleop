@@ -230,25 +230,19 @@ class TeleoperationEnvWithDelay(gym.Env):
         if self.steps_remaining_in_warmup > 0:
             self.steps_remaining_in_warmup -= 1
             
-            # Run baseline PD controller on the *delayed* target
             target_q_for_remote = delayed_q 
             torque_compensation_for_remote = np.zeros(N_JOINTS)
-            
-            # Clear any potential garbage prediction
             self._last_predicted_target = None
             
-            # Apply to remote robot
             step_info = self.remote_robot.step(
                 target_q=target_q_for_remote,      
                 torque_compensation=torque_compensation_for_remote,
             )
             
-            # Get remote state (to populate observation buffer)
             remote_q, remote_qd = self.remote_robot.get_joint_state()
             
-            # During warmup, reward is 0 and we cannot terminate
             reward = 0.0
-            terminated = False
+            terminated = False # <<< Explicitly False during warmup
             truncated = self.current_step >= self.max_episode_steps
             
             if self.render_mode == "human":
@@ -262,54 +256,51 @@ class TeleoperationEnvWithDelay(gym.Env):
                 self._get_info()
             )
 
-        # RL learning steps, runs after warmup phase
-        # Determine target for remote robot based on last predicted target
+        # RL learning steps, or Data Collection (if _last_predicted_target is None)
         if self._last_predicted_target is not None:
             target_q_for_remote = self._last_predicted_target[:N_JOINTS]
             torque_compensation_for_remote = action
         else:
-            # Fallback (e.g., during SAC_START_STEPS, but after warmup)
-            # Use baseline PD controller on delayed target
+            # Data Collection Mode Fallback
             target_q_for_remote = delayed_q 
             torque_compensation_for_remote = np.zeros(N_JOINTS)
         
-        # Apply target and torque compensation to remote robot
         step_info = self.remote_robot.step(
             target_q=target_q_for_remote,      
             torque_compensation=torque_compensation_for_remote,
         )
         
-        # Get remote robot current state after implementing action
         remote_q, remote_qd = self.remote_robot.get_joint_state()
-
-        # Calculate reward
         reward, r_tracking = self._calculate_reward(action)
 
-        # Update history buffers for plotting
         self.hist_total_reward.append(reward)
         self.hist_tracking_reward.append(r_tracking)
         true_target = self.get_true_current_target()
-        true_target_q_for_plot = true_target[:N_JOINTS] # Renamed to avoid scope collision
-        tracking_error_q = np.linalg.norm(true_target_q_for_plot - remote_q)
-        r_tracking = np.exp(-TRACKING_ERROR_SCALE * tracking_error_q**2)
-        self.hist_tracking_reward.append(r_tracking)
+        true_target_q_for_plot = true_target[:N_JOINTS]
         
-        # Check termination
+        # --- [MODIFICATION START] ---
+        # Initialize terminated as False. Only check for it if we are in RL mode.
+        terminated = False
+        term_penalty = 0.0
+        predicted_q = None
+        joint_error = 0.0 # Initialize
+        
         if self._last_predicted_target is not None:
+            # --- This block now ONLY runs in RL mode ---
             predicted_q = self._last_predicted_target[:N_JOINTS]
             joint_error = np.linalg.norm(predicted_q - remote_q)
-        else:
-            # Fallback: use error from initial position
-            predicted_q = None # For logging
-            joint_error = np.linalg.norm(self.initial_qpos - remote_q)
             
-        true_target_q = true_target_q_for_plot # Ground truth
+            terminated, term_penalty = self._check_termination(joint_error, remote_q)
+            if terminated:
+                reward += term_penalty
         
-        # Check for termination BEFORE printing, so we can log it
-        terminated, term_penalty = self._check_termination(joint_error, remote_q)
+        true_target_q = true_target_q_for_plot # Ground truth
+
+        # Check truncation (this is our main reset trigger)
+        truncated = self.current_step >= self.max_episode_steps
 
         # Print out information for debugging
-        if (self.current_step % 100 == 1) or (terminated):
+        if (self.current_step % 100 == 1) or (terminated): # 'terminated' will only be true in RL mode
             np.set_printoptions(precision=4, suppress=True, linewidth=120)
             
             print(f"\n[DEBUG] Step: {self.current_step}")
@@ -317,22 +308,16 @@ class TeleoperationEnvWithDelay(gym.Env):
             if predicted_q is not None:
                 print(f"  Predicted q:   {predicted_q}")
                 pred_error_norm = np.linalg.norm(true_target_q - predicted_q)
-                # [FIX] Change label from "mm" to "rad" and remove * 1000
                 print(f"  -> Prediction Error (norm): {pred_error_norm:.4f} rad")
             else:
-                print(f"  Predicted q:   None (target not set or random phase)")
+                print(f"  Predicted q:   None (Data Collection Mode)") # This is now expected
             
             print(f"  Remote Robot q:  {remote_q}")
-            # [FIX] Change label from "mm" to "rad" and remove * 1000
             print(f"  -> Tracking Error (norm): {np.linalg.norm(true_target_q - remote_q):.4f} rad")
-            print(f"  -> Joint Error (for term): {joint_error:.6f}")
-
-        if terminated:
-            reward += term_penalty
-
-        # Check truncation
-        truncated = self.current_step >= self.max_episode_steps
-
+            if self._last_predicted_target is not None:
+                print(f"  -> Joint Error (for term): {joint_error:.6f}")
+        # --- [MODIFICATION END] ---
+        
         if self.render_mode == "human":
             self.render()        
         
