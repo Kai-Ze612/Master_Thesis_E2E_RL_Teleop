@@ -37,7 +37,7 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 JOINT_LIMIT_MARGIN = 0.05
 KP_LOCAL = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
 KD_LOCAL = np.array([50.0,  50.0,  50.0,  50.0,  30.0,  25.0,  15.0], dtype=np.float32)
-WARM_UP_DURATION = 1.0
+WARM_UP_DURATION = 2.0
 
 ######################################
 # Control Parameters
@@ -63,7 +63,6 @@ IK_CONTINUITY_GAIN = 0.5
 TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.5], dtype=np.float32)
 TRAJECTORY_SCALE = np.array([0.1, 0.3], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1
-TRAJECTORY_RANDOM = False
 
 ######################################
 # pre-trained LSTM hyperparameters
@@ -80,7 +79,7 @@ ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 512
 RNN_NUM_LAYERS = 4
-RNN_SEQUENCE_LENGTH = 64 # Input sequence for LSTM
+RNN_SEQUENCE_LENGTH = 200 # Input sequence for LSTM
 
 ######################################
 # RL Environment Parameters
