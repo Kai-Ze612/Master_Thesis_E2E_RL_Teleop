@@ -46,7 +46,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     VELOCITY_ERROR_SCALE,
     ACTION_PENALTY_WEIGHT,
     RNN_SEQUENCE_LENGTH,
-    LSTM_MODEL_PATH,
 )
 
 

@@ -203,21 +203,32 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     replay_buffer = ReplayBuffer(ESTIMATOR_BUFFER_SIZE, device)
     
     if args.randomize_trajectory == False:
-        logger.info("OVERFIT MODE: Collecting 80k clean samples from 1 deterministic env...")
-        train_env.reset()
-        for _ in range(1000):  # skip warmup
-            train_env.step([np.zeros((n_envs, N_JOINTS))])
+        target_initial_samples = ESTIMATOR_BUFFER_SIZE
+        logger.info("OVERFIT MODE: Collecting complete static dataset...")
+    else:
+        target_initial_samples = ESTIMATOR_BATCH_SIZE * 50  # Warmup with ~50 batches
+        logger.info(f"RANDOMIZED MODE: Collecting warmup data ({target_initial_samples} samples)...")
 
-        collected = 0
-        while collected < ESTIMATOR_BUFFER_SIZE:
-            seqs, targets = collect_data_from_envs(train_env, n_envs)
-            for i in range(n_envs):
-                replay_buffer.add(seqs[i], targets[i])
-            collected += n_envs
-            train_env.step([np.zeros((n_envs, N_JOINTS))])
-            if collected % 10000 < n_envs:
-                logger.info(f"  → {collected}/{ESTIMATOR_BUFFER_SIZE} samples collected")
-                
+    train_env.reset()
+    
+    # Skip the initial steps to fill the LSTM buffer
+    for _ in range(100): 
+        train_env.step([np.zeros((n_envs, N_JOINTS))])
+        
+    collected = 0
+    while collected < target_initial_samples:
+        seqs, targets = collect_data_from_envs(train_env, n_envs)
+        for i in range(n_envs):
+            replay_buffer.add(seqs[i], targets[i])
+        
+        collected += n_envs
+        train_env.step([np.zeros((n_envs, N_JOINTS))])
+        
+        if collected % 5000 < n_envs:
+            logger.info(f"  -> {collected}/{target_initial_samples} samples collected")
+            
+    logger.info(f"Data collection init complete. Buffer size: {len(replay_buffer)}")
+            
     # Validation buffer (single env for clean eval)                
     val_env = DummyVecEnv([make_env(0)])
     val_buffer = ReplayBuffer(ESTIMATOR_VAL_STEPS, device)
@@ -239,21 +250,17 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     patience_counter = 0
     loss_history = deque(maxlen=100)
     
-    ## Waiting for data collection
-    logger.info("Waiting for buffer to fill...")
-    while len(replay_buffer) < ESTIMATOR_BATCH_SIZE * 10:
-        time.sleep(2)
+    logger.info(f"Starting training...")
     
-    logger.info(f"Buffer filled with {len(replay_buffer)} samples. Starting training...")
     for update in range(ESTIMATOR_TOTAL_UPDATES):
-        if len(replay_buffer) < ESTIMATOR_BATCH_SIZE:
-            continue
-        
         if args.randomize_trajectory:
             delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, n_envs)
             for i in range(n_envs):
                 replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
-            train_env.step([np.zeros((n_envs, N_JOINTS))])  # advance simulation
+            train_env.step([np.zeros((n_envs, N_JOINTS))])
+
+        if len(replay_buffer) < ESTIMATOR_BATCH_SIZE:
+            continue
         
         batch = replay_buffer.sample(ESTIMATOR_BATCH_SIZE)
         pred, _ = state_estimator(batch['delayed_sequences'])

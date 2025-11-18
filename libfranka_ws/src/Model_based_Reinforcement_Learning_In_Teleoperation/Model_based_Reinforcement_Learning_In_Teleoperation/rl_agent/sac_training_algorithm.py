@@ -4,7 +4,8 @@ Custom Model-Based SAC (Soft Actor-Critic) Training Algorithm.
 Pipeline:
 1. Load pre-trained LSTM State Estimator.
 2. Freeze the State Estimator parameters.
-3. Train Actor and Critic networks using SAC.
+3. Data collection using the current policy.
+4. Train Actor and Critic networks using SAC.
 """
 
 import torch
@@ -18,7 +19,6 @@ from copy import deepcopy
 from collections import deque
 
 from stable_baselines3.common.vec_env import VecEnv
-
 from torch.utils.tensorboard import SummaryWriter
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import StateEstimator, Actor, Critic
@@ -51,9 +51,9 @@ logger = logging.getLogger(__name__)
 
 class ReplayBuffer:
     """
-    to store all collected experience for SAC training.
+    Store all collected experience for SAC training.
     
-    pipeline:
+    Pipeline:
     1. Add experience
     2. Sample mini-batches for training
     """
@@ -76,7 +76,7 @@ class ReplayBuffer:
         self.next_delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
         self.next_remote_states = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
         self.dones = np.zeros((buffer_size, 1), dtype=np.float32)
-
+    
     def add(self, delayed_seq, remote_state, action, reward, true_target, next_delayed_seq, next_remote_state, done):
         """Add a single experience to the replay buffer"""
         self.delayed_sequences[self.ptr] = delayed_seq
@@ -132,8 +132,13 @@ class SACTrainer:
         
         # Load LSTM State Estimator
         self.state_estimator = StateEstimator().to(self.device)
-        weights = torch.load(pretrained_estimator_path, map_location=self.device)
-        self.state_estimator.load_state_dict(weights['state_estimator_state_dict'])
+        if pretrained_estimator_path and os.path.exists(pretrained_estimator_path):
+            weights = torch.load(pretrained_estimator_path, map_location=self.device)
+            self.state_estimator.load_state_dict(weights['state_estimator_state_dict'])
+            logger.info(f"Loaded estimator from {pretrained_estimator_path}")
+        else:
+            logger.warning("Pretrained estimator path invalid or not provided. Using random weights.")
+
         # freeze the estimator
         self.state_estimator.eval()
         for param in self.state_estimator.parameters():
@@ -154,7 +159,7 @@ class SACTrainer:
             self.critic.parameters(), lr=SAC_LEARNING_RATE
         )
         
-        # Automatic Temperature (Alpha) Tuning (unchanged)
+        # Automatic Temperature (Alpha) Tuning
         if SAC_TARGET_ENTROPY == 'auto':
             self.target_entropy = -torch.prod(torch.Tensor(self.env.action_space.shape).to(self.device)).item()
         else:
@@ -172,9 +177,6 @@ class SACTrainer:
         self.checkpoint_dir = CHECKPOINT_DIR_RL
         self.tb_writer: Optional[SummaryWriter] = None
         self.training_start_time = None
-        
-        # Initialize persistent hidden states for stateful LSTM inference
-        self.hidden_states = self.state_estimator.init_hidden_state(self.num_envs, self.device)
 
         # Validation parameters and Early Stopping
         self.best_validation_reward = -np.inf
@@ -194,18 +196,20 @@ class SACTrainer:
         logger.info(f"Tensorboard logs at: {tb_dir}")
 
     def _log_metrics(self, metrics: Dict[str, float], avg_reward: float, val_reward: Optional[float] = None,
-                     env_stats: Dict[str, float] = {}): # MODIFIED: Added env_stats
+                     env_stats: Dict[str, float] = {}):
         """Log metrics to TensorBoard"""
         step = self.num_updates
         if self.tb_writer:
-            # ... (rest of the function)
-            
-            # [FIX] Log detailed env stats to tensorboard in RADIANS
+            self.tb_writer.add_scalar('train/avg_reward', avg_reward, self.total_timesteps)
+            if val_reward is not None:
+                self.tb_writer.add_scalar('train/val_reward', val_reward, self.total_timesteps)
+
+            # Log detailed env stats to tensorboard in RADIANS
             if env_stats:
                 self.tb_writer.add_scalar('env/real_time_error_q_rad', env_stats.get('avg_rt_error_rad', np.nan), self.total_timesteps)
                 self.tb_writer.add_scalar('env/prediction_error_lstm_rad', env_stats.get('avg_pred_error_rad', np.nan), self.total_timesteps)
                 self.tb_writer.add_scalar('env/avg_delay_steps', env_stats.get('avg_delay', np.nan), self.total_timesteps)
-            
+
             self.tb_writer.add_scalar('train/alpha', metrics.get('alpha', 0.0), step)
             self.tb_writer.add_scalars('losses', {
                 'actor_loss': metrics.get('actor_loss', 0.0),
@@ -218,46 +222,26 @@ class SACTrainer:
     def alpha(self) -> float:
         return self.log_alpha.exp().detach().item()
 
-    def select_action(self, 
-                      delayed_seq_batch: np.ndarray, 
-                      remote_state_batch: np.ndarray,
+    def select_action(self,
+                      delayed_seq_batch: np.ndarray,  # (num_envs, seq_len, 14)
+                      remote_state_batch: np.ndarray,  # (num_envs, 14)
                       deterministic: bool = False
                      ) -> Tuple[np.ndarray, np.ndarray]:
-       
+        """ Select action using the current policy given delayed sequences and remote states. """
         with torch.no_grad():
-            # stateful LSTM Inference
-            current_obs_only = delayed_seq_batch[:, -1:, :]
-            
-            # Convert to tensor
-            current_obs_t = torch.tensor(
-                current_obs_only, 
-                dtype=torch.float32, 
-                device=self.device
-            )
-            remote_state_t = torch.tensor(
-                remote_state_batch, 
-                dtype=torch.float32, 
-                device=self.device
-            )
-            
-            #LSTM step
-            predicted_state_t, new_hidden_state = self.state_estimator(
-                current_obs_t,           # ← Single timestep (NOT full 128!)
-                self.hidden_states       # ← Persistent memory from previous step
-            )
-            
-            # Update persistent hidden state for next inference call
-            self.hidden_states = new_hidden_state
-            
-            actor_input_t = torch.cat([predicted_state_t, remote_state_t], dim=1)
-            
-            # Actor outputs action distribution
+            delayed_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)  # (num_envs, seq_len, 14)
+            remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)  # (num_envs, 14)
+
+            # Full-sequence LSTM (zero hidden init inside StateEstimator)
+            predicted_state_t, _ = self.state_estimator(delayed_t)  # (num_envs, 14)
+
+            actor_input_t = torch.cat([predicted_state_t, remote_state_t], dim=1)  # (num_envs, 28)
+
             action_t, _, _ = self.actor.sample(actor_input_t, deterministic)
-            
-            # Convert to numpy for environment
+
             actions_np = action_t.cpu().numpy()
             predicted_states_np = predicted_state_t.cpu().numpy()
-            
+
             return actions_np, predicted_states_np
     
     def validate(self) -> float:
@@ -267,12 +251,10 @@ class SACTrainer:
         
         # Initialize validation environment
         val_obs, _ = self.val_env.reset()
-        val_hidden_states = self.state_estimator.init_hidden_state(1, self.device)
-        
+ 
         for episode in range(SAC_VAL_EPISODES):
             episode_reward = 0.0
             val_obs, _ = self.val_env.reset()
-            val_hidden_states = self.state_estimator.init_hidden_state(1, self.device)
             
             for step in range(MAX_EPISODE_STEPS):
                 # Get delayed buffer for LSTM
@@ -285,13 +267,14 @@ class SACTrainer:
                 
                 # Get deterministic action (no exploration)
                 with torch.no_grad():
-                    # Process through LSTM
-                    current_obs_only = delayed_seq_batch[:, -1:, :]
-                    current_obs_t = torch.tensor(current_obs_only, dtype=torch.float32, device=self.device)
-                    remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)
-                    
-                    predicted_state_t, val_hidden_states = self.state_estimator(current_obs_t, val_hidden_states)
-                    actor_input_t = torch.cat([predicted_state_t, remote_state_t], dim=1)
+                    delayed_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)  # (1, seq_len, 14)
+                    remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)  # (1, 14)
+
+                    # Full-sequence inference
+                    predicted_state_t, _ = self.state_estimator(delayed_t)  # (1, 14)
+
+                    actor_input_t = torch.cat([predicted_state_t, remote_state_t], dim=1)  # (1, 28)
+
                     action_t, _, _ = self.actor.sample(actor_input_t, deterministic=True)
                     action = action_t.cpu().numpy()[0]
                 
@@ -417,6 +400,8 @@ class SACTrainer:
         self._init_tensorboard()
         self.training_start_time = datetime.now()
         start_time = self.training_start_time
+
+        metrics = {}
         
         logger.info("="*70)
         logger.info("Starting SAC Training")
@@ -431,7 +416,7 @@ class SACTrainer:
         logger.info(f"  Buffer size: {SAC_BUFFER_SIZE:,}")
         logger.info(f"  Start steps (random): {SAC_START_STEPS:,}")
         logger.info(f"  Device: {self.device}")
-        logger.info(f"  Observation dim: {OBS_DIM}D (112: current 14D + history 70D + pred 14D + error 14D)")
+        logger.info(f"  Observation dim: {OBS_DIM}D")
         logger.info(f"  Actor input dim: 28D (predicted state 14D + remote state 14D)")
         logger.info("")
         
@@ -445,7 +430,7 @@ class SACTrainer:
         logger.info("")
 
         for t in range(int(total_timesteps // self.num_envs)):
-            # --- Data Collectrion Phase
+            # --- Data Collection Phase
             # Get delayed observation sequences from all environments
             delayed_buffers_list = self.env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
             remote_states_list = self.env.env_method("get_remote_state")
@@ -459,8 +444,7 @@ class SACTrainer:
             remote_state_batch = np.array(remote_states_list)
             true_target_batch = np.array(true_targets_list)
 
-
-            # --- Action selction phase
+            # --- Action selection phase
             if self.total_timesteps < SAC_START_STEPS:
                 # Exploration phase: random actions
                 actions_batch = np.array([self.env.action_space.sample() for _ in range(self.num_envs)])
@@ -490,12 +474,12 @@ class SACTrainer:
             # --- Store Experience in Replay Buffer
             for i in range(self.num_envs):
                 self.replay_buffer.add(
-                    delayed_seq_batch[i], 
-                    remote_state_batch[i], 
+                    delayed_seq_batch[i],
+                    remote_state_batch[i],
                     actions_batch[i],
-                    rewards_batch[i], 
+                    rewards_batch[i],
                     true_target_batch[i],
-                    next_delayed_seq_batch[i], 
+                    next_delayed_seq_batch[i],
                     next_remote_state_batch[i],
                     dones_batch[i]
                 )
@@ -516,15 +500,12 @@ class SACTrainer:
                     # Track completed episode reward
                     completed_episode_rewards.append(episode_rewards[i])
                     
-                    # Reset hidden state for this environment (stateful LSTM)
-                    if isinstance(self.hidden_states, tuple):
-                        h, c = self.hidden_states
-                        h[:, i, :] = 0.0
-                        c[:, i, :] = 0.0
-                        self.hidden_states = (h, c)
-                    else:
-                        self.hidden_states[:, i, :] = 0.0
-                    
+                    # ### MODIFICATION: Removed "Reset hidden state" block.
+                    # Reason: Your LSTM uses a sliding window (`get_delayed_target_buffer`).
+                    # The hidden state is re-initialized to zero for every forward pass
+                    # on the new window. Manual state management here is not needed and
+                    # caused a crash because `self.hidden_states` did not exist.
+
                     # Reset episode tracking
                     episode_rewards[i] = 0.0
                     episode_lengths[i] = 0
@@ -571,33 +552,33 @@ class SACTrainer:
                 elapsed_time = datetime.now() - start_time
                 avg_reward = np.mean(completed_episode_rewards) if completed_episode_rewards else 0.0
                 
-                # [FIX] Calculate info stats in RADIANS
-                avg_rt_error_rad = (np.nanmean(self.real_time_error_history)
-                                   if len(self.real_time_error_history) > 0 else np.nan)
-                avg_pred_error_rad = (np.nanmean(self.prediction_error_history)
-                                     if len(self.prediction_error_history) > 0 else np.nan)
+                # Calculate info stats in RADIANS
+                avg_rt_error_rad = (np.nanmean(self.real_time_error_history) 
+                                    if len(self.real_time_error_history) > 0 else np.nan)
+                avg_pred_error_rad = (np.nanmean(self.prediction_error_history) 
+                                      if len(self.prediction_error_history) > 0 else np.nan)
                 avg_delay = (np.nanmean(self.delay_steps_history) 
                              if len(self.delay_steps_history) > 0 else np.nan)
-
+                
                 logger.info(f"\n{'─'*70}")
-                # ... (rest of the logging)
-
-                # [FIX] Print detailed env stats in RADIANS
+                logger.info(f"Timesteps: {self.total_timesteps:,} | Updates: {self.num_updates:,}")
+                logger.info(f"Elapsed Time: {str(elapsed_time).split('.')[0]}")
+                logger.info(f"Avg Reward (last 100 ep): {avg_reward:.4f}")
+                
+                # Print detailed env stats in RADIANS
                 logger.info(f"\nEnvironment Stats (avg over last {len(self.real_time_error_history)} steps):")
-                logger.info(f"  Avg Real-Time Error (q): {avg_rt_error_rad:.4f} rad")
-                logger.info(f"  Avg Prediction Error (LSTM): {avg_pred_error_rad:.4f} rad")
-                logger.info(f"  Avg Delay (steps): {avg_delay:.2f}")
+                logger.info(f" Avg Real-Time Error (q): {avg_rt_error_rad:.4f} rad")
+                logger.info(f" Avg Prediction Error (LSTM): {avg_pred_error_rad:.4f} rad")
+                logger.info(f" Avg Delay (steps): {avg_delay:.2f}")
                 
-                # ... (rest of the logging)
-                
-                # [FIX] Pass new stats to _log_metrics
+                # Pass new stats to _log_metrics
                 env_stats_dict = {
                     'avg_rt_error_rad': avg_rt_error_rad,
                     'avg_pred_error_rad': avg_pred_error_rad,
                     'avg_delay': avg_delay,
                 }
                 self._log_metrics(metrics, avg_reward, validation_reward, env_stats=env_stats_dict)
-
+        
         # --- Training Complete
         logger.info("")
         logger.info("="*70)
