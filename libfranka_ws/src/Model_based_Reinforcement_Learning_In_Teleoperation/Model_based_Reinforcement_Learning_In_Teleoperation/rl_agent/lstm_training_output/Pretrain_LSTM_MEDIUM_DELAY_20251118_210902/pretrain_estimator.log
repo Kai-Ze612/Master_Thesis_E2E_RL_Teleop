@@ -46,3 +46,21 @@
 2025-11-18 21:12:25 [INFO]   -> 125000/200000 samples collected
 2025-11-18 21:12:33 [INFO]   -> 130000/200000 samples collected
 2025-11-18 21:12:41 [INFO]   -> 135000/200000 samples collected
+2025-11-18 21:12:50 [INFO]   -> 140000/200000 samples collected
+2025-11-18 21:12:58 [INFO]   -> 145000/200000 samples collected
+2025-11-18 21:13:06 [INFO]   -> 150000/200000 samples collected
+2025-11-18 21:13:14 [INFO]   -> 155000/200000 samples collected
+2025-11-18 21:13:22 [INFO]   -> 160000/200000 samples collected
+2025-11-18 21:13:30 [INFO]   -> 165000/200000 samples collected
+2025-11-18 21:13:38 [INFO]   -> 170000/200000 samples collected
+2025-11-18 21:13:46 [INFO]   -> 175000/200000 samples collected
+2025-11-18 21:13:53 [INFO]   -> 180000/200000 samples collected
+2025-11-18 21:14:01 [INFO]   -> 185000/200000 samples collected
+2025-11-18 21:14:08 [INFO]   -> 190000/200000 samples collected
+2025-11-18 21:14:16 [INFO]   -> 195000/200000 samples collected
+2025-11-18 21:14:23 [INFO]   -> 200000/200000 samples collected
+2025-11-18 21:14:23 [INFO] Data collection init complete. Buffer size: 200000
+2025-11-18 21:14:23 [INFO] Filling validation buffer...
+2025-11-18 21:14:32 [INFO] Starting training...
+2025-11-18 21:14:33 [INFO] Update 00000 | Train 0.16803811 | Val 0.18997225
+2025-11-18 21:14:33 [INFO]   → NEW BEST!
