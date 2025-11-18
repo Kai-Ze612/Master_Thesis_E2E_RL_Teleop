@@ -46,7 +46,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     VELOCITY_ERROR_SCALE,
     ACTION_PENALTY_WEIGHT,
     RNN_SEQUENCE_LENGTH,
-    LSTM_MODEL_PATH,
 )
 
 
@@ -285,7 +284,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         true_target = self.get_true_current_target()
         true_target_q_for_plot = true_target[:N_JOINTS]
         
-        # --- [MODIFICATION START] ---
         # Initialize terminated as False. Only check for it if we are in RL mode.
         terminated = False
         term_penalty = 0.0
@@ -323,7 +321,6 @@ class TeleoperationEnvWithDelay(gym.Env):
             print(f"  -> Tracking Error (norm): {np.linalg.norm(true_target_q - remote_q):.4f} rad")
             if self._last_predicted_target is not None:
                 print(f"  -> Joint Error (for term): {joint_error:.6f}")
-        # --- [MODIFICATION END] ---
         
         if self.render_mode == "human":
             self.render()        

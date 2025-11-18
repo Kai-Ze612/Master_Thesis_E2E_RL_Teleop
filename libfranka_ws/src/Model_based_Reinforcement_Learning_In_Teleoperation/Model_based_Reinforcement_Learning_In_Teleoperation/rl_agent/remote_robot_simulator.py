@@ -141,8 +141,8 @@ class RemoteRobotSimulator:
         # Compute baseline torque using inverse dynamics
         tau_gravity = self.compute_gravity_compensation(q_current)
         tau_pd = self.kp * q_error + self.kd * qd_error
-        tau_baseline = tau_gravity + tau_pd
-        
+        tau_baseline = tau_gravity * 0 + tau_pd
+       
         # Applying RL compensation
         tau_total = tau_baseline + torque_compensation
         
