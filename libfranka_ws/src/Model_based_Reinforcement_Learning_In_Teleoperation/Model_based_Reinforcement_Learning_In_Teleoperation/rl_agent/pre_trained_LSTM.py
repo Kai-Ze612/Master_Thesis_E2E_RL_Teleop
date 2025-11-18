@@ -189,8 +189,8 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
             return TeleoperationEnvWithDelay(
                 delay_config=args.config,
                 trajectory_type=args.trajectory_type,
-                randomize_trajectory=args.randomize_trajectory
-                seed=args.seed + rank
+                randomize_trajectory=args.randomize_trajectory,
+                seed=args.seed + rank  # in order to let each env have different seed
             )
         return _init
     
