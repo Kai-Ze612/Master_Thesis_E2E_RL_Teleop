@@ -1,0 +1,50 @@
+2025-11-18 14:03:48 [INFO] ================================================================================
+2025-11-18 14:03:48 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING
+2025-11-18 14:03:48 [INFO] ================================================================================
+2025-11-18 14:03:48 [INFO] Configuration:
+2025-11-18 14:03:48 [INFO]   Delay Config: FULL_RANGE_COVER
+2025-11-18 14:03:48 [INFO]   Train Trajectory: figure_8
+2025-11-18 14:03:48 [INFO]   Environments: 1
+2025-11-18 14:03:48 [INFO]   Sequence Length: 200
+2025-11-18 14:03:48 [INFO]   Randomize Trajectory: False
+2025-11-18 14:03:48 [INFO] Hyperparameters:
+2025-11-18 14:03:48 [INFO]   Learning Rate: 0.0001
+2025-11-18 14:03:48 [INFO]   Batch Size: 512
+2025-11-18 14:03:48 [INFO]   Buffer Size: 200000
+2025-11-18 14:03:48 [INFO]   Total Updates: 50000
+2025-11-18 14:03:48 [INFO]   Validation Frequency: 1000 steps
+2025-11-18 14:03:48 [INFO]   Early Stopping Patience: 10 checks
+2025-11-18 14:03:48 [INFO]   LR Scheduler Patience: 5 checks
+2025-11-18 14:03:48 [INFO]   RNN Hidden Dimension: 512
+2025-11-18 14:03:48 [INFO]   RNN Number of Layers: 4
+2025-11-18 14:03:48 [INFO] ================================================================================
+2025-11-18 14:03:48 [INFO] OVERFIT MODE: Collecting 80k clean samples from 1 deterministic env...
+2025-11-18 14:04:04 [INFO]   → 10000/200000 samples collected
+2025-11-18 14:04:18 [INFO]   → 20000/200000 samples collected
+2025-11-18 14:04:33 [INFO]   → 30000/200000 samples collected
+2025-11-18 14:04:48 [INFO]   → 40000/200000 samples collected
+2025-11-18 14:05:02 [INFO]   → 50000/200000 samples collected
+2025-11-18 14:05:17 [INFO]   → 60000/200000 samples collected
+2025-11-18 14:05:32 [INFO]   → 70000/200000 samples collected
+2025-11-18 14:05:46 [INFO]   → 80000/200000 samples collected
+2025-11-18 14:06:01 [INFO]   → 90000/200000 samples collected
+2025-11-18 14:06:15 [INFO]   → 100000/200000 samples collected
+2025-11-18 14:06:30 [INFO]   → 110000/200000 samples collected
+2025-11-18 14:06:45 [INFO]   → 120000/200000 samples collected
+2025-11-18 14:06:59 [INFO]   → 130000/200000 samples collected
+2025-11-18 14:07:14 [INFO]   → 140000/200000 samples collected
+2025-11-18 14:07:28 [INFO]   → 150000/200000 samples collected
+2025-11-18 14:07:43 [INFO]   → 160000/200000 samples collected
+2025-11-18 14:07:58 [INFO]   → 170000/200000 samples collected
+2025-11-18 14:08:12 [INFO]   → 180000/200000 samples collected
+2025-11-18 14:08:27 [INFO]   → 190000/200000 samples collected
+2025-11-18 14:08:42 [INFO]   → 200000/200000 samples collected
+2025-11-18 14:08:43 [INFO] Filling validation buffer...
+2025-11-18 14:08:50 [INFO] Waiting for buffer to fill...
+2025-11-18 14:08:50 [INFO] Buffer filled with 200000 samples. Starting training...
+2025-11-18 14:08:51 [INFO] Update 00000 | Train 0.15307073 | Val 0.17869408
+2025-11-18 14:08:51 [INFO]   → NEW BEST!
+2025-11-18 14:09:48 [INFO] Update 01000 | Train 0.00177814 | Val 0.00945521
+2025-11-18 14:09:48 [INFO]   → NEW BEST!
+2025-11-18 14:10:46 [INFO] Update 02000 | Train 0.00150765 | Val 0.00914327
+2025-11-18 14:10:46 [INFO]   → NEW BEST!
