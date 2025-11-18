@@ -1,0 +1,64 @@
+2025-11-18 17:19:43 [INFO] ================================================================================
+2025-11-18 17:19:43 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING
+2025-11-18 17:19:43 [INFO] ================================================================================
+2025-11-18 17:19:43 [INFO] Configuration:
+2025-11-18 17:19:43 [INFO]   Delay Config: LOW_DELAY
+2025-11-18 17:19:43 [INFO]   Train Trajectory: figure_8
+2025-11-18 17:19:43 [INFO]   Environments: 1
+2025-11-18 17:19:43 [INFO]   Sequence Length: 200
+2025-11-18 17:19:43 [INFO]   Randomize Trajectory: True
+2025-11-18 17:19:43 [INFO] Hyperparameters:
+2025-11-18 17:19:43 [INFO]   Learning Rate: 0.0001
+2025-11-18 17:19:43 [INFO]   Batch Size: 512
+2025-11-18 17:19:43 [INFO]   Buffer Size: 200000
+2025-11-18 17:19:43 [INFO]   Total Updates: 50000
+2025-11-18 17:19:43 [INFO]   Validation Frequency: 1000 steps
+2025-11-18 17:19:43 [INFO]   Early Stopping Patience: 10 checks
+2025-11-18 17:19:43 [INFO]   LR Scheduler Patience: 5 checks
+2025-11-18 17:19:43 [INFO]   RNN Hidden Dimension: 512
+2025-11-18 17:19:43 [INFO]   RNN Number of Layers: 4
+2025-11-18 17:19:43 [INFO] ================================================================================
+2025-11-18 17:19:43 [INFO] RANDOMIZED MODE: Collecting warmup data (25600 samples)...
+2025-11-18 17:19:51 [INFO]   -> 5000/25600 samples collected
+2025-11-18 17:19:59 [INFO]   -> 10000/25600 samples collected
+2025-11-18 17:20:06 [INFO]   -> 15000/25600 samples collected
+2025-11-18 17:20:14 [INFO]   -> 20000/25600 samples collected
+2025-11-18 17:20:22 [INFO]   -> 25000/25600 samples collected
+2025-11-18 17:20:23 [INFO] Data collection init complete. Buffer size: 25600
+2025-11-18 17:20:23 [INFO] Filling validation buffer...
+2025-11-18 17:20:31 [INFO] Starting training...
+2025-11-18 17:20:34 [INFO] Update 00000 | Train 0.14778227 | Val 0.20877890
+2025-11-18 17:20:34 [INFO]   → NEW BEST!
+2025-11-18 17:22:59 [INFO] Update 01000 | Train 0.00063294 | Val 0.00873847
+2025-11-18 17:22:59 [INFO]   → NEW BEST!
+2025-11-18 17:25:24 [INFO] Update 02000 | Train 0.00054036 | Val 0.00834684
+2025-11-18 17:25:24 [INFO]   → NEW BEST!
+2025-11-18 17:27:36 [INFO] Update 03000 | Train 0.00046827 | Val 0.00814716
+2025-11-18 17:27:36 [INFO]   → NEW BEST!
+2025-11-18 17:29:47 [INFO] Update 04000 | Train 0.00043670 | Val 0.00686311
+2025-11-18 17:29:47 [INFO]   → NEW BEST!
+2025-11-18 17:32:13 [INFO] Update 05000 | Train 0.00034730 | Val 0.00664452
+2025-11-18 17:32:13 [INFO]   → NEW BEST!
+2025-11-18 17:34:37 [INFO] Update 06000 | Train 0.00031114 | Val 0.00671319
+2025-11-18 17:36:37 [INFO] Update 07000 | Train 0.00038548 | Val 0.00735781
+2025-11-18 17:38:59 [INFO] Update 08000 | Train 0.00027183 | Val 0.00758445
+2025-11-18 17:41:24 [INFO] Update 09000 | Train 0.00033429 | Val 0.00733848
+2025-11-18 17:43:48 [INFO] Update 10000 | Train 0.00029930 | Val 0.00674927
+2025-11-18 17:45:04 [INFO] Update 11000 | Train 0.00024582 | Val 0.00692352
+2025-11-18 17:46:02 [INFO] Update 12000 | Train 0.00031165 | Val 0.00736748
+2025-11-18 17:47:00 [INFO] Update 13000 | Train 0.00025147 | Val 0.00687860
+2025-11-18 17:48:00 [INFO] Update 14000 | Train 0.00021512 | Val 0.00658733
+2025-11-18 17:48:00 [INFO]   → NEW BEST!
+2025-11-18 17:48:58 [INFO] Update 15000 | Train 0.00038265 | Val 0.00728237
+2025-11-18 17:50:04 [INFO] Update 16000 | Train 0.00042783 | Val 0.00752863
+2025-11-18 17:51:29 [INFO] Update 17000 | Train 0.00042031 | Val 0.00771642
+2025-11-18 17:53:30 [INFO] Update 18000 | Train 0.00040953 | Val 0.00746866
+2025-11-18 17:55:30 [INFO] Update 19000 | Train 0.00030567 | Val 0.00714057
+2025-11-18 17:57:30 [INFO] Update 20000 | Train 0.00038080 | Val 0.00747489
+2025-11-18 17:59:51 [INFO] Update 21000 | Train 0.00036348 | Val 0.00746905
+2025-11-18 18:02:16 [INFO] Update 22000 | Train 0.00036300 | Val 0.00827243
+2025-11-18 18:04:18 [INFO] Update 23000 | Train 0.00036637 | Val 0.00717818
+2025-11-18 18:06:24 [INFO] Update 24000 | Train 0.00029978 | Val 0.00718196
+2025-11-18 18:06:24 [INFO] Early stopping
+2025-11-18 18:06:24 [INFO] Training finished! Best Val MSE = 0.00658733
+2025-11-18 18:06:24 [INFO] Model saved to ./lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251118_171943
