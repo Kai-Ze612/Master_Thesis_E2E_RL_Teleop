@@ -315,113 +315,41 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     logger.info(f"Model saved to {output_dir}")
     tb_writer.close()
     train_env.close()
-    
-    def make_test_env():
-        return TeleoperationEnvWithDelay(
-            delay_config=args.config,
-            trajectory_type=args.trajectory_type,
-            randomize_trajectory=False,
-            seed=args.seed + 2 # Use a third seed
-        )
-    
-    test_env = make_vec_env(make_test_env, n_envs=1, vec_env_cls=DummyVecEnv)
-    
-    # Fill a test buffer
-    test_buffer = PretrainReplayBuffer(ESTIMATOR_VAL_STEPS, device)
-    logger.info("Filling test buffer...")
-    test_obs = test_env.reset()
-    for _ in range(ESTIMATOR_VAL_STEPS):
-        delayed_seq, true_target = collect_data_from_envs(test_env, 1)
-        test_buffer.add(delayed_seq[0], true_target[0])
-        random_action = np.array([test_env.action_space.sample()])
-        test_obs, _, _, _ = test_env.step(random_action)
-    logger.info(f"Test buffer filled: {len(test_buffer)} samples")
-    test_env.close()
-
-    # Load best model and evaluate
-    best_model_path = os.path.join(output_dir, "estimator_best.pth")
-    if os.path.exists(best_model_path):
-        checkpoint = torch.load(best_model_path, map_location=device)
-        state_estimator.load_state_dict(checkpoint['state_estimator_state_dict'])
-        
-        final_test_loss = evaluate_model(state_estimator, test_buffer, ESTIMATOR_BATCH_SIZE)
-        
-        logger.info("="*80)
-        logger.info("FINAL TEST RESULTS")
-        logger.info(f"  Best Validation Loss: {best_val_loss:.6f}")
-        logger.info(f"  Final Test Loss: {final_test_loss:.6f}")
-        logger.info(f"  Output: {output_dir}")
-        logger.info("="*80)
-        
-        tb_writer.add_hparams(
-            {
-                "lr": ESTIMATOR_LEARNING_RATE,
-                "batch_size": ESTIMATOR_BATCH_SIZE,
-                "config": args.config.name,
-                "trajectory": args.trajectory_type.value,
-            },
-            {
-                "hparam/best_validation_loss": best_val_loss,
-                "hparam/final_test_loss": final_test_loss,
-            },
-        )
-    else:
-        logger.error("No 'estimator_best.pth' found. Cannot run final test.")
-
-    
-    # Save final model (last state, regardless of performance)
-    torch.save({
-        'state_estimator_state_dict': state_estimator.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'final_loss': loss.item() if 'loss' in locals() else -1.0,
-        'final_avg_loss': np.mean(loss_history) if len(loss_history) > 0 else -1.0,
-        'best_val_loss': best_val_loss,
-    }, os.path.join(output_dir, "estimator_final_state.pth"))
-    
-    
-    tb_writer.close()
 
 
 def parse_arguments() -> argparse.Namespace:
-    """Parse command line arguments."""
-    parser = argparse.ArgumentParser(
-        description="Pre-train the State Estimator LSTM for teleoperation with delays.",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+    parser = argparse.ArgumentParser(description="Pre-train the State Estimator LSTM (fixed + overfit mode)")
     
-    parser.add_argument("--config", type=str, default="3", choices=['1', '2', '3', '4'], help="Delay configuration preset.")
-    parser.add_argument("--trajectory-type", type=str, default="figure_8", choices=[t.value for t in TrajectoryType], help="Reference trajectory type.")
-    parser.add_argument("--seed", type=int, default=50, help="Random seed.")
-    
+    parser.add_argument("--config", type=str, default="1", choices=['1', '2', '3', '4'],
+                        help="Delay configuration (use '1' first for debugging)")
+    parser.add_argument("--trajectory-type", type=str, default="figure_8",
+                        choices=[t.value for t in TrajectoryType])
+    parser.add_argument("--seed", type=int, default=50)
+    # MODIFICATION: New flags
+    parser.add_argument("--overfit", action="store_true",
+                        help="Enable overfit mode: collect full clean trajectory offline (RECOMMENDED for debugging)")
+    parser.add_argument("--randomize-trajectory", action="store_true",
+                        help="Randomize trajectory params (only use after overfit works)")
+
     args = parser.parse_args()
-    
-    # Convert string arguments to enum types
+
     config_options = list(ExperimentConfig)
-    CONFIG_MAP = {
-        '1': config_options[0], 
-        '2': config_options[1],
-        '3': config_options[2], 
-        '4': config_options[3]
-    }
+    CONFIG_MAP = {'1': config_options[0], '2': config_options[1],
+                  '3': config_options[2], '4': config_options[3]}
     args.config = CONFIG_MAP[args.config]
-    args.trajectory_type = next(
-        t for t in TrajectoryType 
-        if t.value.lower() == args.trajectory_type.lower()
-    )
     
+    args.trajectory_type = next(t for t in TrajectoryType if t.value.lower() == args.trajectory_type.lower())
+
     return args
 
 
 if __name__ == "__main__":
     multiprocessing.set_start_method('spawn', force=True)
-    
     args = parse_arguments()
     
-    try:
-        pretrain_estimator(args)
-    except KeyboardInterrupt:
-        print("\n[INFO] Training interrupted by user.")
-        sys.exit(0)
-    except Exception as e:
-        print(f"\n[ERROR] Training failed: {e}")
-        raise
+    # In overfit mode we FORCE deterministic + no randomisation
+    if args.overfit:
+        args.randomize_trajectory = False
+        print("OVERFIT MODE ACTIVATED – forcing deterministic trajectory")
+
+    pretrain_estimator(args)
