@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import LocalRobotSimulator, TrajectoryType
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.remote_robot_simulator import RemoteRobotSimulator
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import StateEstimator
 
 # Configuration imports
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
@@ -45,6 +46,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     VELOCITY_ERROR_SCALE,
     ACTION_PENALTY_WEIGHT,
     RNN_SEQUENCE_LENGTH,
+    LSTM_MODEL_PATH,
 )
 
 
@@ -59,6 +61,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         randomize_trajectory: bool = False,
         seed: Optional[int] = None,
         render_mode: Optional[str] = None,
+        pretrained_estimator_path: Optional[str] = None,
         # Initialize trajectory as simplest for simplicity
     ):
         super().__init__()
@@ -99,6 +102,10 @@ class TeleoperationEnvWithDelay(gym.Env):
             seed=seed
         )
 
+        # Action delay
+        self.action_delay_steps = self.delay_simulator.get_action_delay_steps()
+        self.torque_buffer = deque() if self.action_delay_steps > 0 else None
+        
         # Initialize Leader and Remote Robot
         self.trajectory_type = trajectory_type
         self.randomize_trajectory = randomize_trajectory
@@ -120,16 +127,16 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.remote_q_history = deque(maxlen=REMOTE_HISTORY_LEN)
         self.remote_qd_history = deque(maxlen=REMOTE_HISTORY_LEN)
 
-        # Store predicted target from policy
+        # Store predicted target from LSTM
         self._last_predicted_target: Optional[np.ndarray] = None
+        
+        # Get steps to fill the LSTM buffer
+        self.buffer_fill_steps = RNN_SEQUENCE_LENGTH 
         
         # Get leader's warmup steps
         self.leader_warmup_steps = int(
             self.leader._warm_up_duration / (1.0 / self.control_freq)
         )
-        
-        # Get steps to fill the LSTM buffer
-        self.buffer_fill_steps = RNN_SEQUENCE_LENGTH 
         
         # Total warmup is SUM of both
         self.total_warmup_phase_steps = self.leader_warmup_steps + self.buffer_fill_steps
