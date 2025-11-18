@@ -197,7 +197,8 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     n_envs = 1 if args.randomize_trajectory == False else NUM_ENVIRONMENTS
     vec_cls = DummyVecEnv if n_envs == 1 else SubprocVecEnv
     
-    train_env = make_vec_env(make_env, n_envs=n_envs, seed=args.seed, vec_env_cls=vec_cls)
+    train_env_fns = [make_env(i) for i in range(n_envs)]
+    train_env = vec_cls(train_env_fns)
 
     replay_buffer = ReplayBuffer(ESTIMATOR_BUFFER_SIZE, device)
     
@@ -208,17 +209,17 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
             train_env.step([np.zeros((n_envs, N_JOINTS))])
 
         collected = 0
-        while collected < 80000:
+        while collected < ESTIMATOR_BUFFER_SIZE:
             seqs, targets = collect_data_from_envs(train_env, n_envs)
             for i in range(n_envs):
                 replay_buffer.add(seqs[i], targets[i])
             collected += n_envs
             train_env.step([np.zeros((n_envs, N_JOINTS))])
             if collected % 10000 < n_envs:
-                logger.info(f"  → {collected}/80000 samples collected")
+                logger.info(f"  → {collected}/{ESTIMATOR_BUFFER_SIZE} samples collected")
                 
     # Validation buffer (single env for clean eval)                
-    val_env = make_vec_env(make_env(0), n_envs=1, vec_env_cls=DummyVecEnv)
+    val_env = DummyVecEnv([make_env(0)])
     val_buffer = ReplayBuffer(ESTIMATOR_VAL_STEPS, device)
     logger.info("Filling validation buffer...")
     val_env.reset()
