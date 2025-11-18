@@ -252,7 +252,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
             delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, n_envs)
             for i in range(n_envs):
                 replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
-            train_env.step([np.zeros((n_envs, N_JOINTS))])
+            train_env.step([np.zeros((n_envs, N_JOINTS))])  # advance simulation
         
         batch = replay_buffer.sample(ESTIMATOR_BATCH_SIZE)
         pred, _ = state_estimator(batch['delayed_sequences'])
