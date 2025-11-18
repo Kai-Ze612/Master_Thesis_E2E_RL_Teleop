@@ -246,25 +246,31 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     # Model & optimizer
     state_estimator = StateEstimator().to(device)
     optimizer = torch.optim.Adam(state_estimator.parameters(), lr=ESTIMATOR_LEARNING_RATE)
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=ESTIMATOR_LR_PATIENCE, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=ESTIMATOR_LR_PATIENCE)
 
     state_estimator.train()
     best_val_loss = float('inf')
     patience_counter = 0
     loss_history = deque(maxlen=100)
-
+    
     logger.info("Starting training loop...")
     
+    # Wait until we have enough data in overfit mode
+    if args.overfit:
+        while len(replay_buffer) < 5000:
+            logger.info(f"   Buffer filling... {len(replay_buffer)}/5000+ samples")
+            import time; time.sleep(3)
+        logger.info(f"Buffer filled with {len(replay_buffer)} samples → START TRAINING!")
+
     for update in range(ESTIMATOR_TOTAL_UPDATES):
         
-        # MODIFICATION: In overfit mode we DO NOT collect online anymore
-        if not args.overfit and update > 500:  # old buggy behaviour – kept only for non-overfit
-            delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, 1)
-            replay_buffer.add(delayed_seq_batch[0], true_target_batch[0])
-            action = np.zeros((1, N_JOINTS), dtype=np.float32)
-            train_env.step([action])
-
-        # Training step (same)
+        # Skip sampling if buffer empty (safety)
+        if len(replay_buffer) < ESTIMATOR_BATCH_SIZE:
+            if update % 100 == 0:
+                logger.info(f"Update {update}: Buffer too small ({len(replay_buffer)}), skipping...")
+            continue
+        
+        # Normal training
         batch = replay_buffer.sample(ESTIMATOR_BATCH_SIZE)
         predicted_targets, _ = state_estimator(batch['delayed_sequences'])
         loss = F.mse_loss(predicted_targets, batch['true_targets'])
@@ -275,12 +281,10 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         optimizer.step()
         
         loss_history.append(loss.item())
-
-        # Validation
+        
         if update % ESTIMATOR_VAL_FREQ == 0:
             avg_train_loss = np.mean(loss_history)
             val_loss = evaluate_model(state_estimator, val_buffer, ESTIMATOR_BATCH_SIZE)
-            
             tb_writer.add_scalar('loss/train_avg_100', avg_train_loss, update)
             tb_writer.add_scalar('loss/validation_mse', val_loss, update)
             tb_writer.add_scalar('hyperparameters/learning_rate', optimizer.param_groups[0]['lr'], update)

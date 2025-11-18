@@ -1,0 +1,25 @@
+2025-11-18 10:30:35 [INFO] ================================================================================
+2025-11-18 10:30:35 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING
+2025-11-18 10:30:35 [INFO] ================================================================================
+2025-11-18 10:30:35 [INFO] Configuration:
+2025-11-18 10:30:35 [INFO]   Delay Config: LOW_DELAY
+2025-11-18 10:30:35 [INFO]   Train Trajectory: figure_8
+2025-11-18 10:30:35 [INFO]   Device: cuda
+2025-11-18 10:30:35 [INFO]   Environments: 1
+2025-11-18 10:30:35 [INFO]   Sequence Length: 64
+2025-11-18 10:30:35 [INFO] Hyperparameters:
+2025-11-18 10:30:35 [INFO]   Learning Rate: 0.0001
+2025-11-18 10:30:35 [INFO]   Batch Size: 512
+2025-11-18 10:30:35 [INFO]   Buffer Size: 200000
+2025-11-18 10:30:35 [INFO]   Total Updates: 50000
+2025-11-18 10:30:35 [INFO]   Warmup Steps: 5500
+2025-11-18 10:30:35 [INFO]   Validation Frequency: 1000 steps
+2025-11-18 10:30:35 [INFO]   Early Stopping Patience: 10 checks
+2025-11-18 10:30:35 [INFO]   LR Scheduler Patience: 5 checks
+2025-11-18 10:30:35 [INFO]   Trajectory Randomization during Training: False
+2025-11-18 10:30:35 [INFO]   RNN Hidden Dimension: 512
+2025-11-18 10:30:35 [INFO]   RNN Number of Layers: 4
+2025-11-18 10:30:35 [INFO] ================================================================================
+2025-11-18 10:30:35 [INFO] Standard online collection (not recommended until overfit works)
+2025-11-18 10:30:35 [INFO] Filling validation buffer...
+2025-11-18 10:30:41 [INFO] Starting training loop...
