@@ -1,0 +1,39 @@
+2025-11-18 16:56:11 [INFO] ================================================================================
+2025-11-18 16:56:11 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING
+2025-11-18 16:56:11 [INFO] ================================================================================
+2025-11-18 16:56:11 [INFO] Configuration:
+2025-11-18 16:56:11 [INFO]   Delay Config: LOW_DELAY
+2025-11-18 16:56:11 [INFO]   Train Trajectory: figure_8
+2025-11-18 16:56:11 [INFO]   Environments: 1
+2025-11-18 16:56:11 [INFO]   Sequence Length: 200
+2025-11-18 16:56:11 [INFO]   Randomize Trajectory: False
+2025-11-18 16:56:11 [INFO] Hyperparameters:
+2025-11-18 16:56:11 [INFO]   Learning Rate: 0.0001
+2025-11-18 16:56:11 [INFO]   Batch Size: 512
+2025-11-18 16:56:11 [INFO]   Buffer Size: 200000
+2025-11-18 16:56:11 [INFO]   Total Updates: 50000
+2025-11-18 16:56:11 [INFO]   Validation Frequency: 1000 steps
+2025-11-18 16:56:11 [INFO]   Early Stopping Patience: 10 checks
+2025-11-18 16:56:11 [INFO]   LR Scheduler Patience: 5 checks
+2025-11-18 16:56:11 [INFO]   RNN Hidden Dimension: 512
+2025-11-18 16:56:11 [INFO]   RNN Number of Layers: 4
+2025-11-18 16:56:11 [INFO] ================================================================================
+2025-11-18 16:56:12 [INFO] OVERFIT MODE: Collecting complete static dataset...
+2025-11-18 16:56:19 [INFO]   -> 5000/200000 samples collected
+2025-11-18 16:56:27 [INFO]   -> 10000/200000 samples collected
+2025-11-18 16:56:35 [INFO]   -> 15000/200000 samples collected
+2025-11-18 16:56:43 [INFO]   -> 20000/200000 samples collected
+2025-11-18 16:56:50 [INFO]   -> 25000/200000 samples collected
+2025-11-18 16:56:58 [INFO]   -> 30000/200000 samples collected
+2025-11-18 16:57:06 [INFO]   -> 35000/200000 samples collected
+2025-11-18 16:57:14 [INFO]   -> 40000/200000 samples collected
+2025-11-18 16:57:22 [INFO]   -> 45000/200000 samples collected
+2025-11-18 16:57:30 [INFO]   -> 50000/200000 samples collected
+2025-11-18 16:57:38 [INFO]   -> 55000/200000 samples collected
+2025-11-18 16:57:46 [INFO]   -> 60000/200000 samples collected
+2025-11-18 16:57:54 [INFO]   -> 65000/200000 samples collected
+2025-11-18 16:58:03 [INFO]   -> 70000/200000 samples collected
+2025-11-18 16:58:11 [INFO]   -> 75000/200000 samples collected
+2025-11-18 16:58:19 [INFO]   -> 80000/200000 samples collected
+2025-11-18 16:58:29 [INFO]   -> 85000/200000 samples collected
+2025-11-18 16:58:38 [INFO]   -> 90000/200000 samples collected
