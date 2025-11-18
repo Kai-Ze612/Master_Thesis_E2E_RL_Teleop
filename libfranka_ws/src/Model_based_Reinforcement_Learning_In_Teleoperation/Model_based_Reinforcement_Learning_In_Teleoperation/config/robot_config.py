@@ -7,8 +7,8 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
 
 RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_HIGH_DELAY_figure_8_20251114_220018/best_policy.pth"
 LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251114_120334/estimator_best.pth"
@@ -63,7 +63,7 @@ IK_CONTINUITY_GAIN = 0.5
 TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.5], dtype=np.float32)
 TRAJECTORY_SCALE = np.array([0.1, 0.3], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1
-TRAJECTORY_RANDOM = True
+TRAJECTORY_RANDOM = False
 
 ######################################
 # pre-trained LSTM hyperparameters
@@ -80,7 +80,7 @@ ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 512
 RNN_NUM_LAYERS = 4
-RNN_SEQUENCE_LENGTH = 256 # Input sequence for LSTM
+RNN_SEQUENCE_LENGTH = 64 # Input sequence for LSTM
 
 ######################################
 # RL Environment Parameters
