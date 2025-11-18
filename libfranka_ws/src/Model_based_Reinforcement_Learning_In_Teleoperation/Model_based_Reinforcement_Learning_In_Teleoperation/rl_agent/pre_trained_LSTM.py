@@ -247,7 +247,13 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     for update in range(ESTIMATOR_TOTAL_UPDATES):
         if len(replay_buffer) < ESTIMATOR_BATCH_SIZE:
             continue
-
+        
+        if args.randomize_trajectory:
+            delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, n_envs)
+            for i in range(n_envs):
+                replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
+            train_env.step([np.zeros((n_envs, N_JOINTS))])
+        
         batch = replay_buffer.sample(ESTIMATOR_BATCH_SIZE)
         pred, _ = state_estimator(batch['delayed_sequences'])
         loss = F.mse_loss(pred, batch['true_targets'])
