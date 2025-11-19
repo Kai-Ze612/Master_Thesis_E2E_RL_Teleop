@@ -311,6 +311,7 @@ class AgentNode(Node):
             predicted_q = predicted_target_np[:N_JOINTS]
             predicted_qd = predicted_target_np[N_JOINTS:]
             tau_rl = action_t.cpu().numpy().flatten()
+            tau_rl[-1] = 0.0
             
             self.publish_predicted_target(predicted_q, predicted_qd)
             self.publish_tau_compensation(tau_rl)

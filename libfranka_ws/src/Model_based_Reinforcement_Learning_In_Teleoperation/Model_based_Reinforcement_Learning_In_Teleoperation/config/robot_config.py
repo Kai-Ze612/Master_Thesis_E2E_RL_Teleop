@@ -7,13 +7,13 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251116_121211/best_policy.pth"
-# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251118_130722/estimator_best.pth"
+DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251119_150939/best_policy.pth"
+LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251119_090724/estimator_best.pth"
 
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251119_090724/estimator_best.pth"
+# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251119_090724/estimator_best.pth"
 ######################################
 
 CHECKPOINT_DIR_RL = "./rl_training_output"
@@ -37,10 +37,11 @@ WARM_UP_DURATION = 2.0
 ######################################
 # Control Parameters
 ######################################
-DEFAULT_CONTROL_FREQ = 500
-DEFAULT_PUBLISH_FREQ = 500
-DEFAULT_KP_REMOTE = np.array([70.0, 70.0, 70.0, 50.0, 30.0, 30.0, 0.0], dtype=np.float32) # We use kp kd to calculate baseline tau
-DEFAULT_KD_REMOTE = np.array([ 7.0,  7.0,  7.0,  5.0, 4.5, 4.5,  0.0], dtype=np.float32)
+DEFAULT_CONTROL_FREQ = 100
+DEFAULT_PUBLISH_FREQ = 100
+
+DEFAULT_KP_REMOTE = np.array([70.0, 70.0, 70.0, 50.0, 30.0, 20.0, 0.0], dtype=np.float32) # We use kp kd to calculate baseline tau
+DEFAULT_KD_REMOTE = np.array([ 7.0,  7.0,  7.0,  5.0, 4.5, 3.0,  0.0], dtype=np.float32)
 
 ######################################
 # IK Solver Parameterss

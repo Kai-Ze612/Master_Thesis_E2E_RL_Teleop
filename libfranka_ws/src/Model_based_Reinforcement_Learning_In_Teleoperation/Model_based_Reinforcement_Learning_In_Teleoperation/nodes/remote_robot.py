@@ -285,6 +285,8 @@ class RemoteRobotNode(Node):
             # tau_baseline = tau_gravity + tau_pd
             
             # Final Torque Command
+            tau_pd[-1] = 0.0  # No torque on last joint
+            
             tau_command = tau_pd + tau_rl
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
@@ -314,8 +316,9 @@ class RemoteRobotNode(Node):
                 f"Predicted qd: {np.round(self.target_qd_, 3)} (From Agent)\n"
                 f"Remote q:   {np.round(q_current, 3)}\n"
                 f"Remote qd:  {np.round(qd_current, 3)}\n"
-                f"Tau RL:     {np.round(tau_rl, 3)}\n"
-                # f"Tau Baseline: {np.round(tau_baseline, 3)}\n"
+                f"Tau PD:      {np.round(tau_pd, 3)}\n"
+                f"Tau RL:     {np.round(tau_rl, 3)}\n",
+                # f"Tau Baseline: {np.round(tau_baseline, 3)}\n",
                 throttle_duration_sec=1.0
             )
 
