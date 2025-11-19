@@ -52,3 +52,18 @@ Environment Stats (avg over last 1000 steps):
 2025-m-19 18:53:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 2/10: Reward = -5814.0359
 2025-m-19 18:55:07 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 3/10: Reward = -5814.0335
 2025-m-19 18:56:47 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 4/10: Reward = -5814.0335
+2025-m-19 18:58:30 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 5/10: Reward = -5814.0335
+2025-m-19 19:00:10 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 6/10: Reward = -5814.0335
+2025-m-19 19:01:49 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 7/10: Reward = -5814.0335
+2025-m-19 19:03:29 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 8/10: Reward = -5814.0335
+2025-m-19 19:05:10 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 9/10: Reward = -5814.0335
+2025-m-19 19:06:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Episode 10/10: Reward = -5814.0335
+2025-m-19 19:06:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - 
+Validation Results:
+2025-m-19 19:06:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Average Reward: -5765.9565
+2025-m-19 19:06:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Std Dev: 144.2318
+2025-m-19 19:06:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Min: -5814.0359
+2025-m-19 19:06:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Max: -5333.2611
+2025-m-19 19:06:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251119_184823/best_policy.pth
+2025-m-19 19:06:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm - ✓ NEW BEST! Validation reward: -5765.9565
+2025-m-19 19:06:52 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_training_algorithm -   Saved: best_policy.pth
