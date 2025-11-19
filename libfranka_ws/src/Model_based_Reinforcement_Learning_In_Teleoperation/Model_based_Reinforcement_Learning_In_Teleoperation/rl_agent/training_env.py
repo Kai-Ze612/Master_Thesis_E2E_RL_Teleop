@@ -593,11 +593,9 @@ class TeleoperationEnvWithDelay(gym.Env):
             info_dict['prediction_error'] = np.nan
 
         info_dict['current_delay_steps'] = self.get_current_observation_delay()
-        
-        # --- [NEW] WARMUP LOGIC ---
-        # Add warmup status to info
+
+        # [CRITICAL ADDITION] - You must expose this for the trainer to see!
         info_dict['is_in_warmup'] = (self.steps_remaining_in_warmup > 0)
-        # --- END WARMUP LOGIC ---
 
         return info_dict
 

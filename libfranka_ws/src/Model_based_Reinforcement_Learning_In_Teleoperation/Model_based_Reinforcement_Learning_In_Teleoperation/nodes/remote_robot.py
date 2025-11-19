@@ -195,25 +195,25 @@ class RemoteRobotNode(Node):
         """Normalize an angle or array of angles to the range [-pi, pi]."""
         return (angle + np.pi) % (2 * np.pi) - np.pi
         
-    def _compute_gravity_compensation(self, q: NDArray[np.float64]) -> NDArray[np.float64]:
-        """Computes the torque needed to counteract gravity."""
+    # def _compute_gravity_compensation(self, q: NDArray[np.float64]) -> NDArray[np.float64]:
+    #     """Computes the torque needed to counteract gravity."""
         
-        qpos_save = self.mj_data_.qpos.copy()
-        qvel_save = self.mj_data_.qvel.copy()
-        qacc_save = self.mj_data_.qacc.copy()
+    #     qpos_save = self.mj_data_.qpos.copy()
+    #     qvel_save = self.mj_data_.qvel.copy()
+    #     qacc_save = self.mj_data_.qacc.copy()
 
-        self.mj_data_.qpos[:self.n_joints_] = q
-        self.mj_data_.qvel[:self.n_joints_] = 0.0
-        self.mj_data_.qacc[:self.n_joints_] = 0.0
+    #     self.mj_data_.qpos[:self.n_joints_] = q
+    #     self.mj_data_.qvel[:self.n_joints_] = 0.0
+    #     self.mj_data_.qacc[:self.n_joints_] = 0.0
 
-        mujoco.mj_inverse(self.mj_model_, self.mj_data_)
-        tau_gravity = self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
+    #     mujoco.mj_inverse(self.mj_model_, self.mj_data_)
+    #     tau_gravity = self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
 
-        self.mj_data_.qpos[:] = qpos_save
-        self.mj_data_.qvel[:] = qvel_save
-        self.mj_data_.qacc[:] = qacc_save
+    #     self.mj_data_.qpos[:] = qpos_save
+    #     self.mj_data_.qvel[:] = qvel_save
+    #     self.mj_data_.qacc[:] = qacc_save
         
-        return tau_gravity
+    #     return tau_gravity
 
     def _compute_tcp_position(self, q: NDArray[np.float64]) -> NDArray[np.float64]:
         """Compute TCP (Tool Center Point) position using forward kinematics."""
@@ -240,7 +240,7 @@ class RemoteRobotNode(Node):
         # Restore state
         self.mj_data_.qpos[:] = qpos_save
         
-        return tcp_pos  # ✓ Returns TCP center, matching IK target
+        return tcp_pos  # Returns TCP center, matching IK target
     
     def control_loop_callback(self) -> None:
         
@@ -277,15 +277,15 @@ class RemoteRobotNode(Node):
             self.last_q_target_ = q_target.copy() # Update state for next step
             
             # PD Calculation
-            tau_gravity = self._compute_gravity_compensation(q_current)
+            # tau_gravity = self._compute_gravity_compensation(q_current)
             q_error = self._normalize_angle(q_target - q_current)
             qd_error = qd_target - qd_current
             tau_pd = self.kp_ * q_error + self.kd_ * qd_error
             
-            tau_baseline = tau_gravity + tau_pd
+            # tau_baseline = tau_gravity + tau_pd
             
             # Final Torque Command
-            tau_command = tau_gravity*0 + tau_pd * 0 + tau_rl * 0
+            tau_command = tau_pd + tau_rl
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
             # ACTION DELAY
@@ -315,8 +315,7 @@ class RemoteRobotNode(Node):
                 f"Remote q:   {np.round(q_current, 3)}\n"
                 f"Remote qd:  {np.round(qd_current, 3)}\n"
                 f"Tau RL:     {np.round(tau_rl, 3)}\n"
-                f"Tau Baseline: {np.round(tau_baseline, 3)}\n"
-                f"---------------------------------",
+                # f"Tau Baseline: {np.round(tau_baseline, 3)}\n"
                 throttle_duration_sec=1.0
             )
 

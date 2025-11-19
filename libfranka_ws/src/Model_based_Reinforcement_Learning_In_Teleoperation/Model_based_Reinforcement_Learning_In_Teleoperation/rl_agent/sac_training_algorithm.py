@@ -313,6 +313,9 @@ class SACTrainer:
         """
         metrics = {}
         
+        if len(self.replay_buffer) < SAC_BATCH_SIZE:
+            return metrics
+        
         # Sample from replay buffer
         batch = self.replay_buffer.sample(SAC_BATCH_SIZE)
         
@@ -474,14 +477,28 @@ class SACTrainer:
             
             # --- Store Experience in Replay Buffer
             for i in range(self.num_envs):
+                # [CRITICAL FIX] 1. Logic: Skip transitions collected during warmup
+                # The environment forced the action to zero, but 'actions_batch' contains 
+                # the policy's output. Saving this would poison the Critic.
+                if infos_batch[i].get('is_in_warmup', False):
+                    continue
+
+                # [Recommended] 2. Safety: Skip if prediction contained NaNs
+                # predicted_state_batch is a numpy array here
+                if np.isnan(predicted_state_batch[i]).any():
+                    continue
+
+                # [Syntax Correction] 3. Data Types:
+                # In your script, these variables are ALREADY numpy arrays.
+                # Do NOT use .cpu().numpy() or it will crash.
                 self.replay_buffer.add(
-                    delayed_seq_batch[i],
-                    remote_state_batch[i],
-                    actions_batch[i],
+                    delayed_seq_batch[i],          # Already numpy
+                    remote_state_batch[i],         # Already numpy
+                    actions_batch[i],              # This is the policy action (valid now because we skipped warmup)
                     rewards_batch[i],
-                    true_target_batch[i],
-                    next_delayed_seq_batch[i],
-                    next_remote_state_batch[i],
+                    true_target_batch[i],          # Already numpy
+                    next_delayed_seq_batch[i],     # Already numpy
+                    next_remote_state_batch[i],    # Already numpy
                     dones_batch[i]
                 )
 
