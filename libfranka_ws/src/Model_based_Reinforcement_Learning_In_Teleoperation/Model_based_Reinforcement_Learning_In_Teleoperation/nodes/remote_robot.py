@@ -203,8 +203,8 @@ class RemoteRobotNode(Node):
             
             # Safety: No torque on last joint
             tau_pd[-1] = 0.0 
-            
-            tau_command = tau_pd + tau_rl
+           
+            tau_command = tau_pd * 0 + tau_rl * 0
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
             # apply action delay
