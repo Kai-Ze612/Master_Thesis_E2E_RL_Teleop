@@ -23,6 +23,7 @@ import numpy as np
 import torch
 from collections import deque
 import os
+import pickle  # For loading normalization stats
 
 # ROS2 imports
 import rclpy
@@ -42,6 +43,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     RNN_SEQUENCE_LENGTH,
     RL_MODEL_PATH,
     LSTM_MODEL_PATH,
+    TRAJECTORY_FREQUENCY,
 )
 
 
@@ -85,12 +87,11 @@ class AgentNode(Node):
         
         self.get_logger().info(f"Loading PRE-TRAINED LSTM from: {self.lstm_model_path_}")
         try:
-            # The pre-trained file saved the state_dict directly or in a dict
             lstm_checkpoint = torch.load(self.lstm_model_path_, map_location=self.device_)
             if 'state_estimator_state_dict' in lstm_checkpoint:
                 self.state_estimator_.load_state_dict(lstm_checkpoint['state_estimator_state_dict'])
             else:
-                self.state_estimator_.load_state_dict(lstm_checkpoint) # Assume it's the raw state_dict
+                self.state_estimator_.load_state_dict(lstm_checkpoint)
             
             self.state_estimator_.eval()
             self.get_logger().info("StateEstimator weights loaded from PRE-TRAINED file.")
@@ -116,18 +117,11 @@ class AgentNode(Node):
             raise
         
         # Initialize Delay Simulator
-        try:
-            self.delay_config_ = ExperimentConfig(self.experiment_config_int_)
-        except ValueError:
-            self.get_logger().fatal(f"Invalid 'experiment_config' int: {self.experiment_config_int_}")
-            raise
-
         self.delay_simulator_ = DelaySimulator(
             control_freq=self.control_freq_,
             config=self.delay_config_,
-            seed=50 # Fixed seed for experiment reproducibility
+            seed=50
         )
-        self.get_logger().info(f"Initialized with delay config: {self.delay_config_.name}")
         
         # Initialize Buffers and States
         self.leader_q_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
@@ -137,14 +131,13 @@ class AgentNode(Node):
         self.current_remote_q_ = None
         self.current_remote_qd_ = None
         
+        # Warmup Logic (One Full Round)
+        self.warmup_time_ = 1.0 / TRAJECTORY_FREQUENCY 
+        self.warmup_steps_ = int(self.warmup_time_ * self.control_freq_)
+        self.warmup_steps_count_ = 0
+        self.get_logger().info(f"Warmup set for {self.warmup_time_:.2f} seconds ({self.warmup_steps_} steps).")
         
-
         self.target_joint_names_ = [f'panda_joint{i+1}' for i in range(N_JOINTS)]
-        
-        # Initialize LSTM hidden states
-        # self.lstm_hidden_state_ = self.state_estimator_.init_hidden_state(
-        #     batch_size=1, device=self.device_
-        # )
         
         self.rnn_seq_len_ = RNN_SEQUENCE_LENGTH
         self._prefill_buffers()
@@ -191,8 +184,6 @@ class AgentNode(Node):
         self.get_logger().info(f"Prefilled leader history with {num_prefill} initial states.")
         
     def local_robot_state_callback(self, msg: JointState) -> None:
-        """Callback for local robot state updates."""
-        # Re-order joint states to match target_joint_names_
         try:
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
             pos = [msg.position[name_to_index_map[name]] for name in self.target_joint_names_]
@@ -204,12 +195,9 @@ class AgentNode(Node):
             self.leader_q_history_.append(q_new)
             self.leader_qd_history_.append(qd_new)
 
-            # --- THIS IS THE MISSING LINE ---
             self.leader_messages_received_ += 1
             
-            # Start flag
             if not self.is_leader_ready_:
-                # Wait until the buffer has at least one full sequence
                 if self.leader_messages_received_ > self.rnn_seq_len_:
                     self.is_leader_ready_ = True
                     self.get_logger().info(
@@ -217,12 +205,9 @@ class AgentNode(Node):
                     )
         
         except (KeyError, IndexError) as e:
-            self.get_logger().warn(
-                f"Error re-ordering LOCAL state: {e}. Skipping message."
-            )
+            self.get_logger().warn(f"Error re-ordering LOCAL state: {e}")
         
     def remote_robot_state_callback(self, msg: JointState) -> None:
-        """Callback for remote robot state updates."""
         try:
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
             pos = [msg.position[name_to_index_map[name]] for name in self.target_joint_names_]
@@ -236,82 +221,109 @@ class AgentNode(Node):
                 self.get_logger().info("First REMOTE state received.")
                 
         except (KeyError, IndexError) as e:
-            self.get_logger().warn(
-                f"Error re-ordering remote state: {e}. Skipping message."
-            )
+            self.get_logger().warn(f"Error re-ordering remote state: {e}")
     
     def _get_delayed_leader_observation(self) -> np.ndarray:
-        """
-        Get delayed target sequence for state predictor (LSTM) input.
-        This is for STATELESS inference, matching sac_training_algorithm.py.
-        """
         history_len = len(self.leader_q_history_)
-        
-        # Get current observation delay
         obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
-        
-        # Most recent delayed observation index
         most_recent_delayed_idx = -(obs_delay_steps + 1)
-        
-        # Oldest index we need
         oldest_idx = most_recent_delayed_idx - self.rnn_seq_len_ + 1
         
         buffer_q = []
         buffer_qd = []
         
-        # Iterate from oldest to most recent (FORWARD in time)
         for i in range(oldest_idx, most_recent_delayed_idx + 1):
             safe_idx = np.clip(i, -history_len, -1)
             buffer_q.append(self.leader_q_history_[safe_idx].copy())
             buffer_qd.append(self.leader_qd_history_[safe_idx].copy())
         
-        # Stack and concatenate
         sequence = [np.concatenate([q, qd]) for q, qd in zip(buffer_q, buffer_qd)]
-        
-        # Returns shape (rnn_seq_len, 14) e.g., (256, 14)
         return np.array(sequence, dtype=np.float32)
     
     def control_loop_callback(self) -> None:
-        """
-        Main control loop running at control_freq_
-        """
-        
         if not self.is_leader_ready_ or not self.is_remote_ready_:
             return
         
-        try:            
-            # 1. Get the FULL delayed sequence (Shape: (256, 14))
-            delayed_leader_sequence = self._get_delayed_leader_observation()
+        self.warmup_steps_count_ += 1
+
+        # STANDBY MODE (Wait for full round)
+        if self.warmup_steps_count_ < self.warmup_steps_:    
+            # Log periodically
+            if self.warmup_steps_count_ % 50 == 0:
+                remaining = (self.warmup_steps_ - self.warmup_steps_count_) / self.control_freq_
+                self.get_logger().info(f"STANDBY: Filling buffer... {remaining:.1f}s remaining")
+
+            # Hold current position (Standby)
+            safe_q = self.current_remote_q_.copy()
+            safe_qd = np.zeros(N_JOINTS)
+            safe_tau = np.zeros(N_JOINTS)
             
-            # 2. Get current remote state (Shape: (14,))
-            remote_state = np.concatenate([self.current_remote_q_, self.current_remote_qd_])
+            self.publish_predicted_target(safe_q, safe_qd)
+            self.publish_tau_compensation(safe_tau)
+            return
+        
+        # 2. ACTIVE CONTROL MODE
+        try:            
+            # Get Raw Data
+            raw_delayed_sequence = self._get_delayed_leader_observation() # (256, 14)
+            raw_remote_state = np.concatenate([self.current_remote_q_, self.current_remote_qd_]) # (14,)
 
-            # 3. Convert to Tensors for models
-            #    Estimator expects: (batch, seq_len, features) -> (1, 256, 14)
-            full_seq_t = torch.tensor(
-                delayed_leader_sequence, dtype=torch.float32
-            ).to(self.device_).reshape(1, self.rnn_seq_len_, -1) 
+            # Normalize Data
+            if self.obs_mean is not None:
+                # Normalize sequence
+                delayed_seq = (raw_delayed_sequence - self.obs_mean) / np.sqrt(self.obs_var + self.epsilon)
+                # Normalize remote state
+                rem_state = (raw_remote_state - self.obs_mean) / np.sqrt(self.obs_var + self.epsilon)
+            else:
+                delayed_seq = raw_delayed_sequence
+                rem_state = raw_remote_state
 
-            remote_state_t = torch.tensor(
-                remote_state, dtype=torch.float32
-            ).to(self.device_).reshape(1, -1) # Shape: (1, 14)
+            # Convert to Tensors
+            full_seq_t = torch.tensor(delayed_seq, dtype=torch.float32).to(self.device_).reshape(1, self.rnn_seq_len_, -1) 
+            remote_state_t = torch.tensor(rem_state, dtype=torch.float32).to(self.device_).reshape(1, -1)
 
+            # Inference
             with torch.no_grad():
-                predicted_target_t, _ = self.state_estimator_(
-                    full_seq_t
-                )
+                # LSTM predicts NORMALIZED target
+                predicted_norm_target_t, _ = self.state_estimator_(full_seq_t)
                 
-                actor_input_t = torch.cat([predicted_target_t, remote_state_t], dim=1)
-                action_t, _, _ = self.actor_.sample(
-                    actor_input_t,
-                    deterministic=True
-                )
+                actor_input_t = torch.cat([predicted_norm_target_t, remote_state_t], dim=1)
+                action_t, _, _ = self.actor_.sample(actor_input_t, deterministic=True)
 
-            predicted_target_np = predicted_target_t.cpu().numpy().flatten()
-            predicted_q = predicted_target_np[:N_JOINTS]
-            predicted_qd = predicted_target_np[N_JOINTS:]
+            # Denormalize Prediction (Position)
+            pred_norm_np = predicted_norm_target_t.cpu().numpy().flatten()
+            
+            if self.obs_mean is not None:
+                # Reverse normalization: x = (x_norm * std) + mean
+                pred_raw_np = (pred_norm_np * np.sqrt(self.obs_var + self.epsilon)) + self.obs_mean
+            else:
+                pred_raw_np = pred_norm_np
+
+            predicted_q = pred_raw_np[:N_JOINTS]
+            
+            # Calculate Velocity via Finite Difference + Low Pass Filter
+            # We ignore LSTM's velocity prediction (pred_raw_np[N_JOINTS:]) because it is too noisy.
+            if not hasattr(self, '_last_pred_q'):
+                self._last_pred_q = predicted_q.copy()
+                self._filtered_qd = np.zeros(N_JOINTS)
+                predicted_qd = np.zeros(N_JOINTS)
+            else:
+                # Calculate raw velocity: (Current_Pos - Last_Pos) / dt
+                raw_qd = (predicted_q - self._last_pred_q) / self.timer_period_
+                
+                # Apply Low-Pass Filter (Smoothing)
+                # 0.8 = History weight (Smoothness), 0.2 = New sample weight (Responsiveness)
+                self._filtered_qd = 0.8 * self._filtered_qd + 0.2 * raw_qd
+                predicted_qd = self._filtered_qd
+
+            # Update history for next step
+            self._last_pred_q = predicted_q.copy()
+
+            # Prepare Torque
             tau_rl = action_t.cpu().numpy().flatten()
-            tau_rl[-1] = 0.0
+            # Note: Action scaling is handled by Actor architecture (Tanh * Limit), so no manual denorm needed.
+            
+            tau_rl[-1] = 0.0 # Safety: zero out last joint
             
             self.publish_predicted_target(predicted_q, predicted_qd)
             self.publish_tau_compensation(tau_rl)
@@ -322,21 +334,17 @@ class AgentNode(Node):
             traceback.print_exc()
 
     def publish_predicted_target(self, q: np.ndarray, qd: np.ndarray) -> None:
-        """Publish predicted target joint state."""
         msg = JointState()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.name = self.target_joint_names_
         msg.position = q.tolist()
         msg.velocity = qd.tolist()
-        msg.effort = []  # Empty for predicted targets
-        
+        msg.effort = [] 
         self.desired_q_pub_.publish(msg)
 
     def publish_tau_compensation(self, tau_rl: np.ndarray) -> None:
-        """Publish torque compensation as Float64MultiArray."""
         msg = Float64MultiArray()
         msg.data = tau_rl.tolist()
-        
         self.tau_pub_.publish(msg)
     
 def main(args=None):
@@ -346,12 +354,7 @@ def main(args=None):
         agent_node = AgentNode()
         rclpy.spin(agent_node)
     except KeyboardInterrupt:
-        if agent_node:
-            agent_node.get_logger().info("Keyboard interrupt, shutting down...")
-    except Exception as e:
-        print(f"Node failed to initialize or run: {e}")
-        import traceback
-        traceback.print_exc()
+        pass
     finally:
         if agent_node:
             agent_node.destroy_node()

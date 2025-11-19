@@ -45,6 +45,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     VELOCITY_ERROR_SCALE,
     ACTION_PENALTY_WEIGHT,
     RNN_SEQUENCE_LENGTH,
+    TRAJECTORY_FREQUENCY,
 )
 
 
@@ -81,7 +82,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.episode_count = 0
 
         # Safety limits
-        self.max_joint_error = MAX_JOINT_ERROR_TERMINATION  # RL termination threshold
+        self.max_joint_error = MAX_JOINT_ERROR_TERMINATION
         self.joint_limit_margin = JOINT_LIMIT_MARGIN
 
         # Franka Panda robot parameters
@@ -130,12 +131,10 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Get steps to fill the LSTM buffer
         self.buffer_fill_steps = RNN_SEQUENCE_LENGTH 
         
-        # Get leader's warmup steps
-        self.leader_warmup_steps = int(
-            self.leader._warm_up_duration / (1.0 / self.control_freq)
-        )
+        # Warmup logic
+        self.warmup_time = 1.0 / TRAJECTORY_FREQUENCY
+        self.leader_warmup_steps = int(self.warmup_time * self.control_freq)
         
-        # Total warmup is SUM of both
         self.total_warmup_phase_steps = self.leader_warmup_steps + self.buffer_fill_steps
         self.steps_remaining_in_warmup = 0
 
@@ -241,17 +240,20 @@ class TeleoperationEnvWithDelay(gym.Env):
 
         # Get delay input for remote robot
         delayed_q = self._get_delayed_q()
+        delayed_qd = self._get_delayed_qd()
 
         # Warmup phase logic
         if self.steps_remaining_in_warmup > 0:
             self.steps_remaining_in_warmup -= 1
             
             target_q_for_remote = delayed_q 
+            target_qd_for_remote = delayed_qd
             torque_compensation_for_remote = np.zeros(N_JOINTS)
             self._last_predicted_target = None
             
             step_info = self.remote_robot.step(
-                target_q=target_q_for_remote,      
+                target_q=target_q_for_remote,
+                target_qd=target_qd_for_remote,
                 torque_compensation=torque_compensation_for_remote,
             )
             
@@ -275,14 +277,22 @@ class TeleoperationEnvWithDelay(gym.Env):
         # RL learning steps, or Data Collection (if _last_predicted_target is None)
         if self._last_predicted_target is not None:
             target_q_for_remote = self._last_predicted_target[:N_JOINTS]
+            
+            # [CRITICAL ADDITION] Extract velocity from prediction
+            # The LSTM predicts [q (7), qd (7)]. We use the second half.
+            target_qd_for_remote = self._last_predicted_target[N_JOINTS:] 
+            
             torque_compensation_for_remote = actual_action
         else:
             # Data Collection Mode Fallback
-            target_q_for_remote = delayed_q 
+            target_q_for_remote = delayed_q
+            target_qd_for_remote = delayed_qd # [ADDED] Use delayed truth
             torque_compensation_for_remote = np.zeros(N_JOINTS)
         
+        # Step Remote Robot with explicit velocity
         step_info = self.remote_robot.step(
-            target_q=target_q_for_remote,      
+            target_q=target_q_for_remote,
+            target_qd=target_qd_for_remote, # [ADDED] Pass velocity
             torque_compensation=torque_compensation_for_remote,
         )
         
@@ -542,7 +552,6 @@ class TeleoperationEnvWithDelay(gym.Env):
 
         # 2. Check Velocity Limits (CRITICAL FIX)
         # Prevents violent oscillations that accumulate massive negative rewards.
-        # 5.0 rad/s is a reasonable safety limit for a Franka arm.
         _, remote_qd = self.remote_robot.get_joint_state()
         velocity_violation = np.any(np.abs(remote_qd) > 5.0)
         if velocity_violation:
@@ -594,7 +603,6 @@ class TeleoperationEnvWithDelay(gym.Env):
 
         info_dict['current_delay_steps'] = self.get_current_observation_delay()
 
-        # [CRITICAL ADDITION] - You must expose this for the trainer to see!
         info_dict['is_in_warmup'] = (self.steps_remaining_in_warmup > 0)
 
         return info_dict
