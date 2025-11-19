@@ -105,6 +105,9 @@ class ReplayBuffer:
             'dones': torch.tensor(self.dones[indices], device=self.device)
         }
         return batch
+    
+    def __len__(self) -> int:
+        return self.size
 
 
 class SACTrainer:

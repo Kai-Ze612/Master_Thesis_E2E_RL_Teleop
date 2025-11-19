@@ -160,30 +160,37 @@ class TeleoperationEnvWithDelay(gym.Env):
         super().reset(seed=seed)
         
         self.current_step = 0
-        
-        # Reset the warmup counter
-        self.steps_remaining_in_warmup = self.total_warmup_phase_steps
-        
         self.episode_count += 1
-        self._last_predicted_target = None  # Clear predicted target
+        self._last_predicted_target = None
 
-        # Reset leader and remote robot
+        # 1. Reset Simulators
         leader_start_q, _ = self.leader.reset(seed=seed, options=options)
-        self.remote_robot.reset(initial_qpos=self.initial_qpos)
+        self.remote_robot.reset(initial_qpos=self.initial_qpos) # Remote starts at INITIAL_QPOS
        
-        # Clear history buffers
+        # 2. Clear Buffers
         self.leader_q_history.clear()
         self.leader_qd_history.clear()
-        
-        # Clear remote state history
         self.remote_q_history.clear()
         self.remote_qd_history.clear()
 
-        # Pre-fill leader history buffer
+        # 3. Static Pre-fill (To prevent deque IndexError)
+        # We pre-fill the leader history with a static state to stabilize the delay simulator.
         max_history_needed = self.delay_simulator._obs_delay_max_steps + RNN_SEQUENCE_LENGTH + 5
         for _ in range(max_history_needed):
             self.leader_q_history.append(leader_start_q.copy())
             self.leader_qd_history.append(np.zeros(self.n_joints))
+        
+        start_target_q = self._get_delayed_q()
+        self.remote_robot.reset(initial_qpos=start_target_q)
+        
+        self.remote_q_history.clear()
+        self.remote_qd_history.clear()
+        for _ in range(REMOTE_HISTORY_LEN):
+            self.remote_q_history.append(start_target_q.copy())
+            self.remote_qd_history.append(np.zeros(self.n_joints))
+            
+        # The agent immediately starts controlling from a zero-error state.
+        self.steps_remaining_in_warmup = 0
         
         return self._get_observation(), self._get_info()
 
@@ -325,7 +332,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         truncated = self.current_step >= self.max_episode_steps
 
         # Print out information for debugging
-        if (self.current_step % 100 == 1) or (terminated): # 'terminated' will only be true in RL mode
+        if (self.current_step % 1000 == 1) or (terminated): # 'terminated' will only be true in RL mode
             np.set_printoptions(precision=4, suppress=True, linewidth=120)
             
             print(f"\n[DEBUG] Step: {self.current_step}")
@@ -550,12 +557,12 @@ class TeleoperationEnvWithDelay(gym.Env):
         if not np.all(np.isfinite(remote_q)):
             return True, -100.0
 
-        # 2. Check Velocity Limits (CRITICAL FIX)
-        # Prevents violent oscillations that accumulate massive negative rewards.
-        _, remote_qd = self.remote_robot.get_joint_state()
-        velocity_violation = np.any(np.abs(remote_qd) > 5.0)
-        if velocity_violation:
-             return True, -100.0
+        # # 2. Check Velocity Limits (CRITICAL FIX)
+        # # Prevents violent oscillations that accumulate massive negative rewards.
+        # _, remote_qd = self.remote_robot.get_joint_state()
+        # velocity_violation = np.any(np.abs(remote_qd) > 5.0)
+        # if velocity_violation:
+        #      return True, -100.0
 
         # 3. Check Joint Limits
         at_limits = (

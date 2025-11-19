@@ -13,7 +13,7 @@ import numpy as np
 
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251119_090724/estimator_best.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251119_174813/estimator_best.pth"
 ######################################
 
 CHECKPOINT_DIR_RL = "./rl_training_output"
@@ -32,7 +32,7 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 JOINT_LIMIT_MARGIN = 0.05
 KP_LOCAL = np.array([300.0, 300.0, 300.0, 300.0, 125.0, 75.0, 10.0], dtype=np.float32) # local robot PD to calculate qdd
 KD_LOCAL = np.array([35.0,  35.0,  35.0,  35.0,  23.0,  17.0,  6.32], dtype=np.float32)
-WARM_UP_DURATION = 1.0
+WARM_UP_DURATION = 0
 
 ######################################
 # Control Parameters
@@ -134,7 +134,7 @@ SAC_EARLY_STOPPING_PATIENCE = 10
 # Reward Function Configuration
 ######################################
 TRACKING_ERROR_SCALE = 5       # Gaussian bandwidth for exp(-scale * error²)
-VELOCITY_ERROR_SCALE = 0.5       # Gaussian bandwidth for velocity tracking
+VELOCITY_ERROR_SCALE = 1       # Gaussian bandwidth for velocity tracking
 
 ACTION_PENALTY_WEIGHT = 0.01 # penalty for large actions
 
