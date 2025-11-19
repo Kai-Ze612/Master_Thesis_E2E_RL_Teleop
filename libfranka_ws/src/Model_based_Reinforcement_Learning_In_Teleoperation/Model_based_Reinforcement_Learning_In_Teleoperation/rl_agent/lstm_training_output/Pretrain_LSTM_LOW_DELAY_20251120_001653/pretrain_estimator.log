@@ -1,0 +1,41 @@
+2025-11-20 00:16:53 [INFO] ================================================================================
+2025-11-20 00:16:53 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING
+2025-11-20 00:16:53 [INFO] ================================================================================
+2025-11-20 00:16:54 [INFO] Initializing Data Collection...
+2025-11-20 00:16:54 [INFO] Injecting STATIC HOLD sequences (Augmentation)...
+2025-11-20 00:16:54 [INFO] Added 5000 static hold samples.
+2025-11-20 00:16:54 [INFO] Collecting dynamic trajectory data...
+2025-11-20 00:17:02 [INFO]   -> 5000/20000 dynamic samples collected
+2025-11-20 00:17:10 [INFO]   -> 10000/20000 dynamic samples collected
+2025-11-20 00:17:17 [INFO]   -> 15000/20000 dynamic samples collected
+2025-11-20 00:17:25 [INFO]   -> 20000/20000 dynamic samples collected
+2025-11-20 00:17:25 [INFO] Data collection complete. Buffer size: 20000
+2025-11-20 00:17:33 [INFO] Starting training...
+2025-11-20 00:17:33 [INFO] Update 00000 | Train 0.16700797 | Val 0.16650347
+2025-11-20 00:17:33 [INFO]   → NEW BEST!
+2025-11-20 00:17:45 [INFO] Update 01000 | Train 0.00014958 | Val 0.00185683
+2025-11-20 00:17:45 [INFO]   → NEW BEST!
+2025-11-20 00:17:57 [INFO] Update 02000 | Train 0.00021171 | Val 0.00218107
+2025-11-20 00:18:09 [INFO] Update 03000 | Train 0.00007904 | Val 0.00194273
+2025-11-20 00:18:21 [INFO] Update 04000 | Train 0.00008645 | Val 0.00180096
+2025-11-20 00:18:21 [INFO]   → NEW BEST!
+2025-11-20 00:18:33 [INFO] Update 05000 | Train 0.00007741 | Val 0.00174558
+2025-11-20 00:18:33 [INFO]   → NEW BEST!
+2025-11-20 00:18:45 [INFO] Update 06000 | Train 0.00009219 | Val 0.00162360
+2025-11-20 00:18:45 [INFO]   → NEW BEST!
+2025-11-20 00:18:57 [INFO] Update 07000 | Train 0.00011113 | Val 0.00179957
+2025-11-20 00:19:09 [INFO] Update 08000 | Train 0.00009525 | Val 0.00138355
+2025-11-20 00:19:09 [INFO]   → NEW BEST!
+2025-11-20 00:19:21 [INFO] Update 09000 | Train 0.00011322 | Val 0.00185895
+2025-11-20 00:19:33 [INFO] Update 10000 | Train 0.00006428 | Val 0.00150892
+2025-11-20 00:19:45 [INFO] Update 11000 | Train 0.00008852 | Val 0.00160533
+2025-11-20 00:19:58 [INFO] Update 12000 | Train 0.00010792 | Val 0.00142732
+2025-11-20 00:20:10 [INFO] Update 13000 | Train 0.00005874 | Val 0.00172811
+2025-11-20 00:20:22 [INFO] Update 14000 | Train 0.00005275 | Val 0.00189938
+2025-11-20 00:20:34 [INFO] Update 15000 | Train 0.00004350 | Val 0.00182090
+2025-11-20 00:20:46 [INFO] Update 16000 | Train 0.00003872 | Val 0.00171112
+2025-11-20 00:20:58 [INFO] Update 17000 | Train 0.00006895 | Val 0.00173574
+2025-11-20 00:21:11 [INFO] Update 18000 | Train 0.00004937 | Val 0.00179359
+2025-11-20 00:21:11 [INFO] Early stopping
+2025-11-20 00:21:11 [INFO] Training finished! Best Val MSE = 0.00138355
+2025-11-20 00:21:11 [INFO] Model saved to ./lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_001653
