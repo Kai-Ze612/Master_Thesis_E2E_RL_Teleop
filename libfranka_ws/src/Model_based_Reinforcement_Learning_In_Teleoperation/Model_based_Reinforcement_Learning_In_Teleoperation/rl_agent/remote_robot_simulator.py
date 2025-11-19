@@ -106,34 +106,34 @@ class RemoteRobotSimulator:
         """Normalize an angle or array of angles to the range [-pi, pi]."""
         return (angle + np.pi) % (2 * np.pi) - np.pi
     
-    # def compute_gravity_compensation(
-    #     self,
-    #     q: NDArray[np.float64],
-    # ) -> NDArray[np.float64]:
-    #     """Gravity compensation torque for given joint positions."""
+    def compute_gravity_compensation(
+        self,
+        q: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
+        """Gravity compensation torque for given joint positions."""
     
-    #     # Save current state
-    #     qpos_save = self.data.qpos.copy()
-    #     qvel_save = self.data.qvel.copy()
-    #     qacc_save = self.data.qacc.copy()
+        # Save current state
+        qpos_save = self.data.qpos.copy()
+        qvel_save = self.data.qvel.copy()
+        qacc_save = self.data.qacc.copy()
 
-    #     # Set desired state
-    #     self.data.qpos[:self.n_joints] = q
-    #     self.data.qvel[:self.n_joints] = 0.0
-    #     self.data.qacc[:self.n_joints] = 0.0
+        # Set desired state
+        self.data.qpos[:self.n_joints] = q
+        self.data.qvel[:self.n_joints] = 0.0
+        self.data.qacc[:self.n_joints] = 0.0
 
-    #     mujoco.mj_inverse(self.model, self.data)
-    #     tau_gravity = self.data.qfrc_inverse[:self.n_joints].copy()
+        mujoco.mj_inverse(self.model, self.data)
+        tau_gravity = self.data.qfrc_inverse[:self.n_joints].copy()
 
-    #     # Restore original state
-    #     self.data.qpos[:] = qpos_save
-    #     self.data.qvel[:] = qvel_save
-    #     self.data.qacc[:] = qacc_save
+        # Restore original state
+        self.data.qpos[:] = qpos_save
+        self.data.qvel[:] = qvel_save
+        self.data.qacc[:] = qacc_save
         
-    #     # Reset the data state after restoring
-    #     mujoco.mj_forward(self.model, self.data)
+        # Reset the data state after restoring
+        mujoco.mj_forward(self.model, self.data)
 
-    #     return tau_gravity
+        return tau_gravity
 
     def step(
         self,
@@ -153,16 +153,16 @@ class RemoteRobotSimulator:
 
         # Calculate desired acceleration using PD control
         q_error = self._normalize_angle(q_target - q_current) # Normalize angle error
-        qd_error = qd_target - qd_current
-        qdd_desired = self.kp * q_error + self.kd * qd_error
+        qd_error = - qd_current
+        # qdd_desired = self.kp * q_error + self.kd * qd_error
 
         # Compute baseline torque using inverse dynamics
-        # tau_gravity = self.compute_gravity_compensation(q_current)
+        tau_gravity = self.compute_gravity_compensation(q_current)
         tau_pd = self.kp * q_error + self.kd * qd_error
-        # tau_baseline = tau_gravity + tau_pd
+        tau_baseline = tau_gravity + tau_pd
        
         # Applying RL compensation
-        tau_total = tau_pd + torque_compensation
+        tau_total = tau_baseline + torque_compensation
 
         if self.action_delay_steps > 0:
             torque_to_apply = self.torque_buffer[0]
@@ -188,6 +188,9 @@ class RemoteRobotSimulator:
             "joint_error": joint_position_error,
             "velocity_error": joint_velocity_error,
             "limits_hit": limits_hit,
+            "tau_pd": tau_pd,
+            "tau_rl": torque_compensation, # The RAW output from the agent
+            "tau_total": tau_total
         }
         return step_info
 

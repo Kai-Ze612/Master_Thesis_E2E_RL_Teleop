@@ -10,7 +10,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import RNN_SEQUENCE_LENGTH
 
 # ========================= CONFIG =========================
-LSTM_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251118_171943/estimator_best.pth"
+LSTM_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251119_100414/estimator_best.pth"
 DELAY_CONFIG = ExperimentConfig.LOW_DELAY     # or .FULL_RANGE_COVER, etc.
 # =========================================================
 

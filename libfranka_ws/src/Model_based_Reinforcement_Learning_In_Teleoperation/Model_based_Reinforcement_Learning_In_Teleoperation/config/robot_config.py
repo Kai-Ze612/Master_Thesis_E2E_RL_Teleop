@@ -13,7 +13,7 @@ import numpy as np
 
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251118_210922/estimator_best.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251119_100414/estimator_best.pth"
 ######################################
 
 CHECKPOINT_DIR_RL = "./rl_training_output"
@@ -30,8 +30,8 @@ TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.fl
 MAX_TORQUE_COMPENSATION = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 5.0], dtype=np.float32)
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], dtype=np.float32)
 JOINT_LIMIT_MARGIN = 0.05
-KP_LOCAL = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32) # local robot PD to calculate qdd
-KD_LOCAL = np.array([50.0,  50.0,  50.0,  50.0,  30.0,  25.0,  15.0], dtype=np.float32)
+KP_LOCAL = np.array([300.0, 300.0, 300.0, 300.0, 125.0, 75.0, 10.0], dtype=np.float32) # local robot PD to calculate qdd
+KD_LOCAL = np.array([35.0,  35.0,  35.0,  35.0,  23.0,  17.0,  6.32], dtype=np.float32)
 WARM_UP_DURATION = 2.0
 
 ######################################
@@ -39,8 +39,8 @@ WARM_UP_DURATION = 2.0
 ######################################
 DEFAULT_CONTROL_FREQ = 500
 DEFAULT_PUBLISH_FREQ = 500
-DEFAULT_KP_REMOTE = np.array([80.0, 80.0, 50.0, 50.0, 30.0, 30.0, 5.0], dtype=np.float32) # We use kp kd to calculate baseline tau
-DEFAULT_KD_REMOTE = np.array([ 20.0,  20.0,  17.0,  17.0, 8.0, 8.0,  1.5], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([70.0, 70.0, 70.0, 50.0, 30.0, 30.0, 0.0], dtype=np.float32) # We use kp kd to calculate baseline tau
+DEFAULT_KD_REMOTE = np.array([ 7.0,  7.0,  7.0,  5.0, 4.5, 4.5,  0.0], dtype=np.float32)
 
 ######################################
 # IK Solver Parameterss
@@ -63,7 +63,7 @@ TRAJECTORY_FREQUENCY = 0.1
 # pre-trained LSTM hyperparameters
 ######################################
 ESTIMATOR_LEARNING_RATE = 1e-4
-ESTIMATOR_BATCH_SIZE = 512
+ESTIMATOR_BATCH_SIZE = 256
 ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_TOTAL_UPDATES = 50000
 ESTIMATOR_VAL_STEPS = 5000
@@ -71,7 +71,7 @@ ESTIMATOR_VAL_FREQ = 1000
 ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
 
-RNN_HIDDEN_DIM = 512
+RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 4
 RNN_SEQUENCE_LENGTH = 200 # Input sequence for LSTM
 
@@ -135,14 +135,14 @@ SAC_EARLY_STOPPING_PATIENCE = 10
 TRACKING_ERROR_SCALE = 5       # Gaussian bandwidth for exp(-scale * error²)
 VELOCITY_ERROR_SCALE = 0.5       # Gaussian bandwidth for velocity tracking
 
-ACTION_PENALTY_WEIGHT = 0.001  # penalty for large actions
+ACTION_PENALTY_WEIGHT = 0.01 # penalty for large actions
 
 ######################################
 # Environment Settings
 ######################################
 
 # NUM_ENVIRONMENTS = 5 # Number of parallel environments for training
-NUM_ENVIRONMENTS = 1
+NUM_ENVIRONMENTS = 20
 
 ######################################
 # Logging and Checkpointing

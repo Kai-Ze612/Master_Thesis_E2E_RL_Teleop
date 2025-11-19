@@ -458,11 +458,10 @@ class SACTrainer:
                 actions_batch = policy_actions
 
             # Set predicted targets in environments (for reward calculation)
-            for i in range(self.num_envs):
-                self.env.env_method("set_predicted_target", predicted_state_batch[i], indices=[i])
-            
+            augmented_actions_batch = np.concatenate([actions_batch, predicted_state_batch], axis=1)
+           
             # --- Environment Step
-            _, rewards_batch, dones_batch, infos_batch = self.env.step(actions_batch)
+            _, rewards_batch, dones_batch, infos_batch = self.env.step(augmented_actions_batch)
             
             # Get next state observations
             next_delayed_buffers_list = self.env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
@@ -502,12 +501,6 @@ class SACTrainer:
                     # Track completed episode reward
                     completed_episode_rewards.append(episode_rewards[i])
                     
-                    # ### MODIFICATION: Removed "Reset hidden state" block.
-                    # Reason: Your LSTM uses a sliding window (`get_delayed_target_buffer`).
-                    # The hidden state is re-initialized to zero for every forward pass
-                    # on the new window. Manual state management here is not needed and
-                    # caused a crash because `self.hidden_states` did not exist.
-
                     # Reset episode tracking
                     episode_rewards[i] = 0.0
                     episode_lengths[i] = 0

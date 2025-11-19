@@ -59,7 +59,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         randomize_trajectory: bool = False,
         seed: Optional[int] = None,
         render_mode: Optional[str] = None,
-        pretrained_estimator_path: Optional[str] = None,
         # Initialize trajectory as simplest for simplicity
     ):
         super().__init__()
@@ -220,6 +219,18 @@ class TeleoperationEnvWithDelay(gym.Env):
         Returns: observation, reward, terminated, truncated, info
         """
         
+        actual_action = action
+        
+        # Check if we received an augmented vector (Training Mode: 7 + 14 = 21)
+        if action.size > self.n_joints:
+            # Force slice the first 7 elements as the torque action
+            actual_action = action[:self.n_joints]
+            
+            # Extract prediction if it matches the augmented protocol
+            if action.shape[0] == self.n_joints * 3: 
+                predicted_state = action[self.n_joints:]
+                self.set_predicted_target(predicted_state)
+        
         self.current_step += 1
         self._step_counter += 1
         
@@ -264,7 +275,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         # RL learning steps, or Data Collection (if _last_predicted_target is None)
         if self._last_predicted_target is not None:
             target_q_for_remote = self._last_predicted_target[:N_JOINTS]
-            torque_compensation_for_remote = action
+            torque_compensation_for_remote = actual_action
         else:
             # Data Collection Mode Fallback
             target_q_for_remote = delayed_q 
@@ -320,7 +331,16 @@ class TeleoperationEnvWithDelay(gym.Env):
             print(f"  -> Tracking Error (norm): {np.linalg.norm(true_target_q - remote_q):.4f} rad")
             if self._last_predicted_target is not None:
                 print(f"  -> Joint Error (for term): {joint_error:.6f}")
-        
+
+            tau_pd = step_info.get('tau_pd', np.zeros(7))
+            tau_rl = step_info.get('tau_rl', np.zeros(7))
+            tau_total = step_info.get('tau_total', np.zeros(7))
+
+            print(f"  Torque Breakdown (Nm):")
+            print(f"   > PD Baseline:   {tau_pd}")
+            print(f"   > RL Compensat:  {tau_rl}")
+            print(f"   > Total Desired: {tau_total}")
+            
         if self.render_mode == "human":
             self.render()        
         

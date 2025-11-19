@@ -1,0 +1,88 @@
+2025-11-19 11:40:03 [INFO] ================================================================================
+2025-11-19 11:40:03 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING
+2025-11-19 11:40:03 [INFO] ================================================================================
+2025-11-19 11:40:03 [INFO] Configuration:
+2025-11-19 11:40:03 [INFO]   Delay Config: MEDIUM_DELAY
+2025-11-19 11:40:03 [INFO]   Train Trajectory: figure_8
+2025-11-19 11:40:03 [INFO]   Environments: 1
+2025-11-19 11:40:03 [INFO]   Sequence Length: 200
+2025-11-19 11:40:03 [INFO]   Randomize Trajectory: False
+2025-11-19 11:40:03 [INFO] Hyperparameters:
+2025-11-19 11:40:03 [INFO]   Learning Rate: 0.0001
+2025-11-19 11:40:03 [INFO]   Batch Size: 256
+2025-11-19 11:40:03 [INFO]   Buffer Size: 200000
+2025-11-19 11:40:03 [INFO]   Total Updates: 50000
+2025-11-19 11:40:03 [INFO]   Validation Frequency: 1000 steps
+2025-11-19 11:40:03 [INFO]   Early Stopping Patience: 10 checks
+2025-11-19 11:40:03 [INFO]   LR Scheduler Patience: 5 checks
+2025-11-19 11:40:03 [INFO]   RNN Hidden Dimension: 512
+2025-11-19 11:40:03 [INFO]   RNN Number of Layers: 3
+2025-11-19 11:40:03 [INFO] ================================================================================
+2025-11-19 11:40:03 [INFO] OVERFIT MODE: Collecting complete static dataset...
+2025-11-19 11:40:11 [INFO]   -> 5000/200000 samples collected
+2025-11-19 11:40:18 [INFO]   -> 10000/200000 samples collected
+2025-11-19 11:40:25 [INFO]   -> 15000/200000 samples collected
+2025-11-19 11:40:33 [INFO]   -> 20000/200000 samples collected
+2025-11-19 11:40:40 [INFO]   -> 25000/200000 samples collected
+2025-11-19 11:40:47 [INFO]   -> 30000/200000 samples collected
+2025-11-19 11:40:54 [INFO]   -> 35000/200000 samples collected
+2025-11-19 11:41:02 [INFO]   -> 40000/200000 samples collected
+2025-11-19 11:41:09 [INFO]   -> 45000/200000 samples collected
+2025-11-19 11:41:17 [INFO]   -> 50000/200000 samples collected
+2025-11-19 11:41:24 [INFO]   -> 55000/200000 samples collected
+2025-11-19 11:41:31 [INFO]   -> 60000/200000 samples collected
+2025-11-19 11:41:39 [INFO]   -> 65000/200000 samples collected
+2025-11-19 11:41:46 [INFO]   -> 70000/200000 samples collected
+2025-11-19 11:41:53 [INFO]   -> 75000/200000 samples collected
+2025-11-19 11:42:00 [INFO]   -> 80000/200000 samples collected
+2025-11-19 11:42:08 [INFO]   -> 85000/200000 samples collected
+2025-11-19 11:42:16 [INFO]   -> 90000/200000 samples collected
+2025-11-19 11:42:23 [INFO]   -> 95000/200000 samples collected
+2025-11-19 11:42:31 [INFO]   -> 100000/200000 samples collected
+2025-11-19 11:42:38 [INFO]   -> 105000/200000 samples collected
+2025-11-19 11:42:46 [INFO]   -> 110000/200000 samples collected
+2025-11-19 11:42:53 [INFO]   -> 115000/200000 samples collected
+2025-11-19 11:43:01 [INFO]   -> 120000/200000 samples collected
+2025-11-19 11:43:08 [INFO]   -> 125000/200000 samples collected
+2025-11-19 11:43:16 [INFO]   -> 130000/200000 samples collected
+2025-11-19 11:43:23 [INFO]   -> 135000/200000 samples collected
+2025-11-19 11:43:31 [INFO]   -> 140000/200000 samples collected
+2025-11-19 11:43:38 [INFO]   -> 145000/200000 samples collected
+2025-11-19 11:43:45 [INFO]   -> 150000/200000 samples collected
+2025-11-19 11:43:53 [INFO]   -> 155000/200000 samples collected
+2025-11-19 11:44:00 [INFO]   -> 160000/200000 samples collected
+2025-11-19 11:44:08 [INFO]   -> 165000/200000 samples collected
+2025-11-19 11:44:15 [INFO]   -> 170000/200000 samples collected
+2025-11-19 11:44:23 [INFO]   -> 175000/200000 samples collected
+2025-11-19 11:44:30 [INFO]   -> 180000/200000 samples collected
+2025-11-19 11:44:38 [INFO]   -> 185000/200000 samples collected
+2025-11-19 11:44:45 [INFO]   -> 190000/200000 samples collected
+2025-11-19 11:44:53 [INFO]   -> 195000/200000 samples collected
+2025-11-19 11:45:00 [INFO]   -> 200000/200000 samples collected
+2025-11-19 11:45:00 [INFO] Data collection init complete. Buffer size: 200000
+2025-11-19 11:45:00 [INFO] Filling validation buffer...
+2025-11-19 11:45:08 [INFO] Starting training...
+2025-11-19 11:45:08 [INFO] Update 00000 | Train 0.15209240 | Val 0.18113473
+2025-11-19 11:45:08 [INFO]   → NEW BEST!
+2025-11-19 11:45:34 [INFO] Update 01000 | Train 0.00111735 | Val 0.00903214
+2025-11-19 11:45:34 [INFO]   → NEW BEST!
+2025-11-19 11:46:00 [INFO] Update 02000 | Train 0.00119619 | Val 0.00720708
+2025-11-19 11:46:00 [INFO]   → NEW BEST!
+2025-11-19 11:46:27 [INFO] Update 03000 | Train 0.00100129 | Val 0.00844108
+2025-11-19 11:46:55 [INFO] Update 04000 | Train 0.00093602 | Val 0.00738672
+2025-11-19 11:47:27 [INFO] Update 05000 | Train 0.00109113 | Val 0.00726425
+2025-11-19 11:48:04 [INFO] Update 06000 | Train 0.00096140 | Val 0.00556812
+2025-11-19 11:48:04 [INFO]   → NEW BEST!
+2025-11-19 11:48:32 [INFO] Update 07000 | Train 0.00077694 | Val 0.00635225
+2025-11-19 11:49:02 [INFO] Update 08000 | Train 0.00093376 | Val 0.00769437
+2025-11-19 11:49:34 [INFO] Update 09000 | Train 0.00109626 | Val 0.00741290
+2025-11-19 11:50:06 [INFO] Update 10000 | Train 0.00111486 | Val 0.00684744
+2025-11-19 11:50:38 [INFO] Update 11000 | Train 0.00093507 | Val 0.00578584
+2025-11-19 11:51:09 [INFO] Update 12000 | Train 0.00077367 | Val 0.00640100
+2025-11-19 11:51:40 [INFO] Update 13000 | Train 0.00079605 | Val 0.00563598
+2025-11-19 11:52:08 [INFO] Update 14000 | Train 0.00077947 | Val 0.00650793
+2025-11-19 11:52:36 [INFO] Update 15000 | Train 0.00064843 | Val 0.00725211
+2025-11-19 11:53:04 [INFO] Update 16000 | Train 0.00092565 | Val 0.00661053
+2025-11-19 11:53:04 [INFO] Early stopping
+2025-11-19 11:53:04 [INFO] Training finished! Best Val MSE = 0.00556812
+2025-11-19 11:53:04 [INFO] Model saved to ./lstm_training_output/Pretrain_LSTM_MEDIUM_DELAY_20251119_114003
