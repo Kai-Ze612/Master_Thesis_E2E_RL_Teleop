@@ -393,7 +393,7 @@ class SACTrainer:
                 target_param.data.add_(SAC_TAU * param.data)
                 
         return metrics
-        
+       
     def train(self, total_timesteps: int):
         """ The main training loop for Model-Based SAC. """
         
@@ -445,15 +445,17 @@ class SACTrainer:
             true_target_batch = np.array(true_targets_list)
 
             # --- Action selection phase
+            policy_actions, predicted_state_batch = self.select_action(
+                delayed_seq_batch, remote_state_batch, deterministic=False
+            )
+
+            # 2. Decide on the Action (Exploration vs Exploitation)
             if self.total_timesteps < SAC_START_STEPS:
-                # Exploration phase: random actions
+                # Exploration phase: Override policy action with random action
                 actions_batch = np.array([self.env.action_space.sample() for _ in range(self.num_envs)])
-                predicted_state_batch = np.zeros_like(remote_state_batch)
             else:
-                # Exploitation phase: use learned policy
-                actions_batch, predicted_state_batch = self.select_action(
-                    delayed_seq_batch, remote_state_batch
-                )
+                # Exploitation phase: Use the policy action calculated above
+                actions_batch = policy_actions
 
             # Set predicted targets in environments (for reward calculation)
             for i in range(self.num_envs):

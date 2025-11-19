@@ -11,12 +11,14 @@ Pipelines:
 
 from __future__ import annotations
 from cmath import tau
-from typing import Tuple
+from typing import Tuple, Optional
+from collections import deque
 
 import mujoco
 import numpy as np
 from numpy.typing import NDArray
 
+from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     DEFAULT_MUJOCO_MODEL_PATH,
     DEFAULT_CONTROL_FREQ,
@@ -34,6 +36,8 @@ class RemoteRobotSimulator:
     """MuJoCo-based simulator for the remote robot (follower)."""
     def __init__(
         self,
+        delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY,
+        seed: Optional[int] = None,
     ):
         # Initialize MuJoCo model and data
         self.model_path = DEFAULT_MUJOCO_MODEL_PATH
@@ -71,6 +75,14 @@ class RemoteRobotSimulator:
         # State tracking
         self.last_q_target = np.zeros(self.n_joints)
 
+        # Action delay
+        temp_delay_sim = DelaySimulator(self.control_freq, config=delay_config, seed=seed)
+        self.action_delay_steps = temp_delay_sim.get_action_delay_steps()
+        
+        # Create a FIFO buffer for torque actions
+        # If delay is 0, maxlen=1 implies immediate use (requires slight logic adjustment below)
+        self.torque_buffer = deque(maxlen=max(1, self.action_delay_steps))
+        
     def reset(
         self,
         initial_qpos: NDArray[np.float64]
@@ -84,6 +96,12 @@ class RemoteRobotSimulator:
 
         self.last_q_target = initial_qpos.copy()
 
+        self.torque_buffer.clear()
+        
+        if self.action_delay_steps > 0:
+            for _ in range(self.action_delay_steps):
+                self.torque_buffer.append(np.zeros(self.n_joints))
+        
     def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
         """Normalize an angle or array of angles to the range [-pi, pi]."""
         return (angle + np.pi) % (2 * np.pi) - np.pi
@@ -145,10 +163,17 @@ class RemoteRobotSimulator:
        
         # Applying RL compensation
         tau_total = tau_pd + torque_compensation
-       
+
+        if self.action_delay_steps > 0:
+            torque_to_apply = self.torque_buffer[0]
+            self.torque_buffer.append(tau_total.copy())
+        else:
+            # Immediate execution if no delay
+            torque_to_apply = tau_total
+        
         # Apply safety torque limits
-        tau_clipped = np.clip(tau_total, -self.torque_limits, self.torque_limits)
-        limits_hit = np.any(tau_total != tau_clipped)
+        tau_clipped = np.clip(torque_to_apply, -self.torque_limits, self.torque_limits)
+        limits_hit = np.any(torque_to_apply != tau_clipped)
         
         self.data.ctrl[:self.n_joints] = tau_clipped
         for _ in range(self.n_substeps):

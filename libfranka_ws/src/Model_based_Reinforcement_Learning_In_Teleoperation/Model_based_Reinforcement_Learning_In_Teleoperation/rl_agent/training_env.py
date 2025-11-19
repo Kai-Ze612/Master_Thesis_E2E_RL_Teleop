@@ -26,7 +26,6 @@ import matplotlib.pyplot as plt
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import LocalRobotSimulator, TrajectoryType
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.remote_robot_simulator import RemoteRobotSimulator
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import StateEstimator
 
 # Configuration imports
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
@@ -100,10 +99,6 @@ class TeleoperationEnvWithDelay(gym.Env):
             config=delay_config,
             seed=seed
         )
-
-        # Action delay
-        self.action_delay_steps = self.delay_simulator.get_action_delay_steps()
-        self.torque_buffer = deque() if self.action_delay_steps > 0 else None
         
         # Initialize Leader and Remote Robot
         self.trajectory_type = trajectory_type
@@ -112,7 +107,11 @@ class TeleoperationEnvWithDelay(gym.Env):
             trajectory_type=self.trajectory_type,
             randomize_params=self.randomize_trajectory
         )
-        self.remote_robot = RemoteRobotSimulator()
+        
+        self.remote_robot = RemoteRobotSimulator(
+            delay_config=delay_config,
+            seed=seed
+        )
 
         # Calculate buffer sizes based on maximum possible delays
         max_obs_delay = self.delay_simulator._obs_delay_max_steps
@@ -173,7 +172,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Reset leader and remote robot
         leader_start_q, _ = self.leader.reset(seed=seed, options=options)
         self.remote_robot.reset(initial_qpos=self.initial_qpos)
-        
+       
         # Clear history buffers
         self.leader_q_history.clear()
         self.leader_qd_history.clear()
@@ -510,18 +509,32 @@ class TeleoperationEnvWithDelay(gym.Env):
     ) -> Tuple[bool, float]:
         """
         Termination occurs if:
-            1. Joint limits are approached (within margin)
-            2. Joint error is too high (> max_joint_error)
-            3. Joint error is NaN (numerical instability)
+            1. Numerical Instability (NaNs or Infinity) in state
+            2. Velocity Limit Violation (Safety/Oscillation check)
+            3. Joint limits are breached
+            4. Tracking error is excessive
         """
         
-        # Check joint limits
+        # 1. Check for Numerical Instability (CRITICAL FIX)
+        # If the physics exploded (Infinity), kill immediately.
+        if not np.all(np.isfinite(remote_q)):
+            return True, -100.0
+
+        # 2. Check Velocity Limits (CRITICAL FIX)
+        # Prevents violent oscillations that accumulate massive negative rewards.
+        # 5.0 rad/s is a reasonable safety limit for a Franka arm.
+        _, remote_qd = self.remote_robot.get_joint_state()
+        velocity_violation = np.any(np.abs(remote_qd) > 5.0)
+        if velocity_violation:
+             return True, -100.0
+
+        # 3. Check Joint Limits
         at_limits = (
             np.any(remote_q <= self.joint_limits_lower + self.joint_limit_margin) or
             np.any(remote_q >= self.joint_limits_upper - self.joint_limit_margin)
         )
         
-        # Check for instability or excessive error
+        # 4. Check Excessive Tracking Error
         high_error = np.isnan(joint_error) or joint_error > self.max_joint_error
 
         terminated = at_limits or high_error

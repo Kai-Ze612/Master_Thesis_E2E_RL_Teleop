@@ -13,7 +13,7 @@ import numpy as np
 
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_FULL_RANGE_COVER_20251118_140348/estimator_best.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_HIGH_DELAY_20251118_210922/estimator_best.pth"
 ######################################
 
 CHECKPOINT_DIR_RL = "./rl_training_output"
@@ -30,7 +30,7 @@ TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.fl
 MAX_TORQUE_COMPENSATION = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 5.0], dtype=np.float32)
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], dtype=np.float32)
 JOINT_LIMIT_MARGIN = 0.05
-KP_LOCAL = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32)
+KP_LOCAL = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0], dtype=np.float32) # local robot PD to calculate qdd
 KD_LOCAL = np.array([50.0,  50.0,  50.0,  50.0,  30.0,  25.0,  15.0], dtype=np.float32)
 WARM_UP_DURATION = 2.0
 
@@ -39,8 +39,8 @@ WARM_UP_DURATION = 2.0
 ######################################
 DEFAULT_CONTROL_FREQ = 500
 DEFAULT_PUBLISH_FREQ = 500
-DEFAULT_KP_REMOTE = np.array([150.0, 300.0, 100.0, 300.0, 50.0, 30.0, 15.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([ 25.0,  75.0,  20.0,  75.0, 15.0, 10.0,  5.0], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([80.0, 80.0, 50.0, 50.0, 30.0, 30.0, 5.0], dtype=np.float32) # We use kp kd to calculate baseline tau
+DEFAULT_KD_REMOTE = np.array([ 20.0,  20.0,  17.0,  17.0, 8.0, 8.0,  1.5], dtype=np.float32)
 
 ######################################
 # IK Solver Parameterss
@@ -79,7 +79,7 @@ RNN_SEQUENCE_LENGTH = 200 # Input sequence for LSTM
 # RL Environment Parameters
 ######################################
 MAX_EPISODE_STEPS = 20000
-MAX_JOINT_ERROR_TERMINATION = 1.0
+MAX_JOINT_ERROR_TERMINATION = 2.0
 
 REMOTE_HISTORY_LEN = 5
 
@@ -103,8 +103,8 @@ SAC_MLP_HIDDEN_DIMS = [512, 256]
 SAC_ACTIVATION = 'relu'
 
 # Learning Rates
-SAC_LEARNING_RATE = 3e-5        # LR for Actor and Critic
-ALPHA_LEARNING_RATE = 3e-5      # LR for temperature auto-tuning
+SAC_LEARNING_RATE = 3e-4        # LR for Actor and Critic
+ALPHA_LEARNING_RATE = 3e-4      # LR for temperature auto-tuning
 
 # SAC Parameters
 SAC_GAMMA = 0.99
@@ -132,10 +132,10 @@ SAC_EARLY_STOPPING_PATIENCE = 10
 ######################################
 # Reward Function Configuration
 ######################################
-TRACKING_ERROR_SCALE = 100       # Gaussian bandwidth for exp(-scale * error²)
-VELOCITY_ERROR_SCALE = 10       # Gaussian bandwidth for velocity tracking
+TRACKING_ERROR_SCALE = 5       # Gaussian bandwidth for exp(-scale * error²)
+VELOCITY_ERROR_SCALE = 0.5       # Gaussian bandwidth for velocity tracking
 
-ACTION_PENALTY_WEIGHT = 0.01  # penalty for large actions
+ACTION_PENALTY_WEIGHT = 0.001  # penalty for large actions
 
 ######################################
 # Environment Settings
