@@ -143,7 +143,7 @@ ACTION_PENALTY_WEIGHT = 0.01 # penalty for large actions
 ######################################
 
 # NUM_ENVIRONMENTS = 5 # Number of parallel environments for training
-NUM_ENVIRONMENTS = 20
+NUM_ENVIRONMENTS = 1
 
 ######################################
 # Logging and Checkpointing

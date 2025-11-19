@@ -7,14 +7,6 @@ pipelines:
 3. Train the StateEstimator LSTM in a supervised learning. (min MSE loss)
 """
 
-"""
-Pre-training script for the State Estimator (LSTM).
-
-Updates:
-1. Added 'Static Hold Augmentation' to teach the LSTM to handle stationary inputs.
-"""
-
-# ... (Previous imports remain the same)
 # Python imports 
 import os
 import sys
