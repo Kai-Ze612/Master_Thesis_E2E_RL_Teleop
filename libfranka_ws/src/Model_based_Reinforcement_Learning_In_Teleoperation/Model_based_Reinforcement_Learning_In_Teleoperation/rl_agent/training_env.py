@@ -257,18 +257,19 @@ class TeleoperationEnvWithDelay(gym.Env):
         if (self.current_step % 1000 == 1) or (terminated):
             
             np.set_printoptions(precision=4, suppress=True, linewidth=120)
-                    
+            true_target_q = true_target[:self.n_joints]
+              
             print(f"\n[DEBUG] Step: {self.current_step}")
-            print(f"  True Target q: {true_target}")
+            print(f"  True Target q: {true_target_q}")
             if predicted_q is not None:
                 print(f"  Predicted q:   {predicted_q}")
-                pred_error_norm = np.linalg.norm(true_target - predicted_q)
+                pred_error_norm = np.linalg.norm(true_target_q - predicted_q)
                 print(f"  -> Prediction Error (norm): {pred_error_norm:.4f} rad")
             else:
                 print(f"  Predicted q:   None (Data Collection Mode)") # This is now expected
             
             print(f"  Remote Robot q:  {remote_q}")
-            print(f"  -> Tracking Error (norm): {np.linalg.norm(true_target - remote_q):.4f} rad")
+            print(f"  -> Tracking Error (norm): {np.linalg.norm(true_target_q - remote_q):.4f} rad")
             if self._last_predicted_target is not None:
                 print(f"  -> Joint Error (for term): {joint_error:.6f}")
 
