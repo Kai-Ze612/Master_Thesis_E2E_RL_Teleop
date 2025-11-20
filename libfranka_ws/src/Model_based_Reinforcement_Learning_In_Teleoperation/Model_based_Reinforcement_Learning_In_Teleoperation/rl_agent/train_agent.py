@@ -38,7 +38,7 @@ def setup_logging(output_dir: str) -> logging.Logger:
     # Create formatters
     detailed_formatter = logging.Formatter(
         '%(asctime)s [%(levelname)s] %(name)s - %(message)s',
-        datefmt='%Y-m-%d %H:%M:%S'
+        datefmt='%Y-%m-%d %H:%M:%S'
     )
     
     # File handler (detailed logging)

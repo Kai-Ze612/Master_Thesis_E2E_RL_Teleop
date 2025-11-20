@@ -7,13 +7,13 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251119_184254/interrupted_policy.pth"
-# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_114040/estimator_best.pth"
+DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251119_184254/interrupted_policy.pth"
+LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_114040/estimator_best.pth"
 
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_003326/estimator_best.pth"
+# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_003326/estimator_best.pth"
 ######################################
 
 CHECKPOINT_DIR_RL = "./rl_training_output"
@@ -28,10 +28,14 @@ JOINT_LIMITS_LOWER = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0
 JOINT_LIMITS_UPPER = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973], dtype=np.float32)
 TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
 MAX_TORQUE_COMPENSATION = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 5.0], dtype=np.float32)
+
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], dtype=np.float32)
+
 JOINT_LIMIT_MARGIN = 0.05
+
 KP_LOCAL = np.array([300.0, 300.0, 300.0, 300.0, 125.0, 75.0, 10.0], dtype=np.float32) # local robot PD to calculate qdd
 KD_LOCAL = np.array([35.0,  35.0,  35.0,  35.0,  23.0,  17.0,  6.32], dtype=np.float32)
+
 WARM_UP_DURATION = 1
 
 ######################################
@@ -73,11 +77,11 @@ ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 128
-RNN_NUM_LAYERS = 4
+RNN_NUM_LAYERS = 3
 RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
 
-DELAY_INPUT_NORM_FACTOR = 10.0  # Factor to normalize delay input for LSTM
-TARGET_DELTA_SCALE = 10.0  # This scales 1e-4 position changes to ~1e-2 range for gradient stability
+DELAY_INPUT_NORM_FACTOR = 10.0
+TARGET_DELTA_SCALE = 1000.0
 
 ######################################
 # RL Environment Parameters
