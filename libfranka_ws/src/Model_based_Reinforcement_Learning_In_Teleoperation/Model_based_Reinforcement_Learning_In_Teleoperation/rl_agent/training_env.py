@@ -382,7 +382,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         raw_delay_steps = int(self.get_current_observation_delay())
 
         # 2. Get Normalized Float for NETWORK INPUT (e.g., 0.6)
-        normalized_delay = float(raw_delay_steps) / 100.0
+        normalized_delay = float(raw_delay_steps) / 1000.0
 
         # 3. Calculate Integer Indices
         # We look back 'raw_delay_steps' into the past

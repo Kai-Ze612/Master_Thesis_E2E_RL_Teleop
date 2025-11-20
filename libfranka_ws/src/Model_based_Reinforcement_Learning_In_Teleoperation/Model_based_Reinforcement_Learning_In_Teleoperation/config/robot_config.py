@@ -58,7 +58,7 @@ IK_CONTINUITY_GAIN = 0.5
 ######################################
 TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.5], dtype=np.float32)
 TRAJECTORY_SCALE = np.array([0.2, 0.2], dtype=np.float32)
-TRAJECTORY_FREQUENCY = 0.05  # Hz
+TRAJECTORY_FREQUENCY = 0.025  # Hz
 
 ######################################
 # pre-trained LSTM hyperparameters
