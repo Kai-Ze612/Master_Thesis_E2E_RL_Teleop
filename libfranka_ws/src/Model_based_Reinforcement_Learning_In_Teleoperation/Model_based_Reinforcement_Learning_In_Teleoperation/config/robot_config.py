@@ -7,17 +7,18 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251119_184254/interrupted_policy.pth"
-LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_114040/estimator_best.pth"
+# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251119_184254/interrupted_policy.pth"
+# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_114040/estimator_best.pth"
 
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_003326/estimator_best.pth"
+DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_003326/estimator_best.pth"
 ######################################
-
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
+
+
 ######################################
 # Franka Panda Robot Parameters
 ######################################
@@ -31,12 +32,12 @@ MAX_TORQUE_COMPENSATION = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 5.0], dtyp
 
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], dtype=np.float32)
 
-JOINT_LIMIT_MARGIN = 0.05
+JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
 KP_LOCAL = np.array([300.0, 300.0, 300.0, 300.0, 125.0, 75.0, 10.0], dtype=np.float32) # local robot PD to calculate qdd
 KD_LOCAL = np.array([35.0,  35.0,  35.0,  35.0,  23.0,  17.0,  6.32], dtype=np.float32)
 
-WARM_UP_DURATION = 1
+WARM_UP_DURATION = 1  # before starting sending trajectory commands
 
 ######################################
 # Control Parameters
@@ -45,7 +46,7 @@ DEFAULT_CONTROL_FREQ = 100
 DEFAULT_PUBLISH_FREQ = 100
 
 DEFAULT_KP_REMOTE = np.array([70.0, 70.0, 70.0, 50.0, 30.0, 20.0, 0.0], dtype=np.float32) # We use kp kd to calculate baseline tau
-DEFAULT_KD_REMOTE = np.array([ 7.0,  7.0,  7.0,  5.0, 4.5, 3.0,  0.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([ 7.0,  7.0,  7.0,  5.0, 4.5, 3.0,  0.0], dtype=np.float32) 
 
 ######################################
 # IK Solver Parameterss
@@ -67,10 +68,10 @@ TRAJECTORY_FREQUENCY = 0.1  # Hz
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 1e-3
+ESTIMATOR_LEARNING_RATE = 5e-3
 ESTIMATOR_BATCH_SIZE = 256
-ESTIMATOR_BUFFER_SIZE = 20000
-ESTIMATOR_TOTAL_UPDATES = 50000
+ESTIMATOR_BUFFER_SIZE = 100000
+ESTIMATOR_TOTAL_UPDATES = 500000
 ESTIMATOR_VAL_STEPS = 5000
 ESTIMATOR_VAL_FREQ = 1000
 ESTIMATOR_PATIENCE = 10
@@ -86,8 +87,8 @@ TARGET_DELTA_SCALE = 1000.0
 ######################################
 # RL Environment Parameters
 ######################################
-MAX_EPISODE_STEPS = 20000
-MAX_JOINT_ERROR_TERMINATION = 5.0
+MAX_EPISODE_STEPS = 10000
+MAX_JOINT_ERROR_TERMINATION = 1.0
 
 REMOTE_HISTORY_LEN = 5
 
@@ -129,7 +130,7 @@ SAC_BUFFER_SIZE = 1_000_000     # Max size of replay buffer
 SAC_BATCH_SIZE = 256            # batch size of gradient updates
 
 # Training Schedule
-SAC_START_STEPS = 20000           # Number of random exploration steps (before learning)
+SAC_START_STEPS = 20000          # Number of random exploration steps (before learning)
 SAC_UPDATES_PER_STEP = 1.0       # Number of SAC updates per env step
 SAC_TOTAL_TIMESTEPS = 3_000_000  # Total training timesteps
 
