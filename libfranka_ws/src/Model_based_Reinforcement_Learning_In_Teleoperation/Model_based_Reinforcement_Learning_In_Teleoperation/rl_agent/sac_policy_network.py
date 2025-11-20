@@ -72,11 +72,13 @@ class StateEstimator(nn.Module):
         self.fusion_dim = hidden_dim + 1
         
         self.prediction_head = nn.Sequential(
-            nn.Linear(self.fusion_dim, 128),
-            self.activation_fn(),
-            nn.Linear(128, 128),
-            self.activation_fn(),
-            nn.Linear(128, output_dim)
+            nn.Linear(self.fusion_dim, 256),
+            nn.SiLU(),        # or nn.ReLU()
+            nn.Linear(256, 256),
+            nn.SiLU(),
+            nn.Linear(256, 256),
+            nn.SiLU(),
+            nn.Linear(256, output_dim)
         )
         self._initialize_weights()
 

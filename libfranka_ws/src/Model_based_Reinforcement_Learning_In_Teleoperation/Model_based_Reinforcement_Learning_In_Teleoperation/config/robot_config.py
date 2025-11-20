@@ -63,7 +63,7 @@ TRAJECTORY_FREQUENCY = 0.1  # Hz
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 1e-4
+ESTIMATOR_LEARNING_RATE = 1e-3
 ESTIMATOR_BATCH_SIZE = 256
 ESTIMATOR_BUFFER_SIZE = 20000
 ESTIMATOR_TOTAL_UPDATES = 50000
@@ -72,12 +72,12 @@ ESTIMATOR_VAL_FREQ = 1000
 ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
 
-RNN_HIDDEN_DIM = 512
+RNN_HIDDEN_DIM = 128
 RNN_NUM_LAYERS = 4
 RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
 
-DELAY_INPUT_NORM_FACTOR = 100.0  # Factor to normalize delay input for LSTM
-TARGET_DELTA_SCALE = 1.0  # This scales 1e-4 position changes to ~1e-2 range for gradient stability
+DELAY_INPUT_NORM_FACTOR = 10.0  # Factor to normalize delay input for LSTM
+TARGET_DELTA_SCALE = 10.0  # This scales 1e-4 position changes to ~1e-2 range for gradient stability
 
 ######################################
 # RL Environment Parameters

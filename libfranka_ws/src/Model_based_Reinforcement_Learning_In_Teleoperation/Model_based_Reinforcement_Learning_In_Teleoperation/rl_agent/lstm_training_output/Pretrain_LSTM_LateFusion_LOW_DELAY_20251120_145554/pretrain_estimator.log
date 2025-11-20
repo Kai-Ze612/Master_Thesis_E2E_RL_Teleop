@@ -1,9 +1,0 @@
-2025-11-20 14:55:54 [INFO] ================================================================================
-2025-11-20 14:55:54 [INFO] LSTM STATE ESTIMATOR (LATE FUSION + RESIDUAL + L1 LOSS)
-2025-11-20 14:55:54 [INFO] Config: LOW_DELAY | Trajectory: TrajectoryType.FIGURE_8
-2025-11-20 14:55:54 [INFO] ================================================================================
-2025-11-20 14:55:54 [INFO] Targeting Dataset Balance: 4000 Static / 16000 Dynamic
-2025-11-20 14:55:54 [INFO] Injected 4000 static hold samples (Augmented with Delay=0).
-2025-11-20 14:55:54 [INFO] Collecting dynamic trajectories...
-2025-11-20 14:56:01 [INFO]   -> 5000/16000 dynamic samples
-2025-11-20 14:56:08 [INFO]   -> 10000/16000 dynamic samples
