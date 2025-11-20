@@ -77,7 +77,7 @@ RNN_NUM_LAYERS = 4
 RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
 
 DELAY_INPUT_NORM_FACTOR = 10.0  # Factor to normalize delay input for LSTM
-TARGET_DELTA_SCALE = 10.0  # This scales 1e-4 position changes to ~1e-2 range for gradient stability
+TARGET_DELTA_SCALE = 1000.0  # This scales 1e-4 position changes to ~1e-2 range for gradient stability
 
 ######################################
 # RL Environment Parameters
