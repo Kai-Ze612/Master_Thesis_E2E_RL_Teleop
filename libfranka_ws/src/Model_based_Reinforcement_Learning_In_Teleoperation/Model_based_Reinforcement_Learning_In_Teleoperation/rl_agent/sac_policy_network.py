@@ -142,7 +142,7 @@ class Actor(nn.Module):
     """
     def __init__(
         self,
-        state_dim: int = (N_JOINTS * 2) * 2, 
+        state_dim: int = (N_JOINTS * 2 + 1) * 2, 
         action_dim: int = N_JOINTS,
         hidden_dims: list = SAC_MLP_HIDDEN_DIMS,
         activation: str = SAC_ACTIVATION
@@ -224,7 +224,7 @@ class Critic(nn.Module):
     """
     def __init__(
         self,
-        state_dim: int = (N_JOINTS * 2) * 2, 
+        state_dim: int = (N_JOINTS * 2 + 1) * 2, 
         action_dim: int = N_JOINTS,
         hidden_dims: list = SAC_MLP_HIDDEN_DIMS,
         activation: str = SAC_ACTIVATION

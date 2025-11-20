@@ -1,8 +1,0 @@
-2025-m-19 18:45:45 [INFO] __main__ - Training Configuration:
-2025-m-19 18:45:45 [INFO] __main__ -   Delay Config: LOW_DELAY
-2025-m-19 18:45:45 [INFO] __main__ -   Trajectory Type: figure_8
-2025-m-19 18:45:45 [INFO] __main__ -   Randomize Trajectory: False
-2025-m-19 18:45:45 [INFO] __main__ -   Total Timesteps: 3,000,000
-2025-m-19 18:45:45 [INFO] __main__ -   Random Seed: 50
-2025-m-19 18:45:45 [INFO] __main__ - 
-2025-m-19 18:45:45 [INFO] __main__ - Creating vectorized environment...

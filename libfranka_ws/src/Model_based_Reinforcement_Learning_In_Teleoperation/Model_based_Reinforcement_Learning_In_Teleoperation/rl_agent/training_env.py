@@ -47,6 +47,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     RNN_SEQUENCE_LENGTH,
     TRAJECTORY_FREQUENCY,
     WARM_UP_DURATION,
+    DELAY_INPUT_NORM_FACTOR,
 )
 
 
@@ -115,11 +116,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.leader_warmup_steps = int(self.warmup_time * self.control_freq)
         self.total_warmup_phase_steps = self.leader_warmup_steps + self.buffer_fill_steps
         self.steps_remaining_in_warmup = 0
-        
-        # -------------------------------------------------------------------------
-        # [MODIFICATION] Action Space Definition
-        # Space = [Torque (7)] + [Predicted State (14)] = 21 Dimensions
-        # -------------------------------------------------------------------------
+
         
         # 1. Torque Bounds (from config)
         torque_low = -MAX_TORQUE_COMPENSATION.copy()
@@ -211,9 +208,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         """
         self._current_tick += 1
         
-        # -------------------------------------------------------------------------
-        # [MODIFICATION] Explicit Action Unpacking
-        # -------------------------------------------------------------------------
+        # Action parsing
         if action.shape[0] == self.n_joints * 3: # 21 Dimensions
             # 1. Extract Torque (First 7)
             actual_action = action[:self.n_joints]
@@ -355,8 +350,10 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Error signals
         error_q = predicted_q - remote_q  # 7D
         error_qd = predicted_qd - remote_qd  # 7D
-
-        current_delay = float(self.get_current_observation_delay())
+        
+        # Add Normalized delay info
+        current_delay_steps = float(self.get_current_observation_delay())
+        current_delay = current_delay_steps / DELAY_INPUT_NORM_FACTOR
         
         # Concatenate all components into final observation
         obs = np.concatenate([
@@ -397,10 +394,9 @@ class TeleoperationEnvWithDelay(gym.Env):
 
         # 1. Get Raw Integer Steps for INDEXING
         raw_delay_steps = int(self.get_current_observation_delay())
-
-        # 2. Get Normalized Float for NETWORK INPUT
-        # [CORRECTION] Matched to StateEstimator training (100.0, not 1000.0)
-        normalized_delay = float(raw_delay_steps) / 100.0
+                
+        # 2. Get Normalized Float for LSTM Input
+        normalized_delay = float(raw_delay_steps) / DELAY_INPUT_NORM_FACTOR
 
         # 3. Calculate Integer Indices
         # We look back 'raw_delay_steps' into the past

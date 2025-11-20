@@ -1,0 +1,53 @@
+2025-11-20 21:33:18 [INFO] ================================================================================
+2025-11-20 21:33:18 [INFO] LSTM STATE ESTIMATOR (LATE FUSION + RESIDUAL + L1 LOSS)
+2025-11-20 21:33:18 [INFO] Config: FULL_RANGE_COVER | Trajectory: TrajectoryType.FIGURE_8
+2025-11-20 21:33:18 [INFO] ================================================================================
+2025-11-20 21:33:18 [INFO] Targeting Dataset Balance: 20000 Static / 80000 Dynamic
+2025-11-20 21:33:18 [INFO] Injected 20000 static hold samples (Augmented with Delay=0).
+2025-11-20 21:33:18 [INFO] Collecting dynamic trajectories...
+2025-11-20 21:33:26 [INFO]   -> 5000/80000 dynamic samples
+2025-11-20 21:33:33 [INFO]   -> 10000/80000 dynamic samples
+2025-11-20 21:33:40 [INFO]   -> 15000/80000 dynamic samples
+2025-11-20 21:33:47 [INFO]   -> 20000/80000 dynamic samples
+2025-11-20 21:33:54 [INFO]   -> 25000/80000 dynamic samples
+2025-11-20 21:34:01 [INFO]   -> 30000/80000 dynamic samples
+2025-11-20 21:34:08 [INFO]   -> 35000/80000 dynamic samples
+2025-11-20 21:34:16 [INFO]   -> 40000/80000 dynamic samples
+2025-11-20 21:34:23 [INFO]   -> 45000/80000 dynamic samples
+2025-11-20 21:34:30 [INFO]   -> 50000/80000 dynamic samples
+2025-11-20 21:34:37 [INFO]   -> 55000/80000 dynamic samples
+2025-11-20 21:34:44 [INFO]   -> 60000/80000 dynamic samples
+2025-11-20 21:34:51 [INFO]   -> 65000/80000 dynamic samples
+2025-11-20 21:34:58 [INFO]   -> 70000/80000 dynamic samples
+2025-11-20 21:35:05 [INFO]   -> 75000/80000 dynamic samples
+2025-11-20 21:35:12 [INFO]   -> 80000/80000 dynamic samples
+2025-11-20 21:35:12 [INFO] Data collection complete. Buffer size: 100000
+2025-11-20 21:35:12 [INFO] 
+========================================
+2025-11-20 21:35:12 [INFO]  BUFFER COVERAGE CHECK (Joint Positions)
+2025-11-20 21:35:12 [INFO] ========================================
+2025-11-20 21:35:12 [INFO] Joint | Min      | Max      | Range   
+2025-11-20 21:35:12 [INFO] ---------------------------------------------
+2025-11-20 21:35:12 [INFO] J0    | -0.457   | 0.461    | 0.918   
+2025-11-20 21:35:12 [INFO] J1    | -0.785   | 0.805    | 1.590   
+2025-11-20 21:35:12 [INFO] J2    | -0.111   | 0.121    | 0.232   
+2025-11-20 21:35:12 [INFO] J3    | -2.356   | -0.280   | 2.076   
+2025-11-20 21:35:12 [INFO] J4    | -0.290   | 0.283    | 0.573   
+2025-11-20 21:35:12 [INFO] J5    | 0.542    | 1.571    | 1.029   
+2025-11-20 21:35:12 [INFO] J6    | -0.002   | 0.785    | 0.787   
+2025-11-20 21:35:12 [INFO] ========================================
+
+2025-11-20 21:35:12 [INFO] Filling Validation Buffer...
+2025-11-20 21:35:12 [INFO] Injected 1000 static hold samples (Augmented with Delay=0).
+2025-11-20 21:35:18 [INFO] Starting training on cuda...
+2025-11-20 21:35:19 [INFO] Update 00000 | Train 377.72012329 | Val 391.06118835
+2025-11-20 21:35:19 [INFO]   -> NEW BEST!
+2025-11-20 21:35:33 [INFO] Update 01000 | Train 392.08287445 | Val 390.29258118
+2025-11-20 21:35:33 [INFO]   -> NEW BEST!
+2025-11-20 21:35:47 [INFO] Update 02000 | Train 393.60477753 | Val 390.28078735
+2025-11-20 21:35:47 [INFO]   -> NEW BEST!
+2025-11-20 21:36:01 [INFO] Update 03000 | Train 397.63459106 | Val 386.24718140
+2025-11-20 21:36:01 [INFO]   -> NEW BEST!
+2025-11-20 21:36:15 [INFO] Update 04000 | Train 395.70460083 | Val 381.24710388
+2025-11-20 21:36:15 [INFO]   -> NEW BEST!
+2025-11-20 21:36:29 [INFO] Update 05000 | Train 394.78308411 | Val 383.81946716

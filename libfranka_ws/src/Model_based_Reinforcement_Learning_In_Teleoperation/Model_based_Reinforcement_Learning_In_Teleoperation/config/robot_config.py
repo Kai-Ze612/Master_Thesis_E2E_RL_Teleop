@@ -13,7 +13,7 @@ import numpy as np
 
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_003326/estimator_best.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Low_Delay_No_Rand/estimator_best.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -68,21 +68,21 @@ TRAJECTORY_FREQUENCY = 0.1  # Hz
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 5e-3
+ESTIMATOR_LEARNING_RATE = 1e-2
 ESTIMATOR_BATCH_SIZE = 256
 ESTIMATOR_BUFFER_SIZE = 100000
 ESTIMATOR_TOTAL_UPDATES = 500000
 ESTIMATOR_VAL_STEPS = 5000
 ESTIMATOR_VAL_FREQ = 1000
-ESTIMATOR_PATIENCE = 10
+ESTIMATOR_PATIENCE = 30
 ESTIMATOR_LR_PATIENCE = 5
 
-RNN_HIDDEN_DIM = 256
+RNN_HIDDEN_DIM = 512
 RNN_NUM_LAYERS = 3
 RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
 
 DELAY_INPUT_NORM_FACTOR = 10.0
-TARGET_DELTA_SCALE = 500.0
+TARGET_DELTA_SCALE = 1000.0
 
 ######################################
 # RL Environment Parameters

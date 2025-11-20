@@ -64,15 +64,20 @@ class ReplayBuffer:
         self.ptr = 0
         self.size = 0
         self.seq_len = RNN_SEQUENCE_LENGTH
+        
         self.state_dim = N_JOINTS * 2 + 1
         self.action_dim = N_JOINTS
+        self.target_state_dim = N_JOINTS * 2
         
+       
         # Pre-allocate memory
         self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
         self.remote_states = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
         self.actions = np.zeros((buffer_size, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((buffer_size, 1), dtype=np.float32)
-        self.true_targets = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
+
+        self.true_targets = np.zeros((buffer_size, self.target_state_dim), dtype=np.float32)
+        
         self.next_delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
         self.next_remote_states = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
         self.dones = np.zeros((buffer_size, 1), dtype=np.float32)
@@ -265,7 +270,7 @@ class SACTrainer:
                 remote_state = self.val_env.get_remote_state()
                 
                 # Reshape for batch inference
-                delayed_seq_batch = delayed_buffer.reshape(1, RNN_SEQUENCE_LENGTH, N_JOINTS * 2)
+                delayed_seq_batch = delayed_buffer.reshape(1, RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1)
                 remote_state_batch = remote_state.reshape(1, N_JOINTS * 2)
                 
                 # Get deterministic action (no exploration)
@@ -444,7 +449,7 @@ class SACTrainer:
             
             # Convert to numpy arrays with correct shapes
             delayed_seq_batch = np.array([
-                buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2) 
+                buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1) 
                 for buf in delayed_buffers_list
             ])
             remote_state_batch = np.array(remote_states_list)
@@ -474,7 +479,7 @@ class SACTrainer:
             next_remote_states_list = self.env.env_method("get_remote_state")
             next_delayed_seq_batch = np.array([buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1) for buf in next_delayed_buffers_list])
             next_remote_state_batch = np.array(next_remote_states_list)
-            
+
             # --- Store Experience in Replay Buffer
             for i in range(self.num_envs):
                 # [CRITICAL FIX] 1. Logic: Skip transitions collected during warmup
@@ -487,18 +492,26 @@ class SACTrainer:
                 # predicted_state_batch is a numpy array here
                 if np.isnan(predicted_state_batch[i]).any():
                     continue
-
-                # [Syntax Correction] 3. Data Types:
-                # In your script, these variables are ALREADY numpy arrays.
-                # Do NOT use .cpu().numpy() or it will crash.
+                
+                info = infos_batch[i]
+                current_delay_steps = info.get('current_delay_steps', 0)
+                
+                normalized_delay = np.array([float(current_delay_steps) / MAX_EPISODE_STEPS], dtype=np.float32)
+                
+                augmented_remote_state = np.concatenate([remote_state_batch[i], normalized_delay])
+                augmented_next_remote_state = np.concatenate([next_remote_state_batch[i], normalized_delay])
+                action_7D_torque = augmented_actions_batch[i][:N_JOINTS] # Slice the first 7 dimensions (Torque)
+                
+                
+                # Adding back to replay buffer
                 self.replay_buffer.add(
                     delayed_seq_batch[i],          # Already numpy
-                    remote_state_batch[i],         # Already numpy
-                    actions_batch[i],              # This is the policy action (valid now because we skipped warmup)
+                    augmented_remote_state,        # Already numpy
+                    action_7D_torque,              # This is the policy action (valid now because we skipped warmup)
                     rewards_batch[i],
                     true_target_batch[i],          # Already numpy
                     next_delayed_seq_batch[i],     # Already numpy
-                    next_remote_state_batch[i],    # Already numpy
+                    augmented_next_remote_state,   # Already numpy
                     dones_batch[i]
                 )
 
@@ -590,7 +603,7 @@ class SACTrainer:
                     'avg_delay': avg_delay,
                 }
                 self._log_metrics(metrics, avg_reward, validation_reward, env_stats=env_stats_dict)
-        
+       
         # --- Training Complete
         logger.info("")
         logger.info("="*70)
