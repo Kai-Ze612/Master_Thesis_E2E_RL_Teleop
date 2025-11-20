@@ -367,28 +367,46 @@ class TeleoperationEnvWithDelay(gym.Env):
 
     def get_delayed_target_buffer(self, buffer_length: int) -> np.ndarray:
         history_len = len(self.leader_q_history)
+        
         if history_len == 0:
             current_delay_steps = 0.0
-            initial_state = np.concatenate([self.initial_qpos, np.zeros(self.n_joints), [current_delay_steps]])
+            # Note: Ideally normalized 0.0 is just 0.0
+            initial_state = np.concatenate([
+                self.initial_qpos, 
+                np.zeros(self.n_joints), 
+                [0.0]
+            ])
             return np.tile(initial_state, (buffer_length, 1)).flatten().astype(np.float32)
 
-        current_delay_steps = float(self.get_current_observation_delay())
-        most_recent_delayed_idx = -(int(current_delay_steps) + 1)
+        # 1. Get Raw Integer Steps for INDEXING (e.g., 60)
+        raw_delay_steps = int(self.get_current_observation_delay())
+
+        # 2. Get Normalized Float for NETWORK INPUT (e.g., 0.6)
+        normalized_delay = float(raw_delay_steps) / 100.0
+
+        # 3. Calculate Integer Indices
+        # We look back 'raw_delay_steps' into the past
+        most_recent_delayed_idx = -(raw_delay_steps + 1)
         oldest_idx = most_recent_delayed_idx - buffer_length + 1
         
         buffer_seq = []
+        
+        # 4. Loop using INTEGER indices
         for i in range(oldest_idx, most_recent_delayed_idx + 1):
             safe_idx = np.clip(i, -history_len, -1)
+            
             step_vector = np.concatenate([
                 self.leader_q_history[safe_idx],
                 self.leader_qd_history[safe_idx],
-                [current_delay_steps] 
+                [normalized_delay]  # <--- USE NORMALIZED VALUE HERE
             ])
             buffer_seq.append(step_vector)
         
         buffer = np.array(buffer_seq).flatten()
-        if buffer.shape[0] != buffer_length * (N_JOINTS * 2 + 1):
+        
+        if buffer.shape[0] != buffer_length * (self.n_joints * 2 + 1):
             warnings.warn(f"Delayed buffer shape mismatch: got {buffer.shape[0]}")
+            
         return buffer.astype(np.float32)
         
     def get_remote_state(self) -> np.ndarray:

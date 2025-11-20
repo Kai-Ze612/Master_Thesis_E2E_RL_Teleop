@@ -181,25 +181,28 @@ class AgentNode(Node):
         except:
             pass
     
-    def _get_delayed_leader_observation(self) -> np.ndarray:
+    def _get_delayed_leader_data(self) -> tuple[np.ndarray, float]:
         history_len = len(self.leader_q_history_)
         obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
+        current_delay_scalar = float(obs_delay_steps) # explicit delay
+        
         most_recent_delayed_idx = -(obs_delay_steps + 1)
         oldest_idx = most_recent_delayed_idx - self.rnn_seq_len_ + 1
         
-        buffer_q = []
-        buffer_qd = []
-        
-        # Debug: Print what index we are actually reading
-        # self.get_logger().info(f"Reading Buffer Indices: [{oldest_idx} to {most_recent_delayed_idx}]")
+        buffer_seq = []
         
         for i in range(oldest_idx, most_recent_delayed_idx + 1):
             safe_idx = np.clip(i, -history_len, -1)
-            buffer_q.append(self.leader_q_history_[safe_idx].copy())
-            buffer_qd.append(self.leader_qd_history_[safe_idx].copy())
+            # [FIX] Construct 15D vector: [q, qd, delay]
+            step_vector = np.concatenate([
+                self.leader_q_history_[safe_idx],
+                self.leader_qd_history_[safe_idx],
+                [current_delay_scalar] 
+            ])
+            buffer_seq.append(step_vector)
         
-        buffer = np.stack([np.concatenate([q, qd]) for q, qd in zip(buffer_q, buffer_qd)]).flatten()
-        return buffer.astype(np.float32)
+        buffer = np.array(buffer_seq).flatten().astype(np.float32)
+        return buffer, current_delay_scalar
         
     def control_loop_callback(self) -> None:
         if not self.is_leader_ready_ or not self.is_remote_ready_:
@@ -208,7 +211,6 @@ class AgentNode(Node):
         self.warmup_steps_count_ += 1
 
         if self.warmup_steps_count_ < self.warmup_steps_:    
-            # Standby Mode
             if self.warmup_steps_count_ % 50 == 0:
                  self.get_logger().info(f"STANDBY... {self.warmup_steps_ - self.warmup_steps_count_} steps left")
             
@@ -219,35 +221,40 @@ class AgentNode(Node):
             self.publish_tau_compensation(safe_tau)
             return
         
-        # [FIX 3] Smart Flush: Only remove the artificial pre-fill
         if not self.buffer_flushed_:
             self.buffer_flushed_ = True
             self.get_logger().info("WARMUP COMPLETE! Flushing artificial pre-fill...")
-            
-            # We remove exactly the number of frames we artificially added.
-            # The frames added by 'local_robot_state_callback' during warmup (which are real q_init) stay!
             num_to_pop = min(len(self.leader_q_history_), self.num_prefill_)
             for _ in range(num_to_pop):
                 self.leader_q_history_.popleft()
                 self.leader_qd_history_.popleft()
-            
             self.get_logger().info(f"Buffer flushed. New size: {len(self.leader_q_history_)}")
         
         try:            
-            raw_delayed_sequence = self._get_delayed_leader_observation()
+            # [FIX] Get both sequence and scalar delay
+            raw_delayed_sequence, current_delay_scalar = self._get_delayed_leader_data()
+            
             raw_remote_state = np.concatenate([self.current_remote_q_, self.current_remote_qd_])
 
+            # Reshape for LSTM: (Batch=1, Seq, 15)
             full_seq_t = torch.tensor(raw_delayed_sequence, dtype=torch.float32).to(self.device_).reshape(1, self.rnn_seq_len_, -1) 
+            
+            # Remote state: (Batch=1, 14)
             remote_state_t = torch.tensor(raw_remote_state, dtype=torch.float32).to(self.device_).reshape(1, -1)
+            
+            # [FIX] Delay tensor: (Batch=1, 1)
+            delay_t = torch.tensor([[current_delay_scalar]], dtype=torch.float32).to(self.device_)
 
             with torch.no_grad():
                 predicted_raw_target_t, _ = self.state_estimator_(full_seq_t)
-                actor_input_t = torch.cat([predicted_raw_target_t, remote_state_t], dim=1)
+                
+                # [FIX] Concatenate all 3 components for Actor: [Pred(14), Remote(14), Delay(1)]
+                actor_input_t = torch.cat([predicted_raw_target_t, remote_state_t, delay_t], dim=1)
+                
                 action_t, _, _ = self.actor_.sample(actor_input_t, deterministic=True)
 
             predicted_target_np = predicted_raw_target_t.cpu().numpy().flatten()
             
-            # [FIX 2] Use Velocity from LSTM
             predicted_q = predicted_target_np[:N_JOINTS]
             predicted_qd = predicted_target_np[N_JOINTS:] 
 
@@ -259,6 +266,8 @@ class AgentNode(Node):
             
         except Exception as e:
             self.get_logger().error(f"Error: {e}")
+            # import traceback
+            # traceback.print_exc()
 
     def publish_predicted_target(self, q, qd):
         msg = JointState()

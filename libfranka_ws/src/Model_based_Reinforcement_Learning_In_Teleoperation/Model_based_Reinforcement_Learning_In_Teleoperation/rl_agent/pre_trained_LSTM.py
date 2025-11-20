@@ -22,6 +22,7 @@ import time
 
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecEnv
 from stable_baselines3.common.env_util import make_vec_env
+
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
@@ -42,8 +43,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     ESTIMATOR_VAL_FREQ,
     ESTIMATOR_PATIENCE,
     ESTIMATOR_LR_PATIENCE,
-    RNN_HIDDEN_DIM,
-    RNN_NUM_LAYERS,
     INITIAL_JOINT_CONFIG,
 )
 
@@ -86,7 +85,6 @@ def collect_data_from_envs(env: VecEnv, num_envs: int) -> Tuple[np.ndarray, np.n
     delayed_flat_list = env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
     true_target_list = env.env_method("get_true_current_target")
     
-    # [MODIFIED] Reshape to 15D
     delayed_seq_batch = np.array([
         buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1)
         for buf in delayed_flat_list
@@ -109,7 +107,7 @@ def evaluate_model(model: StateEstimator, val_buffer: ReplayBuffer, batch_size: 
 
 def inject_static_samples(buffer: ReplayBuffer, num_samples: int, logger: logging.Logger):
     """Helper to inject static hold sequences."""
-    # [MODIFIED] Augmented static input: [q, 0, delay=0]
+    
     static_input_state = np.concatenate([INITIAL_JOINT_CONFIG, np.zeros(N_JOINTS), [0.0]]).astype(np.float32)
     # Static target: [q, 0]
     static_target_state = np.concatenate([INITIAL_JOINT_CONFIG, np.zeros(N_JOINTS)]).astype(np.float32)
