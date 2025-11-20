@@ -15,7 +15,7 @@ import numpy as np
 import os
 from typing import Tuple, Optional, Union
 
-# Custom imports
+# Custom imports - Adjust path as necessary based on your project structure
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     MAX_TORQUE_COMPENSATION,
@@ -25,19 +25,26 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_ACTIVATION,
     LOG_STD_MIN,
     LOG_STD_MAX,
+    DELAY_INPUT_NORM_FACTOR
 )
 
-# LSTM State Estimator Architecture
+
 class StateEstimator(nn.Module):
     """
-    LSTM-based state estimator.
-    Input: sequence of delayed observations (batch, seq_len, 14)
-    Output: predicted current state (batch, 14)
+    Late Fusion LSTM State Estimator.
+    
+    Architecture:
+    1. Split Input: [Batch, Seq, 15] -> State [Batch, Seq, 14] + Delay [Batch, 1]
+    2. Dynamics Encoding: h = LSTM(State)
+    3. Late Fusion: z = Concat(h, Delay_Normalized)
+    4. Residual Prediction: Delta = MLP(z)
     """
     
     def __init__(
         self,
-        input_dim: int = N_JOINTS * 2 + 1,  # remote_q + remote_qd + time_delay
+        # Note: Input to the *class* is 15 (14 state + 1 delay), 
+        # but LSTM will only take 14.
+        input_dim_total: int = N_JOINTS * 2 + 1,  
         hidden_dim: int = RNN_HIDDEN_DIM,
         num_layers: int = RNN_NUM_LAYERS,
         output_dim: int = N_JOINTS * 2,
@@ -48,15 +55,23 @@ class StateEstimator(nn.Module):
         self.rnn_num_layers = num_layers
         self.activation_fn = self._get_activation(SAC_ACTIVATION)
         
+        # [ARCH CHANGE] LSTM input is now 14 (Robot State only), not 15
+        self.lstm_input_dim = input_dim_total - 1 
+        
         self.lstm = nn.LSTM(
-            input_size=input_dim,
+            input_size=self.lstm_input_dim,
             hidden_size=hidden_dim,
             num_layers=num_layers,
             batch_first=True
         )
         
+        # [ARCH CHANGE] MLP Input = LSTM_Hidden + 1 (The Delay Scalar)
+        self.fusion_dim = hidden_dim + 1
+        
         self.prediction_head = nn.Sequential(
-            nn.Linear(hidden_dim, 128),
+            nn.Linear(self.fusion_dim, 128),
+            self.activation_fn(),
+            nn.Linear(128, 128), # Added extra depth for arithmetic learning
             self.activation_fn(),
             nn.Linear(128, output_dim)
         )
@@ -81,14 +96,40 @@ class StateEstimator(nn.Module):
         return (h_0, c_0)
 
     def forward(self, 
-                delayed_sequence: torch.Tensor,
+                delayed_sequence: torch.Tensor, 
                 hidden_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
                ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        """
+        delayed_sequence: [Batch, Seq_Len, 15] -> Contains (q, qd, delay)
+        """
         
-        lstm_output, new_hidden_state = self.lstm(delayed_sequence, hidden_state)
-        last_lstm_output = lstm_output[:, -1, :]
-        predicted_state = self.prediction_head(last_lstm_output)
-        return predicted_state, new_hidden_state
+        # 1. Slicing: Separate Physics State from Time Delay
+        # State: First 14 dims
+        state_seq = delayed_sequence[:, :, :self.lstm_input_dim] 
+        
+        # Delay: Last dim, take the value from the last timestep (most recent delay)
+        # Shape: [Batch, 1]
+        delay_scalar = delayed_sequence[:, -1, self.lstm_input_dim:]
+        
+        # 2. Normalize Delay explicitly for the network
+        delay_norm = delay_scalar / DELAY_INPUT_NORM_FACTOR
+        
+        # 3. Dynamics Encoding (LSTM on State only)
+        lstm_output, new_hidden_state = self.lstm(state_seq, hidden_state)
+        
+        # Extract latent dynamics from the last timestep
+        # Shape: [Batch, Hidden_Dim]
+        dynamics_embedding = lstm_output[:, -1, :]
+        
+        # 4. Late Fusion (Concatenate Dynamics + Time)
+        # Shape: [Batch, Hidden_Dim + 1]
+        fusion_vector = torch.cat([dynamics_embedding, delay_norm], dim=1)
+        
+        # 5. Extrapolation (MLP)
+        predicted_residual = self.prediction_head(fusion_vector)
+        
+        return predicted_residual, new_hidden_state
+
 
 class Actor(nn.Module):
     """
@@ -171,6 +212,7 @@ class Actor(nn.Module):
         scaled_action = self.action_scale * tanh_action + self.action_bias
         
         return scaled_action, log_prob, raw_action
+
 
 class Critic(nn.Module):
     """

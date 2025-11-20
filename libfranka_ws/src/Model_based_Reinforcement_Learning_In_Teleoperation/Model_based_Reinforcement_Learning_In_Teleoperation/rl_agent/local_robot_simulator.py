@@ -316,7 +316,7 @@ class LocalRobotSimulator(gym.Env):
 
         super().reset(seed=seed)
 
-        # Apply parameter randomization if enabled
+        # 1. Apply parameter randomization if enabled
         if self._randomize_params:
             self._params = self._generate_random_params()
             self._generator = self._create_generator(self._trajectory_type, self._params)
@@ -329,30 +329,40 @@ class LocalRobotSimulator(gym.Env):
                     self._trajectory_type = new_type
                     self._generator = self._create_generator(new_type, self._params)
 
-        # Reset trajectory time
+        # 2. Reset trajectory time
         self._trajectory_time = 0.0
         self._tick = 0
         
-        # Solve IK for initial joint configuration
-        q_initial = INITIAL_JOINT_CONFIG.copy()
+        # 3. Calculate where the trajectory mathematically starts
+        trajectory_start_pos = self._generator.compute_position(0.0)
+        self._start_pos = trajectory_start_pos.copy()
 
-        # Initialize joint state
-        self._q_current = q_initial.copy()
+        # 4. [CRITICAL FIX] Solve IK for this start position immediately
+        # We use INITIAL_JOINT_CONFIG only as a seed for the IK solver
+        q_start, ik_success, _ = self.ik_solver.solve(
+            target_pos=trajectory_start_pos,
+            q_init=INITIAL_JOINT_CONFIG, # Use home as guess
+            body_name=self.ee_body_name,
+            tcp_offset=self.tcp_offset,
+            enforce_continuity=False # False because this is a teleport reset
+        )
+
+        if not ik_success:
+            print(f"[WARNING] Could not solve IK for trajectory start: {trajectory_start_pos}")
+            # Fallback to home if IK fails (though it shouldn't if params are safe)
+            q_start = INITIAL_JOINT_CONFIG.copy()
+
+        # 5. Initialize joint state targets to this new start position
+        self._q_current = q_start.copy()
         self._qd_current = np.zeros(self.n_joints)
-        self._last_q_desired = q_initial.copy()
+        self._last_q_desired = q_start.copy() # <--- Prevents velocity spike on Step 1
 
-        # Reset MuJoCo simulation
+        # 6. Reset MuJoCo simulation to this specific q_start
         mujoco.mj_resetData(self.model, self.data)
-        self.data.qpos[:self.n_joints] = q_initial
+        self.data.qpos[:self.n_joints] = q_start
         self.data.qvel[:self.n_joints] = np.zeros(self.n_joints)
         mujoco.mj_forward(self.model, self.data)
 
-        # Get trajectory start position
-        trajectory_start_pos = self._generator.compute_position(self._trajectory_time)
-        
-        # Store the state position
-        self._start_pos = trajectory_start_pos.copy()
-        
         # Info dictionary
         info = {
             "trajectory_type": self._trajectory_type.value,

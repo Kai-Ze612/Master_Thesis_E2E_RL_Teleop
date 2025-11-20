@@ -61,7 +61,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         randomize_trajectory: bool = False,
         seed: Optional[int] = None,
         render_mode: Optional[str] = None,
-        # Initialize trajectory as simplest for simplicity
     ):
         super().__init__()
         
@@ -117,13 +116,31 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.total_warmup_phase_steps = self.leader_warmup_steps + self.buffer_fill_steps
         self.steps_remaining_in_warmup = 0
         
-        # Build action and observation spaces
+        # -------------------------------------------------------------------------
+        # [MODIFICATION] Action Space Definition
+        # Space = [Torque (7)] + [Predicted State (14)] = 21 Dimensions
+        # -------------------------------------------------------------------------
+        
+        # 1. Torque Bounds (from config)
+        torque_low = -MAX_TORQUE_COMPENSATION.copy()
+        torque_high = MAX_TORQUE_COMPENSATION.copy()
+        
+        # 2. Prediction Bounds (Unbounded / Infinity)
+        # Predictions can be anywhere in state space, so we use +/- infinity
+        pred_low = np.full(self.n_joints * 2, -np.inf, dtype=np.float32)
+        pred_high = np.full(self.n_joints * 2, np.inf, dtype=np.float32)
+        
+        # 3. Concatenate to form 21-dim bounds
+        action_low = np.concatenate([torque_low, pred_low])
+        action_high = np.concatenate([torque_high, pred_high])
+
         self.action_space = spaces.Box(
-            low=-MAX_TORQUE_COMPENSATION.copy(),
-            high=MAX_TORQUE_COMPENSATION.copy(),
-            shape=(self.n_joints,),
+            low=action_low,
+            high=action_high, 
+            shape=(self.n_joints * 3,), # 7 (Torque) + 14 (State) = 21
             dtype=np.float32
         )
+        
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(OBS_DIM,), dtype=np.float32)
 
         # Internal tick counter
@@ -189,22 +206,30 @@ class TeleoperationEnvWithDelay(gym.Env):
         action: np.ndarray
     ) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
         """
-        Execute one timestep in the environment given the predited target and RL action (tau compensation).
-    
-        Returns: observation, reward, terminated, truncated, info
+        Execute one timestep in the environment.
+        Action can be 7D (Torque only) or 21D (Torque + Predicted State).
         """
         self._current_tick += 1
         
-        actual_action = action
-        if action.size > self.n_joints:
+        # -------------------------------------------------------------------------
+        # [MODIFICATION] Explicit Action Unpacking
+        # -------------------------------------------------------------------------
+        if action.shape[0] == self.n_joints * 3: # 21 Dimensions
+            # 1. Extract Torque (First 7)
             actual_action = action[:self.n_joints]
-            if action.shape[0] == self.n_joints * 3: 
-                predicted_state = action[self.n_joints:]
-                self.set_predicted_target(predicted_state)
+            
+            # 2. Extract Prediction (Last 14)
+            predicted_state = action[self.n_joints:]
+            self.set_predicted_target(predicted_state)
+        else:
+            # Fallback for 7-dim action (RL only, no prediction update)
+            actual_action = action
+            # In this case, self._last_predicted_target remains whatever it was previously
         
         self.current_step += 1
         self._step_counter += 1
         
+        # Update Leader (Ground Truth Trajectory)
         new_leader_q, new_leader_qd, _, _, _, _ = self.leader.step()
         self.leader_q_history.append(new_leader_q.copy())
         self.leader_qd_history.append(new_leader_qd.copy())
@@ -212,6 +237,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         delayed_q = self._get_delayed_q()
         delayed_qd = self._get_delayed_qd()
 
+        # Warmup Logic
         if self.steps_remaining_in_warmup > 0:
             self.steps_remaining_in_warmup -= 1
             target_q_for_remote = delayed_q 
@@ -223,18 +249,21 @@ class TeleoperationEnvWithDelay(gym.Env):
             if self.render_mode == "human": self.render()
             return self._get_observation(), 0.0, False, self.current_step >= self.max_episode_steps, self._get_info()
 
+        # Determine target for remote robot
         if self._last_predicted_target is not None:
             target_q_for_remote = self._last_predicted_target[:N_JOINTS]
             target_qd_for_remote = self._last_predicted_target[N_JOINTS:] 
             torque_compensation_for_remote = actual_action
         else:
+            # Fallback if prediction missing (e.g. Data Collection Mode)
             target_q_for_remote = delayed_q
             target_qd_for_remote = delayed_qd
             torque_compensation_for_remote = np.zeros(N_JOINTS)
         
         step_info = self.remote_robot.step(target_q_for_remote, target_qd_for_remote, torque_compensation_for_remote)
         remote_q, remote_qd = self.remote_robot.get_joint_state()
-        reward, r_tracking = self._calculate_reward(action)
+        
+        reward, r_tracking = self._calculate_reward(actual_action)
         self.hist_total_reward.append(reward)
         self.hist_tracking_reward.append(r_tracking)
         
@@ -266,7 +295,7 @@ class TeleoperationEnvWithDelay(gym.Env):
                 pred_error_norm = np.linalg.norm(true_target_q - predicted_q)
                 print(f"  -> Prediction Error (norm): {pred_error_norm:.4f} rad")
             else:
-                print(f"  Predicted q:   None (Data Collection Mode)") # This is now expected
+                print(f"  Predicted q:   None (Data Collection Mode)")
             
             print(f"  Remote Robot q:  {remote_q}")
             print(f"  -> Tracking Error (norm): {np.linalg.norm(true_target_q - remote_q):.4f} rad")
@@ -296,17 +325,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         
     def _get_observation(self) -> np.ndarray:
         """
-        Construct observation for RL agent with optimized structure (112D).
-        
-        Observation Components:
-        1. remote_q (7D): Current remote robot position
-        2. remote_qd (7D): Current remote robot velocity
-        3. remote_q_history (35D): Position trajectory (5 timesteps × 7 joints)
-        4. remote_qd_history (35D): Velocity trajectory (5 timesteps × 7 joints)
-        5. predicted_q (7D): LSTM predicted position
-        6. predicted_qd (7D): LSTM predicted velocity
-        7. error_q (7D): Position error (predicted - remote)
-        8. error_qd (7D): Velocity error (predicted - remote)
+        Construct observation for RL agent (112D).
         """
         
         # Get current remote state
@@ -369,8 +388,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         history_len = len(self.leader_q_history)
         
         if history_len == 0:
-            current_delay_steps = 0.0
-            # Note: Ideally normalized 0.0 is just 0.0
             initial_state = np.concatenate([
                 self.initial_qpos, 
                 np.zeros(self.n_joints), 
@@ -378,11 +395,12 @@ class TeleoperationEnvWithDelay(gym.Env):
             ])
             return np.tile(initial_state, (buffer_length, 1)).flatten().astype(np.float32)
 
-        # 1. Get Raw Integer Steps for INDEXING (e.g., 60)
+        # 1. Get Raw Integer Steps for INDEXING
         raw_delay_steps = int(self.get_current_observation_delay())
 
-        # 2. Get Normalized Float for NETWORK INPUT (e.g., 0.6)
-        normalized_delay = float(raw_delay_steps) / 1000.0
+        # 2. Get Normalized Float for NETWORK INPUT
+        # [CORRECTION] Matched to StateEstimator training (100.0, not 1000.0)
+        normalized_delay = float(raw_delay_steps) / 100.0
 
         # 3. Calculate Integer Indices
         # We look back 'raw_delay_steps' into the past
@@ -416,14 +434,12 @@ class TeleoperationEnvWithDelay(gym.Env):
     
     def get_current_observation_delay(self) -> int:
         """Get the current observation delay in timesteps."""
-
         history_len = len(self.leader_q_history)
         return self.delay_simulator.get_observation_delay_steps(history_len)
 
     def _calculate_reward(self, action: np.ndarray) -> Tuple[float, float]:
         """
         Calculate reward based on tracking error and action penalty.
-        
         """
         remote_q, remote_qd = self.remote_robot.get_joint_state()
         true_target = self.get_true_current_target()
@@ -452,11 +468,6 @@ class TeleoperationEnvWithDelay(gym.Env):
     def _get_info(self) -> Dict[str, Any]:
         """
         info for debugging and analysis.
-        
-        components:
-            - real_time_joint_error: ||true_q[t] - remote_q[t]||
-            - prediction_error: ||predicted_q[t] - true_q[t]||
-            - current_delay_steps: current observation delay in timesteps
         """
         
         info_dict = {}
@@ -516,7 +527,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         # 2. Update Y-axis Data
         self.line1.set_data(x_data, self.hist_total_reward)
         self.line2.set_data(x_data, self.hist_tracking_reward)
-        # self.line3.set_data(x_data, self.hist_prediction_reward) # Removed
 
         # 3. Autoscale and Redraw (Crucial for live updating)
         for ax in self.ax:

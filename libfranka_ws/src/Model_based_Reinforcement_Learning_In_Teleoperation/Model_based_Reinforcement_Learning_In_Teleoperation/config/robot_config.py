@@ -58,7 +58,7 @@ IK_CONTINUITY_GAIN = 0.5
 ######################################
 TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.5], dtype=np.float32)
 TRAJECTORY_SCALE = np.array([0.2, 0.2], dtype=np.float32)
-TRAJECTORY_FREQUENCY = 0.025  # Hz
+TRAJECTORY_FREQUENCY = 0.1  # Hz
 
 ######################################
 # pre-trained LSTM hyperparameters
@@ -73,14 +73,17 @@ ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 256
-RNN_NUM_LAYERS = 3
+RNN_NUM_LAYERS = 4
 RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
+
+DELAY_INPUT_NORM_FACTOR = 100.0  # Factor to normalize delay input for LSTM
+TARGET_DELTA_SCALE = 10.0  # This scales 1e-4 position changes to ~1e-2 range for gradient stability
 
 ######################################
 # RL Environment Parameters
 ######################################
 MAX_EPISODE_STEPS = 20000
-MAX_JOINT_ERROR_TERMINATION = 2.0
+MAX_JOINT_ERROR_TERMINATION = 5.0
 
 REMOTE_HISTORY_LEN = 5
 

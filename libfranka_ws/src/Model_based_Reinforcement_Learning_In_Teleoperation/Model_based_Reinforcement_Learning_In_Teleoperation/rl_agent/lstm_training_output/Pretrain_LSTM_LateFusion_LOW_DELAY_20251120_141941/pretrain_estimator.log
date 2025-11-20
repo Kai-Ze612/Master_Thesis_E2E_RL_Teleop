@@ -1,0 +1,41 @@
+2025-11-20 14:19:41 [INFO] ================================================================================
+2025-11-20 14:19:41 [INFO] LSTM STATE ESTIMATOR (LATE FUSION + RESIDUAL + L1 LOSS)
+2025-11-20 14:19:41 [INFO] Config: LOW_DELAY | Trajectory: TrajectoryType.FIGURE_8
+2025-11-20 14:19:41 [INFO] ================================================================================
+2025-11-20 14:19:42 [INFO] Targeting Dataset Balance: 4000 Static / 16000 Dynamic
+2025-11-20 14:19:42 [INFO] Injected 4000 static hold samples (Augmented with Delay=0).
+2025-11-20 14:19:42 [INFO] Collecting dynamic trajectories...
+2025-11-20 14:19:48 [INFO]   -> 5000/16000 dynamic samples
+2025-11-20 14:19:55 [INFO]   -> 10000/16000 dynamic samples
+2025-11-20 14:20:02 [INFO]   -> 15000/16000 dynamic samples
+2025-11-20 14:20:03 [INFO] Data collection complete. Buffer size: 20000
+2025-11-20 14:20:03 [INFO] 
+========================================
+2025-11-20 14:20:03 [INFO]  BUFFER COVERAGE CHECK (Joint Positions)
+2025-11-20 14:20:03 [INFO] ========================================
+2025-11-20 14:20:03 [INFO] Joint | Min      | Max      | Range   
+2025-11-20 14:20:03 [INFO] ---------------------------------------------
+2025-11-20 14:20:03 [INFO] J0    | -0.429   | 0.428    | 0.857   
+2025-11-20 14:20:03 [INFO] J1    | -0.785   | 0.874    | 1.659   
+2025-11-20 14:20:03 [INFO] J2    | -0.141   | 0.280    | 0.421   
+2025-11-20 14:20:03 [INFO] J3    | -2.356   | -0.151   | 2.205   
+2025-11-20 14:20:03 [INFO] J4    | -0.437   | 0.435    | 0.873   
+2025-11-20 14:20:03 [INFO] J5    | 0.543    | 1.571    | 1.028   
+2025-11-20 14:20:03 [INFO] J6    | -0.000   | 0.785    | 0.785   
+2025-11-20 14:20:03 [INFO] ========================================
+
+2025-11-20 14:20:03 [INFO] Filling Validation Buffer...
+2025-11-20 14:20:03 [INFO] Injected 1000 static hold samples (Augmented with Delay=0).
+2025-11-20 14:20:09 [INFO] Starting training on cuda...
+2025-11-20 14:20:09 [INFO] Update 00000 | Train 2.54395032 | Val 0.65491967
+2025-11-20 14:20:09 [INFO]   -> NEW BEST!
+2025-11-20 14:20:27 [INFO] Update 01000 | Train 2.45377239 | Val 0.63100820
+2025-11-20 14:20:27 [INFO]   -> NEW BEST!
+2025-11-20 14:20:45 [INFO] Update 02000 | Train 2.46463480 | Val 0.66849358
+2025-11-20 14:21:03 [INFO] Update 03000 | Train 2.44127034 | Val 0.65595947
+2025-11-20 14:21:21 [INFO] Update 04000 | Train 2.43724402 | Val 0.67484121
+2025-11-20 14:21:39 [INFO] Update 05000 | Train 2.48041827 | Val 0.63318182
+2025-11-20 14:21:57 [INFO] Update 06000 | Train 2.44429154 | Val 0.67258545
+2025-11-20 14:22:16 [INFO] Update 07000 | Train 2.48242356 | Val 0.60864123
+2025-11-20 14:22:16 [INFO]   -> NEW BEST!
+2025-11-20 14:22:34 [INFO] Update 08000 | Train 2.46544761 | Val 0.67171662
