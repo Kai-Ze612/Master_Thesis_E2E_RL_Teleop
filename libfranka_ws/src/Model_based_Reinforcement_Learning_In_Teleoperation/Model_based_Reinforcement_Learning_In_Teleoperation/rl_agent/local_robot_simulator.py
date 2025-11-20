@@ -210,6 +210,8 @@ class LocalRobotSimulator(gym.Env):
         self._control_freq = control_freq
         self._randomize_params = randomize_params
 
+        self._tick = 0  # We use tick to count the steps
+        
         # Warm-up time before starting trajectory
         self._warm_up_duration = warm_up_duration
         self._start_pos = np.zeros(3)
@@ -329,6 +331,7 @@ class LocalRobotSimulator(gym.Env):
 
         # Reset trajectory time
         self._trajectory_time = 0.0
+        self._tick = 0
         
         # Solve IK for initial joint configuration
         q_initial = INITIAL_JOINT_CONFIG.copy()
@@ -380,7 +383,9 @@ class LocalRobotSimulator(gym.Env):
         """
 
         self._trajectory_time += self._dt
-
+        self._tick += 1
+        
+        
         # Add wait logic
         if self._trajectory_time < self._warm_up_duration:
             # Hold at the start position for the wait duration
@@ -468,3 +473,7 @@ class LocalRobotSimulator(gym.Env):
         else:
             movement_time = t - self._warm_up_duration
             return self._generator.compute_position(movement_time)
+    
+    def get_current_tick(self) -> int:
+        """Get the current simulation tick."""
+        return self._tick

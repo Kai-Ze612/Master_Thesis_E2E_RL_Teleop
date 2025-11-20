@@ -64,7 +64,7 @@ class ReplayBuffer:
         self.ptr = 0
         self.size = 0
         self.seq_len = RNN_SEQUENCE_LENGTH
-        self.state_dim = N_JOINTS * 2
+        self.state_dim = N_JOINTS * 2 + 1
         self.action_dim = N_JOINTS
         
         # Pre-allocate memory
@@ -472,10 +472,7 @@ class SACTrainer:
             # Get next state observations
             next_delayed_buffers_list = self.env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
             next_remote_states_list = self.env.env_method("get_remote_state")
-            next_delayed_seq_batch = np.array([
-                buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2) 
-                for buf in next_delayed_buffers_list
-            ])
+            next_delayed_seq_batch = np.array([buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1) for buf in next_delayed_buffers_list])
             next_remote_state_batch = np.array(next_remote_states_list)
             
             # --- Store Experience in Replay Buffer

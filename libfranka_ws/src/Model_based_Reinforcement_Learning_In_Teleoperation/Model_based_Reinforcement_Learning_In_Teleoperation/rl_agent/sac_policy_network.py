@@ -37,7 +37,7 @@ class StateEstimator(nn.Module):
     
     def __init__(
         self,
-        input_dim: int = N_JOINTS * 2,
+        input_dim: int = N_JOINTS * 2 + 1,  # remote_q + remote_qd + time_delay
         hidden_dim: int = RNN_HIDDEN_DIM,
         num_layers: int = RNN_NUM_LAYERS,
         output_dim: int = N_JOINTS * 2,

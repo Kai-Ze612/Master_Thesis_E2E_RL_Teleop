@@ -32,7 +32,7 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 JOINT_LIMIT_MARGIN = 0.05
 KP_LOCAL = np.array([300.0, 300.0, 300.0, 300.0, 125.0, 75.0, 10.0], dtype=np.float32) # local robot PD to calculate qdd
 KD_LOCAL = np.array([35.0,  35.0,  35.0,  35.0,  23.0,  17.0,  6.32], dtype=np.float32)
-WARM_UP_DURATION = 0
+WARM_UP_DURATION = 1
 
 ######################################
 # Control Parameters
@@ -92,7 +92,8 @@ OBS_DIM = (
     N_JOINTS +                              # predicted_q : 7
     N_JOINTS +                              # predicted_qd: 7
     N_JOINTS +                              # error_q: 7
-    N_JOINTS                                # error_qd: 7
+    N_JOINTS +                                # error_qd: 7
+    1                                        # current_delay: 1
 )
 # Total dim: 112
 

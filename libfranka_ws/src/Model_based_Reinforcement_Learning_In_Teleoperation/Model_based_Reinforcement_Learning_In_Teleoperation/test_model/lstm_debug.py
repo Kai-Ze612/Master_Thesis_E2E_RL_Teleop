@@ -43,7 +43,7 @@ class LSTMTestNode(Node):
         self.leader_q_history = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
         self.leader_qd_history = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
         
-        # Configured sequence length
+        # Configured sequence length (Max capacity)
         self.config_seq_len = RNN_SEQUENCE_LENGTH 
         self.target_joint_names = [f'panda_joint{i+1}' for i in range(N_JOINTS)]
         
@@ -134,19 +134,14 @@ class LSTMTestNode(Node):
             seq_t_full = torch.tensor(seq_flat).to(self.device).reshape(1, self.config_seq_len, -1).float()
             
             # === INPUT DATA CHECK ===
-            # Check the statistics of what we are feeding the LSTM
-            # Input dim is 14 (7 pos, 7 vel).
-            inputs_np = seq_t_full.cpu().numpy().squeeze() # (Seq, 14)
+            inputs_np = seq_t_full.cpu().numpy().squeeze()
             input_q = inputs_np[:, :N_JOINTS]
-            input_qd = inputs_np[:, N_JOINTS:]
+            self.get_logger().info(f"\n=== INPUT DATA CHECK (Min/Max) ===")
+            self.get_logger().info(f"Pos: {np.min(input_q):.3f} / {np.max(input_q):.3f}")
             
-            self.get_logger().info(f"\n=== INPUT DATA CHECK ===")
-            self.get_logger().info(f"Position Range: Min {np.min(input_q):.3f} | Max {np.max(input_q):.3f}")
-            self.get_logger().info(f"Velocity Range: Min {np.min(input_qd):.3f} | Max {np.max(input_qd):.3f}")
-            self.get_logger().info(f"Latest Input q: {np.round(input_q[-1], 3)}")
-            
-            # 2. Test Short vs Long
-            candidates = [10, self.config_seq_len] # Test Short vs Full
+            # 2. Test Candidate Lengths
+            # [CHANGE] We test 30 and 50 (Middle ground) against 200 (Full)
+            candidates = [30, 50, self.config_seq_len] 
             
             for length in candidates:
                 if length > self.config_seq_len: continue
@@ -161,10 +156,7 @@ class LSTMTestNode(Node):
                 
                 error = np.linalg.norm(pred_q - self.latest_q)
                 
-                self.get_logger().info(f"\n--- Len {length} Prediction ---")
-                self.get_logger().info(f"GT   : {np.round(self.latest_q, 3)}")
-                self.get_logger().info(f"Pred : {np.round(pred_q, 3)}")
-                self.get_logger().info(f"Error: {error:.4f}")
+                self.get_logger().info(f"--- Len {length:3d} | Err: {error:.4f} | Pred[0]: {pred_q[0]:.3f}")
 
             self.get_logger().info("=========================================")
 
