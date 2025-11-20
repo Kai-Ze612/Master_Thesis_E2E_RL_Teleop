@@ -37,8 +37,8 @@ WARM_UP_DURATION = 0
 ######################################
 # Control Parameters
 ######################################
-DEFAULT_CONTROL_FREQ = 100
-DEFAULT_PUBLISH_FREQ = 50
+DEFAULT_CONTROL_FREQ = 250
+DEFAULT_PUBLISH_FREQ = 250
 
 DEFAULT_KP_REMOTE = np.array([70.0, 70.0, 70.0, 50.0, 30.0, 20.0, 0.0], dtype=np.float32) # We use kp kd to calculate baseline tau
 DEFAULT_KD_REMOTE = np.array([ 7.0,  7.0,  7.0,  5.0, 4.5, 3.0,  0.0], dtype=np.float32)

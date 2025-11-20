@@ -7,7 +7,6 @@ pipelines:
 3. Train the StateEstimator LSTM in a supervised learning. (min MSE loss)
 """
 
-# Python imports 
 import os
 import sys
 import torch
@@ -21,11 +20,8 @@ from typing import Dict, Tuple
 import multiprocessing
 import time
 
-# Stable Baselines3 imports
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecEnv
 from stable_baselines3.common.env_util import make_vec_env
-
-# PyTorch imports
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
@@ -48,88 +44,62 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     ESTIMATOR_LR_PATIENCE,
     RNN_HIDDEN_DIM,
     RNN_NUM_LAYERS,
-    INITIAL_JOINT_CONFIG, # Ensure this is imported
+    INITIAL_JOINT_CONFIG,
 )
 
-# ... (ReplayBuffer and setup_logging remain the same) ...
 class ReplayBuffer:
-    """
-    Replay buffer for storing delayed observation sequences and corresponding true states.
-    
-    This is the  data collection process.
-    """
-    
     def __init__(self, buffer_size: int, device: torch.device):
-        
-        # Initialize parameters
         self.buffer_size = buffer_size
         self.device = device
-        self.ptr = 0  # Initial pointer
+        self.ptr = 0 
         self.size = 0
-        
         self.seq_len = RNN_SEQUENCE_LENGTH
-        self.state_dim = N_JOINTS * 2  # target_q and target_qd
+        self.state_dim = N_JOINTS * 2 
         
-        self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32) # dim: (buffer_size, seq_len, state_dim)
-        self.true_targets = np.zeros((buffer_size, self.state_dim), dtype=np.float32) # dim: (buffer_size, state_dim)
+        self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
+        self.true_targets = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
 
     def add(self, delayed_seq: np.ndarray, true_target: np.ndarray) -> None:
-        """Add a single (delayed_sequence, true_target) pair to the buffer."""
-        self.delayed_sequences[self.ptr] = delayed_seq  # Training data
-        self.true_targets[self.ptr] = true_target  # Groundtruth data
-        # The pointer is to match the positions in both buffers
-        
-        self.ptr = (self.ptr + 1) % self.buffer_size  # pointer moves to the next slot
+        self.delayed_sequences[self.ptr] = delayed_seq
+        self.true_targets[self.ptr] = true_target
+        self.ptr = (self.ptr + 1) % self.buffer_size
         self.size = min(self.size + 1, self.buffer_size)
 
     def sample(self, batch_size: int) -> Dict[str, torch.Tensor]:
-        """Sample a random batch from the buffer."""
         indices = np.random.randint(0, self.size, size=batch_size)
-        
-        batch = {
+        return {
             'delayed_sequences': torch.tensor(self.delayed_sequences[indices], device=self.device),
             'true_targets': torch.tensor(self.true_targets[indices], device=self.device),
         }
-        return batch
 
     def __len__(self) -> int:
         return self.size
 
-
 def setup_logging(output_dir: str) -> logging.Logger:
-    """Configure logging to file and console."""
     log_file = os.path.join(output_dir, "pretrain_estimator.log")
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s] %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
-        handlers=[
-            logging.FileHandler(log_file),
-            logging.StreamHandler(sys.stdout)
-        ]
+        handlers=[logging.FileHandler(log_file), logging.StreamHandler(sys.stdout)]
     )
     return logging.getLogger(__name__)
 
 def collect_data_from_envs(env: VecEnv, num_envs: int) -> Tuple[np.ndarray, np.ndarray]:
-    """Collect delayed observation sequences and corresponding true current leader states."""
     delayed_flat_list = env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
     true_target_list = env.env_method("get_true_current_target")
-
+    
     delayed_seq_batch = np.array([
         buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2)
         for buf in delayed_flat_list
     ])
-    
     true_target_batch = np.array(true_target_list)
-
     return delayed_seq_batch, true_target_batch
 
 def evaluate_model(model: StateEstimator, val_buffer: ReplayBuffer, batch_size: int, num_batches: int = 50) -> float:
     model.eval()
     total_loss = 0.0
-    
-    if len(val_buffer) < batch_size:
-        return float('inf')
+    if len(val_buffer) < batch_size: return float('inf')
     
     with torch.no_grad():
         for _ in range(num_batches):
@@ -141,9 +111,17 @@ def evaluate_model(model: StateEstimator, val_buffer: ReplayBuffer, batch_size: 
     model.train()
     return total_loss / num_batches
 
-def pretrain_estimator(args: argparse.Namespace) -> None:
-    """Main pre-training function for the State Estimator LSTM."""
+def inject_static_samples(buffer: ReplayBuffer, num_samples: int, logger: logging.Logger):
+    """Helper to inject static hold sequences."""
+    static_state = np.concatenate([INITIAL_JOINT_CONFIG, np.zeros(N_JOINTS)]).astype(np.float32)
+    static_seq = np.tile(static_state, (RNN_SEQUENCE_LENGTH, 1))
     
+    for _ in range(num_samples):
+        buffer.add(static_seq, static_state)
+    
+    logger.info(f"Injected {num_samples} static hold samples.")
+
+def pretrain_estimator(args: argparse.Namespace) -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"Pretrain_LSTM_{args.config.name}_{timestamp}"
     output_dir = os.path.join(CHECKPOINT_DIR_LSTM, run_name)
@@ -151,9 +129,8 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     
     logger = setup_logging(output_dir)    
     logger.info("="*80)
-    logger.info("LSTM STATE ESTIMATOR PRE-TRAINING")
+    logger.info("LSTM STATE ESTIMATOR PRE-TRAINING (Balanced)")
     logger.info("="*80)
-    # ... (Logging configuration remains same) ...
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     tb_writer = SummaryWriter(log_dir=os.path.join(output_dir, "tensorboard"))
@@ -170,76 +147,52 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     
     n_envs = 1 if args.randomize_trajectory == False else NUM_ENVIRONMENTS
     vec_cls = DummyVecEnv if n_envs == 1 else SubprocVecEnv
-    
-    train_env_fns = [make_env(i) for i in range(n_envs)]
-    train_env = vec_cls(train_env_fns)
+    train_env = vec_cls([make_env(i) for i in range(n_envs)])
 
+    # 1. Initialize & Balance Training Buffer
     replay_buffer = ReplayBuffer(ESTIMATOR_BUFFER_SIZE, device)
     
-    if args.randomize_trajectory == False:
-        target_initial_samples = ESTIMATOR_BUFFER_SIZE
-    else:
-        target_initial_samples = ESTIMATOR_BATCH_SIZE * 50
-
-    logger.info("Initializing Data Collection...")
+    # [STRATEGY] 20% Static, 80% Dynamic
+    num_static = int(ESTIMATOR_BUFFER_SIZE * 0.2)
+    num_dynamic = ESTIMATOR_BUFFER_SIZE - num_static
+    
+    logger.info(f"Targeting Dataset Balance: {num_static} Static / {num_dynamic} Dynamic")
+    
+    # Inject Static
+    inject_static_samples(replay_buffer, num_static, logger)
+    
+    # Collect Dynamic
+    logger.info("Collecting dynamic trajectories...")
     train_env.reset()
-    
-    # 1. [NEW] INJECT STATIC HOLD SEQUENCES
-    # We artificially create data where the robot is holding steady at Initial Config.
-    # This teaches the LSTM that (q_init, q_init, ...) -> q_init is valid.
-    logger.info("Injecting STATIC HOLD sequences (Augmentation)...")
-    
-    # Create a static state vector (q + qd)
-    static_state_vector = np.concatenate([
-        INITIAL_JOINT_CONFIG, 
-        np.zeros(N_JOINTS)
-    ]).astype(np.float32) # 14D vector
-    
-    # Create a full sequence of this static state
-    static_seq = np.tile(static_state_vector, (RNN_SEQUENCE_LENGTH, 1)) # (Seq, 14)
-    
-    # Inject 5000 samples (or roughly 10-20% of your buffer size)
-    num_static_samples = 5000 
-    for _ in range(num_static_samples):
-        replay_buffer.add(static_seq, static_state_vector)
-        
-    logger.info(f"Added {num_static_samples} static hold samples.")
-    
-    # 2. Collect Dynamic Data
-    logger.info("Collecting dynamic trajectory data...")
-    for _ in range(100): 
-        train_env.step([np.zeros((n_envs, N_JOINTS))])
-        
     collected = 0
-    while collected < target_initial_samples:
+    while collected < num_dynamic:
         seqs, targets = collect_data_from_envs(train_env, n_envs)
         for i in range(n_envs):
             replay_buffer.add(seqs[i], targets[i])
-        
         collected += n_envs
         train_env.step([np.zeros((n_envs, N_JOINTS))])
-        
         if collected % 5000 < n_envs:
-            logger.info(f"  -> {collected}/{target_initial_samples} dynamic samples collected")
+            logger.info(f"  -> {collected}/{num_dynamic} dynamic samples")
             
-    logger.info(f"Data collection complete. Buffer size: {len(replay_buffer)}")
-            
-    # Validation setup ...
+    # 2. Initialize & Balance Validation Buffer
+    # [CRITICAL] Validate on the SAME distribution we expect in deployment (Static + Dynamic)
     val_env = DummyVecEnv([make_env(0)])
     val_buffer = ReplayBuffer(ESTIMATOR_VAL_STEPS, device)
     
-    # Add some static samples to validation too
-    for _ in range(int(ESTIMATOR_VAL_STEPS * 0.2)):
-         val_buffer.add(static_seq, static_state_vector)
-
+    val_static = int(ESTIMATOR_VAL_STEPS * 0.2)
+    val_dynamic = ESTIMATOR_VAL_STEPS - val_static
+    
+    logger.info("Filling Validation Buffer (Balanced)...")
+    inject_static_samples(val_buffer, val_static, logger)
+    
     val_env.reset()
-    for _ in range(ESTIMATOR_VAL_STEPS):
+    for _ in range(val_dynamic):
         seq, target = collect_data_from_envs(val_env, 1)
         val_buffer.add(seq[0], target[0])
         val_env.step([np.zeros((1, N_JOINTS))])
     val_env.close()
     
-    # Model Training Loop
+    # Model & Training
     state_estimator = StateEstimator().to(device)
     optimizer = torch.optim.Adam(state_estimator.parameters(), lr=ESTIMATOR_LEARNING_RATE)
     scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=ESTIMATOR_LR_PATIENCE)
@@ -252,15 +205,18 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     logger.info(f"Starting training...")
     
     for update in range(ESTIMATOR_TOTAL_UPDATES):
+        # Keep refreshing dynamic data if randomized
         if args.randomize_trajectory:
             delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, n_envs)
             for i in range(n_envs):
+                # Only replace if buffer is full (FIFO), this naturally cycles out old dynamic data
+                # Note: Static data might be overwritten over time. 
+                # To fix this, we could re-inject static data occasionally, 
+                # but for pre-training static injection at start is usually sufficient 
+                # as long as buffer is large enough.
                 replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
             train_env.step([np.zeros((n_envs, N_JOINTS))])
 
-        if len(replay_buffer) < ESTIMATOR_BATCH_SIZE:
-            continue
-        
         batch = replay_buffer.sample(ESTIMATOR_BATCH_SIZE)
         pred, _ = state_estimator(batch['delayed_sequences'])
         loss = F.mse_loss(pred, batch['true_targets'])
@@ -297,8 +253,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
                     break
 
     torch.save({'state_estimator_state_dict': state_estimator.state_dict()}, os.path.join(output_dir, "estimator_final.pth"))
-    logger.info(f"Training finished! Best Val MSE = {best_val_loss:.8f}")
-    logger.info(f"Model saved to {output_dir}")
+    logger.info(f"Finished. Best Val MSE: {best_val_loss:.8f}")
     tb_writer.close()
     train_env.close()
 
@@ -314,9 +269,7 @@ def parse_arguments() -> argparse.Namespace:
     CONFIG_MAP = {'1': config_options[0], '2': config_options[1],
                   '3': config_options[2], '4': config_options[3]}
     args.config = CONFIG_MAP[args.config]
-    
     args.trajectory_type = next(t for t in TrajectoryType if t.value.lower() == args.trajectory_type.lower())
-
     return args
 
 if __name__ == "__main__":
