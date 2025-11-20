@@ -31,11 +31,11 @@ DELAY_INPUT_NORM_FACTOR = 100.0
 
 class StateEstimator(nn.Module):
     """
-    Late Fusion LSTM State Estimator with Batch Normalization.
+    Late Fusion LSTM State Estimator with Layer Normalization.
     
     Architecture:
     1. Split Input: [Batch, Seq, 15] -> State [Batch, Seq, 14] + Delay [Batch, 1]
-    2. Normalize State: BatchNorm1d(State)
+    2. Normalize State: LayerNorm(State)
     3. Dynamics Encoding: h = LSTM(State)
     4. Late Fusion: z = Concat(h, Delay_Normalized)
     5. Residual Prediction: Delta = MLP(z)
@@ -57,9 +57,9 @@ class StateEstimator(nn.Module):
         # LSTM input is 14 (Robot State only)
         self.lstm_input_dim = input_dim_total - 1 
         
-        # [CRITICAL FIX] Batch Normalization for time-series input
-        # Normalizes the 14-dim state vector before LSTM processing
-        self.input_bn = nn.BatchNorm1d(self.lstm_input_dim)
+        # [CRITICAL FIX] Layer Normalization
+        # Robust to batch size 1 and distribution shifts
+        self.input_ln = nn.LayerNorm(self.lstm_input_dim)
         
         self.lstm = nn.LSTM(
             input_size=self.lstm_input_dim,
@@ -116,15 +116,12 @@ class StateEstimator(nn.Module):
         # 2. Normalize Delay
         delay_norm = delay_scalar / DELAY_INPUT_NORM_FACTOR
         
-        # 3. [CRITICAL FIX] Apply Batch Normalization to State Sequence
-        # BatchNorm1d expects [Batch, Channels, Seq_Len]
-        # Input is [Batch, Seq_Len, Channels] -> We must permute
-        state_seq_permuted = state_seq.permute(0, 2, 1) 
-        state_seq_normalized = self.input_bn(state_seq_permuted)
-        state_seq = state_seq_normalized.permute(0, 2, 1) # Permute back
+        # 3. [CRITICAL FIX] Apply Layer Normalization
+        # LayerNorm works directly on the last dimension, no permutation needed
+        state_seq_normalized = self.input_ln(state_seq)
         
         # 4. Dynamics Encoding (LSTM)
-        lstm_output, new_hidden_state = self.lstm(state_seq, hidden_state)
+        lstm_output, new_hidden_state = self.lstm(state_seq_normalized, hidden_state)
         
         # Extract latent dynamics from the last timestep
         dynamics_embedding = lstm_output[:, -1, :]
@@ -136,7 +133,6 @@ class StateEstimator(nn.Module):
         predicted_residual = self.prediction_head(fusion_vector)
         
         return predicted_residual, new_hidden_state
-
 
 class Actor(nn.Module):
     """

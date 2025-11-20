@@ -9,6 +9,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 
+# Custom Imports
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import StateEstimator
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
@@ -19,6 +20,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     RNN_SEQUENCE_LENGTH,
     LSTM_MODEL_PATH,
     TRAJECTORY_FREQUENCY,
+    TARGET_DELTA_SCALE  # [CRITICAL IMPORT]
 )
 
 class LSTMTestNode(Node):
@@ -38,10 +40,10 @@ class LSTMTestNode(Node):
         self.experiment_config_int_ = self.get_parameter('experiment_config').value
         self.delay_config_ = ExperimentConfig(self.experiment_config_int_)
         
-        # Load LSTM Model ONLY
+        # Load LSTM Model
         self.lstm_model_path_ = LSTM_MODEL_PATH
         # [NOTE] Input dim must match your training (15D: 7q + 7qd + 1delay)
-        self.state_estimator_ = StateEstimator(input_dim=N_JOINTS*2+1).to(self.device_)
+        self.state_estimator_ = StateEstimator(input_dim_total=N_JOINTS*2+1).to(self.device_)
         self._load_model()
 
         # Delay Simulator
@@ -74,7 +76,9 @@ class LSTMTestNode(Node):
     def _load_model(self):
         try:
             lstm_ckpt = torch.load(self.lstm_model_path_, map_location=self.device_)
-            self.state_estimator_.load_state_dict(lstm_ckpt.get('state_estimator_state_dict', lstm_ckpt))
+            # Handle both full checkpoint dict and state_dict only
+            state_dict = lstm_ckpt.get('state_estimator_state_dict', lstm_ckpt)
+            self.state_estimator_.load_state_dict(state_dict)
             self.state_estimator_.eval()
             self.get_logger().info(f"LSTM loaded from {self.lstm_model_path_}")
         except Exception as e:
@@ -84,13 +88,11 @@ class LSTMTestNode(Node):
     def _prefill_buffers(self) -> None:
         q_init = INITIAL_JOINT_CONFIG.astype(np.float32)
         qd_init = np.zeros(N_JOINTS, dtype=np.float32)
-        # Fill enough to prevent index errors immediately
         for _ in range(self.rnn_seq_len_ + 50):
             self.leader_q_history_.append(q_init)
             self.leader_qd_history_.append(qd_init)
 
     def local_robot_state_callback(self, msg: JointState) -> None:
-        # Throttle to control freq
         current_time = self.get_clock().now().nanoseconds / 1e9
         if (current_time - self.last_local_update_time_) < (self.dt_ * 0.95):
             return
@@ -104,97 +106,111 @@ class LSTMTestNode(Node):
             q_new = np.array(pos, dtype=np.float32)
             qd_new = np.array(vel, dtype=np.float32)
             
-            # This represents "Real-time" data flowing into the buffer
             self.leader_q_history_.append(q_new)
             self.leader_qd_history_.append(qd_new)
-            
             self.is_leader_ready_ = True
         except (KeyError, IndexError):
             pass
 
-    def _get_delayed_leader_data(self) -> tuple[np.ndarray, float]:
-        """Extracts the sequence the Agent WOUL see (t-k)"""
+    # ---------------------------------------------------------------------
+    # Helper Methods
+    # ---------------------------------------------------------------------
+
+    def _get_delayed_leader_data(self) -> tuple[np.ndarray, float, np.ndarray]:
+        """
+        Returns:
+            buffer: Flattened sequence for LSTM input (normalized delay)
+            raw_delay_scalar: Raw delay steps (for logging)
+            last_observation: The specific [q, qd] at t-delay (for reconstruction)
+        """
         history_len = len(self.leader_q_history_)
-        obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
-        current_delay_scalar = float(obs_delay_steps)
         
-        # Calculate indices for the delayed window
-        most_recent_delayed_idx = -(obs_delay_steps + 1)
+        # 1. Get Raw Delay
+        raw_delay_steps = int(self.delay_simulator_.get_observation_delay_steps(history_len))
+        
+        # 2. Normalize Delay (Divide by 100.0 to match training)
+        normalized_delay = float(raw_delay_steps) / 100.0
+        
+        # 3. Calculate Indices
+        most_recent_delayed_idx = -(raw_delay_steps + 1)
         oldest_idx = most_recent_delayed_idx - self.rnn_seq_len_ + 1
         
         buffer_seq = []
         
+        # 4. Get Last Observation (for Residual Reconstruction)
+        safe_last_idx = np.clip(most_recent_delayed_idx, -history_len, -1)
+        last_q = self.leader_q_history_[safe_last_idx]
+        last_qd = self.leader_qd_history_[safe_last_idx]
+        last_observation = np.concatenate([last_q, last_qd])
+
+        # 5. Build Sequence
         for i in range(oldest_idx, most_recent_delayed_idx + 1):
             safe_idx = np.clip(i, -history_len, -1)
             step_vector = np.concatenate([
                 self.leader_q_history_[safe_idx],
                 self.leader_qd_history_[safe_idx],
-                [current_delay_scalar] # 15th dimension
+                [normalized_delay] # Use NORMALIZED delay
             ])
             buffer_seq.append(step_vector)
         
         buffer = np.array(buffer_seq).flatten().astype(np.float32)
-        return buffer, current_delay_scalar
+        return buffer, float(raw_delay_steps), last_observation
 
     def _get_ground_truth(self) -> np.ndarray:
-        """
-        1. Groundtruth at t
-        Since leader_q_history_ is updated live, the last element (-1) 
-        is the current state of the local robot.
-        """
+        """Current state of the local robot (Live)"""
         gt_q = self.leader_q_history_[-1]
         gt_qd = self.leader_qd_history_[-1]
         return np.concatenate([gt_q, gt_qd])
+
+    # ---------------------------------------------------------------------
+    # Test Loop
+    # ---------------------------------------------------------------------
 
     def test_loop_callback(self) -> None:
         if not self.is_leader_ready_:
             return
             
         try:
-            # ---------------------------------------------------------
-            # 3. Get Delay Sequence (Input to LSTM)
-            # ---------------------------------------------------------
-            raw_delayed_sequence, current_delay_scalar = self._get_delayed_leader_data()
+            # 1. Get Inputs
+            raw_delayed_sequence, raw_delay_scalar, last_observation = self._get_delayed_leader_data()
             
-            # Prepare Tensor
+            # 2. Inference
             full_seq_t = torch.tensor(raw_delayed_sequence, dtype=torch.float32).to(self.device_).reshape(1, self.rnn_seq_len_, -1)
 
-            # ---------------------------------------------------------
-            # 2. Predicted for t (LSTM Inference)
-            # ---------------------------------------------------------
             with torch.no_grad():
-                predicted_raw_target_t, _ = self.state_estimator_(full_seq_t)
+                # Model output is the SCALED residual
+                predicted_delta_scaled_t, _ = self.state_estimator_(full_seq_t)
             
-            predicted_np = predicted_raw_target_t.cpu().numpy().flatten()
+            predicted_delta_scaled_np = predicted_delta_scaled_t.cpu().numpy().flatten()
+            
+            # 3. [CRITICAL FIX] Descaling: Delta = Scaled_Output / Scale_Factor
+            predicted_delta_np = predicted_delta_scaled_np / TARGET_DELTA_SCALE
+            
+            # 4. Reconstruction: Target = Last_Obs + Delta
+            predicted_np = last_observation + predicted_delta_np
 
-            # ---------------------------------------------------------
-            # 1. Groundtruth at t
-            # ---------------------------------------------------------
+            # 5. Ground Truth
             ground_truth_np = self._get_ground_truth()
 
-            # ---------------------------------------------------------
-            # Comparison & Logging
-            # ---------------------------------------------------------
-            
-            # Calculate error
+            # 6. Metrics
             error_vec = ground_truth_np - predicted_np
             error_norm = np.linalg.norm(error_vec)
             
-            # Only print every 0.5 seconds to avoid spamming
-            # (assuming 250Hz, print every ~125 steps)
-            # Or just check magnitude changes
-            
+            # Logging
             print("\n" + "="*50)
-            print(f"[LSTM Diagnostic] Delay Steps: {int(current_delay_scalar)}")
+            print(f"[LSTM Residual Test] Delay: {int(raw_delay_scalar)} steps")
             print("-" * 50)
-            print(f"1. Ground Truth (t) [q0...q6]: \n   {np.round(ground_truth_np[:7], 4)}")
-            print(f"2. Predicted (t)    [q0...q6]: \n   {np.round(predicted_np[:7], 4)}")
+            print(f"1. Ground Truth (t): \n   {np.round(ground_truth_np[:7], 4)}")
+            print(f"2. Predicted (t):    \n   {np.round(predicted_np[:7], 4)}")
+            print(f"   (Last Obs + Delta (Scaled/{TARGET_DELTA_SCALE}))")
             print("-" * 50)
             print(f"Prediction Error (L2 Norm): {error_norm:.5f}")
             print("="*50)
 
         except Exception as e:
             self.get_logger().error(f"Error in test loop: {e}")
+            # import traceback
+            # traceback.print_exc()
 
 def main(args=None):
     rclpy.init(args=args)
