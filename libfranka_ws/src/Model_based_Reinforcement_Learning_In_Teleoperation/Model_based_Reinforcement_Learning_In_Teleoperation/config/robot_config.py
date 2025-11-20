@@ -37,8 +37,8 @@ WARM_UP_DURATION = 1
 ######################################
 # Control Parameters
 ######################################
-DEFAULT_CONTROL_FREQ = 250
-DEFAULT_PUBLISH_FREQ = 250
+DEFAULT_CONTROL_FREQ = 100
+DEFAULT_PUBLISH_FREQ = 100
 
 DEFAULT_KP_REMOTE = np.array([70.0, 70.0, 70.0, 50.0, 30.0, 20.0, 0.0], dtype=np.float32) # We use kp kd to calculate baseline tau
 DEFAULT_KD_REMOTE = np.array([ 7.0,  7.0,  7.0,  5.0, 4.5, 3.0,  0.0], dtype=np.float32)
@@ -57,8 +57,8 @@ IK_CONTINUITY_GAIN = 0.5
 # Trajectory Generation Parameters
 ######################################
 TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.5], dtype=np.float32)
-TRAJECTORY_SCALE = np.array([0.1, 0.3], dtype=np.float32)
-TRAJECTORY_FREQUENCY = 0.1
+TRAJECTORY_SCALE = np.array([0.2, 0.2], dtype=np.float32)
+TRAJECTORY_FREQUENCY = 0.05  # Hz
 
 ######################################
 # pre-trained LSTM hyperparameters
@@ -73,7 +73,7 @@ ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 256
-RNN_NUM_LAYERS = 4
+RNN_NUM_LAYERS = 3
 RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
 
 ######################################
