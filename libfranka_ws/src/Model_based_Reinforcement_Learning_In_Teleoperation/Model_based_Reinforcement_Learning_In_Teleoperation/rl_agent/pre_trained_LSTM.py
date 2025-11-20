@@ -7,6 +7,15 @@ pipelines:
 3. Train the StateEstimator LSTM in a supervised learning. (min MSE loss)
 """
 
+"""
+Pre-training script for the State Estimator (LSTM).
+
+Updates:
+1. Balanced Static Hold Augmentation (20% Static / 80% Dynamic).
+2. Validation Set Augmentation to ensure fair metric comparison.
+3. Added 'verify_buffer_coverage' to ensure full trajectory range is captured.
+"""
+
 import os
 import sys
 import torch
@@ -121,6 +130,40 @@ def inject_static_samples(buffer: ReplayBuffer, num_samples: int, logger: loggin
     
     logger.info(f"Injected {num_samples} static hold samples.")
 
+def verify_buffer_coverage(buffer: ReplayBuffer, logger: logging.Logger):
+    """
+    Analyze the ReplayBuffer to ensure it covers the full workspace.
+    Checks Min/Max values of the collected targets to verify trajectory completeness.
+    """
+    if buffer.size == 0:
+        logger.warning("Buffer is empty! Cannot verify coverage.")
+        return
+
+    # Extract targets: (N, 14) -> we only care about first 7 (Positions)
+    targets = buffer.true_targets[:buffer.size] 
+    positions = targets[:, :N_JOINTS]
+    
+    min_pos = np.min(positions, axis=0)
+    max_pos = np.max(positions, axis=0)
+    mean_pos = np.mean(positions, axis=0)
+    
+    logger.info("\n" + "="*40)
+    logger.info(" BUFFER COVERAGE CHECK (Joint Positions)")
+    logger.info("="*40)
+    logger.info(f"{'Joint':<5} | {'Min':<8} | {'Max':<8} | {'Range':<8} | {'Mean':<8}")
+    logger.info("-" * 45)
+    
+    for i in range(N_JOINTS):
+        p_range = max_pos[i] - min_pos[i]
+        logger.info(f"J{i:<4} | {min_pos[i]:<8.3f} | {max_pos[i]:<8.3f} | {p_range:<8.3f} | {mean_pos[i]:<8.3f}")
+        
+        # Basic sanity check: If range is tiny (e.g., < 0.01 rad), we might be missing motion
+        if p_range < 0.01:
+            logger.warning(f"  [WARNING] Joint {i} range is very small! Check trajectory generator.")
+            
+    logger.info("="*40 + "\n")
+
+
 def pretrain_estimator(args: argparse.Namespace) -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"Pretrain_LSTM_{args.config.name}_{timestamp}"
@@ -164,6 +207,11 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     # Collect Dynamic
     logger.info("Collecting dynamic trajectories...")
     train_env.reset()
+    
+    # Initial warmup steps to fill env buffers
+    for _ in range(100):
+        train_env.step([np.zeros((n_envs, N_JOINTS))])
+
     collected = 0
     while collected < num_dynamic:
         seqs, targets = collect_data_from_envs(train_env, n_envs)
@@ -173,6 +221,11 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         train_env.step([np.zeros((n_envs, N_JOINTS))])
         if collected % 5000 < n_envs:
             logger.info(f"  -> {collected}/{num_dynamic} dynamic samples")
+            
+    logger.info(f"Data collection complete. Buffer size: {len(replay_buffer)}")
+    
+    # [NEW] Verify we actually collected the whole trajectory
+    verify_buffer_coverage(replay_buffer, logger)
             
     # 2. Initialize & Balance Validation Buffer
     # [CRITICAL] Validate on the SAME distribution we expect in deployment (Static + Dynamic)
@@ -186,6 +239,10 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     inject_static_samples(val_buffer, val_static, logger)
     
     val_env.reset()
+    # Warmup val env
+    for _ in range(100):
+         val_env.step([np.zeros((1, N_JOINTS))])
+         
     for _ in range(val_dynamic):
         seq, target = collect_data_from_envs(val_env, 1)
         val_buffer.add(seq[0], target[0])
@@ -209,11 +266,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         if args.randomize_trajectory:
             delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, n_envs)
             for i in range(n_envs):
-                # Only replace if buffer is full (FIFO), this naturally cycles out old dynamic data
-                # Note: Static data might be overwritten over time. 
-                # To fix this, we could re-inject static data occasionally, 
-                # but for pre-training static injection at start is usually sufficient 
-                # as long as buffer is large enough.
+                # Add new data (FIFO buffer handles replacement)
                 replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
             train_env.step([np.zeros((n_envs, N_JOINTS))])
 

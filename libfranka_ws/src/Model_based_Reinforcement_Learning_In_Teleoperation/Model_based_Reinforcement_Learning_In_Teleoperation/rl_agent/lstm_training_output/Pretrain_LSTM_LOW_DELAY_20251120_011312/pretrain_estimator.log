@@ -1,0 +1,13 @@
+2025-11-20 01:13:12 [INFO] ================================================================================
+2025-11-20 01:13:12 [INFO] LSTM STATE ESTIMATOR PRE-TRAINING (Balanced)
+2025-11-20 01:13:12 [INFO] ================================================================================
+2025-11-20 01:13:13 [INFO] Targeting Dataset Balance: 40000 Static / 160000 Dynamic
+2025-11-20 01:13:13 [INFO] Injected 40000 static hold samples.
+2025-11-20 01:13:13 [INFO] Collecting dynamic trajectories...
+2025-11-20 01:13:21 [INFO]   -> 5000/160000 dynamic samples
+2025-11-20 01:13:28 [INFO]   -> 10000/160000 dynamic samples
+2025-11-20 01:13:36 [INFO]   -> 15000/160000 dynamic samples
+2025-11-20 01:13:44 [INFO]   -> 20000/160000 dynamic samples
+2025-11-20 01:13:52 [INFO]   -> 25000/160000 dynamic samples
+2025-11-20 01:14:00 [INFO]   -> 30000/160000 dynamic samples
+2025-11-20 01:14:07 [INFO]   -> 35000/160000 dynamic samples
