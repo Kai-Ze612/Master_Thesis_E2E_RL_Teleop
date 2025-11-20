@@ -7,15 +7,6 @@ pipelines:
 3. Train the StateEstimator LSTM in a supervised learning. (min MSE loss)
 """
 
-"""
-Pre-training script for the State Estimator (LSTM).
-
-Updates:
-1. Balanced Static Hold Augmentation (20% Static / 80% Dynamic).
-2. Validation Set Augmentation to ensure fair metric comparison.
-3. Added 'verify_buffer_coverage' to ensure full trajectory range is captured.
-"""
-
 import os
 import sys
 import torch

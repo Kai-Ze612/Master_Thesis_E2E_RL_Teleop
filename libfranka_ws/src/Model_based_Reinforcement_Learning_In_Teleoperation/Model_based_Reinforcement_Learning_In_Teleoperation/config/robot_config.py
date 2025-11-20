@@ -74,7 +74,7 @@ ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 4
-RNN_SEQUENCE_LENGTH = 200 # Input sequence for LSTM
+RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
 
 ######################################
 # RL Environment Parameters
