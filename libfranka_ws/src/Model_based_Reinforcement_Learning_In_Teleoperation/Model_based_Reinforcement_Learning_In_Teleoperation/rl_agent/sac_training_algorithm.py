@@ -152,10 +152,22 @@ class SACTrainer:
         for param in self.state_estimator.parameters():
             param.requires_grad = False  # Freeze parameters
 
-        # Initialize Actor and Critic Networks
-        self.actor = Actor().to(self.device)
-        self.critic = Critic().to(self.device)
+        # === MODIFICATION: Correct state dimension: 29D ===
+        # Predicted state (from LSTM):           14D (7q + 7qd)
+        # Augmented remote state + delay scalar: 15D (7q + 7qd + 1δ_norm)
+        # → Total state input to Actor/Critic:   29D
+        state_dim = (N_JOINTS * 2) + (N_JOINTS * 2 + 1)  # 14 + 15 = 29
+
+        # === MODIFICATION: Log the initialization for debugging ===
+        logger.info(f"Initializing Actor and Critic networks with state_dim = {state_dim} "
+                    f"(predicted_state 14D + remote_augmented_state 15D)")
+
+        # === MODIFICATION: Initialize Actor and Critic Networks with correct input dimension ===
+        self.actor = Actor(state_dim=state_dim).to(self.device)
+        self.critic = Critic(state_dim=state_dim).to(self.device)
         self.critic_target = deepcopy(self.critic).to(self.device)
+
+        # Freeze target network parameters
         for param in self.critic_target.parameters():
             param.requires_grad = False
 
@@ -166,7 +178,7 @@ class SACTrainer:
         self.critic_optimizer = torch.optim.Adam(
             self.critic.parameters(), lr=SAC_LEARNING_RATE
         )
-        
+
         # Automatic Temperature (Alpha) Tuning
         if SAC_TARGET_ENTROPY == 'auto':
             self.target_entropy = -torch.prod(torch.Tensor(self.env.action_space.shape).to(self.device)).item()
@@ -229,21 +241,31 @@ class SACTrainer:
     @property
     def alpha(self) -> float:
         return self.log_alpha.exp().detach().item()
-
+    
     def select_action(self,
-                      delayed_seq_batch: np.ndarray,  # (num_envs, seq_len, 14)
+                      delayed_seq_batch: np.ndarray,  # (num_envs, seq_len, 15) <--- Note: This is 15D
                       remote_state_batch: np.ndarray,  # (num_envs, 14)
                       deterministic: bool = False
                      ) -> Tuple[np.ndarray, np.ndarray]:
         """ Select action using the current policy given delayed sequences and remote states. """
         with torch.no_grad():
-            delayed_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)  # (num_envs, seq_len, 14)
-            remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)  # (num_envs, 14)
+            # delayed_t shape is (Batch, Seq, 15)
+            delayed_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)
+            remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)
 
-            # Full-sequence LSTM (zero hidden init inside StateEstimator)
-            predicted_state_t, _ = self.state_estimator(delayed_t)  # (num_envs, 14)
+            # 1. Prediction (14D)
+            predicted_state_t, _ = self.state_estimator(delayed_t)
 
-            actor_input_t = torch.cat([predicted_state_t, remote_state_t], dim=1)  # (num_envs, 28)
+            # 2. [FIX] Extract Delay from the input sequence
+            # We take the delay from the last timestep: [:, -1, 14:]
+            # Index 14 is the 15th element (the delay scalar)
+            delay_t = delayed_t[:, -1, 14:] 
+            
+            # 3. [FIX] Augment Remote State (14D + 1D = 15D)
+            augmented_remote_state_t = torch.cat([remote_state_t, delay_t], dim=1)
+
+            # 4. Concatenate for Actor (14D + 15D = 29D)
+            actor_input_t = torch.cat([predicted_state_t, augmented_remote_state_t], dim=1)
 
             action_t, _, _ = self.actor.sample(actor_input_t, deterministic)
 
@@ -275,13 +297,20 @@ class SACTrainer:
                 
                 # Get deterministic action (no exploration)
                 with torch.no_grad():
-                    delayed_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)  # (1, seq_len, 14)
-                    remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)  # (1, 14)
+                    delayed_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)
+                    remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)
 
-                    # Full-sequence inference
-                    predicted_state_t, _ = self.state_estimator(delayed_t)  # (1, 14)
+                    # 1. Predict
+                    predicted_state_t, _ = self.state_estimator(delayed_t)
 
-                    actor_input_t = torch.cat([predicted_state_t, remote_state_t], dim=1)  # (1, 28)
+                    # 2. [FIX] Extract Delay
+                    delay_t = delayed_t[:, -1, 14:] 
+                    
+                    # 3. [FIX] Augment Remote State
+                    augmented_remote_state_t = torch.cat([remote_state_t, delay_t], dim=1)
+
+                    # 4. Concatenate (29D)
+                    actor_input_t = torch.cat([predicted_state_t, augmented_remote_state_t], dim=1)
 
                     action_t, _, _ = self.actor.sample(actor_input_t, deterministic=True)
                     action = action_t.cpu().numpy()[0]

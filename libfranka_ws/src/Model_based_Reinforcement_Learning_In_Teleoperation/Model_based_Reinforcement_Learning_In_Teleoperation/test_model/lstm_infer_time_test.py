@@ -16,7 +16,7 @@ def benchmark():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Benchmarking on device: {device}")
     
-    model = StateEstimator(input_dim=N_JOINTS*2+1).to(device)
+    model = StateEstimator().to(device)
     try:
         checkpoint = torch.load(LSTM_MODEL_PATH, map_location=device)
         model.load_state_dict(checkpoint.get('state_estimator_state_dict', checkpoint))

@@ -50,7 +50,7 @@ class LSTMTestNode(Node):
         self.delay_simulator_ = DelaySimulator(
             control_freq=self.control_freq_,
             config=self.delay_config_,
-            seed=50
+            seed= 100
         )
         
         # Buffers
