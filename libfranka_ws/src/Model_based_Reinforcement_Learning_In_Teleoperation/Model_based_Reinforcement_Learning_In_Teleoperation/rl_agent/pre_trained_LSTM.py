@@ -22,6 +22,7 @@ import time
 
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecEnv
 from stable_baselines3.common.env_util import make_vec_env
+
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
@@ -47,29 +48,32 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     TARGET_DELTA_SCALE
 )
 
-# [NEW] Helper function to detect simulation crashes
 def is_trajectory_stable(delayed_seq: np.ndarray, true_target: np.ndarray) -> bool:
     """
-    Relaxed filter with DEBUG PRINTS to tell us why data is skipped.
+    Data collection script.
+    
+    This function helps filter out unstable trajectories based on:
+    1. NaN values
+    2. Joint velocity spikes
+    3. Joint position divergence
     """
-    # 1. Check for NaNs
+    
+    # Check NaN values
     if np.isnan(delayed_seq).any() or np.isnan(true_target).any():
         print("   [Filter] Rejected: NaN values detected.")
         return False
         
-    # 2. Check Joint Velocities (Indices 7-14)
-    # RELAXED: Increased from 3.0 to 8.0 (Allow fast movements, catch only explosions)
+    # Check Joint Velocities
     velocities = delayed_seq[:, 7:14]
     max_vel = np.max(np.abs(velocities))
-    if max_vel > 8.0:
-        print(f"   [Filter] Rejected: Velocity spike ({max_vel:.4f} > 8.0)")
+    if max_vel > 5.0:
+        print(f"   [Filter] Rejected: Velocity spike ({max_vel:.4f} > 5.0)")
         return False
 
-    # 3. Check Joint Positions
-    # RELAXED: Increased from 4.0 to 6.0
+    # Check Joint Positions
     positions = delayed_seq[:, 0:7]
     max_pos = np.max(np.abs(positions))
-    if max_pos > 6.0: 
+    if max_pos > 6.0:
         print(f"   [Filter] Rejected: Position divergence ({max_pos:.4f} > 6.0)")
         return False
         
@@ -79,12 +83,11 @@ class ReplayBuffer:
     def __init__(self, buffer_size: int, device: torch.device):
         self.buffer_size = buffer_size
         self.device = device
-        self.ptr = 0 
+        self.ptr = 0
         self.size = 0
         self.seq_len = RNN_SEQUENCE_LENGTH
         
         # Input: 15D (7q + 7qd + 1delay)
-        # We store the full vector here; the Network class handles slicing.
         self.state_dim = N_JOINTS * 2 + 1 
         
         self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
@@ -93,7 +96,7 @@ class ReplayBuffer:
     def add(self, delayed_seq: np.ndarray, true_target: np.ndarray) -> None:
         self.delayed_sequences[self.ptr] = delayed_seq
         self.true_targets[self.ptr] = true_target
-        self.ptr = (self.ptr + 1) % self.buffer_size
+        self.ptr = (self.ptr + 1) % self.buffer_size  # pointer
         self.size = min(self.size + 1, self.buffer_size)
 
     def sample(self, batch_size: int) -> Dict[str, torch.Tensor]:
@@ -120,14 +123,14 @@ def collect_data_from_envs(env: VecEnv, num_envs: int) -> Tuple[np.ndarray, np.n
     delayed_flat_list = env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
     true_target_list = env.env_method("get_true_current_target")
     
-    # 1. Raw numpy conversion
+    # numpy arrays conversion
     raw_seqs = np.array([
         buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1)
         for buf in delayed_flat_list
     ])
     raw_targets = np.array(true_target_list)
     
-    # 2. Filter loop
+    # Filter loop
     valid_seqs = []
     valid_targets = []
     
@@ -136,7 +139,7 @@ def collect_data_from_envs(env: VecEnv, num_envs: int) -> Tuple[np.ndarray, np.n
             valid_seqs.append(raw_seqs[i])
             valid_targets.append(raw_targets[i])
             
-    # 3. Handle empty case (if all envs crashed)
+    # Handle empty case (if all envs crashed)
     if len(valid_seqs) == 0:
         return np.array([]), np.array([])
         
@@ -151,21 +154,18 @@ def evaluate_model(model: StateEstimator, val_buffer: ReplayBuffer, batch_size: 
         for _ in range(num_batches):
             batch = val_buffer.sample(batch_size)
             
-            # 1. Get Ground Truth Delta
-            # delayed_sequences is [Batch, Seq, 15]
-            # We extract the state (first 14 dims) from the last timestep to compare against target
+            # ground truth delta
             last_observation_state = batch['delayed_sequences'][:, -1, :14] 
             true_delta = batch['true_targets'] - last_observation_state
             
-            # 2. Scale Target
+            # Scale Target (otherwise, the gradient of origianal delta is too small)
             scaled_target_delta = true_delta * TARGET_DELTA_SCALE
             
-            # 3. Predict (Network handles slicing internally)
-            # Output is the scaled residual
+            # predict
             pred_scaled_delta, _ = model(batch['delayed_sequences'])
             
-            # 4. Loss
-            loss = F.l1_loss(pred_scaled_delta, scaled_target_delta)
+            # Loss
+            loss = F.l1_loss(pred_scaled_delta, scaled_target_delta)  # we use L1 loss
             total_loss += loss.item()
     
     model.train()
@@ -173,7 +173,6 @@ def evaluate_model(model: StateEstimator, val_buffer: ReplayBuffer, batch_size: 
 
 def inject_static_samples(buffer: ReplayBuffer, num_samples: int, logger: logging.Logger):
     """Helper to inject static hold sequences to fix 'Static Hold Failure'."""
-    # Static input: [q, 0, delay=0.0] -> Note the 0.0 delay
     static_input_state = np.concatenate([INITIAL_JOINT_CONFIG, np.zeros(N_JOINTS), [0.0]]).astype(np.float32)
     # Static target: [q, 0]
     static_target_state = np.concatenate([INITIAL_JOINT_CONFIG, np.zeros(N_JOINTS)]).astype(np.float32)
@@ -265,7 +264,6 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
             # Standard step if data is good
             train_env.step([np.zeros((n_envs, N_JOINTS))])
         else:
-            # [CRITICAL FIX] If data is bad, RESET the environment to clear buffers
             logger.warning("Unstable trajectory detected. Resetting environment to clear history...")
             train_env.reset()
             # Warmup again to settle physics
@@ -293,14 +291,12 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
          
     for _ in range(val_dynamic):
         seq, target = collect_data_from_envs(val_env, 1)
-        # [MODIFIED] Validate val set too
         if len(seq) > 0:
             val_buffer.add(seq[0], target[0])
         val_env.step([np.zeros((1, N_JOINTS))])
     val_env.close()
     
     # Model & Optimizer
-    # Input dim passed is 15, but model will separate it to 14 + 1 internally
     state_estimator = StateEstimator(input_dim_total=N_JOINTS*2 + 1).to(device)
     
     optimizer = torch.optim.Adam(state_estimator.parameters(), lr=ESTIMATOR_LEARNING_RATE)
@@ -318,7 +314,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         if args.randomize_trajectory:
             delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, n_envs)
             
-            # [MODIFIED] Only add valid data
+            # Only add valid data
             if len(delayed_seq_batch) > 0:
                 for i in range(len(delayed_seq_batch)):
                     replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])

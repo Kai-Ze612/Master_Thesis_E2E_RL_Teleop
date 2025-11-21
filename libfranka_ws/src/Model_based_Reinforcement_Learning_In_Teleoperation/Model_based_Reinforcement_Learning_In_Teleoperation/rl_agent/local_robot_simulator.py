@@ -85,14 +85,7 @@ class TrajectoryGenerator(ABC): # Define the interface
 
     @abstractmethod
     def compute_position(self, t: float) -> NDArray[np.float64]:
-        """Compute position at time t.
-        
-        Args:
-            t: Time in seconds
-            
-        Returns:
-            3D position vector
-        """
+        """Compute 3D position at time t."""
         pass
     
     def _compute_phase(self, t: float) -> float:
@@ -103,14 +96,7 @@ class TrajectoryGenerator(ABC): # Define the interface
 class SquareTrajectoryGenerator(TrajectoryGenerator): # import the custom interface
     """Square trajectory in XY plane with smooth corners."""
     def compute_position(self, t: float) -> NDArray[np.float64]:
-        """Generate square pattern in XY plane.
         
-        Args:
-            t: Time in seconds
-            
-        Returns:
-            3D position with Z fixed at center height
-        """
         phase = self._compute_phase(t)
         t_norm = (phase % (2 * np.pi)) / (2 * np.pi)  # Normalize to [0, 1]
         
@@ -147,16 +133,7 @@ class LissajousComplexGenerator(TrajectoryGenerator):
     _PHASE_SHIFT = np.pi / 4
     
     def compute_position(self, t: float) -> NDArray[np.float64]:
-        """Generate complex Lissajous pattern for precision testing.
         
-        Mathematical form: x(t) = A*sin(3ωt + π/4), y(t) = B*sin(4ωt)
-        
-        Args:
-            t: Time in seconds
-            
-        Returns:
-            3D position with Z fixed at center height
-        """
         phase = self._compute_phase(t)
         dx = self._params.scale[0] * np.sin(self._FREQ_RATIO_X * phase + self._PHASE_SHIFT)
         dy = self._params.scale[1] * np.sin(self._FREQ_RATIO_Y * phase)
@@ -165,16 +142,7 @@ class LissajousComplexGenerator(TrajectoryGenerator):
 class Figure8TrajectoryGenerator(TrajectoryGenerator):
     """Figure-8 trajectory using Lissajous curve with 1:2 frequency ratio."""
     def compute_position(self, t: float) -> NDArray[np.float64]:
-        """Generate smooth figure-8 pattern in XY plane.
         
-        Mathematical form: x(t) = A*sin(ωt), y(t) = B*sin(ωt/2)
-        
-        Args:
-            t: Time in seconds
-            
-        Returns:
-            3D position with Z fixed at center height
-        """
         phase = self._compute_phase(t)
         dx = self._params.scale[0] * np.sin(phase)
         dy = self._params.scale[1] * np.sin(phase / 2)
@@ -337,7 +305,7 @@ class LocalRobotSimulator(gym.Env):
         trajectory_start_pos = self._generator.compute_position(0.0)
         self._start_pos = trajectory_start_pos.copy()
 
-        # 4. [CRITICAL FIX] Solve IK for this start position immediately
+        # Solve IK for this start position immediately
         # We use INITIAL_JOINT_CONFIG only as a seed for the IK solver
         q_start, ik_success, _ = self.ik_solver.solve(
             target_pos=trajectory_start_pos,

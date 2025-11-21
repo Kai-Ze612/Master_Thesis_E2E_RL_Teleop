@@ -24,10 +24,8 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_ACTIVATION,
     LOG_STD_MIN,
     LOG_STD_MAX,
+    DELAY_INPUT_NORM_FACTOR,
 )
-
-# Constant for normalizing input delay (e.g. 60 ticks -> 0.6)
-DELAY_INPUT_NORM_FACTOR = 100.0 
 
 class StateEstimator(nn.Module):
     """

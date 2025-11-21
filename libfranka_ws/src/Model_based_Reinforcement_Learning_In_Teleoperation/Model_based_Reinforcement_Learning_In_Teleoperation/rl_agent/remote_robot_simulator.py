@@ -11,7 +11,7 @@ Pipelines:
 
 from __future__ import annotations
 from typing import Tuple, Optional, List
-import heapq # [NEW] For time-ordered priority queue
+import heapq  # For time order queue management
 
 import mujoco
 import numpy as np
@@ -73,11 +73,8 @@ class RemoteRobotSimulator:
         # State tracking
         self.last_q_target = np.zeros(self.n_joints)
 
-        # [FIX] Keep the simulator instance to sample delay DYNAMICALLY every step
+        # Adding action delay simulator
         self.delay_simulator = DelaySimulator(self.control_freq, config=delay_config, seed=seed)
-        
-        # [FIX] Use a Priority Queue for variable delay handling
-        # Format: (arrival_tick, torque_action)
         self.action_queue: List[Tuple[int, np.ndarray]] = []
         
         self.internal_tick = 0
@@ -96,7 +93,7 @@ class RemoteRobotSimulator:
 
         self.last_q_target = initial_qpos.copy()
 
-        # [FIX] Reset queue and time
+        # Reset queue and time
         self.action_queue = []
         self.internal_tick = 0
         self.last_executed_rl_torque = np.zeros(self.n_joints)
@@ -115,58 +112,45 @@ class RemoteRobotSimulator:
         
         self.internal_tick += 1
         
-        # -------------------------------------------------------
-        # [FIX] 1. Sample Dynamic Delay for THIS specific packet
-        # -------------------------------------------------------
+        # delay time into steps and store the action in the queue arrcording to its arrival time
         delay_steps = int(self.delay_simulator.get_action_delay_steps())
         arrival_time = self.internal_tick + delay_steps
-        
-        # Push the RL action into the timeline
-        # We use heappush to keep the queue sorted by arrival time
         heapq.heappush(self.action_queue, (arrival_time, torque_compensation.copy()))
         
-        # -------------------------------------------------------
-        # [FIX] 2. Retrieve valid packets (Network Simulation)
-        # -------------------------------------------------------
-        # We pop ALL packets that have 'arrived' (arrival_time <= current_tick)
-        # and use the most recent one (Zero-Order Hold behavior).
-        
+        # Hold the latest valid torque compensation that has arrived if there is no update        
         updated = False
         while self.action_queue and self.action_queue[0][0] <= self.internal_tick:
             _, valid_torque = heapq.heappop(self.action_queue)
-            self.last_executed_rl_torque = valid_torque
+            self.last_executed_rl_torque = valid_torque  # RL compensation to be applied
             updated = True
             
-        # If no new packet arrived, we hold the previous torque (self.last_executed_rl_torque)
-        
-        # -------------------------------------------------------
-        # 3. Compute Local PD Control (Real-Time Firmware)
-        # -------------------------------------------------------
-        # NOTE: PD control runs on the robot locally, so it is NOT delayed.
-        # It reacts to the (delayed) target_q it received and its current state.
-        
+        # get current remote robot joint states
         q_current = self.data.qpos[:self.n_joints].copy()
         qd_current = self.data.qvel[:self.n_joints].copy()
         
+        # Calculate PD control torques
+        # q_error = target_q - q_current
+        # Normalize angle error to handle wrap-around (normalized to -pi to pi)
         q_error = self._normalize_angle(target_q - q_current) 
         qd_error = target_qd - qd_current
 
+        # PD control torque
         tau_pd = self.kp * q_error + self.kd * qd_error
-        tau_pd[-1] = 0.0 
+        tau_pd[-1] = 0.0 # No torque on gripper joint 
         
-        # -------------------------------------------------------
-        # 4. Final Torque = RealTime PD + Delayed RL Action
-        # -------------------------------------------------------
+        # Final torque = PD torque + RL compensation
         tau_total = tau_pd + self.last_executed_rl_torque
 
         # Apply safety torque limits
         tau_clipped = np.clip(tau_total, -self.torque_limits, self.torque_limits)
         limits_hit = np.any(tau_total != tau_clipped)
         
+        # Apply torques and step simulation        
         self.data.ctrl[:self.n_joints] = tau_clipped
         for _ in range(self.n_substeps):
             mujoco.mj_step(self.model, self.data)
 
+        # get remote robot joint states after stepping
         q_achieved = self.data.qpos[:self.n_joints].copy()
         joint_position_error = np.linalg.norm(target_q - q_achieved)
         qd_achieved = self.data.qvel[:self.n_joints].copy()
@@ -177,7 +161,7 @@ class RemoteRobotSimulator:
             "velocity_error": joint_velocity_error,
             "limits_hit": limits_hit,
             "tau_pd": tau_pd,
-            "tau_rl": self.last_executed_rl_torque, # Report what was actually applied
+            "tau_rl": self.last_executed_rl_torque,
             "tau_total": tau_total
         }
         return step_info
