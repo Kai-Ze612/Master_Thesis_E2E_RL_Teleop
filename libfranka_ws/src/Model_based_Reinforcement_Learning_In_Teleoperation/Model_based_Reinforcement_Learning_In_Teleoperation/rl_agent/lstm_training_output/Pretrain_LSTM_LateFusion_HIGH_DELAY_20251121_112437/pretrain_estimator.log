@@ -1,0 +1,31 @@
+2025-11-21 11:24:37 [INFO] ================================================================================
+2025-11-21 11:24:37 [INFO] LSTM STATE ESTIMATOR (LATE FUSION + RESIDUAL + L1 LOSS)
+2025-11-21 11:24:37 [INFO] Config: HIGH_DELAY | Trajectory: TrajectoryType.FIGURE_8
+2025-11-21 11:24:37 [INFO] ================================================================================
+2025-11-21 11:24:38 [INFO] Targeting Dataset Balance: 40000 Static / 160000 Dynamic
+2025-11-21 11:24:38 [INFO] Injected 40000 static hold samples (Augmented with Delay=0).
+2025-11-21 11:24:38 [INFO] Collecting dynamic trajectories...
+2025-11-21 11:24:45 [INFO]   -> 5000/160000 dynamic samples
+2025-11-21 11:24:52 [INFO]   -> 10000/160000 dynamic samples
+2025-11-21 11:24:59 [INFO]   -> 15000/160000 dynamic samples
+2025-11-21 11:25:07 [INFO]   -> 20000/160000 dynamic samples
+2025-11-21 11:25:14 [INFO]   -> 25000/160000 dynamic samples
+2025-11-21 11:25:21 [INFO]   -> 30000/160000 dynamic samples
+2025-11-21 11:25:29 [INFO]   -> 35000/160000 dynamic samples
+2025-11-21 11:25:36 [INFO]   -> 40000/160000 dynamic samples
+2025-11-21 11:25:44 [INFO]   -> 45000/160000 dynamic samples
+2025-11-21 11:25:51 [INFO]   -> 50000/160000 dynamic samples
+2025-11-21 11:25:59 [INFO]   -> 55000/160000 dynamic samples
+2025-11-21 11:26:07 [INFO]   -> 60000/160000 dynamic samples
+2025-11-21 11:26:14 [INFO]   -> 65000/160000 dynamic samples
+2025-11-21 11:26:22 [INFO]   -> 70000/160000 dynamic samples
+2025-11-21 11:26:29 [INFO]   -> 75000/160000 dynamic samples
+2025-11-21 11:26:37 [INFO]   -> 80000/160000 dynamic samples
+2025-11-21 11:26:44 [INFO]   -> 85000/160000 dynamic samples
+2025-11-21 11:26:52 [INFO]   -> 90000/160000 dynamic samples
+2025-11-21 11:27:00 [INFO]   -> 95000/160000 dynamic samples
+2025-11-21 11:27:07 [INFO]   -> 100000/160000 dynamic samples
+2025-11-21 11:27:15 [INFO]   -> 105000/160000 dynamic samples
+2025-11-21 11:27:23 [INFO]   -> 110000/160000 dynamic samples
+2025-11-21 11:27:30 [INFO]   -> 115000/160000 dynamic samples
+2025-11-21 11:27:38 [INFO]   -> 120000/160000 dynamic samples
