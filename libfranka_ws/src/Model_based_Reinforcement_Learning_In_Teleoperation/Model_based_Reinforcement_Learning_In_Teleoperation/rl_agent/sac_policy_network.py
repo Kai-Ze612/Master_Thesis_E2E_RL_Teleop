@@ -102,34 +102,26 @@ class StateEstimator(nn.Module):
                 delayed_sequence: torch.Tensor, 
                 hidden_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
                ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        """
-        delayed_sequence: [Batch, Seq_Len, 15] -> Contains (q, qd, delay)
-        """
         
-        # 1. Slicing: Separate Physics State from Time Delay
-        # State: First 14 dims
+        # 1. Slicing
         state_seq = delayed_sequence[:, :, :self.lstm_input_dim] 
-        
-        # Delay: Last dim, take value from last timestep
         delay_scalar = delayed_sequence[:, -1, self.lstm_input_dim:]
         
-        # 2. Normalize Delay
-        delay_norm = delay_scalar / DELAY_INPUT_NORM_FACTOR
+        # 2. [CRITICAL FIX] Remove Double Normalization
+        # The 'delay_scalar' from the buffer is ALREADY normalized by training_env.py
+        # delay_norm = delay_scalar / DELAY_INPUT_NORM_FACTOR  <-- DELETE THIS LINE
         
-        # 3. [CRITICAL FIX] Apply Layer Normalization
-        # LayerNorm works directly on the last dimension, no permutation needed
+        delay_norm = delay_scalar # Use directly
+        
+        # 3. Continue...
         state_seq_normalized = self.input_ln(state_seq)
-        
-        # 4. Dynamics Encoding (LSTM)
         lstm_output, new_hidden_state = self.lstm(state_seq_normalized, hidden_state)
         
-        # Extract latent dynamics from the last timestep
         dynamics_embedding = lstm_output[:, -1, :]
         
-        # 5. Late Fusion
+        # 4. Late Fusion
         fusion_vector = torch.cat([dynamics_embedding, delay_norm], dim=1)
         
-        # 6. Extrapolation
         predicted_residual = self.prediction_head(fusion_vector)
         
         return predicted_residual, new_hidden_state
