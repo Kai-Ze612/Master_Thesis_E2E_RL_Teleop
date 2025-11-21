@@ -73,7 +73,7 @@ def validate_environment(env: TeleoperationEnvWithDelay, logger: logging.Logger)
             logger.error(f"Observation shape mismatch: got {obs.shape}, expected {expected_obs_shape}")
             return False
         
-        # NEW: Verify observation dimension is exactly 112D
+        # Verify observation dimension is exactly 112D
         if obs.shape[0] != 112:
             logger.error(f"Observation dimension should be 112D, got {obs.shape[0]}D")
             return False
