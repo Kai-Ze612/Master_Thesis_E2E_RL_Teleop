@@ -68,13 +68,13 @@ TRAJECTORY_FREQUENCY = 0.1  # Hz
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 5e-3
+ESTIMATOR_LEARNING_RATE = 1e-2
 ESTIMATOR_BATCH_SIZE = 256
 ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_TOTAL_UPDATES = 500000
 ESTIMATOR_VAL_STEPS = 5000
 ESTIMATOR_VAL_FREQ = 1000
-ESTIMATOR_PATIENCE = 10
+ESTIMATOR_PATIENCE = 30
 ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 256
@@ -113,7 +113,7 @@ SAC_MLP_HIDDEN_DIMS = [512, 256]
 SAC_ACTIVATION = 'relu'
 
 # Learning Rates
-SAC_LEARNING_RATE = 3e-4        # LR for Actor and Critic
+SAC_LEARNING_RATE = 1e-3        # LR for Actor and Critic
 ALPHA_LEARNING_RATE = 3e-4      # LR for temperature auto-tuning
 
 # SAC Parameters
