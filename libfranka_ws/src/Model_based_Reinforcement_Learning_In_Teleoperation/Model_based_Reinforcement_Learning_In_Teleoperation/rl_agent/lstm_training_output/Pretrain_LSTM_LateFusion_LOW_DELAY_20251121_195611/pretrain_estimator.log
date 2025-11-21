@@ -1,0 +1,100 @@
+2025-11-21 19:56:11 [INFO] ================================================================================
+2025-11-21 19:56:11 [INFO] LSTM STATE ESTIMATOR (LATE FUSION + RESIDUAL + L1 LOSS)
+2025-11-21 19:56:11 [INFO] Config: LOW_DELAY | Trajectory: TrajectoryType.FIGURE_8
+2025-11-21 19:56:11 [INFO] Randomize Trajectory: True | Seed: 50
+2025-11-21 19:56:11 [INFO] Control Freq (Hz):    100
+2025-11-21 19:56:11 [INFO] Publish Freq (Hz):    100
+2025-11-21 19:56:11 [INFO] Learning Rate:        0.003
+2025-11-21 19:56:11 [INFO] Batch Size:           256
+2025-11-21 19:56:11 [INFO] Buffer Size:          200000
+2025-11-21 19:56:11 [INFO] Total Updates:        500000
+2025-11-21 19:56:11 [INFO] RNN Hidden Dim:       256
+2025-11-21 19:56:11 [INFO] RNN Layers:           3
+2025-11-21 19:56:11 [INFO] RNN Seq Length:       100
+2025-11-21 19:56:11 [INFO] Delay Norm Factor:    10.0
+2025-11-21 19:56:11 [INFO] Target Scale:         500.0
+2025-11-21 19:56:11 [INFO] ================================================================================
+2025-11-21 19:56:11 [INFO] Targeting Dataset Balance: 40000 Static / 160000 Dynamic
+2025-11-21 19:56:11 [INFO] Injected 40000 static hold samples (Augmented with Delay=0).
+2025-11-21 19:56:11 [INFO] Collecting dynamic trajectories...
+2025-11-21 19:56:19 [INFO]   -> 5000/160000 dynamic samples
+2025-11-21 19:56:26 [INFO]   -> 10000/160000 dynamic samples
+2025-11-21 19:56:33 [INFO]   -> 15000/160000 dynamic samples
+2025-11-21 19:56:41 [INFO]   -> 20000/160000 dynamic samples
+2025-11-21 19:56:48 [INFO]   -> 25000/160000 dynamic samples
+2025-11-21 19:56:56 [WARNING] Unstable trajectory detected. Resetting environment to clear history...
+2025-11-21 19:56:56 [WARNING] Unstable trajectory detected. Resetting environment to clear history...
+2025-11-21 19:56:56 [INFO]   -> 30000/160000 dynamic samples
+2025-11-21 19:57:03 [INFO]   -> 35000/160000 dynamic samples
+2025-11-21 19:57:10 [INFO]   -> 40000/160000 dynamic samples
+2025-11-21 19:57:18 [INFO]   -> 45000/160000 dynamic samples
+2025-11-21 19:57:25 [INFO]   -> 50000/160000 dynamic samples
+2025-11-21 19:57:32 [INFO]   -> 55000/160000 dynamic samples
+2025-11-21 19:57:40 [INFO]   -> 60000/160000 dynamic samples
+2025-11-21 19:57:47 [INFO]   -> 65000/160000 dynamic samples
+2025-11-21 19:57:54 [WARNING] Unstable trajectory detected. Resetting environment to clear history...
+2025-11-21 19:57:54 [INFO]   -> 70000/160000 dynamic samples
+2025-11-21 19:58:02 [INFO]   -> 75000/160000 dynamic samples
+2025-11-21 19:58:09 [INFO]   -> 80000/160000 dynamic samples
+2025-11-21 19:58:16 [INFO]   -> 85000/160000 dynamic samples
+2025-11-21 19:58:23 [INFO]   -> 90000/160000 dynamic samples
+2025-11-21 19:58:31 [INFO]   -> 95000/160000 dynamic samples
+2025-11-21 19:58:39 [INFO]   -> 100000/160000 dynamic samples
+2025-11-21 19:58:46 [INFO]   -> 105000/160000 dynamic samples
+2025-11-21 19:58:53 [INFO]   -> 110000/160000 dynamic samples
+2025-11-21 19:59:01 [INFO]   -> 115000/160000 dynamic samples
+2025-11-21 19:59:08 [INFO]   -> 120000/160000 dynamic samples
+2025-11-21 19:59:15 [INFO]   -> 125000/160000 dynamic samples
+2025-11-21 19:59:22 [INFO]   -> 130000/160000 dynamic samples
+2025-11-21 19:59:30 [INFO]   -> 135000/160000 dynamic samples
+2025-11-21 19:59:37 [WARNING] Unstable trajectory detected. Resetting environment to clear history...
+2025-11-21 19:59:37 [INFO]   -> 140000/160000 dynamic samples
+2025-11-21 19:59:44 [INFO]   -> 145000/160000 dynamic samples
+2025-11-21 19:59:51 [INFO]   -> 150000/160000 dynamic samples
+2025-11-21 19:59:59 [INFO]   -> 155000/160000 dynamic samples
+2025-11-21 20:00:06 [INFO]   -> 160000/160000 dynamic samples
+2025-11-21 20:00:06 [INFO] Data collection complete. Buffer size: 200000
+2025-11-21 20:00:06 [INFO] 
+========================================
+2025-11-21 20:00:06 [INFO]  BUFFER COVERAGE CHECK (Joint Positions)
+2025-11-21 20:00:06 [INFO] ========================================
+2025-11-21 20:00:06 [INFO] Joint | Min      | Max      | Range   
+2025-11-21 20:00:06 [INFO] ---------------------------------------------
+2025-11-21 20:00:06 [INFO] J0    | -0.664   | 0.729    | 1.393   
+2025-11-21 20:00:06 [INFO] J1    | -0.785   | 0.885    | 1.670   
+2025-11-21 20:00:06 [INFO] J2    | -0.367   | 0.323    | 0.690   
+2025-11-21 20:00:06 [INFO] J3    | -2.356   | -0.151   | 2.205   
+2025-11-21 20:00:06 [INFO] J4    | -0.226   | 0.248    | 0.474   
+2025-11-21 20:00:06 [INFO] J5    | 0.146    | 1.571    | 1.425   
+2025-11-21 20:00:06 [INFO] J6    | -0.003   | 0.785    | 0.788   
+2025-11-21 20:00:06 [INFO] ========================================
+
+2025-11-21 20:00:06 [INFO] Filling Validation Buffer...
+2025-11-21 20:00:06 [INFO] Injected 1000 static hold samples (Augmented with Delay=0).
+2025-11-21 20:00:13 [INFO] Starting training on cuda...
+2025-11-21 20:00:13 [INFO] Update 00000 | Train 159.93179321 | Val 159.60384064
+2025-11-21 20:00:13 [INFO]   -> NEW BEST!
+2025-11-21 20:00:22 [INFO] Update 01000 | Train 146.69380829 | Val 144.23122498
+2025-11-21 20:00:22 [INFO]   -> NEW BEST!
+2025-11-21 20:00:32 [INFO] Update 02000 | Train 70.20332756 | Val 67.36201904
+2025-11-21 20:00:32 [INFO]   -> NEW BEST!
+2025-11-21 20:00:41 [INFO] Update 03000 | Train 17.28653934 | Val 16.20563597
+2025-11-21 20:00:41 [INFO]   -> NEW BEST!
+2025-11-21 20:00:50 [INFO] Update 04000 | Train 11.28896279 | Val 15.00148438
+2025-11-21 20:00:50 [INFO]   -> NEW BEST!
+2025-11-21 20:01:00 [INFO] Update 05000 | Train 9.50295230 | Val 12.08410940
+2025-11-21 20:01:00 [INFO]   -> NEW BEST!
+2025-11-21 20:01:09 [INFO] Update 06000 | Train 8.96596342 | Val 10.74478892
+2025-11-21 20:01:09 [INFO]   -> NEW BEST!
+2025-11-21 20:01:18 [INFO] Update 07000 | Train 8.40478800 | Val 12.67050402
+2025-11-21 20:01:28 [INFO] Update 08000 | Train 7.24511914 | Val 9.57480608
+2025-11-21 20:01:28 [INFO]   -> NEW BEST!
+2025-11-21 20:01:37 [INFO] Update 09000 | Train 6.70691451 | Val 8.15106609
+2025-11-21 20:01:37 [INFO]   -> NEW BEST!
+2025-11-21 20:01:47 [INFO] Update 10000 | Train 5.87746500 | Val 9.12624432
+2025-11-21 20:01:57 [INFO] Update 11000 | Train 5.90302206 | Val 9.44878747
+2025-11-21 20:02:07 [INFO] Update 12000 | Train 5.74209328 | Val 9.01713072
+2025-11-21 20:02:17 [INFO] Update 13000 | Train 5.11216438 | Val 8.03718204
+2025-11-21 20:02:17 [INFO]   -> NEW BEST!
+2025-11-21 20:02:28 [INFO] Update 14000 | Train 4.91950550 | Val 7.25424698
+2025-11-21 20:02:28 [INFO]   -> NEW BEST!

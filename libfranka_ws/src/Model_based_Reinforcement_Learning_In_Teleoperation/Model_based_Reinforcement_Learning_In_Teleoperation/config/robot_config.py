@@ -13,7 +13,7 @@ import numpy as np
 
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/old/Low_Delay_No_Rand/estimator_best.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_MEDIUM_DELAY_20251121_170420/estimator_best.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -28,7 +28,7 @@ TCP_OFFSET = np.array([0.0, 0.0, 0.1034], dtype=np.float32)
 JOINT_LIMITS_LOWER = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973], dtype=np.float32)
 JOINT_LIMITS_UPPER = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973], dtype=np.float32)
 TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
-MAX_TORQUE_COMPENSATION = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 5.0], dtype=np.float32)
+MAX_TORQUE_COMPENSATION = np.array([20.0, 15.0, 15.0, 10.0, 10.0, 5.0, 5.0], dtype=np.float32)
 
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], dtype=np.float32)
 
@@ -113,7 +113,7 @@ SAC_MLP_HIDDEN_DIMS = [512, 256]
 SAC_ACTIVATION = 'relu'
 
 # Learning Rates
-SAC_LEARNING_RATE = 1e-3        # LR for Actor and Critic
+SAC_LEARNING_RATE = 3e-4        # LR for Actor and Critic
 ALPHA_LEARNING_RATE = 3e-4      # LR for temperature auto-tuning
 
 # SAC Parameters
@@ -142,8 +142,8 @@ SAC_EARLY_STOPPING_PATIENCE = 10
 ######################################
 # Reward Function Configuration
 ######################################
-TRACKING_ERROR_SCALE = 100       # Gaussian bandwidth for exp(-scale * error²)
-VELOCITY_ERROR_SCALE = 100       # Gaussian bandwidth for velocity tracking
+TRACKING_ERROR_SCALE = 10       # Gaussian bandwidth for exp(-scale * error²)
+VELOCITY_ERROR_SCALE = 5       # Gaussian bandwidth for velocity tracking
 
 ACTION_PENALTY_WEIGHT = 0.01 # penalty for large actions
 
