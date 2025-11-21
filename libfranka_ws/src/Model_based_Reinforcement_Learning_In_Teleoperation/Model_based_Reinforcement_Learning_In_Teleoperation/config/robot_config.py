@@ -68,7 +68,7 @@ TRAJECTORY_FREQUENCY = 0.1  # Hz
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 1e-3
+ESTIMATOR_LEARNING_RATE = 3e-3
 ESTIMATOR_BATCH_SIZE = 256
 ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_TOTAL_UPDATES = 500000
