@@ -33,7 +33,12 @@ class StateEstimator(nn.Module):
     
     This model decoples the learning of robot dynamics from the delay horizons.
     
-        
+    LSTM: learns the dynamics from the sequence of robot states.
+        Input: Robot physical state [batch_size, seq_len, 14]
+        Output: dynamics embedding [batch_size, hidden_dim]
+    MLP: fuses the dynamics encoding with the delay scalar to predict the residual.
+        Input: The fused vector of physics and time [batch_size, hidden_dim + 1]
+        Output: The scaled residual correction [batch_size, 14]
 
     Architecture:
     1. Split Input: [Batch, Seq, 15] -> State [Batch, Seq, 14] + Delay [Batch, 1]
@@ -45,7 +50,7 @@ class StateEstimator(nn.Module):
     
     def __init__(
         self,
-        input_dim_total: int = N_JOINTS * 2 + 1,  
+        input_dim_total: int = N_JOINTS * 2 + 1,  # 14D robot state(q, qd) + 1D delay scalar
         hidden_dim: int = RNN_HIDDEN_DIM,
         num_layers: int = RNN_NUM_LAYERS,
         output_dim: int = N_JOINTS * 2,
@@ -59,8 +64,7 @@ class StateEstimator(nn.Module):
         # LSTM input is 14 (Robot State only)
         self.lstm_input_dim = input_dim_total - 1 
         
-        # [CRITICAL FIX] Layer Normalization
-        # Robust to batch size 1 and distribution shifts
+        # Layer Norm for LSTM input
         self.input_ln = nn.LayerNorm(self.lstm_input_dim)
         
         self.lstm = nn.LSTM(
@@ -107,25 +111,22 @@ class StateEstimator(nn.Module):
                 hidden_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
                ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         
-        # 1. Slicing
+        # 1. Slicing: input [Batch, Seq, 15] -> State [Batch, Seq, 14] + Delay [Batch, 1]
         state_seq = delayed_sequence[:, :, :self.lstm_input_dim] 
         delay_scalar = delayed_sequence[:, -1, self.lstm_input_dim:]
+        delay_norm = delay_scalar
         
-        # 2. [CRITICAL FIX] Remove Double Normalization
-        # The 'delay_scalar' from the buffer is ALREADY normalized by training_env.py
-        # delay_norm = delay_scalar / DELAY_INPUT_NORM_FACTOR  <-- DELETE THIS LINE
-        
-        delay_norm = delay_scalar # Use directly
-        
-        # 3. Continue...
+        # 2. Normalize State
         state_seq_normalized = self.input_ln(state_seq)
         lstm_output, new_hidden_state = self.lstm(state_seq_normalized, hidden_state)
         
+        # 3. Dynamics Encoding: take the last output
         dynamics_embedding = lstm_output[:, -1, :]
         
         # 4. Late Fusion
         fusion_vector = torch.cat([dynamics_embedding, delay_norm], dim=1)
         
+        # 5. Residual Prediction
         predicted_residual = self.prediction_head(fusion_vector)
         
         return predicted_residual, new_hidden_state
@@ -136,7 +137,7 @@ class Actor(nn.Module):
     """
     def __init__(
         self,
-        state_dim: int = (N_JOINTS * 2 + 1) * 2, 
+        state_dim: int = (N_JOINTS * 2 + 1) * 2,
         action_dim: int = N_JOINTS,
         hidden_dims: list = SAC_MLP_HIDDEN_DIMS,
         activation: str = SAC_ACTIVATION
@@ -159,7 +160,7 @@ class Actor(nn.Module):
         self._initialize_weights()
         
         self.register_buffer(
-            'action_scale', 
+            'action_scale',
             torch.tensor(MAX_TORQUE_COMPENSATION, dtype=torch.float32)
         )
         self.register_buffer(

@@ -38,7 +38,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_TARGET_ENTROPY,
     SAC_UPDATES_PER_STEP,
     SAC_START_STEPS,
-    LOG_FREQ, 
+    LOG_FREQ,
     CHECKPOINT_DIR_RL,
     SAC_VAL_FREQ,
     SAC_VAL_EPISODES,
@@ -70,7 +70,6 @@ class ReplayBuffer:
         self.action_dim = N_JOINTS
         self.target_state_dim = N_JOINTS * 2
         
-       
         # Pre-allocate memory
         self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
         self.remote_states = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
@@ -153,17 +152,12 @@ class SACTrainer:
         for param in self.state_estimator.parameters():
             param.requires_grad = False  # Freeze parameters
 
-        # === MODIFICATION: Correct state dimension: 29D ===
+        # state_dim for Actor and Critic
         # Predicted state (from LSTM):           14D (7q + 7qd)
-        # Augmented remote state + delay scalar: 15D (7q + 7qd + 1δ_norm)
-        # → Total state input to Actor/Critic:   29D
+        # Remote robot augmented state:         15D (7q + 7qd + 1 delay)
         state_dim = (N_JOINTS * 2) + (N_JOINTS * 2 + 1)  # 14 + 15 = 29
 
-        # === MODIFICATION: Log the initialization for debugging ===
-        logger.info(f"Initializing Actor and Critic networks with state_dim = {state_dim} "
-                    f"(predicted_state 14D + remote_augmented_state 15D)")
-
-        # === MODIFICATION: Initialize Actor and Critic Networks with correct input dimension ===
+        # Initialize Actor and Critic networks
         self.actor = Actor(state_dim=state_dim).to(self.device)
         self.critic = Critic(state_dim=state_dim).to(self.device)
         self.critic_target = deepcopy(self.critic).to(self.device)
@@ -253,30 +247,17 @@ class SACTrainer:
             delayed_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)
             remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)
 
-            # -------------------------------------------------------
-            # 1. Get Scaled Residual from LSTM
-            # -------------------------------------------------------
-            # This outputs the magnified delta: Delta * Scale
+            # get scaled time from state estimator
             scaled_residual_t, _ = self.state_estimator(delayed_t)
 
-            # -------------------------------------------------------
-            # 2. Reconstruction Logic (Matches LSTMTestNode)
-            # -------------------------------------------------------
-            # A. Descale: Delta = Output / Scale
+            # descale the time
             predicted_residual_t = scaled_residual_t / TARGET_DELTA_SCALE
 
-            # B. Get Last Known Observation (q, qd) from the sequence
-            # delayed_seq_batch is [Batch, Seq, 15]. 
-            # We want the state part (first 14 dims) of the LAST timestep (-1).
-            last_observation_t = delayed_t[:, -1, :N_JOINTS*2] 
-
-            # C. Reconstruct: Predicted_State = Last_Obs + Delta
+            # Get the last sequence observation (7q + 7qd)
+            last_observation_t = delayed_t[:, -1, :N_JOINTS*2]
             predicted_state_t = last_observation_t + predicted_residual_t
             
-            # -------------------------------------------------------
-            # 3. Prepare Actor Input
-            # -------------------------------------------------------
-            # Extract Delay for the Augmented Remote State
+            # Extract Delay for the Augmented Remote State (1D)
             delay_t = delayed_t[:, -1, 14:] 
             
             # Augment Remote State (14D + 1D = 15D)
@@ -321,10 +302,10 @@ class SACTrainer:
                     # 1. Predict
                     predicted_state_t, _ = self.state_estimator(delayed_t)
 
-                    # 2. [FIX] Extract Delay
+                    # 2. Extract Delay
                     delay_t = delayed_t[:, -1, 14:] 
                     
-                    # 3. [FIX] Augment Remote State
+                    # 3. Augment Remote State
                     augmented_remote_state_t = torch.cat([remote_state_t, delay_t], dim=1)
 
                     # 4. Concatenate (29D)
@@ -502,7 +483,7 @@ class SACTrainer:
             remote_state_batch = np.array(remote_states_list)
             true_target_batch = np.array(true_targets_list)
 
-           # --- Action selection phase
+            # --- Action selection phase
             policy_actions, predicted_state_batch = self.select_action(
                 delayed_seq_batch, remote_state_batch, deterministic=False
             )
@@ -521,8 +502,7 @@ class SACTrainer:
                 # Exploitation phase: Use the policy action
                 actions_batch = policy_actions
 
-            # [CRITICAL] Concatenate: 7D (Torque) + 14D (Prediction) = 21D
-            # This creates the exact shape the Env expects.
+            # Concatenate: 7D (Torque) + 14D (Prediction) = 21D
             augmented_actions_batch = np.concatenate([actions_batch, predicted_state_batch], axis=1)
             
             # Now pass 'augmented_actions_batch' (which is 21D) to env.step()
@@ -536,13 +516,13 @@ class SACTrainer:
 
             # --- Store Experience in Replay Buffer
             for i in range(self.num_envs):
-                # [CRITICAL FIX] 1. Logic: Skip transitions collected during warmup
+                # 1. Logic: Skip transitions collected during warmup
                 # The environment forced the action to zero, but 'actions_batch' contains 
                 # the policy's output. Saving this would poison the Critic.
                 if infos_batch[i].get('is_in_warmup', False):
                     continue
 
-                # [Recommended] 2. Safety: Skip if prediction contained NaNs
+                # 2. Safety: Skip if prediction contained NaNs
                 # predicted_state_batch is a numpy array here
                 if np.isnan(predicted_state_batch[i]).any():
                     continue
