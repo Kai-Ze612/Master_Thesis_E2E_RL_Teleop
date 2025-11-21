@@ -294,7 +294,7 @@ class LocalRobotSimulator(gym.Env):
             center=np.array([
                 np.random.uniform(0.4, 0.5),
                 np.random.uniform(-0.2, 0.2),
-                0.6,
+                0.5,
             ], dtype=np.float64),
             
             scale=np.array([
@@ -302,7 +302,7 @@ class LocalRobotSimulator(gym.Env):
                 np.random.uniform(0.1, 0.3),
             ], dtype=np.float64),
 
-            frequency=np.random.uniform(0.1, 0.2),
+            frequency=np.random.uniform(0.05, 0.1),
 
             initial_phase=0.0,
         )

@@ -68,16 +68,16 @@ TRAJECTORY_FREQUENCY = 0.1  # Hz
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 1e-2
+ESTIMATOR_LEARNING_RATE = 5e-3
 ESTIMATOR_BATCH_SIZE = 256
-ESTIMATOR_BUFFER_SIZE = 100000
+ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_TOTAL_UPDATES = 500000
 ESTIMATOR_VAL_STEPS = 5000
 ESTIMATOR_VAL_FREQ = 1000
-ESTIMATOR_PATIENCE = 30
+ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
 
-RNN_HIDDEN_DIM = 512
+RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 3
 RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
 
@@ -142,8 +142,8 @@ SAC_EARLY_STOPPING_PATIENCE = 10
 ######################################
 # Reward Function Configuration
 ######################################
-TRACKING_ERROR_SCALE = 5       # Gaussian bandwidth for exp(-scale * error²)
-VELOCITY_ERROR_SCALE = 1       # Gaussian bandwidth for velocity tracking
+TRACKING_ERROR_SCALE = 500       # Gaussian bandwidth for exp(-scale * error²)
+VELOCITY_ERROR_SCALE = 500       # Gaussian bandwidth for velocity tracking
 
 ACTION_PENALTY_WEIGHT = 0.01 # penalty for large actions
 

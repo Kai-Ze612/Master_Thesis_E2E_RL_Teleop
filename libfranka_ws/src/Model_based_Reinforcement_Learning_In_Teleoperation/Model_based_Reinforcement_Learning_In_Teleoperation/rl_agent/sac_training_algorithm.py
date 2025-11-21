@@ -44,7 +44,8 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_VAL_EPISODES,
     SAC_EARLY_STOPPING_PATIENCE,
     OBS_DIM,
-    MAX_EPISODE_STEPS
+    MAX_EPISODE_STEPS,
+    TARGET_DELTA_SCALE,
 )
 
 logger = logging.getLogger(__name__)
@@ -243,28 +244,45 @@ class SACTrainer:
         return self.log_alpha.exp().detach().item()
     
     def select_action(self,
-                      delayed_seq_batch: np.ndarray,  # (num_envs, seq_len, 15) <--- Note: This is 15D
+                      delayed_seq_batch: np.ndarray,  # (num_envs, seq_len, 15)
                       remote_state_batch: np.ndarray,  # (num_envs, 14)
                       deterministic: bool = False
                      ) -> Tuple[np.ndarray, np.ndarray]:
         """ Select action using the current policy given delayed sequences and remote states. """
         with torch.no_grad():
-            # delayed_t shape is (Batch, Seq, 15)
             delayed_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)
             remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)
 
-            # 1. Prediction (14D)
-            predicted_state_t, _ = self.state_estimator(delayed_t)
+            # -------------------------------------------------------
+            # 1. Get Scaled Residual from LSTM
+            # -------------------------------------------------------
+            # This outputs the magnified delta: Delta * Scale
+            scaled_residual_t, _ = self.state_estimator(delayed_t)
 
-            # 2. [FIX] Extract Delay from the input sequence
-            # We take the delay from the last timestep: [:, -1, 14:]
-            # Index 14 is the 15th element (the delay scalar)
+            # -------------------------------------------------------
+            # 2. Reconstruction Logic (Matches LSTMTestNode)
+            # -------------------------------------------------------
+            # A. Descale: Delta = Output / Scale
+            predicted_residual_t = scaled_residual_t / TARGET_DELTA_SCALE
+
+            # B. Get Last Known Observation (q, qd) from the sequence
+            # delayed_seq_batch is [Batch, Seq, 15]. 
+            # We want the state part (first 14 dims) of the LAST timestep (-1).
+            last_observation_t = delayed_t[:, -1, :N_JOINTS*2] 
+
+            # C. Reconstruct: Predicted_State = Last_Obs + Delta
+            predicted_state_t = last_observation_t + predicted_residual_t
+            
+            # -------------------------------------------------------
+            # 3. Prepare Actor Input
+            # -------------------------------------------------------
+            # Extract Delay for the Augmented Remote State
             delay_t = delayed_t[:, -1, 14:] 
             
-            # 3. [FIX] Augment Remote State (14D + 1D = 15D)
+            # Augment Remote State (14D + 1D = 15D)
             augmented_remote_state_t = torch.cat([remote_state_t, delay_t], dim=1)
 
-            # 4. Concatenate for Actor (14D + 15D = 29D)
+            # Concatenate for Actor (14D Pred + 15D Remote = 29D)
             actor_input_t = torch.cat([predicted_state_t, augmented_remote_state_t], dim=1)
 
             action_t, _, _ = self.actor.sample(actor_input_t, deterministic)
@@ -391,8 +409,8 @@ class SACTrainer:
         
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
         self.critic_optimizer.step()
-        metrics['critic_loss'] = critic_loss.item()
         
         # Update Actor Network
         for param in self.critic.parameters():
@@ -410,8 +428,8 @@ class SACTrainer:
         
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=1.0) # <--- ADD THIS
         self.actor_optimizer.step()
-        metrics['actor_loss'] = actor_loss.item()
         
         # Unfreeze critic parameters
         for param in self.critic.parameters():
@@ -484,23 +502,30 @@ class SACTrainer:
             remote_state_batch = np.array(remote_states_list)
             true_target_batch = np.array(true_targets_list)
 
-            # --- Action selection phase
+           # --- Action selection phase
             policy_actions, predicted_state_batch = self.select_action(
                 delayed_seq_batch, remote_state_batch, deterministic=False
             )
 
             # 2. Decide on the Action (Exploration vs Exploitation)
             if self.total_timesteps < SAC_START_STEPS:
-                # Exploration phase: Override policy action with random action
-                actions_batch = np.array([self.env.action_space.sample() for _ in range(self.num_envs)])
+                # [FIX] Exploration phase: Sample ONLY 7D TORQUE
+                # Do NOT use self.env.action_space.sample() because that gives 21D!
+                
+                # Create a random 7D vector (Torque only)
+                actions_batch = np.array([
+                    np.random.uniform(-1.0, 1.0, size=(N_JOINTS,)) 
+                    for _ in range(self.num_envs)
+                ])
             else:
-                # Exploitation phase: Use the policy action calculated above
+                # Exploitation phase: Use the policy action
                 actions_batch = policy_actions
 
-            # Set predicted targets in environments (for reward calculation)
+            # [CRITICAL] Concatenate: 7D (Torque) + 14D (Prediction) = 21D
+            # This creates the exact shape the Env expects.
             augmented_actions_batch = np.concatenate([actions_batch, predicted_state_batch], axis=1)
-           
-            # --- Environment Step
+            
+            # Now pass 'augmented_actions_batch' (which is 21D) to env.step()
             _, rewards_batch, dones_batch, infos_batch = self.env.step(augmented_actions_batch)
             
             # Get next state observations

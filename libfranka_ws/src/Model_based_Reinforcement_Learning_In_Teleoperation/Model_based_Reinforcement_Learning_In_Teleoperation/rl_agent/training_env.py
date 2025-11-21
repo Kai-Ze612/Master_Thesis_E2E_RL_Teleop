@@ -278,7 +278,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         
         #############################################################################################
         # Debug logging 
-        if (self.current_step % 1000 == 1) or (terminated):
+        if (self.current_step % 100 == 1) or (terminated):
             
             np.set_printoptions(precision=4, suppress=True, linewidth=120)
             true_target_q = true_target[:self.n_joints]
