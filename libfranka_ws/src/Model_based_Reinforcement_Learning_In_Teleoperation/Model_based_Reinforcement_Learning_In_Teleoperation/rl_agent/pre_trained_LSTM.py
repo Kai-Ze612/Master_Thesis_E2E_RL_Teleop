@@ -45,9 +45,15 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     ESTIMATOR_PATIENCE,
     ESTIMATOR_LR_PATIENCE,
     INITIAL_JOINT_CONFIG,
-    TARGET_DELTA_SCALE
+    TARGET_DELTA_SCALE,
+    DEFAULT_CONTROL_FREQ,
+    DEFAULT_PUBLISH_FREQ,
+    RNN_HIDDEN_DIM,
+    RNN_NUM_LAYERS,
+    DELAY_INPUT_NORM_FACTOR,
 )
 
+# Helper Functions to filter unstable trajectories data
 def is_trajectory_stable(delayed_seq: np.ndarray, true_target: np.ndarray) -> bool:
     """
     Data collection script.
@@ -219,6 +225,18 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     logger.info("="*80)
     logger.info("LSTM STATE ESTIMATOR (LATE FUSION + RESIDUAL + L1 LOSS)")
     logger.info(f"Config: {args.config.name} | Trajectory: {args.trajectory_type}")
+    logger.info(f"Randomize Trajectory: {args.randomize_trajectory} | Seed: {args.seed}")
+    logger.info(f"Control Freq (Hz):    {DEFAULT_CONTROL_FREQ}")
+    logger.info(f"Publish Freq (Hz):    {DEFAULT_PUBLISH_FREQ}")
+    logger.info(f"Learning Rate:        {ESTIMATOR_LEARNING_RATE}")
+    logger.info(f"Batch Size:           {ESTIMATOR_BATCH_SIZE}")
+    logger.info(f"Buffer Size:          {ESTIMATOR_BUFFER_SIZE}")
+    logger.info(f"Total Updates:        {ESTIMATOR_TOTAL_UPDATES}")
+    logger.info(f"RNN Hidden Dim:       {RNN_HIDDEN_DIM}")
+    logger.info(f"RNN Layers:           {RNN_NUM_LAYERS}")
+    logger.info(f"RNN Seq Length:       {RNN_SEQUENCE_LENGTH}")
+    logger.info(f"Delay Norm Factor:    {DELAY_INPUT_NORM_FACTOR}")
+    logger.info(f"Target Scale:         {TARGET_DELTA_SCALE}") 
     logger.info("="*80)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

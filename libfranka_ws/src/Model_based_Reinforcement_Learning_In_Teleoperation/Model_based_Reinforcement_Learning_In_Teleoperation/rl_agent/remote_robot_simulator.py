@@ -136,7 +136,9 @@ class RemoteRobotSimulator:
 
         # PD control torque
         tau_pd = self.kp * q_error + self.kd * qd_error
-        tau_pd[-1] = 0.0 # No torque on gripper joint 
+        
+        # No torque on gripper joint
+        tau_pd[-1] = self.last_executed_rl_torque[-1] = 0.0
         
         # Final torque = PD torque + RL compensation
         tau_total = tau_pd + self.last_executed_rl_torque

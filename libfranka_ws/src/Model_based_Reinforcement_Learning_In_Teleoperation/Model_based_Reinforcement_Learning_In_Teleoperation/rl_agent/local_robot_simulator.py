@@ -267,10 +267,10 @@ class LocalRobotSimulator(gym.Env):
             
             scale=np.array([
                 np.random.uniform(0.1, 0.2),
-                np.random.uniform(0.1, 0.3),
+                np.random.uniform(0.1, 0.2),
             ], dtype=np.float64),
 
-            frequency=np.random.uniform(0.05, 0.1),
+            frequency=np.random.uniform(0.05, 0.15),
 
             initial_phase=0.0,
         )

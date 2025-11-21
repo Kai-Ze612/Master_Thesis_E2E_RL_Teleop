@@ -12,8 +12,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Normal
 import numpy as np
-import os
-from typing import Tuple, Optional, Union
+from typing import Tuple, Optional
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
@@ -24,13 +23,18 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_ACTIVATION,
     LOG_STD_MIN,
     LOG_STD_MAX,
-    DELAY_INPUT_NORM_FACTOR,
 )
 
 class StateEstimator(nn.Module):
     """
     Late Fusion LSTM State Estimator with Layer Normalization.
     
+    Late Fusion is designed to predict the real time state of the local robot real time state.
+    
+    This model decoples the learning of robot dynamics from the delay horizons.
+    
+        
+
     Architecture:
     1. Split Input: [Batch, Seq, 15] -> State [Batch, Seq, 14] + Delay [Batch, 1]
     2. Normalize State: LayerNorm(State)
