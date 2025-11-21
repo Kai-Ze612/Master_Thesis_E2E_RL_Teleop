@@ -13,7 +13,7 @@ import numpy as np
 
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Low_Delay_No_Rand/estimator_best.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/old/Low_Delay_No_Rand/estimator_best.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -68,7 +68,7 @@ TRAJECTORY_FREQUENCY = 0.1  # Hz
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 1e-2
+ESTIMATOR_LEARNING_RATE = 1e-3
 ESTIMATOR_BATCH_SIZE = 256
 ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_TOTAL_UPDATES = 500000
@@ -82,7 +82,7 @@ RNN_NUM_LAYERS = 3
 RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
 
 DELAY_INPUT_NORM_FACTOR = 10.0
-TARGET_DELTA_SCALE = 1000.0
+TARGET_DELTA_SCALE = 500.0
 
 ######################################
 # RL Environment Parameters
@@ -142,8 +142,8 @@ SAC_EARLY_STOPPING_PATIENCE = 10
 ######################################
 # Reward Function Configuration
 ######################################
-TRACKING_ERROR_SCALE = 500       # Gaussian bandwidth for exp(-scale * error²)
-VELOCITY_ERROR_SCALE = 500       # Gaussian bandwidth for velocity tracking
+TRACKING_ERROR_SCALE = 100       # Gaussian bandwidth for exp(-scale * error²)
+VELOCITY_ERROR_SCALE = 100       # Gaussian bandwidth for velocity tracking
 
 ACTION_PENALTY_WEIGHT = 0.01 # penalty for large actions
 
