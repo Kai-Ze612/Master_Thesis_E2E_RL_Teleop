@@ -315,7 +315,14 @@ class LocalRobotSimulator(gym.Env):
         self._qd_current = np.zeros(self.n_joints)
         self._last_q_desired = INITIAL_JOINT_CONFIG.copy()
         
-        return self._q_current.astype(np.float32)
+        # Info dictionary
+        info = {
+            "trajectory_type": self._trajectory_type.value,
+            "joint_pos": self._q_current.copy(),
+            "center": self._params.center.copy(),
+        }
+
+        return self._q_current.astype(np.float32), info
     
     def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
         """Normalize an angle or array of angles to the range [-pi, pi]."""
