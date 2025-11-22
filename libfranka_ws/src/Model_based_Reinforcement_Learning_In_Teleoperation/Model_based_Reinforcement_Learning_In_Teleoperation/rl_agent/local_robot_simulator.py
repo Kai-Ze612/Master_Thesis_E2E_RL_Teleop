@@ -343,7 +343,11 @@ class LocalRobotSimulator(gym.Env):
         }
 
         return self._q_current.astype(np.float32), info
-
+    
+    def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
+        """Normalize an angle or array of angles to the range [-pi, pi]."""
+        return (angle + np.pi) % (2 * np.pi) - np.pi
+    
     def _get_inverse_dynamics(self, q: np.ndarray, v: np.ndarray, a_desired: np.ndarray) -> np.ndarray:
         """
         Compute Torque using MuJoCo Inverse Dynamics.
@@ -414,7 +418,7 @@ class LocalRobotSimulator(gym.Env):
         qd_current = self.data.qvel[:self.n_joints].copy()
 
         # 2. Calculate Error
-        q_error = q_desired - q_current
+        q_error = self._normalize_angle(q_desired - q_current)
         qd_error = qd_desired - qd_current
 
         # 3. PD Control -> Output is DESIRED ACCELERATION (not Torque)

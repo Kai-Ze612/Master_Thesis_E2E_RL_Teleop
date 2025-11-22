@@ -48,6 +48,8 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     TARGET_DELTA_SCALE,
     WARM_UP_DURATION,
     NO_DELAY_DURATION,
+    REMOTE_HISTORY_LEN,
+    OBS_DIM,
 )
 
 class AgentNode(Node):
@@ -72,7 +74,7 @@ class AgentNode(Node):
         self.lstm_model_path_ = LSTM_MODEL_PATH
         
         self.state_estimator_ = StateEstimator().to(self.device_)
-        sac_state_dim = (N_JOINTS * 2) + (N_JOINTS * 2 + 1) 
+        sac_state_dim = OBS_DIM
         
         self.actor_ = Actor(state_dim=sac_state_dim).to(self.device_)
         
@@ -88,6 +90,9 @@ class AgentNode(Node):
         # Initialize Buffers
         self.leader_q_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
         self.leader_qd_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
+
+        self.remote_q_history_ = deque(maxlen=REMOTE_HISTORY_LEN)
+        self.remote_qd_history_ = deque(maxlen=REMOTE_HISTORY_LEN)
 
         self.current_remote_q_ = np.zeros(N_JOINTS, dtype=np.float32)
         self.current_remote_qd_ = np.zeros(N_JOINTS, dtype=np.float32)
@@ -106,8 +111,12 @@ class AgentNode(Node):
         self.target_joint_names_ = [f'panda_joint{i+1}' for i in range(N_JOINTS)]
         self.rnn_seq_len_ = RNN_SEQUENCE_LENGTH
         
-        # [FIX 1] Pre-fill with CORRECT Initial Config
+        # Pre-fill with CORRECT Initial Config
         self._prefill_buffers()
+        
+        for _ in range(REMOTE_HISTORY_LEN):
+            self.remote_q_history_.append(np.zeros(N_JOINTS, dtype=np.float32))
+            self.remote_qd_history_.append(np.zeros(N_JOINTS, dtype=np.float32))
         
         self.is_leader_ready_ = False
         self.is_remote_ready_ = False
@@ -292,9 +301,29 @@ class AgentNode(Node):
                 # Recover Absolute State
                 predicted_state_t = last_delayed_obs_t + predicted_residual_t
                 
-                # Actor Input: [predicted_state, remote_state, delay]
-                actor_input_t = torch.cat([predicted_state_t, remote_state_t, delay_t], dim=1)
+                pred_state_np = predicted_state_t.cpu().numpy().flatten()
+                pred_q = pred_state_np[:N_JOINTS]
+                pred_qd = pred_state_np[N_JOINTS:]
                 
+                rem_q_hist = np.concatenate(list(self.remote_q_history_))
+                rem_qd_hist = np.concatenate(list(self.remote_qd_history_))
+                
+                error_q = pred_q - self.current_remote_q_
+                error_qd = pred_qd - self.current_remote_qd_
+                
+                obs_vec = np.concatenate([
+                    self.current_remote_q_,
+                    self.current_remote_qd_,
+                    rem_q_hist,
+                    rem_qd_hist,
+                    pred_q,
+                    pred_qd,
+                    error_q,
+                    error_qd,
+                    [normalized_delay_scalar]
+                ]).astype(np.float32)
+                
+                actor_input_t = torch.tensor(obs_vec, dtype=torch.float32).to(self.device_).unsqueeze(0)
                 action_t, _, _ = self.actor_.sample(actor_input_t, deterministic=True)
 
             # Publish Results

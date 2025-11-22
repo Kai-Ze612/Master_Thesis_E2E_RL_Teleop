@@ -45,7 +45,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     VELOCITY_ERROR_SCALE,
     ACTION_PENALTY_WEIGHT,
     RNN_SEQUENCE_LENGTH,
-    TRAJECTORY_FREQUENCY,
     WARM_UP_DURATION,
     DELAY_INPUT_NORM_FACTOR,
     NO_DELAY_DURATION,
