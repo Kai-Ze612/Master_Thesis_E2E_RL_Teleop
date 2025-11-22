@@ -141,6 +141,16 @@ class TeleoperationEnvWithDelay(gym.Env):
             dtype=np.float32
         )
         
+        expected_obs_dim = (
+            (self.n_joints * 2) +               # Current Remote (14)
+            (self.n_joints * 2 * REMOTE_HISTORY_LEN) + # History (14 * 5 = 70)
+            (self.n_joints * 2) +               # Predicted (14)
+            (self.n_joints * 2) +               # Error (14)
+            1                                   # Delay (1)
+        )
+        if expected_obs_dim != OBS_DIM:
+             raise ValueError(f"Config Mismatch: OBS_DIM is {OBS_DIM}, but calculated dim is {expected_obs_dim}. Check REMOTE_HISTORY_LEN.")
+        
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(OBS_DIM,), dtype=np.float32)
 
         # Internal tick counter

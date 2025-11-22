@@ -66,7 +66,7 @@ class ReplayBuffer:
         self.size = 0
         self.seq_len = RNN_SEQUENCE_LENGTH
         
-        self.state_dim = N_JOINTS * 2 + 1
+        self.state_dim = OBS_DIM
         self.action_dim = N_JOINTS
         self.target_state_dim = N_JOINTS * 2
         
@@ -155,7 +155,7 @@ class SACTrainer:
         # state_dim for Actor and Critic
         # Predicted state (from LSTM):           14D (7q + 7qd)
         # Remote robot augmented state:         15D (7q + 7qd + 1 delay)
-        state_dim = (N_JOINTS * 2) + (N_JOINTS * 2 + 1)  # 14 + 15 = 29
+        state_dim = OBS_DIM
 
         # Initialize Actor and Critic networks
         self.actor = Actor(state_dim=state_dim).to(self.device)
