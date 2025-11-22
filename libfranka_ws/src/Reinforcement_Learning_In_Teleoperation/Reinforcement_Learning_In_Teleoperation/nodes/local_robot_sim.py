@@ -299,7 +299,7 @@ class LeaderRobotPublisher(Node):
             center=np.array([
                 np.random.uniform(0.4, 0.5),
                 np.random.uniform(-0.2, 0.2),
-                0.6,
+                0.5,
             ], dtype=np.float64),
             
             scale=np.array([

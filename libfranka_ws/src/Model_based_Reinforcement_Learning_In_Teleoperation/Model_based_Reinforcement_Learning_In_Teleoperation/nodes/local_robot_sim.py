@@ -199,7 +199,7 @@ class LeaderRobotPublisher(Node):
     def _reset(self) -> None:
         """ Reset parameters and simulation to initial state."""
 
-        # Apply parameter randomization if enabled
+        # Randomize params if needed
         if self._randomize_params:
             self._params = self._generate_random_params()
             self._generator = self._create_generator(self._trajectory_type, self._params)
@@ -208,20 +208,33 @@ class LeaderRobotPublisher(Node):
         # Reset trajectory time
         self._trajectory_time = 0.0
 
+        # Calculate Cartesian Start Position
         trajectory_start_pos = self._generator.compute_position(0.0)
         self._start_pos = trajectory_start_pos.copy()
         
-        # Initialize joint state
-        q_initial = INITIAL_JOINT_CONFIG.copy()
-        self._last_q_desired = q_initial.copy()
+        # Solve IK for the start position immediately
+        q_start, ik_success, _ = self.ik_solver.solve(
+            target_pos=self._start_pos,
+            q_init=INITIAL_JOINT_CONFIG.copy(), 
+            body_name=self.ee_body_name,
+            tcp_offset=self.tcp_offset,
+            enforce_continuity=False # False because we are teleporting/resetting
+        )
 
-        # Reset MuJoCo simulation
+        if not ik_success:
+            self.get_logger().warn("IK failed for initial position! Fallback to Home.")
+            q_start = INITIAL_JOINT_CONFIG.copy()
+
+        # Set internal state to this calculated start configuration
+        self._last_q_desired = q_start.copy()
+
+        # Reset MuJoCo simulation to match
         mujoco.mj_resetData(self.model, self.data)
-        self.data.qpos[:self.n_joints] = q_initial
+        self.data.qpos[:self.n_joints] = q_start
         self.data.qvel[:self.n_joints] = np.zeros(self.n_joints)
         mujoco.mj_forward(self.model, self.data)
         
-        self.get_logger().info("Simulation reset to initial configuration.")
+        self.get_logger().info(f"Simulation reset. Spawning at: {q_start}")
 
     def timer_callback(self) -> None:
         """
@@ -265,6 +278,7 @@ class LeaderRobotPublisher(Node):
         # Publish the joint states message
         msg = JointState()
         msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = "world"
         msg.name = self.joint_names_
         
         # Publish the desired state from the IK solver
@@ -299,7 +313,7 @@ class LeaderRobotPublisher(Node):
             center=np.array([
                 np.random.uniform(0.4, 0.5),
                 np.random.uniform(-0.2, 0.2),
-                0.6,
+                0.5,
             ], dtype=np.float64),
             
             scale=np.array([
@@ -320,15 +334,14 @@ def main(args=None):
         leader_node = LeaderRobotPublisher()
         rclpy.spin(leader_node)
     except KeyboardInterrupt:
-        leader_node.get_logger().info("Keyboard interrupt, shutting down...")
+        pass # Clean exit on Ctrl+C
     except Exception as e:
-        print(f"Node failed to initialize or run: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"Node failed: {e}")
     finally:
         if leader_node:
             leader_node.destroy_node()
-        # rclpy.shutdown()
+        if rclpy.ok(): # Check if context is still valid
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

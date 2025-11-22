@@ -49,7 +49,7 @@ class RemoteRobotNode(Node):
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
         self.tcp_offset_ = TCP_OFFSET
-        self.kp_ = DEFAULT_KP_REMOTE
+        self.kp_ = DEFAULT_KP_REMOTE 
         self.kd_ = DEFAULT_KD_REMOTE
         self.torque_limits_ = TORQUE_LIMITS
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
@@ -178,46 +178,69 @@ class RemoteRobotNode(Node):
         """Normalize an angle or array of angles to the range [-pi, pi]."""
         return (angle + np.pi) % (2 * np.pi) - np.pi
     
+    def _get_inverse_dynamics(self, q: np.ndarray, v: np.ndarray, a_desired: np.ndarray) -> np.ndarray:
+        """
+        Compute Torque using MuJoCo Inverse Dynamics.
+        Equation: tau = M(q)*a_desired + C(q,v)*v + G(q)
+        """
+        # 1. Update MuJoCo with the CURRENT Robot State
+        # We must use the current state so M(q) and G(q) match reality
+        self.mj_data_.qpos[:self.n_joints_] = q
+        self.mj_data_.qvel[:self.n_joints_] = v
+        
+        # 2. Set the DESIRED Acceleration (from PD)
+        self.mj_data_.qacc[:self.n_joints_] = a_desired
+
+        # 3. Compute Inverse Dynamics
+        # MuJoCo solves: tau = M*qacc + C*qvel + G
+        mujoco.mj_inverse(self.mj_model_, self.mj_data_)
+
+        return self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
+
     def control_loop_callback(self) -> None:
         
         # Wait for all required data
         if not self.robot_state_ready_ or not self.target_command_ready_ or not self.tau_rl_ready_ or not self.local_state_ready_:
-            self.get_logger().warn(
-                f"Waiting for data...",
-                throttle_duration_sec=2.0
-            )
+            self.get_logger().warn(f"Waiting for data...", throttle_duration_sec=2.0)
             return
 
         q_target = self.target_q_ 
         qd_target = self.target_qd_ 
-        tau_rl = self.current_tau_rl_
         
         try:
             q_current = self.current_q_
             qd_current = self.current_qd_
             
-            # PD Calculation
+            # PD Control now outputs Acceleration ---
             q_error = self._normalize_angle(q_target - q_current)
             qd_error = qd_target - qd_current
-            tau_pd = self.kp_ * q_error + self.kd_ * qd_error
+            
+            # acc_desired is in rad/s^2
+            # stiffness in Acceleration space, not Torque space.
+            acc_desired = self.kp_ * q_error + self.kd_ * qd_error
+            
+            # Use Computed Torque (Inverse Dynamics)
+            # This calculates: tau = M(q)*acc_desired + C(q,qd)*qd + G(q)
+            tau_id = self._get_inverse_dynamics(q_current, qd_current, acc_desired)
+            
+            # RL compensation
+            tau_rl = self.current_tau_rl_
             
             # Safety: No torque on last joint
-            tau_pd[-1] = 0.0 
-           
-            tau_command = tau_pd * 0 + tau_rl * 0
+            tau_id[-1] = 0.0 
+            
+            # Final Command
+            tau_command = tau_id + tau_rl * 0
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
-            # apply action delay
+            # Apply action delay
             self.torque_command_history_.append(tau_clipped)
             
             action_delay_steps = self.action_delay_simulator_.get_action_delay_steps()
             
-            # If buffer is too short to satisfy delay, output Zeros (Safety)
             if action_delay_steps >= len(self.torque_command_history_):
                 torque_to_publish = np.zeros(self.n_joints_)
             else:
-                # Get the command from 'delay' steps ago
-                # -1 is most recent. -1 - delay is the delayed one.
                 torque_to_publish = self.torque_command_history_[-1 - action_delay_steps]
             
             # Publish
@@ -226,16 +249,13 @@ class RemoteRobotNode(Node):
             self.torque_command_pub_.publish(msg)
 
             self.get_logger().info(
-                f"\n--- DEBUG (throttled 1s) ---\n"
-                f"True q:     {np.round(self.current_local_q_, 3)}\n"
-                f"True qd:    {np.round(self.current_local_qd_, 3)}\n"
+                f"\n--- DEBUG (throttled 0.1s) ---\n"
+                f"True q:       {np.round(self.current_local_q_, 3)}\n"
                 f"Predicted q:  {np.round(q_target, 3)}\n"
-                f"Predicted qd: {np.round(qd_target, 3)} (Clean Signal)\n"
-                f"Remote q:   {np.round(q_current, 3)}\n"
-                f"Remote qd:  {np.round(qd_current, 3)}\n"
-                f"Tau PD:      {np.round(tau_pd, 3)}\n"
-                f"Tau RL:     {np.round(tau_rl, 3)}\n",
-                throttle_duration_sec=1.0
+                f"Remote q:     {np.round(q_current, 3)}\n"
+                f"Tau ID:       {np.round(tau_id, 3)} (Includes Gravity)\n"
+                f"Tau RL:       {np.round(tau_rl, 3)}\n",
+                throttle_duration_sec=0.1
             )
 
         except Exception as e:

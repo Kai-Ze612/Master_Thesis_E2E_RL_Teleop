@@ -7,13 +7,13 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251119_184254/interrupted_policy.pth"
-# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LOW_DELAY_20251120_114040/estimator_best.pth"
+DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251121_195833/best_policy.pth"
+LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251121_170404/estimator_best.pth"
 
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_MEDIUM_DELAY_20251121_170420/estimator_best.pth"
+# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_MEDIUM_DELAY_20251121_170420/estimator_best.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -34,8 +34,8 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
-KP_LOCAL = np.array([300.0, 300.0, 300.0, 300.0, 125.0, 75.0, 10.0], dtype=np.float32) # local robot PD to calculate qdd
-KD_LOCAL = np.array([35.0,  35.0,  35.0,  35.0,  23.0,  17.0,  6.32], dtype=np.float32)
+KP_LOCAL = np.array([60.0, 50.0, 50.0, 30.0, 30.0, 15.0, 15.0], dtype=np.float32)
+KD_LOCAL = np.array([ 13.0,  12.0,  12.0,  10.5, 10.0, 8.0,  8.0], dtype=np.float32) 
 
 WARM_UP_DURATION = 1  # before starting sending trajectory commands
 
@@ -45,8 +45,8 @@ WARM_UP_DURATION = 1  # before starting sending trajectory commands
 DEFAULT_CONTROL_FREQ = 100
 DEFAULT_PUBLISH_FREQ = 100
 
-DEFAULT_KP_REMOTE = np.array([70.0, 70.0, 70.0, 50.0, 30.0, 20.0, 0.0], dtype=np.float32) # We use kp kd to calculate baseline tau
-DEFAULT_KD_REMOTE = np.array([ 7.0,  7.0,  7.0,  5.0, 4.5, 3.0,  0.0], dtype=np.float32) 
+DEFAULT_KP_REMOTE = np.array([60.0, 50.0, 50.0, 30.0, 30.0, 15.0, 15.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([ 13.0,  12.0,  12.0,  10.5, 10.0, 8.0,  8.0], dtype=np.float32) 
 
 ######################################
 # IK Solver Parameterss
@@ -166,5 +166,5 @@ SAVE_FREQ = 1000  # Save checkpoint every N *env steps*
 
 MAX_INFERENCE_TIME = 0.9 * (1.0 / DEFAULT_CONTROL_FREQ)  # 90% of control cycle time for safety
 
-DEPLOYMENT_HISTORY_BUFFER_SIZE = 500  # Must be > max_delay_steps + RNN sequence length
+DEPLOYMENT_HISTORY_BUFFER_SIZE = 200  # Must be > max_delay_steps + RNN sequence length
 

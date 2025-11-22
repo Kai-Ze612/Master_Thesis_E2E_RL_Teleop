@@ -44,6 +44,9 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     RL_MODEL_PATH,
     LSTM_MODEL_PATH,
     TRAJECTORY_FREQUENCY,
+    DELAY_INPUT_NORM_FACTOR,
+    TARGET_DELTA_SCALE,
+    WARM_UP_DURATION
 )
 
 class AgentNode(Node):
@@ -68,7 +71,9 @@ class AgentNode(Node):
         self.lstm_model_path_ = LSTM_MODEL_PATH
         
         self.state_estimator_ = StateEstimator().to(self.device_)
-        self.actor_ = Actor().to(self.device_)
+        sac_state_dim = (N_JOINTS * 2) + (N_JOINTS * 2 + 1) 
+        
+        self.actor_ = Actor(state_dim=sac_state_dim).to(self.device_)
         
         self._load_models()
 
@@ -87,7 +92,7 @@ class AgentNode(Node):
         self.current_remote_qd_ = np.zeros(N_JOINTS, dtype=np.float32)
         
         # Warmup Logic
-        self.warmup_time_ = 1.0 / TRAJECTORY_FREQUENCY
+        self.warmup_time_ = WARM_UP_DURATION # seconds
         self.warmup_steps_ = int(self.warmup_time_ * self.control_freq_)
         self.warmup_steps_count_ = 0
         self.buffer_flushed_ = False
@@ -117,11 +122,19 @@ class AgentNode(Node):
 
     def _load_models(self):
         try:
-            lstm_ckpt = torch.load(self.lstm_model_path_, map_location=self.device_)
+            lstm_ckpt = torch.load(
+                self.lstm_model_path_, 
+                map_location=self.device_, 
+                weights_only=False
+            )
             self.state_estimator_.load_state_dict(lstm_ckpt.get('state_estimator_state_dict', lstm_ckpt))
             self.state_estimator_.eval()
             
-            sac_ckpt = torch.load(self.sac_model_path_, map_location=self.device_)
+            sac_ckpt = torch.load(
+                self.sac_model_path_, 
+                map_location=self.device_, 
+                weights_only=False
+            )
             self.actor_.load_state_dict(sac_ckpt['actor_state_dict'])
             self.actor_.eval()
         except Exception as e:
@@ -184,7 +197,7 @@ class AgentNode(Node):
     def _get_delayed_leader_data(self) -> tuple[np.ndarray, float]:
         history_len = len(self.leader_q_history_)
         obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
-        current_delay_scalar = float(obs_delay_steps) # explicit delay
+        current_delay_scalar = float(obs_delay_steps) / DELAY_INPUT_NORM_FACTOR
         
         most_recent_delayed_idx = -(obs_delay_steps + 1)
         oldest_idx = most_recent_delayed_idx - self.rnn_seq_len_ + 1
@@ -231,43 +244,54 @@ class AgentNode(Node):
             self.get_logger().info(f"Buffer flushed. New size: {len(self.leader_q_history_)}")
         
         try:            
-            # [FIX] Get both sequence and scalar delay
-            raw_delayed_sequence, current_delay_scalar = self._get_delayed_leader_data()
             
+            # Get normalized delayed leader data
+            raw_delayed_sequence, raw_delay_scalar = self._get_delayed_leader_data()
+            normalized_delay_scalar = raw_delay_scalar
+            
+            # 15D data per step: [q(7), qd(7), delay(1)]
+            full_seq_t = torch.tensor(raw_delayed_sequence, dtype=torch.float32).to(self.device_).reshape(1, self.rnn_seq_len_, -1)
+            
+            # delay tensor (Batch=1, 1)
+            delay_t = torch.tensor([[normalized_delay_scalar]], dtype=torch.float32).to(self.device_)
+            
+            # Remote State (Batch=1, 14)
             raw_remote_state = np.concatenate([self.current_remote_q_, self.current_remote_qd_])
-
-            # Reshape for LSTM: (Batch=1, Seq, 15)
-            full_seq_t = torch.tensor(raw_delayed_sequence, dtype=torch.float32).to(self.device_).reshape(1, self.rnn_seq_len_, -1) 
-            
-            # Remote state: (Batch=1, 14)
             remote_state_t = torch.tensor(raw_remote_state, dtype=torch.float32).to(self.device_).reshape(1, -1)
-            
-            # [FIX] Delay tensor: (Batch=1, 1)
-            delay_t = torch.tensor([[current_delay_scalar]], dtype=torch.float32).to(self.device_)
 
+            # Local robot state prediction
             with torch.no_grad():
-                predicted_raw_target_t, _ = self.state_estimator_(full_seq_t)
+                # Get Scaled Residual from LSTM
+                scaled_residual_t, _ = self.state_estimator_(full_seq_t)
                 
-                # [FIX] Concatenate all 3 components for Actor: [Pred(14), Remote(14), Delay(1)]
-                actor_input_t = torch.cat([predicted_raw_target_t, remote_state_t, delay_t], dim=1)
+                # Descale
+                predicted_residual_t = scaled_residual_t / TARGET_DELTA_SCALE
+                
+                # Add to Delayed Observation (The "Anchor")
+                # The sequence is [q, qd, delay]. We need just [q, qd] (first 14 dims) from the LAST step.
+                last_delayed_obs_t = full_seq_t[:, -1, :N_JOINTS*2] 
+                
+                # Recover Absolute State
+                predicted_state_t = last_delayed_obs_t + predicted_residual_t
+                
+                # Actor Input: [predicted_state, remote_state, delay]
+                actor_input_t = torch.cat([predicted_state_t, remote_state_t, delay_t], dim=1)
                 
                 action_t, _, _ = self.actor_.sample(actor_input_t, deterministic=True)
 
-            predicted_target_np = predicted_raw_target_t.cpu().numpy().flatten()
-            
-            predicted_q = predicted_target_np[:N_JOINTS]
-            predicted_qd = predicted_target_np[N_JOINTS:] 
+            # Publish Results
+            predicted_state_np = predicted_state_t.cpu().numpy().flatten()
+            predicted_q = predicted_state_np[:N_JOINTS]
+            predicted_qd = predicted_state_np[N_JOINTS:] 
 
             tau_rl = action_t.cpu().numpy().flatten()
-            tau_rl[-1] = 0.0
+            tau_rl[-1] = 0.0 # Safety: No torque on gripper
             
             self.publish_predicted_target(predicted_q, predicted_qd)
             self.publish_tau_compensation(tau_rl)
             
         except Exception as e:
             self.get_logger().error(f"Error: {e}")
-            # import traceback
-            # traceback.print_exc()
 
     def publish_predicted_target(self, q, qd):
         msg = JointState()

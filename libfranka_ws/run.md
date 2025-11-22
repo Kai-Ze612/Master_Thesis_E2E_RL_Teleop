@@ -52,12 +52,12 @@ cd ~/Libraries/libfranka/build/examples
 ## Run the real robot arm
 1. Start robot with necessary features via bringup, this will load the controllers.
 ```bash
-ros2 launch Model_based_Reinforcement_Learning_In_Teleoperation remote_agent.launch.py robot_ip:=192.168.03.107
+ros2 launch Model_based_Reinforcement_Learning_In_Teleoperation remote_agent.launch.py robot_ip:=192.168.03.108
 ```
 
 2. Start local robot
 ```bash
-ros2 launch Reinforcement_Learning_In_Teleoperation local_robot.launch.py
+ros2 launch Model_based_Reinforcement_Learning_In_Teleoperation local_robot.launch.py seed:=50 config:=1
 ```
 
 
