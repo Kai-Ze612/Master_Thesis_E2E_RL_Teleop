@@ -71,14 +71,18 @@ class ReplayBuffer:
         self.target_state_dim = N_JOINTS * 2
         
         # Pre-allocate memory
-        self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
+        self.delayed_seq_dim = N_JOINTS * 2 + 1
+        self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.delayed_seq_dim), dtype=np.float32)
+        
+        
         self.remote_states = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
         self.actions = np.zeros((buffer_size, self.action_dim), dtype=np.float32)
         self.rewards = np.zeros((buffer_size, 1), dtype=np.float32)
 
         self.true_targets = np.zeros((buffer_size, self.target_state_dim), dtype=np.float32)
         
-        self.next_delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
+        self.next_delayed_sequences = np.zeros((buffer_size, self.seq_len, self.delayed_seq_dim), dtype=np.float32)
+        
         self.next_remote_states = np.zeros((buffer_size, self.state_dim), dtype=np.float32)
         self.dones = np.zeros((buffer_size, 1), dtype=np.float32)
     
@@ -238,35 +242,24 @@ class SACTrainer:
         return self.log_alpha.exp().detach().item()
     
     def select_action(self,
+                      obs: np.ndarray,                # [Added] Full 113D Env Observation
                       delayed_seq_batch: np.ndarray,  # (num_envs, seq_len, 15)
-                      remote_state_batch: np.ndarray,  # (num_envs, 14)
                       deterministic: bool = False
                      ) -> Tuple[np.ndarray, np.ndarray]:
-        """ Select action using the current policy given delayed sequences and remote states. """
+        """ Select action using the current policy given full observation and delayed sequences. """
         with torch.no_grad():
+            # 1. LSTM Prediction (Used for the Action output, not the Actor input)
             delayed_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)
-            remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)
-
-            # get scaled time from state estimator
             scaled_residual_t, _ = self.state_estimator(delayed_t)
-
-            # descale the time
             predicted_residual_t = scaled_residual_t / TARGET_DELTA_SCALE
-
-            # Get the last sequence observation (7q + 7qd)
+            
+            # Calculate predicted state (for the 2nd half of the action)
             last_observation_t = delayed_t[:, -1, :N_JOINTS*2]
             predicted_state_t = last_observation_t + predicted_residual_t
-            
-            # Extract Delay for the Augmented Remote State (1D)
-            delay_t = delayed_t[:, -1, 14:] 
-            
-            # Augment Remote State (14D + 1D = 15D)
-            augmented_remote_state_t = torch.cat([remote_state_t, delay_t], dim=1)
 
-            # Concatenate for Actor (14D Pred + 15D Remote = 29D)
-            actor_input_t = torch.cat([predicted_state_t, augmented_remote_state_t], dim=1)
-
-            action_t, _, _ = self.actor.sample(actor_input_t, deterministic)
+            # 2. Actor Action (Uses the full 113D Observation)
+            obs_t = torch.tensor(obs, dtype=torch.float32, device=self.device)
+            action_t, _, _ = self.actor.sample(obs_t, deterministic)
 
             actions_np = action_t.cpu().numpy()
             predicted_states_np = predicted_state_t.cpu().numpy()
@@ -279,7 +272,7 @@ class SACTrainer:
         validation_rewards = []
         
         # Initialize validation environment
-        val_obs, _ = self.val_env.reset()
+        val_obs, _ = self.val_env.reset() # SB3 DummyVecEnv might behave differently, but this is a standard Gym Env here
  
         for episode in range(SAC_VAL_EPISODES):
             episode_reward = 0.0
@@ -288,35 +281,28 @@ class SACTrainer:
             for step in range(MAX_EPISODE_STEPS):
                 # Get delayed buffer for LSTM
                 delayed_buffer = self.val_env.get_delayed_target_buffer(RNN_SEQUENCE_LENGTH)
-                remote_state = self.val_env.get_remote_state()
                 
-                # Reshape for batch inference
+                # Reshape for batch inference (1, Seq, Feat)
                 delayed_seq_batch = delayed_buffer.reshape(1, RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1)
-                remote_state_batch = remote_state.reshape(1, N_JOINTS * 2)
                 
-                # Get deterministic action (no exploration)
-                with torch.no_grad():
-                    delayed_t = torch.tensor(delayed_seq_batch, dtype=torch.float32, device=self.device)
-                    remote_state_t = torch.tensor(remote_state_batch, dtype=torch.float32, device=self.device)
-
-                    # 1. Predict
-                    predicted_state_t, _ = self.state_estimator(delayed_t)
-
-                    # 2. Extract Delay
-                    delay_t = delayed_t[:, -1, 14:] 
-                    
-                    # 3. Augment Remote State
-                    augmented_remote_state_t = torch.cat([remote_state_t, delay_t], dim=1)
-
-                    # 4. Concatenate (29D)
-                    actor_input_t = torch.cat([predicted_state_t, augmented_remote_state_t], dim=1)
-
-                    action_t, _, _ = self.actor.sample(actor_input_t, deterministic=True)
-                    action = action_t.cpu().numpy()[0]
+                # Reshape obs for batch inference (1, 113)
+                obs_batch = val_obs.reshape(1, -1)
                 
-                # Set predicted target and step environment
-                self.val_env.set_predicted_target(predicted_state_t.cpu().numpy()[0])
-                val_obs, reward, done, truncated, info = self.val_env.step(action)
+                # [FIX] Use the shared select_action method
+                # This handles all the LSTM prediction and Actor inference correctly
+                actions, predicted_states = self.select_action(
+                    obs_batch, delayed_seq_batch, deterministic=True
+                )
+                
+                # Unpack single batch result
+                action = actions[0]
+                predicted_target = predicted_states[0]
+                
+                # Combine for environment step (21D: 7D Torque + 14D Prediction)
+                augmented_action = np.concatenate([action, predicted_target])
+                
+                # Step environment
+                val_obs, reward, done, truncated, info = self.val_env.step(augmented_action)
                 
                 episode_reward += reward
                 
@@ -332,8 +318,6 @@ class SACTrainer:
         logger.info(f"\nValidation Results:")
         logger.info(f"  Average Reward: {avg_validation_reward:.4f}")
         logger.info(f"  Std Dev: {std_validation_reward:.4f}")
-        logger.info(f"  Min: {np.min(validation_rewards):.4f}")
-        logger.info(f"  Max: {np.max(validation_rewards):.4f}")
         
         return avg_validation_reward
             
@@ -363,29 +347,27 @@ class SACTrainer:
             metrics['estimator_loss (frozen)'] = estimator_loss.item()
         
         with torch.no_grad():
-            # Get predicted states (from frozen estimator)
-            predicted_state_t, _ = self.state_estimator(batch['delayed_sequences'])
-            next_predicted_state_t, _ = self.state_estimator(batch['next_delayed_sequences'])
+            # [Fix] Critic Target uses 'next_remote_states' which is actually 'next_obs' (113D)
+            # We no longer need to concatenate predicted states for the Actor input, 
+            # because the Actor now takes the raw 113D observation.
             
-            actor_state_t = torch.cat([predicted_state_t, batch['remote_states']], dim=1)
-            next_actor_state_t = torch.cat([next_predicted_state_t, batch['next_remote_states']], dim=1)
-
-            # Get next actions and log_probs from *current* actor
-            next_actions_t, next_log_probs_t, _ = self.actor.sample(next_actor_state_t)
+            next_state_t = batch['next_remote_states'] # This holds the 113D Next Observation
             
-            # Get Q-values from *target* critic
-            q1_target, q2_target = self.critic_target(next_actor_state_t, next_actions_t)
+            # Get next actions from Target Actor
+            next_actions_t, next_log_probs_t, _ = self.actor.sample(next_state_t)
+            
+            # Get Q-values from Target Critic
+            q1_target, q2_target = self.critic_target(next_state_t, next_actions_t)
             q_target_min = torch.min(q1_target, q2_target)
             
-            # Calculate the target for the Q-function
             q_target = batch['rewards'] + (1.0 - batch['dones']) * SAC_GAMMA * (
                 q_target_min - self.alpha * next_log_probs_t
             )
 
-        # Get current Q-values from *current* critic
-        current_q1, current_q2 = self.critic(actor_state_t, batch['actions'])
+        # [Fix] Current Critic Update
+        current_state_t = batch['remote_states'] # This holds the 113D Current Observation
+        current_q1, current_q2 = self.critic(current_state_t, batch['actions'])
         
-        # MSE loss between current Q and target Q (bellman equation)
         critic_loss = F.mse_loss(current_q1, q_target) + F.mse_loss(current_q2, q_target)
         
         self.critic_optimizer.zero_grad()
@@ -398,10 +380,8 @@ class SACTrainer:
             param.requires_grad = False
             
         # Get actions and log_probs from current actor
-        actions_t, log_probs_t, _ = self.actor.sample(actor_state_t)
-        
-        # Get Q-values from sampled actions
-        q1_policy, q2_policy = self.critic(actor_state_t, actions_t)
+        actions_t, log_probs_t, _ = self.actor.sample(current_state_t)
+        q1_policy, q2_policy = self.critic(current_state_t, actions_t)
         q_policy_min = torch.min(q1_policy, q2_policy)
         
         # Actor loss: maximize (Q - α*log_π) = minimize (α*log_π - Q)
@@ -439,7 +419,8 @@ class SACTrainer:
         self._init_tensorboard()
         self.training_start_time = datetime.now()
         start_time = self.training_start_time
-
+        validation_reward = None
+        
         metrics = {}
         
         logger.info("="*70)
@@ -468,197 +449,125 @@ class SACTrainer:
         logger.info("Training loop starting...")
         logger.info("")
 
+        obs = self.env.reset()
+        
         for t in range(int(total_timesteps // self.num_envs)):
-            # --- Data Collection Phase
-            # Get delayed observation sequences from all environments
+            
+            # Debug Print to confirm it is moving
+            if t % 100 == 0:
+                print(f"Step {self.total_timesteps}/{total_timesteps}", end='\r')
+
+            # 1. Data Collection (Get History)
             delayed_buffers_list = self.env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
-            remote_states_list = self.env.env_method("get_remote_state")
             true_targets_list = self.env.env_method("get_true_current_target")
             
-            # Convert to numpy arrays with correct shapes
-            delayed_seq_batch = np.array([
-                buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1) 
-                for buf in delayed_buffers_list
-            ])
-            remote_state_batch = np.array(remote_states_list)
+            # Stack and Reshape: (Batch, Seq, Feat)
+            flat_batch = np.stack(delayed_buffers_list)
+            delayed_seq_batch = flat_batch.reshape(self.num_envs, RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1)
             true_target_batch = np.array(true_targets_list)
 
-            # --- Action selection phase
+            # 2. Action Selection
             policy_actions, predicted_state_batch = self.select_action(
-                delayed_seq_batch, remote_state_batch, deterministic=False
+                obs, delayed_seq_batch, deterministic=False
             )
 
-            # 2. Decide on the Action (Exploration vs Exploitation)
+            # 3. Exploration Logic
             if self.total_timesteps < SAC_START_STEPS:
-                # [FIX] Exploration phase: Sample ONLY 7D TORQUE
-                # Do NOT use self.env.action_space.sample() because that gives 21D!
-                
-                # Create a random 7D vector (Torque only)
                 actions_batch = np.array([
                     np.random.uniform(-1.0, 1.0, size=(N_JOINTS,)) 
                     for _ in range(self.num_envs)
                 ])
             else:
-                # Exploitation phase: Use the policy action
                 actions_batch = policy_actions
 
-            # Concatenate: 7D (Torque) + 14D (Prediction) = 21D
+            # 4. Step Environment
             augmented_actions_batch = np.concatenate([actions_batch, predicted_state_batch], axis=1)
+            next_obs, rewards_batch, dones_batch, infos_batch = self.env.step(augmented_actions_batch)
             
-            # Now pass 'augmented_actions_batch' (which is 21D) to env.step()
-            _, rewards_batch, dones_batch, infos_batch = self.env.step(augmented_actions_batch)
-            
-            # Get next state observations
+            # 5. Get Next History (for Replay Buffer)
             next_delayed_buffers_list = self.env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
-            next_remote_states_list = self.env.env_method("get_remote_state")
-            next_delayed_seq_batch = np.array([buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1) for buf in next_delayed_buffers_list])
-            next_remote_state_batch = np.array(next_remote_states_list)
+            next_flat_batch = np.stack(next_delayed_buffers_list)
+            next_delayed_seq_batch = next_flat_batch.reshape(self.num_envs, RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1)
 
-            # --- Store Experience in Replay Buffer
+            # 6. Store Experience in Replay Buffer
+            # [FIX] Iterate over ENVIRONMENTS (i), not Time (t)
             for i in range(self.num_envs):
-                # 1. Logic: Skip transitions collected during warmup
-                # The environment forced the action to zero, but 'actions_batch' contains 
-                # the policy's output. Saving this would poison the Critic.
                 if infos_batch[i].get('is_in_warmup', False):
                     continue
-
-                # 2. Safety: Skip if prediction contained NaNs
-                # predicted_state_batch is a numpy array here
-                if np.isnan(predicted_state_batch[i]).any():
-                    continue
                 
-                info = infos_batch[i]
-                current_delay_steps = info.get('current_delay_steps', 0)
-                
-                normalized_delay = np.array([float(current_delay_steps) / MAX_EPISODE_STEPS], dtype=np.float32)
-                
-                augmented_remote_state = np.concatenate([remote_state_batch[i], normalized_delay])
-                augmented_next_remote_state = np.concatenate([next_remote_state_batch[i], normalized_delay])
-                action_7D_torque = augmented_actions_batch[i][:N_JOINTS] # Slice the first 7 dimensions (Torque)
-                
-                
-                # Adding back to replay buffer
                 self.replay_buffer.add(
-                    delayed_seq_batch[i],          # Already numpy
-                    augmented_remote_state,        # Already numpy
-                    action_7D_torque,              # This is the policy action (valid now because we skipped warmup)
+                    delayed_seq_batch[i],
+                    obs[i],                # 113D Current
+                    actions_batch[i],      # 7D Torque
                     rewards_batch[i],
-                    true_target_batch[i],          # Already numpy
-                    next_delayed_seq_batch[i],     # Already numpy
-                    augmented_next_remote_state,   # Already numpy
+                    true_target_batch[i],
+                    next_delayed_seq_batch[i],
+                    next_obs[i],           # 113D Next
                     dones_batch[i]
                 )
 
-            # --- Update Training Statistics
+            obs = next_obs
+            
+            # 7. Update Statistics
             self.total_timesteps += self.num_envs
             episode_rewards += rewards_batch
             episode_lengths += 1
 
-            for info in infos_batch:
+            # Track Episode Completion
+            for i in range(self.num_envs):
+                if dones_batch[i]:
+                    completed_episode_rewards.append(episode_rewards[i])
+                    episode_rewards[i] = 0.0
+                    episode_lengths[i] = 0
+                
+                # Track Metrics
+                info = infos_batch[i]
                 self.real_time_error_history.append(info.get('real_time_joint_error', np.nan))
                 self.prediction_error_history.append(info.get('prediction_error', np.nan))
                 self.delay_steps_history.append(info.get('current_delay_steps', np.nan))
 
-            # Handle episode termination
-            for i in range(self.num_envs):
-                if dones_batch[i]:
-                    # Track completed episode reward
-                    completed_episode_rewards.append(episode_rewards[i])
-                    
-                    # Reset episode tracking
-                    episode_rewards[i] = 0.0
-                    episode_lengths[i] = 0
-            
-            # --- Policy Update Phase (after collecting sufficient data)
+            # 8. Policy Update (Gradient Descent)
             if self.total_timesteps >= SAC_START_STEPS:
                 for _ in range(int(SAC_UPDATES_PER_STEP * self.num_envs)):
                     metrics = self.update_policy()
                     self.num_updates += 1
 
-            # --- Validation and Early Stopping Check
-            validation_reward = None
+            # 9. Validation & Logging
             if (t + 1) % (SAC_VAL_FREQ // self.num_envs) == 0 and self.total_timesteps >= SAC_START_STEPS:
                 validation_reward = self.validate()
                 self.validation_rewards_history.append(validation_reward)
                 
-                # Early stopping logic
                 if validation_reward > self.best_validation_reward:
-                    # New best!
                     self.best_validation_reward = validation_reward
                     self.patience_counter = 0
                     self.save_checkpoint("best_policy.pth")
-                    logger.info(f"✓ NEW BEST! Validation reward: {validation_reward:.4f}")
-                    logger.info(f"  Saved: best_policy.pth")
+                    logger.info(f"✓ NEW BEST! Val Reward: {validation_reward:.4f}")
                 else:
-                    # No improvement
                     self.patience_counter += 1
-                    logger.info(f"⚠ No improvement for {self.patience_counter}/{SAC_EARLY_STOPPING_PATIENCE} checks")
-                    
-                    # Check early stopping
                     if self.patience_counter >= SAC_EARLY_STOPPING_PATIENCE:
-                        logger.info("")
-                        logger.info("="*70)
-                        logger.info(" EARLY STOPPING TRIGGERED!")
-                        logger.info("="*70)
-                        logger.info(f"Best validation reward: {self.best_validation_reward:.4f}")
-                        logger.info(f"Stopped at timestep: {self.total_timesteps:,}")
-                        logger.info(f"Using best checkpoint: best_policy.pth")
+                        logger.info("Early stopping triggered.")
                         self.early_stop_triggered = True
                         break
 
-            # Logging
+            # Periodic Console Log
             if (t + 1) % (LOG_FREQ * 10) == 0:
                 elapsed_time = datetime.now() - start_time
                 avg_reward = np.mean(completed_episode_rewards) if completed_episode_rewards else 0.0
                 
-                # Calculate info stats in RADIANS
-                avg_rt_error_rad = (np.nanmean(self.real_time_error_history) 
-                                    if len(self.real_time_error_history) > 0 else np.nan)
-                avg_pred_error_rad = (np.nanmean(self.prediction_error_history) 
-                                      if len(self.prediction_error_history) > 0 else np.nan)
-                avg_delay = (np.nanmean(self.delay_steps_history) 
-                             if len(self.delay_steps_history) > 0 else np.nan)
-                
                 logger.info(f"\n{'─'*70}")
                 logger.info(f"Timesteps: {self.total_timesteps:,} | Updates: {self.num_updates:,}")
-                logger.info(f"Elapsed Time: {str(elapsed_time).split('.')[0]}")
-                logger.info(f"Avg Reward (last 100 ep): {avg_reward:.4f}")
+                logger.info(f"Avg Reward: {avg_reward:.4f}")
                 
-                # Print detailed env stats in RADIANS
-                logger.info(f"\nEnvironment Stats (avg over last {len(self.real_time_error_history)} steps):")
-                logger.info(f" Avg Real-Time Error (q): {avg_rt_error_rad:.4f} rad")
-                logger.info(f" Avg Prediction Error (LSTM): {avg_pred_error_rad:.4f} rad")
-                logger.info(f" Avg Delay (steps): {avg_delay:.2f}")
-                
-                # Pass new stats to _log_metrics
-                env_stats_dict = {
-                    'avg_rt_error_rad': avg_rt_error_rad,
-                    'avg_pred_error_rad': avg_pred_error_rad,
-                    'avg_delay': avg_delay,
+                env_stats = {
+                    'avg_rt_error_rad': np.nanmean(self.real_time_error_history),
+                    'avg_pred_error_rad': np.nanmean(self.prediction_error_history),
+                    'avg_delay': np.nanmean(self.delay_steps_history)
                 }
-                self._log_metrics(metrics, avg_reward, validation_reward, env_stats=env_stats_dict)
-       
-        # --- Training Complete
-        logger.info("")
-        logger.info("="*70)
-        logger.info("Training Completed")
-        logger.info("="*70)
-        logger.info(f"Total timesteps: {self.total_timesteps:,}")
-        logger.info(f"Total updates: {self.num_updates:,}")
-        elapsed_time = datetime.now() - self.training_start_time
-        logger.info(f"Total training time: {str(elapsed_time).split('.')[0]}")
-        logger.info(f"Best validation reward: {self.best_validation_reward:.4f}")
-        logger.info(f"Early stopping triggered: {self.early_stop_triggered}")
-        logger.info("")
-        logger.info("Checkpoints saved:")
-        logger.info(f"  best_policy.pth (validation peak)")
-        logger.info(f"  final_policy.pth (last state)")
-        logger.info("")
-        
+                self._log_metrics(metrics, avg_reward, validation_reward, env_stats)
+
+        # Save Final
         self.save_checkpoint("final_policy.pth")
-        
-        if self.tb_writer:
-            self.tb_writer.close()
+        if self.tb_writer: self.tb_writer.close()
 
     def save_checkpoint(self, filename: str):
         """Save current model checkpoint"""

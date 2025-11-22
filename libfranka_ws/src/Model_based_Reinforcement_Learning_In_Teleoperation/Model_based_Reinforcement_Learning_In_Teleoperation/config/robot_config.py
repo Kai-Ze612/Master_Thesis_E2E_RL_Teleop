@@ -7,13 +7,13 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251121_195833/best_policy.pth"
-LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251121_170404/estimator_best.pth"
+# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251121_195833/best_policy.pth"
+# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251121_170404/estimator_best.pth"
 
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_MEDIUM_DELAY_20251121_170420/estimator_best.pth"
+DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251122_162205/estimator_best.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -34,8 +34,8 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
-KP_LOCAL = np.array([100.0, 80.0, 70.0, 50.0, 50.0, 15.0, 5.0], dtype=np.float32)
-KD_LOCAL = np.array([ 15.0,  12.0,  12.0,  10.5, 10.0, 4.0,  2.5], dtype=np.float32) 
+KP_LOCAL = np.array([80.0, 70.0, 60.0, 60.0, 40.0, 20.0, 15.0], dtype=np.float32)
+KD_LOCAL = np.array([14.0, 13.0, 13.0, 12.0, 11.0,  5.0,  3.0], dtype=np.float32)
 
 WARM_UP_DURATION = 1  # sec (before starting moving)
 NO_DELAY_DURATION = 0.5 # sec (before starting delay simulation)
@@ -46,14 +46,14 @@ NO_DELAY_DURATION = 0.5 # sec (before starting delay simulation)
 DEFAULT_CONTROL_FREQ = 200
 DEFAULT_PUBLISH_FREQ = 200
 
-DEFAULT_KP_REMOTE = np.array([70.0, 60.0, 50.0, 50.0, 30.0, 15.0, 10.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([ 13.0,  12.0,  12.0,  10.5, 10.0, 4.0,  2.5], dtype=np.float32) 
+DEFAULT_KP_REMOTE = np.array([80.0, 70.0, 60.0, 60.0, 40.0, 20.0, 15.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([14.0, 13.0, 13.0, 12.0, 11.0,  5.0,  3.0], dtype=np.float32)
 
 ######################################
 # IK Solver Parameterss
 ######################################
-IK_MAX_ITER = 100
-IK_TOLERANCE = 1e-4
+IK_MAX_ITER = 200
+IK_TOLERANCE = 0.002
 IK_DAMPING = 1e-4
 IK_STEP_SIZE = 0.25
 IK_MAX_JOINT_CHANGE = 0.1
@@ -75,7 +75,7 @@ ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_TOTAL_UPDATES = 500000
 ESTIMATOR_VAL_STEPS = 5000
 ESTIMATOR_VAL_FREQ = 1000
-ESTIMATOR_PATIENCE = 30
+ESTIMATOR_PATIENCE = 20
 ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 256
@@ -153,7 +153,7 @@ ACTION_PENALTY_WEIGHT = 0.01 # penalty for large actions
 ######################################
 
 # NUM_ENVIRONMENTS = 5 # Number of parallel environments for training
-NUM_ENVIRONMENTS = 1
+NUM_ENVIRONMENTS = 20
 
 ######################################
 # Logging and Checkpointing

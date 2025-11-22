@@ -284,7 +284,7 @@ class LocalRobotSimulator(gym.Env):
 
         super().reset(seed=seed)
 
-        # Apply parameter randomization if enabled
+        # 1. Apply parameter randomization if enabled
         if self._randomize_params:
             self._params = self._generate_random_params()
             self._generator = self._create_generator(self._trajectory_type, self._params)
@@ -297,37 +297,49 @@ class LocalRobotSimulator(gym.Env):
                     self._trajectory_type = new_type
                     self._generator = self._create_generator(new_type, self._params)
 
-        # Reset trajectory time
+        # 2. Reset trajectory time
         self._trajectory_time = 0.0
         self._tick = 0
         
-        # Calculate trajectory start position
-        self._traj_start_pos = self._generator.compute_position(0.0)
-        
-        # Calculate Home Position
+        # 3. Calculate where the trajectory mathematically starts
+        trajectory_start_pos = self._generator.compute_position(0.0)
+        self._start_pos = trajectory_start_pos.copy()
+
+        # Solve IK for this start position immediately
+        # We use INITIAL_JOINT_CONFIG only as a seed for the IK solver
+        q_start, ik_success, _ = self.ik_solver.solve(
+            target_pos=trajectory_start_pos,
+            q_init=INITIAL_JOINT_CONFIG, # Use home as guess
+            body_name=self.ee_body_name,
+            tcp_offset=self.tcp_offset,
+            enforce_continuity=False # False because this is a teleport reset
+        )
+
+        if not ik_success:
+            print(f"[WARNING] Could not solve IK for trajectory start: {trajectory_start_pos}")
+            # Fallback to home if IK fails (though it shouldn't if params are safe)
+            q_start = INITIAL_JOINT_CONFIG.copy()
+
+        # 5. Initialize joint state targets to this new start position
+        self._q_current = q_start.copy()
+        self._qd_current = np.zeros(self.n_joints)
+        self._last_q_desired = q_start.copy()
+
+        # 3. Reset Physics to q_start
         mujoco.mj_resetData(self.model, self.data)
-        self.data.qpos[:self.n_joints] = INITIAL_JOINT_CONFIG
+        self.data.qpos[:self.n_joints] = q_start
         self.data.qvel[:self.n_joints] = np.zeros(self.n_joints)
         mujoco.mj_forward(self.model, self.data)
-        self._home_pos_cartesian = self.get_cartesian_position() # Helper function exists    
 
-        self._q_current = INITIAL_JOINT_CONFIG.copy()
-        self._qd_current = np.zeros(self.n_joints)
-        self._last_q_desired = INITIAL_JOINT_CONFIG.copy()
-        
-        # Info dictionary
         info = {
             "trajectory_type": self._trajectory_type.value,
             "joint_pos": self._q_current.copy(),
             "center": self._params.center.copy(),
         }
 
+        # --- MODIFICATION: Return 2 values for Gym API compatibility ---
         return self._q_current.astype(np.float32), info
-    
-    def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
-        """Normalize an angle or array of angles to the range [-pi, pi]."""
-        return (angle + np.pi) % (2 * np.pi) - np.pi
-    
+
     def _get_inverse_dynamics(self, q: np.ndarray, v: np.ndarray, a_desired: np.ndarray) -> np.ndarray:
         """
         Compute Torque using MuJoCo Inverse Dynamics.
@@ -345,6 +357,10 @@ class LocalRobotSimulator(gym.Env):
         mujoco.mj_inverse(self.model, self.data)
 
         return self.data.qfrc_inverse[:self.n_joints].copy()
+    
+    def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
+        """Normalize an angle or array of angles to the range [-pi, pi]."""
+        return (angle + np.pi) % (2 * np.pi) - np.pi
     
     def step(
         self,
@@ -365,16 +381,14 @@ class LocalRobotSimulator(gym.Env):
         self._trajectory_time += self._dt
         self._tick += 1
         
-       
+        
         # Add wait logic
         if self._trajectory_time < self._warm_up_duration:
-            alpha = self._trajectory_time / self._warm_up_duration
-            # Cubic easing for smoother start/stop (optional, but better than linear)
-            alpha_smooth = alpha * alpha * (3 - 2 * alpha) 
-            cartesian_target = (1 - alpha_smooth) * self._home_pos_cartesian + alpha_smooth * self._traj_start_pos
-            
+            # Hold at the start position for the wait duration
+            cartesian_target = self._start_pos.copy()
         else:
-            # Normal Trajectory Generation
+            # After wait, compute position relative to the *start* of the movement
+            # This ensures the trajectory starts from t=0 *after* the wait
             movement_time = self._trajectory_time - self._warm_up_duration
             cartesian_target = self._generator.compute_position(movement_time)
 
