@@ -183,7 +183,7 @@ class LocalRobotSimulator(gym.Env):
         # Warm-up time before starting trajectory
         self._warm_up_duration = warm_up_duration
         self._start_pos = np.zeros(3)
-        
+               
         # PD gains for local robot
         self.kd_local = kd_local.copy()
         self.kp_local = kp_local.copy()
@@ -344,6 +344,24 @@ class LocalRobotSimulator(gym.Env):
 
         return self._q_current.astype(np.float32), info
 
+    def _get_inverse_dynamics(self, q: np.ndarray, v: np.ndarray, a_desired: np.ndarray) -> np.ndarray:
+        """
+        Compute Torque using MuJoCo Inverse Dynamics.
+        Equation: tau = M(q)*a_desired + C(q,v)*v + G(q)
+        """
+        # 1. Update MuJoCo with the CURRENT Robot State
+        self.data.qpos[:self.n_joints] = q
+        self.data.qvel[:self.n_joints] = v
+        
+        # 2. Set the DESIRED Acceleration (from PD)
+        self.data.qacc[:self.n_joints] = a_desired
+
+        # 3. Compute Inverse Dynamics
+        # This calculates the forces required to produce 'a_desired'
+        mujoco.mj_inverse(self.model, self.data)
+
+        return self.data.qfrc_inverse[:self.n_joints].copy()
+    
     def step(
         self,
         action: Optional[Any] = None,
@@ -391,17 +409,29 @@ class LocalRobotSimulator(gym.Env):
         qd_desired = (q_desired - self._last_q_desired) / self._dt
         self._last_q_desired = q_desired.copy()
 
-        # PD controller for local robot tracking
-        q_error = q_desired - self.data.qpos[:self.n_joints]
-        qd_error = qd_desired - self.data.qvel[:self.n_joints]
+        # 1. Get Current State
+        q_current = self.data.qpos[:self.n_joints].copy()
+        qd_current = self.data.qvel[:self.n_joints].copy()
 
-        tau_control = self.kp_local * q_error + self.kd_local * qd_error
+        # 2. Calculate Error
+        q_error = q_desired - q_current
+        qd_error = qd_desired - qd_current
+
+        # 3. PD Control -> Output is DESIRED ACCELERATION (not Torque)
+        # acc = Kp * (pos_err) + Kd * (vel_err)
+        acc_desired = self.kp_local * q_error + self.kd_local * qd_error
+
+        # 4. Inverse Dynamics -> Output is REQUIRED TORQUE
+        # tau = M(q)*acc + C + G
+        tau_control = self._get_inverse_dynamics(q_current, qd_current, acc_desired)
+        
+        # 5. Apply to Simulation
         self.data.ctrl[:self.n_joints] = tau_control
 
-        # Simulate MuJoCo dynamics
+        # 6. Step Physics
         for _ in range(self.n_substeps):
             mujoco.mj_step(self.model, self.data)
-
+        
         # Read actual joint state from simulation
         self._q_current = self.data.qpos[:self.n_joints].copy()
         self._qd_current = self.data.qvel[:self.n_joints].copy()
