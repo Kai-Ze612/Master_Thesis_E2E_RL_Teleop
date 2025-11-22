@@ -102,57 +102,79 @@ class RemoteRobotSimulator:
         """Normalize an angle or array of angles to the range [-pi, pi]."""
         return (angle + np.pi) % (2 * np.pi) - np.pi
     
+    def _get_inverse_dynamics(self, q: np.ndarray, v: np.ndarray, a_desired: np.ndarray) -> np.ndarray:
+        """
+        Compute Torque using MuJoCo Inverse Dynamics.
+        Equation: tau = M(q)*a_desired + C(q,v)*v + G(q)
+        """
+        # 1. Update MuJoCo with the CURRENT Robot State
+        self.data.qpos[:self.n_joints] = q
+        self.data.qvel[:self.n_joints] = v
+        
+        # 2. Set the DESIRED Acceleration (from PD)
+        self.data.qacc[:self.n_joints] = a_desired
+
+        # 3. Compute Inverse Dynamics
+        mujoco.mj_inverse(self.model, self.data)
+
+        return self.data.qfrc_inverse[:self.n_joints].copy()
+    
     def step(
         self,
         target_q: NDArray[np.float64],
         target_qd: NDArray[np.float64],
         torque_compensation: NDArray[np.float64],
     ) -> dict:
-        """Execute one control step with additive torque compensation."""
+        """Execute one control step with Computed Torque Control."""
         
         self.internal_tick += 1
         
-        # delay time into steps and store the action in the queue arrcording to its arrival time
+        # Adding action delay
         delay_steps = int(self.delay_simulator.get_action_delay_steps())
         arrival_time = self.internal_tick + delay_steps
         heapq.heappush(self.action_queue, (arrival_time, torque_compensation.copy()))
         
-        # Hold the latest valid torque compensation that has arrived if there is no update        
+        # Hold the latest valid torque compensation that has arrived
         updated = False
         while self.action_queue and self.action_queue[0][0] <= self.internal_tick:
             _, valid_torque = heapq.heappop(self.action_queue)
-            self.last_executed_rl_torque = valid_torque  # RL compensation to be applied
+            self.last_executed_rl_torque = valid_torque 
             updated = True
             
-        # get current remote robot joint states
+        # get remote state
         q_current = self.data.qpos[:self.n_joints].copy()
         qd_current = self.data.qvel[:self.n_joints].copy()
         
-        # Calculate PD control torques
-        # q_error = target_q - q_current
-        # Normalize angle error to handle wrap-around (normalized to -pi to pi)
+        # calculate acc based on PD control
         q_error = self._normalize_angle(target_q - q_current) 
         qd_error = target_qd - qd_current
-
-        # PD control torque
-        tau_pd = self.kp * q_error + self.kd * qd_error
+        acc_desired = self.kp * q_error + self.kd * qd_error # rad/s^2
         
-        # No torque on gripper joint
-        tau_pd[-1] = self.last_executed_rl_torque[-1] = 0.0
+        # inverse dynamics (computed torque)
+        tau_id = self._get_inverse_dynamics(q_current, qd_current, acc_desired)
         
-        # Final torque = PD torque + RL compensation
-        tau_total = tau_pd + self.last_executed_rl_torque
+        # Safety: No torque on gripper joint (index -1)
+        tau_id[-1] = 0.0
+        self.last_executed_rl_torque[-1] = 0.0
 
-        # Apply safety torque limits
+        # Adding noise to inverse dynamics torque for simulating model inaccuracies
+        # This will help the RL agent to learn to compensate better in real world robot (due to no perfect inverse dynamics model)
+        noise = np.random.uniform(0.95, 1.05, size=self.n_joints)
+        tau_id = tau_id * noise
+        
+        # combine torques
+        tau_total = tau_id + self.last_executed_rl_torque
+
+        # Apply safety limits
         tau_clipped = np.clip(tau_total, -self.torque_limits, self.torque_limits)
         limits_hit = np.any(tau_total != tau_clipped)
         
-        # Apply torques and step simulation        
+        # step physics
         self.data.ctrl[:self.n_joints] = tau_clipped
         for _ in range(self.n_substeps):
             mujoco.mj_step(self.model, self.data)
 
-        # get remote robot joint states after stepping
+        # Metrics
         q_achieved = self.data.qpos[:self.n_joints].copy()
         joint_position_error = np.linalg.norm(target_q - q_achieved)
         qd_achieved = self.data.qvel[:self.n_joints].copy()
@@ -162,7 +184,7 @@ class RemoteRobotSimulator:
             "joint_error": joint_position_error,
             "velocity_error": joint_velocity_error,
             "limits_hit": limits_hit,
-            "tau_pd": tau_pd,
+            "tau_pd": tau_id, # Renamed for clarity (this is now the Baseline ID Torque)
             "tau_rl": self.last_executed_rl_torque,
             "tau_total": tau_total
         }
