@@ -46,7 +46,8 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     TRAJECTORY_FREQUENCY,
     DELAY_INPUT_NORM_FACTOR,
     TARGET_DELTA_SCALE,
-    WARM_UP_DURATION
+    WARM_UP_DURATION,
+    NO_DELAY_DURATION,
 )
 
 class AgentNode(Node):
@@ -96,6 +97,11 @@ class AgentNode(Node):
         self.warmup_steps_ = int(self.warmup_time_ * self.control_freq_)
         self.warmup_steps_count_ = 0
         self.buffer_flushed_ = False
+        
+        # No_delay Logic
+        self.no_delay_time_ = NO_DELAY_DURATION # seconds
+        self.no_delay_steps_ = int(self.no_delay_time_ * self.control_freq_)
+        self.no_delay_steps_count_ = 0
         
         self.target_joint_names_ = [f'panda_joint{i+1}' for i in range(N_JOINTS)]
         self.rnn_seq_len_ = RNN_SEQUENCE_LENGTH
@@ -194,9 +200,19 @@ class AgentNode(Node):
         except:
             pass
     
-    def _get_delayed_leader_data(self) -> tuple[np.ndarray, float]:
+    def _get_delayed_leader_data(self, force_no_delay: bool = False) -> tuple[np.ndarray, float]:
+        """ Get delayed leader data sequence for LSTM input."""
+        
+        # Determine observation delay steps
+        # during no-delay phase, force zero delay
+        # after that, normal delay simulation
         history_len = len(self.leader_q_history_)
-        obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
+        if force_no_delay:
+            obs_delay_steps = 0
+        else:
+            obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
+        
+        # normalize delay scalar 
         current_delay_scalar = float(obs_delay_steps) / DELAY_INPUT_NORM_FACTOR
         
         most_recent_delayed_idx = -(obs_delay_steps + 1)
@@ -244,10 +260,12 @@ class AgentNode(Node):
             self.get_logger().info(f"Buffer flushed. New size: {len(self.leader_q_history_)}")
         
         try:            
+            self.no_delay_steps_count_ += 1
             
-            # Get normalized delayed leader data
-            raw_delayed_sequence, raw_delay_scalar = self._get_delayed_leader_data()
-            normalized_delay_scalar = raw_delay_scalar
+            is_in_grace_period = (self.no_delay_steps_count_ < self.no_delay_steps_)
+            
+            # get normalized delayed leader data
+            raw_delayed_sequence, normalized_delay_scalar = self._get_delayed_leader_data(force_no_delay=is_in_grace_period)
             
             # 15D data per step: [q(7), qd(7), delay(1)]
             full_seq_t = torch.tensor(raw_delayed_sequence, dtype=torch.float32).to(self.device_).reshape(1, self.rnn_seq_len_, -1)

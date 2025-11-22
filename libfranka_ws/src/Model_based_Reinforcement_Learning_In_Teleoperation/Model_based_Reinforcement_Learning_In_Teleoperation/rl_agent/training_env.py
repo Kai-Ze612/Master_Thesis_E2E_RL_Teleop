@@ -48,6 +48,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     TRAJECTORY_FREQUENCY,
     WARM_UP_DURATION,
     DELAY_INPUT_NORM_FACTOR,
+    NO_DELAY_DURATION,
 )
 
 
@@ -117,6 +118,9 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.total_warmup_phase_steps = self.leader_warmup_steps + self.buffer_fill_steps
         self.steps_remaining_in_warmup = 0
 
+        # No_delay phase parameters
+        self.no_delay_duration = NO_DELAY_DURATION
+        self.grace_period_steps = int(self.no_delay_duration * self.control_freq)
         
         # 1. Torque Bounds (from config)
         torque_low = -MAX_TORQUE_COMPENSATION.copy()
@@ -182,9 +186,12 @@ class TeleoperationEnvWithDelay(gym.Env):
         self._last_predicted_target = predicted_target.copy()
 
     def get_current_observation_delay(self) -> int:
+        if self.current_step < self.grace_period_steps:
+            return 0  # 0 delay
+        
+        # Otherwise, use the Simulator's delay profile
         history_len = len(self.leader_q_history)
-        sim_delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
-        return int(sim_delay_steps)
+        return self.delay_simulator.get_observation_delay_steps(history_len)
 
     def _get_delayed_q(self) -> np.ndarray:
         buffer_len = len(self.leader_q_history)
