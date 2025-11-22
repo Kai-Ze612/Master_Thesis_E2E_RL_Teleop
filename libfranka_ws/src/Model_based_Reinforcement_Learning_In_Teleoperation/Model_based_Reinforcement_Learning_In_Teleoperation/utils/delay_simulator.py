@@ -45,9 +45,9 @@ class DelaySimulator:
     
     _DELAY_CONFIGS: dict[ExperimentConfig, DelayParameters] = {
         ExperimentConfig.LOW_DELAY: DelayParameters(
-            action_delay=0,
-            obs_delay_min=0,
-            obs_delay_max=0,
+            action_delay=50,
+            obs_delay_min=40,
+            obs_delay_max= 80,
             name="Low Delay"
         ),
         ExperimentConfig.MEDIUM_DELAY: DelayParameters(

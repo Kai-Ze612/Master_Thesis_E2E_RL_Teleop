@@ -1,0 +1,50 @@
+2025-11-22 14:08:08 [INFO] ================================================================================
+2025-11-22 14:08:08 [INFO] LSTM STATE ESTIMATOR (LATE FUSION + RESIDUAL + L1 LOSS)
+2025-11-22 14:08:08 [INFO] Config: LOW_DELAY | Trajectory: TrajectoryType.FIGURE_8
+2025-11-22 14:08:08 [INFO] Randomize Trajectory: False | Seed: 50
+2025-11-22 14:08:08 [INFO] Control Freq (Hz):    200
+2025-11-22 14:08:08 [INFO] Publish Freq (Hz):    200
+2025-11-22 14:08:08 [INFO] Learning Rate:        0.003
+2025-11-22 14:08:08 [INFO] Batch Size:           256
+2025-11-22 14:08:08 [INFO] Buffer Size:          200000
+2025-11-22 14:08:08 [INFO] Total Updates:        500000
+2025-11-22 14:08:08 [INFO] RNN Hidden Dim:       256
+2025-11-22 14:08:08 [INFO] RNN Layers:           3
+2025-11-22 14:08:08 [INFO] RNN Seq Length:       100
+2025-11-22 14:08:08 [INFO] Delay Norm Factor:    10.0
+2025-11-22 14:08:08 [INFO] Target Scale:         500.0
+2025-11-22 14:08:08 [INFO] ================================================================================
+2025-11-22 14:08:08 [INFO] Targeting Dataset Balance: 40000 Static / 160000 Dynamic
+2025-11-22 14:08:08 [INFO] Injected 40000 static hold samples (Augmented with Delay=0).
+2025-11-22 14:08:08 [INFO] Collecting dynamic trajectories...
+2025-11-22 14:08:16 [INFO]   -> 5000/160000 dynamic samples
+2025-11-22 14:08:24 [INFO]   -> 10000/160000 dynamic samples
+2025-11-22 14:08:32 [INFO]   -> 15000/160000 dynamic samples
+2025-11-22 14:08:39 [INFO]   -> 20000/160000 dynamic samples
+2025-11-22 14:08:47 [INFO]   -> 25000/160000 dynamic samples
+2025-11-22 14:08:55 [INFO]   -> 30000/160000 dynamic samples
+2025-11-22 14:09:02 [INFO]   -> 35000/160000 dynamic samples
+2025-11-22 14:09:10 [INFO]   -> 40000/160000 dynamic samples
+2025-11-22 14:09:18 [INFO]   -> 45000/160000 dynamic samples
+2025-11-22 14:09:25 [INFO]   -> 50000/160000 dynamic samples
+2025-11-22 14:09:33 [INFO]   -> 55000/160000 dynamic samples
+2025-11-22 14:09:40 [INFO]   -> 60000/160000 dynamic samples
+2025-11-22 14:09:48 [INFO]   -> 65000/160000 dynamic samples
+2025-11-22 14:09:56 [INFO]   -> 70000/160000 dynamic samples
+2025-11-22 14:10:03 [INFO]   -> 75000/160000 dynamic samples
+2025-11-22 14:10:11 [INFO]   -> 80000/160000 dynamic samples
+2025-11-22 14:10:18 [INFO]   -> 85000/160000 dynamic samples
+2025-11-22 14:10:26 [INFO]   -> 90000/160000 dynamic samples
+2025-11-22 14:10:34 [INFO]   -> 95000/160000 dynamic samples
+2025-11-22 14:10:41 [INFO]   -> 100000/160000 dynamic samples
+2025-11-22 14:10:49 [INFO]   -> 105000/160000 dynamic samples
+2025-11-22 14:10:57 [INFO]   -> 110000/160000 dynamic samples
+2025-11-22 14:11:04 [INFO]   -> 115000/160000 dynamic samples
+2025-11-22 14:11:12 [INFO]   -> 120000/160000 dynamic samples
+2025-11-22 14:11:19 [INFO]   -> 125000/160000 dynamic samples
+2025-11-22 14:11:27 [INFO]   -> 130000/160000 dynamic samples
+2025-11-22 14:11:35 [INFO]   -> 135000/160000 dynamic samples
+2025-11-22 14:11:43 [INFO]   -> 140000/160000 dynamic samples
+2025-11-22 14:11:51 [INFO]   -> 145000/160000 dynamic samples
+2025-11-22 14:11:59 [INFO]   -> 150000/160000 dynamic samples
+2025-11-22 14:12:07 [INFO]   -> 155000/160000 dynamic samples

@@ -1,0 +1,26 @@
+2025-11-22 14:12:12 [INFO] ================================================================================
+2025-11-22 14:12:12 [INFO] LSTM STATE ESTIMATOR (LATE FUSION + RESIDUAL + L1 LOSS)
+2025-11-22 14:12:12 [INFO] Config: LOW_DELAY | Trajectory: TrajectoryType.FIGURE_8
+2025-11-22 14:12:12 [INFO] Randomize Trajectory: False | Seed: 50
+2025-11-22 14:12:12 [INFO] Control Freq (Hz):    200
+2025-11-22 14:12:12 [INFO] Publish Freq (Hz):    200
+2025-11-22 14:12:12 [INFO] Learning Rate:        0.003
+2025-11-22 14:12:12 [INFO] Batch Size:           256
+2025-11-22 14:12:12 [INFO] Buffer Size:          200000
+2025-11-22 14:12:12 [INFO] Total Updates:        500000
+2025-11-22 14:12:12 [INFO] RNN Hidden Dim:       256
+2025-11-22 14:12:12 [INFO] RNN Layers:           3
+2025-11-22 14:12:12 [INFO] RNN Seq Length:       100
+2025-11-22 14:12:12 [INFO] Delay Norm Factor:    10.0
+2025-11-22 14:12:12 [INFO] Target Scale:         500.0
+2025-11-22 14:12:12 [INFO] ================================================================================
+2025-11-22 14:12:13 [INFO] Targeting Dataset Balance: 40000 Static / 160000 Dynamic
+2025-11-22 14:12:13 [INFO] Injected 40000 static hold samples (Augmented with Delay=0).
+2025-11-22 14:12:13 [INFO] Collecting dynamic trajectories...
+2025-11-22 14:12:13 [WARNING] Unstable trajectory detected. Resetting environment to clear history...
+2025-11-22 14:12:13 [INFO]   -> 0/160000 dynamic samples
+2025-11-22 14:12:20 [INFO]   -> 5000/160000 dynamic samples
+2025-11-22 14:12:28 [INFO]   -> 10000/160000 dynamic samples
+2025-11-22 14:12:35 [INFO]   -> 15000/160000 dynamic samples
+2025-11-22 14:12:43 [INFO]   -> 20000/160000 dynamic samples
+2025-11-22 14:12:51 [INFO]   -> 25000/160000 dynamic samples
