@@ -34,8 +34,8 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
-KP_LOCAL = np.array([70.0, 60.0, 50.0, 50.0, 30.0, 15.0, 10.0], dtype=np.float32)
-KD_LOCAL = np.array([ 13.0,  12.0,  12.0,  10.5, 10.0, 4.0,  2.5], dtype=np.float32) 
+KP_LOCAL = np.array([100.0, 80.0, 70.0, 50.0, 50.0, 15.0, 5.0], dtype=np.float32)
+KD_LOCAL = np.array([ 15.0,  12.0,  12.0,  10.5, 10.0, 4.0,  2.5], dtype=np.float32) 
 
 WARM_UP_DURATION = 1  # sec (before starting moving)
 NO_DELAY_DURATION = 0.5 # sec (before starting delay simulation)
