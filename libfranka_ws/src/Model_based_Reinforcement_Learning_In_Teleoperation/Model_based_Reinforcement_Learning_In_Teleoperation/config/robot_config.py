@@ -7,13 +7,13 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251121_195833/best_policy.pth"
-# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251121_170404/estimator_best.pth"
+DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251122_225835/best_policy.pth"
+LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251122_162205/estimator_best.pth"
 
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_FULL_RANGE_COVER_20251122_170339/estimator_best.pth"
+# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_FULL_RANGE_COVER_20251122_170339/estimator_best.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -62,7 +62,7 @@ IK_CONTINUITY_GAIN = 0.5
 ######################################
 # Trajectory Generation Parameters
 ######################################
-TRAJECTORY_CENTER = np.array([0.4, 0.0, 0.5], dtype=np.float32)
+TRAJECTORY_CENTER = np.array([0.3, 0.0, 0.5], dtype=np.float32)
 TRAJECTORY_SCALE = np.array([0.2, 0.2], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1  # Hz
 

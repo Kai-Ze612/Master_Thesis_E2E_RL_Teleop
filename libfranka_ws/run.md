@@ -44,7 +44,7 @@ source setup_environment.sh
 ### Initial Position Return
 ```bash
 cd ~/Libraries/libfranka/build/examples
-./communication_test 192.168.03.107
+./communication_test 192.168.03.108
 ```
 
 ----

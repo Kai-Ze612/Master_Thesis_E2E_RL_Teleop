@@ -1,3 +1,0 @@
-Sat Nov 22 13:39:03 2025
-WARNING: mju_openResource: unknown file '/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml'
-
