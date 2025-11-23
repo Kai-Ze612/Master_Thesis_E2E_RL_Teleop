@@ -13,7 +13,7 @@ import numpy as np
 
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251122_162205/estimator_best.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_FULL_RANGE_COVER_20251122_170339/estimator_best.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -74,7 +74,7 @@ ESTIMATOR_BATCH_SIZE = 256
 ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_TOTAL_UPDATES = 500000
 ESTIMATOR_VAL_STEPS = 5000
-ESTIMATOR_VAL_FREQ = 1000
+ESTIMATOR_VAL_FREQ = 5000
 ESTIMATOR_PATIENCE = 20
 ESTIMATOR_LR_PATIENCE = 5
 
@@ -88,8 +88,7 @@ TARGET_DELTA_SCALE = 500.0
 ######################################
 # RL Environment Parameters
 ######################################
-MAX_EPISODE_STEPS = 10000
-MAX_JOINT_ERROR_TERMINATION = 1.0
+MAX_JOINT_ERROR_TERMINATION = 1.0 
 
 REMOTE_HISTORY_LEN = 5
 
@@ -138,7 +137,7 @@ SAC_TOTAL_TIMESTEPS = 3_000_000  # Total training timesteps
 # Validation and Early Stopping
 SAC_VAL_FREQ = 25000
 SAC_VAL_EPISODES = 10
-SAC_EARLY_STOPPING_PATIENCE = 10
+SAC_EARLY_STOPPING_PATIENCE = 30
 
 ######################################
 # Reward Function Configuration
@@ -153,7 +152,8 @@ ACTION_PENALTY_WEIGHT = 0.01 # penalty for large actions
 ######################################
 
 # NUM_ENVIRONMENTS = 5 # Number of parallel environments for training
-NUM_ENVIRONMENTS = 20
+NUM_ENVIRONMENTS = 1
+MAX_EPISODE_STEPS = 4200 * 5
 
 ######################################
 # Logging and Checkpointing

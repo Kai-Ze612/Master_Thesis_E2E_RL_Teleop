@@ -470,9 +470,16 @@ class TeleoperationEnvWithDelay(gym.Env):
     
     def _check_termination(self, joint_error: float, remote_q: np.ndarray) -> Tuple[bool, float]:
         """Terminate if joint limits exceeded or joint error too high."""
+        
+        # Check for NaNs in remote state
         if not np.all(np.isfinite(remote_q)): return True, -100.0
+        
+        # Check joint limits
         at_limits = (np.any(remote_q <= self.joint_limits_lower + self.joint_limit_margin) or np.any(remote_q >= self.joint_limits_upper - self.joint_limit_margin))
+        
+        # Check when joint error too high
         high_error = np.isnan(joint_error) or joint_error > self.max_joint_error
+        
         terminated = at_limits or high_error
         penalty = -10.0 if terminated else 0.0
         return terminated, penalty
