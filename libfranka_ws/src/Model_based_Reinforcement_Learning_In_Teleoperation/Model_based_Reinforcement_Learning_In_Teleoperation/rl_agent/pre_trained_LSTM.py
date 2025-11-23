@@ -51,6 +51,9 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     RNN_HIDDEN_DIM,
     RNN_NUM_LAYERS,
     DELAY_INPUT_NORM_FACTOR,
+    MAX_PACKET_LOSS_STEPS,
+    AUGMENTATION_STRIDE,
+    DT,
 )
 
 # Helper Functions to filter unstable trajectories data
@@ -150,6 +153,57 @@ def collect_data_from_envs(env: VecEnv, num_envs: int) -> Tuple[np.ndarray, np.n
         return np.array([]), np.array([])
         
     return np.array(valid_seqs), np.array(valid_targets)
+
+def augment_and_add_to_buffer(
+    replay_buffer: ReplayBuffer, 
+    seqs: np.ndarray, 
+    targets: np.ndarray, 
+    histories: list[deque]
+) -> int:
+    """
+    Adds standard samples AND generates synthetic packet loss samples.
+    Using STRIDE to prevent buffer flooding.
+    """
+    added_count = 0
+    
+    for i in range(len(seqs)):
+        current_seq = seqs[i]
+        current_target = targets[i]
+        
+        # 1. Standard Addition
+        replay_buffer.add(current_seq, current_target)
+        added_count += 1
+        
+        # 2. Augmentation using History
+        env_history = histories[i]
+       
+        # Iterate backwards through history
+        for k, stale_seq in enumerate(reversed(env_history)):
+            # k=0 -> 1 step ago. k=47 -> 48 steps ago.
+            
+            # STRIDE CHECK: Only add every Nth step
+            # Always add the most recent (k=0) and the oldest (k=len-1) for boundary coverage
+            if k % AUGMENTATION_STRIDE != 0 and k != len(env_history) - 1:
+                continue
+
+            steps_ago = k + 1
+            
+            synthetic_seq = stale_seq.copy()
+            
+            # Calculate extra time
+            extra_time = steps_ago * DT
+            extra_time_norm = extra_time / DELAY_INPUT_NORM_FACTOR
+            
+            # Update delay scalar
+            synthetic_seq[:, -1] += extra_time_norm
+            
+            replay_buffer.add(synthetic_seq, current_target)
+            added_count += 1
+            
+        # 3. Update History
+        env_history.append(current_seq)
+        
+    return added_count
 
 def evaluate_model(model: StateEstimator, val_buffer: ReplayBuffer, batch_size: int, num_batches: int = 50) -> float:
     model.eval()
@@ -264,10 +318,11 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     logger.info(f"Targeting Dataset Balance: {num_static} Static / {num_dynamic} Dynamic")
     inject_static_samples(replay_buffer, num_static, logger)
     
+    env_histories = [deque(maxlen=MAX_PACKET_LOSS_STEPS) for _ in range(n_envs)]
+    
     logger.info("Collecting dynamic trajectories...")
     train_env.reset()
     
-    # Warmup
     for _ in range(100):
         train_env.step([np.zeros((n_envs, N_JOINTS))])
 
@@ -276,20 +331,21 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
         seqs, targets = collect_data_from_envs(train_env, n_envs)
         
         if len(seqs) > 0:
-            for i in range(len(seqs)):
-                replay_buffer.add(seqs[i], targets[i])
-            collected += len(seqs)
-            # Standard step if data is good
+            added = augment_and_add_to_buffer(replay_buffer, seqs, targets, env_histories)
+            collected += added
+            
             train_env.step([np.zeros((n_envs, N_JOINTS))])
         else:
-            logger.warning("Unstable trajectory detected. Resetting environment to clear history...")
+            logger.warning("Unstable trajectory detected. Resetting environment...")
             train_env.reset()
-            # Warmup again to settle physics
+            for history in env_histories:
+                history.clear()
+            
             for _ in range(50):
                 train_env.step([np.zeros((n_envs, N_JOINTS))])
 
-        if collected % 5000 < n_envs:
-            logger.info(f"  -> {collected}/{num_dynamic} dynamic samples")
+        if collected % 5000 < 500:
+            logger.info(f"  -> {collected}/{num_dynamic} dynamic samples (Augmented)")
             
     logger.info(f"Data collection complete. Buffer size: {len(replay_buffer)}")
     verify_buffer_coverage(replay_buffer, logger)
@@ -334,8 +390,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
             
             # Only add valid data
             if len(delayed_seq_batch) > 0:
-                for i in range(len(delayed_seq_batch)):
-                    replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
+                augment_and_add_to_buffer(replay_buffer, delayed_seq_batch, true_target_batch, env_histories)
             
             train_env.step([np.zeros((n_envs, N_JOINTS))])
 
