@@ -26,6 +26,7 @@ def generate_launch_description():
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
     use_rviz_parameter_name = 'use_rviz'
+    
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
     use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
@@ -33,9 +34,12 @@ def generate_launch_description():
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
 
     # RL agent arguments
-    experiment_config_name = 'experiment_config'
-    default_experiment_config = str(ExperimentConfig.HIGH_DELAY.value) # Default to 3
-    experiment_config = LaunchConfiguration(experiment_config_name)
+    config_param_name = 'config'
+    default_config = str(ExperimentConfig.LOW_DELAY.value) # Default to 1
+    config = LaunchConfiguration(config_param_name)
+
+    seed_param_name = 'seed'
+    seed = LaunchConfiguration(seed_param_name)
     
     # Setup Robot Description & Controllers (from Franka)
     franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots', 'real',
@@ -53,7 +57,7 @@ def generate_launch_description():
             FindPackageShare('franka_bringup'),
             'config',
             'real',
-            'single_controllers.yaml', # This file contains 'joint_tau_controller'
+            'single_controllers.yaml', 
         ]
     )
 
@@ -63,6 +67,7 @@ def generate_launch_description():
     # Add All Launch Arguments
     ld.add_action(DeclareLaunchArgument(
         robot_ip_parameter_name,
+        default_value='172.16.0.2', 
         description='Hostname or IP address of the robot.'))
     ld.add_action(DeclareLaunchArgument(
         use_rviz_parameter_name,
@@ -83,9 +88,15 @@ def generate_launch_description():
         description='Use Franka Gripper as an end-effector.'))
     
     ld.add_action(DeclareLaunchArgument(
-        experiment_config_name,
-        default_value=default_experiment_config,
+        config_param_name,
+        default_value=default_config,
         description='Experiment config (1=LOW, 2=MEDIUM, 3=HIGH delay)'
+    ))
+    
+    ld.add_action(DeclareLaunchArgument(
+        seed_param_name,
+        default_value='50', 
+        description='Random seed for delay simulator'
     ))
     
     ld.add_action(Node(
@@ -159,12 +170,11 @@ def generate_launch_description():
         name='agent_node',
         output='screen',
         parameters=[{
-            'experiment_config': experiment_config
+            'experiment_config': config, 
+            'seed': seed                 
         }],
         remappings=[
-            # Subscribe to the actual local robot
             ('local_robot/joint_states', '/local_robot/joint_states'),
-            # Subscribe to the multiplexed hardware state
             ('remote_robot/joint_states', '/joint_states'),
         ]
     ))
@@ -175,13 +185,17 @@ def generate_launch_description():
         executable='remote_node',
         name='remote_robot_node',
         output='screen',
+        
+        # --- FIX: Pass parameters to remote_node ---
+        parameters=[{
+            'experiment_config': config,
+            'seed': seed
+        }],
+        # -------------------------------------------
+        
         remappings=[
-            # Subscribe to the actual hardware joint states topic
             ('remote_robot/joint_states', '/franka/joint_states'),
-            
-            # Publish torque commands to the hardware controller
             ('joint_tau/torques_desired', '/joint_tau/torques_desired')
-            
         ]
     ))
 

@@ -10,22 +10,23 @@ Pipelines:
 6. publish to '/joint_tau/torques_desired' (Float64MultiArray) for robot control
 """
 
-# ROS2 imports
+"""
+direct_teleop_test.py
+
+A Pure Classical Control Node for System Identification.
+Path: Local Robot -> [PD Controller + Gravity Comp] -> Remote Robot
+"""
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
-
-# Mujoco imports
 import mujoco
-
-# Python imports
 import numpy as np
-from numpy.typing import NDArray
-from collections import deque
+import sys
 
-# Custom imports
-from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
+# --- CONFIG IMPORTS ---
+# We only need physical constants, no AI configs
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     DEFAULT_MUJOCO_MODEL_PATH, 
@@ -34,246 +35,175 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     TORQUE_LIMITS,
     DEFAULT_KD_REMOTE,
     DEFAULT_KP_REMOTE,
-    TCP_OFFSET,
     EE_BODY_NAME,
-    DEPLOYMENT_HISTORY_BUFFER_SIZE,
-    WARM_UP_DURATION,
 )
 
-class RemoteRobotNode(Node):
+class DirectTeleopTest(Node):
     def __init__(self):
-        super().__init__('remote_robot_node')
+        super().__init__('direct_teleop_test_node')
         
-        # Initialize parameters from config.py
-        self.n_joints_ = N_JOINTS
-        self.control_freq_ = DEFAULT_CONTROL_FREQ
-        self.dt_ = 1.0 / self.control_freq_
-        self.tcp_offset_ = TCP_OFFSET
-        self.kp_ = DEFAULT_KP_REMOTE / 2
-        self.kd_ = DEFAULT_KD_REMOTE / 2
-        self.torque_limits_ = TORQUE_LIMITS
-        self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
-        self.initial_joint_config_ = INITIAL_JOINT_CONFIG
-        self.ee_body_name_ = EE_BODY_NAME
+        self.n_joints = N_JOINTS
+        self.joint_names = [f'panda_joint{i+1}' for i in range(self.n_joints)]
         
-        # Initialize remote robot current joint states and velocities
-        self.current_q_ = self.initial_joint_config_.copy()
-        self.current_qd_ = np.zeros(self.n_joints_, dtype=np.float32)
-
-        # Initialize Mujoco model and data
-        model_path = DEFAULT_MUJOCO_MODEL_PATH
-        self.mj_model_ = mujoco.MjModel.from_xml_path(model_path)
-        self.mj_data_ = mujoco.MjData(self.mj_model_)
-        self.ee_body_id_ = self.mj_model_.body(name=self.ee_body_name_).id
+        # 1. Control Parameters (Classic PD)
+        self.kp = DEFAULT_KP_REMOTE
+        self.kd = DEFAULT_KD_REMOTE
+        self.torque_limits = TORQUE_LIMITS
         
-        # Initialize target joint states and velocities
-        self.target_q_ = INITIAL_JOINT_CONFIG.copy()
-        self.target_qd_ = np.zeros(self.n_joints_)  # Store target velocity
-        self.current_tau_rl_ = np.zeros(self.n_joints_)
-
-        # Vairables for storing true local state (for debugging)
-        self.current_local_q_ = INITIAL_JOINT_CONFIG.copy()
-        self.current_local_qd_ = np.zeros(self.n_joints_)
+        # 2. State Variables
+        self.q_remote = INITIAL_JOINT_CONFIG.copy()
+        self.qd_remote = np.zeros(self.n_joints)
+        self.q_leader = INITIAL_JOINT_CONFIG.copy()
+        self.qd_leader = np.zeros(self.n_joints)
         
-        # Action delay
-        self.default_experiment_config_ = ExperimentConfig.HIGH_DELAY.value
-        self.declare_parameter('experiment_config', self.default_experiment_config_)
-        self.experiment_config_int_ = self.get_parameter('experiment_config').value
+        # 3. Mujoco Setup (Solely for Gravity Compensation)
         try:
-            self.delay_config_ = ExperimentConfig(self.experiment_config_int_)
-        except ValueError:
-            self.get_logger().fatal(f"Invalid 'experiment_config' int: {self.experiment_config_int_}")
-            raise
+            self.mj_model = mujoco.MjModel.from_xml_path(DEFAULT_MUJOCO_MODEL_PATH)
+            self.mj_data = mujoco.MjData(self.mj_model)
+        except Exception as e:
+            self.get_logger().fatal(f"Could not load Mujoco model for G-Comp: {e}")
+            sys.exit(1)
 
-        self.action_delay_simulator_ = DelaySimulator(
-            control_freq=self.control_freq_,
-            config=self.delay_config_,
-            seed=50 
-        )
-        
-        self.torque_command_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
-        
-        # State flags
-        self.robot_state_ready_ = False
-        self.target_command_ready_ = False
-        self.tau_rl_ready_ = False
-        self.local_state_ready_ = False
-        
-        # ROS2 Interfaces
-        self.target_command_sub_ = self.create_subscription(
-            JointState, 'agent/predict_target', self.target_command_callback, 10
-        )
-        
-        self.tau_rl_sub_ = self.create_subscription(
-            Float64MultiArray, 'agent/tau_rl', self.tau_rl_callback, 10
-        )
-        
-        self.robot_state_sub_ = self.create_subscription(
-            JointState,  'remote_robot/joint_states', self.robot_state_callback, 10
-        )
-        
-        self.local_robot_state_sub_ = self.create_subscription(
-            JointState, 'local_robot/joint_states', self.local_robot_state_callback, 10
-        )
-        
-        controller_command_topic = 'joint_tau/torques_desired' 
-        self.get_logger().info(f"Publishing torque commands to RELATIVE topic: {controller_command_topic}")
-        
-        self.torque_command_pub_ = self.create_publisher(
-            Float64MultiArray,  controller_command_topic, 10)
-        
-        self.control_timer_ = self.create_timer(
-            self.dt_, self.control_loop_callback)
-        
-        self.get_logger().info("Remote Robot Node initialized.")
+        # 4. Connectivity Flags
+        self.remote_ready = False
+        self.leader_ready = False
+        self.safety_lock_disengaged = False
 
-    def target_command_callback(self, msg: JointState) -> None:
-        """Callback for the AGENT's predicted target state."""
+        # 5. ROS2 Interfaces
+        # Listen to the LEADER (The Target)
+        self.sub_leader = self.create_subscription(
+            JointState, 
+            'local_robot/joint_states', 
+            self.leader_callback, 
+            10
+        )
+        
+        # Listen to the FOLLOWER (The Real Robot)
+        self.sub_remote = self.create_subscription(
+            JointState, 
+            'remote_robot/joint_states', 
+            self.remote_callback, 
+            10
+        )
+        
+        # Command the FOLLOWER
+        self.pub_torque = self.create_publisher(
+            Float64MultiArray, 
+            'joint_tau/torques_desired', 
+            10
+        )
+        
+        # Control Loop Timer (1kHz)
+        self.dt = 1.0 / DEFAULT_CONTROL_FREQ
+        self.timer = self.create_timer(self.dt, self.control_loop)
+        
+        self.get_logger().info("=== DIRECT TELEOP (NO-AI) TEST STARTED ===")
+        self.get_logger().info("Waiting for robot connections...")
+
+    def leader_callback(self, msg):
         try:
-            name_to_index_map = {name: i for i, name in enumerate(msg.name)}
-            self.target_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
-            self.target_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
+            # Parse Leader State
+            name_map = {name: i for i, name in enumerate(msg.name)}
+            self.q_leader = np.array([msg.position[name_map[n]] for n in self.joint_names])
+            self.qd_leader = np.array([msg.velocity[name_map[n]] for n in self.joint_names])
             
-            if not self.target_command_ready_:
-                self.target_command_ready_ = True
-                self.get_logger().info("First command from Agent (predict_target) received.")
+            if not self.leader_ready:
+                self.get_logger().info("Leader Robot Signal Detected.")
+                self.leader_ready = True
+        except Exception as e:
+            pass
 
-        except (KeyError, IndexError) as e:
-            self.get_logger().warn(f"Error processing target command: {e}")
-
-    def tau_rl_callback(self, msg: Float64MultiArray) -> None:
-        """Callback for the AGENT's compensation torque."""
-        self.current_tau_rl_ = np.array(msg.data, dtype=np.float32)
-        if not self.tau_rl_ready_:
-            self.tau_rl_ready_ = True
-            self.get_logger().info("First command from Agent (tau_rl) received.")
-
-    def robot_state_callback(self, msg: JointState) -> None:
-        """Callback for the REAL ROBOT's current state."""
+    def remote_callback(self, msg):
         try:
-            name_to_index_map = {name: i for i, name in enumerate(msg.name)}
-            self.current_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
-            self.current_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
+            # Parse Remote State
+            name_map = {name: i for i, name in enumerate(msg.name)}
+            self.q_remote = np.array([msg.position[name_map[n]] for n in self.joint_names])
+            self.qd_remote = np.array([msg.velocity[name_map[n]] for n in self.joint_names])
             
-            if not self.robot_state_ready_:
-                self.robot_state_ready_ = True
-                self.get_logger().info("First hardware state from Remote Robot received.")
-        except (KeyError, IndexError) as e:
-            self.get_logger().warn(f"Error processing robot state: {e}")
-            
-    def local_robot_state_callback(self, msg: JointState) -> None:
-        """Callback for the LOCAL ROBOT's current state."""
-        try:
-            name_to_index_map = {name: i for i, name in enumerate(msg.name)}
-            self.current_local_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
-            self.current_local_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
-            
-            if not self.local_state_ready_:
-                self.local_state_ready_ = True
-                self.get_logger().info("First state from Local Robot received.")
-        except (KeyError, IndexError) as e:
-            self.get_logger().warn(f"Error processing LOCAL robot state: {e}")
-        
-    def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
-        """Normalize an angle or array of angles to the range [-pi, pi]."""
+            if not self.remote_ready:
+                self.get_logger().info("Remote Robot Signal Detected.")
+                self.remote_ready = True
+        except Exception as e:
+            pass
+
+    # def _get_gravity_comp(self, q):
+    #     """
+    #     Calculate G(q) using Mujoco Inverse Dynamics.
+    #     Set vel/acc to 0 to isolate gravity term.
+    #     """
+    #     self.mj_data.qpos[:self.n_joints] = q
+    #     self.mj_data.qvel[:self.n_joints] = 0.0
+    #     self.mj_data.qacc[:self.n_joints] = 0.0
+    #     mujoco.mj_inverse(self.mj_model, self.mj_data)
+    #     return self.mj_data.qfrc_inverse[:self.n_joints].copy()
+
+    def _normalize_angle(self, angle):
+        """Normalize to [-pi, pi] to handle joint wrapping."""
         return (angle + np.pi) % (2 * np.pi) - np.pi
-    
-    def _get_inverse_dynamics(self, q: np.ndarray, v: np.ndarray, a_desired: np.ndarray) -> np.ndarray:
-        """
-        Compute Torque using MuJoCo Inverse Dynamics.
-        Equation: tau = M(q)*a_desired + C(q,v)*v + G(q)
-        """
-        # 1. Update MuJoCo with the CURRENT Robot State
-        # We must use the current state so M(q) and G(q) match reality
-        self.mj_data_.qpos[:self.n_joints_] = q
-        self.mj_data_.qvel[:self.n_joints_] = v
-        
-        # 2. Set the DESIRED Acceleration (from PD)
-        self.mj_data_.qacc[:self.n_joints_] = a_desired
 
-        # 3. Compute Inverse Dynamics
-        # MuJoCo solves: tau = M*qacc + C*qvel + G
-        mujoco.mj_inverse(self.mj_model_, self.mj_data_)
-
-        return self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
-
-    def control_loop_callback(self) -> None:
-        
-        # Wait for all required data
-        if not self.robot_state_ready_ or not self.target_command_ready_ or not self.tau_rl_ready_ or not self.local_state_ready_:
-            self.get_logger().warn(f"Waiting for data...", throttle_duration_sec=2.0)
+    def control_loop(self):
+        # 1. Safety: Wait for data
+        if not self.remote_ready or not self.leader_ready:
             return
 
-        q_target = self.target_q_ 
-        qd_target = self.target_qd_ 
-        
-        try:
-            q_current = self.current_q_
-            qd_current = self.current_qd_
-            
-            # PD Control now outputs Acceleration ---
-            q_error = self._normalize_angle(q_target - q_current)
-            qd_error = qd_target - qd_current
-            
-            # acc_desired is in rad/s^2
-            # stiffness in Acceleration space, not Torque space.
-            acc_desired = self.kp_ * q_error + self.kd_ * qd_error
-            
-            # Use Computed Torque (Inverse Dynamics)
-            # This calculates: tau = M(q)*acc_desired + C(q,qd)*qd + G(q)
-            tau_id = self._get_inverse_dynamics(q_current, qd_current, acc_desired)
-            
-            # RL compensation
-            tau_rl = self.current_tau_rl_
-            
-            # Safety: No torque on last joint
-            tau_id[-1] = 0.0 
-            
-            # Final Command
-            tau_command = tau_id + tau_rl * 0
-            tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
-
-            # Apply action delay
-            self.torque_command_history_.append(tau_clipped)
-            
-            action_delay_steps = self.action_delay_simulator_.get_action_delay_steps()
-            
-            if action_delay_steps >= len(self.torque_command_history_):
-                torque_to_publish = np.zeros(self.n_joints_)
+        # 2. Safety: Prevent "The Jump"
+        # If the leader and remote are too far apart at startup, do NOT engage PD.
+        # Just output Gravity Compensation to hold position.
+        if not self.safety_lock_disengaged:
+            error_norm = np.linalg.norm(self.q_leader - self.q_remote)
+            if error_norm > 0.5: # 0.3 rad threshold
+                self.get_logger().warn(
+                    f"SAFETY LOCK ACTIVE: Alignment Error = {error_norm:.2f} rad. "
+                    f"Sync Leader/Remote positions manually.", 
+                    throttle_duration_sec=1.0
+                )
+                # Hold current position against gravity
+                tau_g = self._get_gravity_comp(self.q_remote)
+                self._publish_torque(tau_g)
+                return
             else:
-                torque_to_publish = self.torque_command_history_[-1 - action_delay_steps]
-            
-            # Publish
-            msg = Float64MultiArray()
-            msg.data = torque_to_publish.tolist()
-            self.torque_command_pub_.publish(msg)
+                self.get_logger().info("Safety Lock Disengaged. PD Control ENGAGED.")
+                self.safety_lock_disengaged = True
 
-            self.get_logger().info(
-                f"\n--- DEBUG (throttled 0.1s) ---\n"
-                f"True q:       {np.round(self.current_local_q_, 3)}\n"
-                f"Predicted q:  {np.round(q_target, 3)}\n"
-                f"Remote q:     {np.round(q_current, 3)}\n"
-                f"Tau ID:       {np.round(tau_id, 3)} (Includes Gravity)\n"
-                f"Tau RL:       {np.round(tau_rl, 3)}\n",
-                throttle_duration_sec=0.1
-            )
+        # --- CONTROL LAW ---
+        
+        # A. Gravity Compensation (G)
+        # tau_g = self._get_gravity_comp(self.q_remote)
+        
+        # B. PD Controller
+        # Position Error
+        q_err = self._normalize_angle(self.q_leader - self.q_remote)
+        # Velocity Error (Feedforward - Feedback)
+        qd_err = self.qd_leader - self.qd_remote 
+        
+        tau_pd = (self.kp * q_err) + (self.kd * qd_err)
+        
+        # C. Total Torque
+        tau_total = tau_pd
+        
+        # D. Clip and Safety
+        tau_total = np.clip(tau_total, -self.torque_limits, self.torque_limits)
+        tau_total[-1] = 0.0  # Gripper is usually position controlled or ignored
+        
+        # E. Publish
+        self._publish_torque(tau_total)
 
-        except Exception as e:
-            self.get_logger().error(f"Error in control loop: {e}")
-            import traceback
-            traceback.print_exc()
+    def _publish_torque(self, tau):
+        msg = Float64MultiArray()
+        msg.data = tau.tolist()
+        self.pub_torque.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)
-    remote_robot_node = None
+    node = DirectTeleopTest()
     try:
-        remote_robot_node = RemoteRobotNode()
-        rclpy.spin(remote_robot_node)
+        rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
-        if remote_robot_node:
-            remote_robot_node.destroy_node()
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

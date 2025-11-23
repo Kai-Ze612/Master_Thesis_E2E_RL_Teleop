@@ -64,7 +64,7 @@ class AgentNode(Node):
         self.last_local_update_time_ = 0.0
         
         # Experiment config setup
-        self.default_experiment_config_ = ExperimentConfig.HIGH_DELAY.value
+        self.default_experiment_config_ = ExperimentConfig.LOW_DELAY.value
         self.declare_parameter('experiment_config', self.default_experiment_config_)
         self.experiment_config_int_ = self.get_parameter('experiment_config').value
         self.delay_config_ = ExperimentConfig(self.experiment_config_int_)
