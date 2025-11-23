@@ -61,8 +61,7 @@ class AgentNode(Node):
         # Frequency Management
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
-        self.last_local_update_time_ = 0.0
-        
+        self.last_leader_msg_arrival_time_ = self.get_clock().now().nanoseconds / 1e9
         # Experiment config setup
         self.default_experiment_config_ = ExperimentConfig.LOW_DELAY.value
         self.declare_parameter('experiment_config', self.default_experiment_config_)
@@ -174,11 +173,7 @@ class AgentNode(Node):
         self.get_logger().info(f"Prefilled with {self.num_prefill_} INITIAL_JOINT_CONFIG states.")
 
     def local_robot_state_callback(self, msg: JointState) -> None:
-        # Enforce Frequency Matching (approx)
-        current_time = self.get_clock().now().nanoseconds / 1e9
-        if (current_time - self.last_local_update_time_) < (self.dt_ * 0.95):
-            return
-        self.last_local_update_time_ = current_time
+        self.last_leader_msg_arrival_time_ = self.get_clock().now().nanoseconds / 1e9
 
         try:
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
@@ -191,7 +186,6 @@ class AgentNode(Node):
             self.leader_q_history_.append(q_new)
             self.leader_qd_history_.append(qd_new)
             
-            # Only declare ready if we have enough REAL data (or valid prefill)
             if not self.is_leader_ready_ and len(self.leader_q_history_) > self.rnn_seq_len_:
                 self.is_leader_ready_ = True
         except (KeyError, IndexError):
@@ -209,20 +203,18 @@ class AgentNode(Node):
         except:
             pass
     
-    def _get_delayed_leader_data(self, force_no_delay: bool = False) -> tuple[np.ndarray, float]:
+    def _get_delayed_leader_data(self, force_no_delay: bool = False, extra_delay_seconds: float = 0.0) -> tuple[np.ndarray, float]:
         """ Get delayed leader data sequence for LSTM input."""
         
-        # Determine observation delay steps
-        # during no-delay phase, force zero delay
-        # after that, normal delay simulation
         history_len = len(self.leader_q_history_)
         if force_no_delay:
             obs_delay_steps = 0
         else:
             obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
         
-        # normalize delay scalar 
-        current_delay_scalar = float(obs_delay_steps) / DELAY_INPUT_NORM_FACTOR
+        base_delay_norm = float(obs_delay_steps) / DELAY_INPUT_NORM_FACTOR
+        extra_delay_norm = extra_delay_seconds / DELAY_INPUT_NORM_FACTOR
+        current_delay_scalar = base_delay_norm + extra_delay_norm
         
         most_recent_delayed_idx = -(obs_delay_steps + 1)
         oldest_idx = most_recent_delayed_idx - self.rnn_seq_len_ + 1
@@ -231,7 +223,6 @@ class AgentNode(Node):
         
         for i in range(oldest_idx, most_recent_delayed_idx + 1):
             safe_idx = np.clip(i, -history_len, -1)
-            # [FIX] Construct 15D vector: [q, qd, delay]
             step_vector = np.concatenate([
                 self.leader_q_history_[safe_idx],
                 self.leader_qd_history_[safe_idx],
@@ -270,17 +261,21 @@ class AgentNode(Node):
         
         try:            
             self.no_delay_steps_count_ += 1
-            
             is_in_grace_period = (self.no_delay_steps_count_ < self.no_delay_steps_)
             
-            # get normalized delayed leader data
-            raw_delayed_sequence, normalized_delay_scalar = self._get_delayed_leader_data(force_no_delay=is_in_grace_period)
+            current_time = self.get_clock().now().nanoseconds / 1e9
+            time_since_last_msg = current_time - self.last_leader_msg_arrival_time_
+            
+            packet_staleness_seconds = max(0.0, time_since_last_msg - self.dt_)
+            
+            # get normalized delayed leader data WITH staleness
+            raw_delayed_sequence, normalized_delay_scalar = self._get_delayed_leader_data(
+                force_no_delay=is_in_grace_period,
+                extra_delay_seconds=packet_staleness_seconds
+            )
             
             # 15D data per step: [q(7), qd(7), delay(1)]
             full_seq_t = torch.tensor(raw_delayed_sequence, dtype=torch.float32).to(self.device_).reshape(1, self.rnn_seq_len_, -1)
-            
-            # delay tensor (Batch=1, 1)
-            delay_t = torch.tensor([[normalized_delay_scalar]], dtype=torch.float32).to(self.device_)
             
             # Remote State (Batch=1, 14)
             raw_remote_state = np.concatenate([self.current_remote_q_, self.current_remote_qd_])
@@ -295,7 +290,6 @@ class AgentNode(Node):
                 predicted_residual_t = scaled_residual_t / TARGET_DELTA_SCALE
                 
                 # Add to Delayed Observation (The "Anchor")
-                # The sequence is [q, qd, delay]. We need just [q, qd] (first 14 dims) from the LAST step.
                 last_delayed_obs_t = full_seq_t[:, -1, :N_JOINTS*2] 
                 
                 # Recover Absolute State
