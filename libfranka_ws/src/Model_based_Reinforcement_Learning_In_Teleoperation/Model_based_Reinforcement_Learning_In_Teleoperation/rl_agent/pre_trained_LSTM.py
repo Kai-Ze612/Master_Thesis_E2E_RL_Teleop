@@ -260,25 +260,38 @@ def verify_buffer_coverage(buffer: ReplayBuffer, logger: logging.Logger):
     if buffer.size == 0:
         logger.warning("Buffer is empty! Cannot verify coverage.")
         return
-    
-    targets = buffer.true_targets[:buffer.size] 
+
+    targets = buffer.true_targets[:buffer.size]
     positions = targets[:, :N_JOINTS]
-    
+
     min_pos = np.min(positions, axis=0)
     max_pos = np.max(positions, axis=0)
-    
+
     logger.info("\n" + "="*40)
     logger.info(" BUFFER COVERAGE CHECK (Joint Positions)")
     logger.info("="*40)
     logger.info(f"{'Joint':<5} | {'Min':<8} | {'Max':<8} | {'Range':<8}")
     logger.info("-" * 45)
-    
+
     for i in range(N_JOINTS):
         p_range = max_pos[i] - min_pos[i]
         logger.info(f"J{i:<4} | {min_pos[i]:<8.3f} | {max_pos[i]:<8.3f} | {p_range:<8.3f}")
         if p_range < 0.01:
             logger.warning(f"  [WARNING] Joint {i} range is very small!")
-            
+
+    # New: Check delay coverage (last dimension of sequences)
+    delays = buffer.delayed_sequences[:buffer.size, :, -1]
+    min_delay = np.min(delays)
+    max_delay = np.max(delays)
+    mean_delay = np.mean(delays)
+
+    logger.info("\n" + "="*40)
+    logger.info(" BUFFER COVERAGE CHECK (Delays)")
+    logger.info("="*40)
+    logger.info(f"Min: {min_delay:<8.3f} | Max: {max_delay:<8.3f} | Mean: {mean_delay:<8.3f}")
+    if max_delay > 1.0:
+        logger.warning("  [WARNING] Max normalized delay exceeds 1.0! Consider increasing DELAY_INPUT_NORM_FACTOR in robot_config.py.")
+
     logger.info("="*40 + "\n")
 
 def pretrain_estimator(args: argparse.Namespace) -> None:

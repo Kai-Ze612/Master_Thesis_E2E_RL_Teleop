@@ -15,7 +15,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
-from geometry_msgs.msg import PointStamped # --- MODIFICATION: Use PointStamped ---
+from geometry_msgs.msg import PointStamped
 
 # Mujoco imports
 import mujoco
@@ -49,8 +49,8 @@ class RemoteRobotNode(Node):
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
         self.tcp_offset_ = TCP_OFFSET
-        self.kp_ = DEFAULT_KP_REMOTE / 2
-        self.kd_ = DEFAULT_KD_REMOTE / 2
+        self.kp_ = DEFAULT_KP_REMOTE
+        self.kd_ = DEFAULT_KD_REMOTE
         self.torque_limits_ = TORQUE_LIMITS
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
         self.initial_joint_config_ = INITIAL_JOINT_CONFIG
@@ -246,7 +246,7 @@ class RemoteRobotNode(Node):
             tau_rl[-2] = 0.0
             
             # Final Command
-            tau_command = tau_id + tau_rl
+            tau_command = tau_id + tau_rl * 0
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
             # Apply action delay
@@ -283,7 +283,7 @@ class RemoteRobotNode(Node):
                 f"EE Pos:       {np.round(ee_pos, 3)}\n"
                 f"Tau ID:       {np.round(tau_id, 3)} (Includes Gravity)\n"
                 f"Tau RL:       {np.round(tau_rl, 3)}\n",
-                throttle_duration_sec=0.1
+                throttle_duration_sec=0.005
             )
 
         except Exception as e:
