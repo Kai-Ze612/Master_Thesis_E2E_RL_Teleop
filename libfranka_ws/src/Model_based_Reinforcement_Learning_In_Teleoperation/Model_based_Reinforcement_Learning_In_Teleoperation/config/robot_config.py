@@ -34,8 +34,8 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.571, 0.785], d
 
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
-KP_LOCAL = np.array([48.0, 48.0, 48.0, 48.0, 30.0, 6.0, 2.0], dtype=np.float32)
-KD_LOCAL = np.array([8.0,  10.0,  8.0,  8.0,  8.0, 1.5, 0.5], dtype=np.float32)
+KP_LOCAL = np.array([169.0, 169.0, 144.0, 144.0, 100.0, 6.0, 2.0], dtype=np.float32)
+KD_LOCAL = np.array([15.0,  15.0,  15.0,  15.0,  15.0, 1.5, 0.5], dtype=np.float32)
 
 WARM_UP_DURATION = 1  # sec (before starting moving)
 NO_DELAY_DURATION = 0.5 # sec (before starting delay simulation)
@@ -46,8 +46,8 @@ NO_DELAY_DURATION = 0.5 # sec (before starting delay simulation)
 DEFAULT_CONTROL_FREQ = 200
 DEFAULT_PUBLISH_FREQ = 200
 
-DEFAULT_KP_REMOTE = np.array([48.0, 48.0, 48.0, 48.0, 30.0, 6.0, 2.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([8.0,  10.0,  8.0,  8.0,  8.0, 1.5, 0.5], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([169.0, 169.0, 144.0, 144.0, 100.0, 6.0, 2.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([15.0,  15.0,  15.0,  15.0,  15.0, 1.5, 0.5], dtype=np.float32)
 
 ######################################
 # IK Solver Parameterss

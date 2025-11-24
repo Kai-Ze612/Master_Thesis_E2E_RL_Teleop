@@ -7,8 +7,8 @@ Pipeline:
 3. publish joint states to /local_robot/joint_states topic
 """
 
-# python imports
-from __future__ import annotations
+from __future__ import annotations 
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
@@ -20,6 +20,7 @@ import mujoco
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
+from geometry_msgs.msg import PointStamped
 
 # Custom imports
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.inverse_kinematics import IKSolver
@@ -44,10 +45,11 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     WARM_UP_DURATION,
 )
 
+# Z-Axis Oscillation Amplitude
 Z_AMPLITUDE = 0.01
 
 class TrajectoryType(Enum):
-    """Enumeration for different trajectory types."""
+    """Enumeration of available trajectory types."""
     FIGURE_8 = "figure_8"
     SQUARE = "square"
     LISSAJOUS_COMPLEX = "lissajous_complex"
@@ -112,6 +114,8 @@ class SquareTrajectoryGenerator(TrajectoryGenerator):
         
         dx = self._params.scale[0] * position_2d[0]
         dy = self._params.scale[1] * position_2d[1]
+        
+        # Z oscillation
         dz = Z_AMPLITUDE * np.sin(phase)
         
         return self._params.center + np.array([dx, dy, dz], dtype=np.float64)
@@ -126,8 +130,10 @@ class LissajousComplexGenerator(TrajectoryGenerator):
         phase = self._compute_phase(t)
         dx = self._params.scale[0] * np.sin(self._FREQ_RATIO_X * phase + self._PHASE_SHIFT)
         dy = self._params.scale[1] * np.sin(self._FREQ_RATIO_Y * phase)
-        dz = Z_AMPLITUDE * np.sin(phase)
         
+        # Z oscillation
+        dz = Z_AMPLITUDE * np.sin(phase)
+
         return self._params.center + np.array([dx, dy, dz], dtype=np.float64)
 
 class Figure8TrajectoryGenerator(TrajectoryGenerator):
@@ -136,8 +142,10 @@ class Figure8TrajectoryGenerator(TrajectoryGenerator):
         phase = self._compute_phase(t)
         dx = self._params.scale[0] * np.sin(phase)
         dy = self._params.scale[1] * np.sin(phase / 2)
-        dz = Z_AMPLITUDE * np.sin(phase)
         
+        # Z oscillation
+        dz = Z_AMPLITUDE * np.sin(phase)
+
         return self._params.center + np.array([dx, dy, dz], dtype=np.float64)
 
 class LeaderRobotPublisher(Node):
@@ -197,8 +205,10 @@ class LeaderRobotPublisher(Node):
         # Reset simulation to initial state
         self._reset()
         
-        # create ROS2 publisher and timer
+        # create ROS2 publishers
         self.joint_state_pub_ = self.create_publisher(JointState, 'local_robot/joint_states', 100)
+        self.ee_pose_pub_ = self.create_publisher(PointStamped, 'local_robot/ee_pose', 100) # Initialize Publisher
+        
         self.timer_ = self.create_timer(self.timer_period_, self.timer_callback)
 
         self.get_logger().info("Local Robot Publisher node started successfully.")
@@ -250,6 +260,7 @@ class LeaderRobotPublisher(Node):
         2. Generate Cartesian target position.
         3. Solve IK to get desired joint positions.
         4. Publish joint states.
+        5. Publish EE Pose.
         """
     
         self._trajectory_time += self._dt
@@ -294,6 +305,21 @@ class LeaderRobotPublisher(Node):
         msg.effort = []
         
         self.joint_state_pub_.publish(msg)
+        
+        # --- Publish EE Pose ---
+        self.data.qpos[:self.n_joints] = q_desired
+        mujoco.mj_kinematics(self.model, self.data)
+        ee_pos_fk = self.data.body(self.ee_body_name).xpos.copy()
+        
+        ee_msg = PointStamped()
+        ee_msg.header.stamp = msg.header.stamp 
+        ee_msg.header.frame_id = "world"
+        ee_msg.point.x = float(ee_pos_fk[0])
+        ee_msg.point.y = float(ee_pos_fk[1])
+        ee_msg.point.z = float(ee_pos_fk[2])
+        
+        self.ee_pose_pub_.publish(ee_msg)
+        # -----------------------
 
     # Create trajectory generator
     def _create_generator(

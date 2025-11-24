@@ -125,12 +125,12 @@ class AgentNode(Node):
         self.desired_q_pub_ = self.create_publisher(JointState, 'agent/predict_target', 100)
 
         self.local_robot_state_subscriber_ = self.create_subscription(
-            JointState, 'local_robot/joint_states', self.local_robot_state_callback, 10
+            JointState, 'local_robot/joint_states', self.local_robot_state_callback, 100
         )
         self.remote_robot_state_subscriber_ = self.create_subscription(
-            JointState, 'remote_robot/joint_states', self.remote_robot_state_callback, 10
+            JointState, 'remote_robot/joint_states', self.remote_robot_state_callback, 100
         )
-        
+       
         self.control_timer_ = self.create_timer(self.dt_, self.control_loop_callback)
         self.get_logger().info("Agent Node initialized.")
 

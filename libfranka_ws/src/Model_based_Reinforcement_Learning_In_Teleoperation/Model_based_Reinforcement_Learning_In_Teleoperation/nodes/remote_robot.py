@@ -15,6 +15,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
+from geometry_msgs.msg import PointStamped # --- MODIFICATION: Use PointStamped ---
 
 # Mujoco imports
 import mujoco
@@ -37,7 +38,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     TCP_OFFSET,
     EE_BODY_NAME,
     DEPLOYMENT_HISTORY_BUFFER_SIZE,
-    WARM_UP_DURATION,
 )
 
 class RemoteRobotNode(Node):
@@ -79,6 +79,11 @@ class RemoteRobotNode(Node):
         self.default_experiment_config_ = ExperimentConfig.HIGH_DELAY.value
         self.declare_parameter('experiment_config', self.default_experiment_config_)
         self.experiment_config_int_ = self.get_parameter('experiment_config').value
+        
+        # Read Seed
+        self.declare_parameter('seed', 50)
+        self.seed_ = self.get_parameter('seed').value
+
         try:
             self.delay_config_ = ExperimentConfig(self.experiment_config_int_)
         except ValueError:
@@ -88,7 +93,7 @@ class RemoteRobotNode(Node):
         self.action_delay_simulator_ = DelaySimulator(
             control_freq=self.control_freq_,
             config=self.delay_config_,
-            seed=50 
+            seed=self.seed_ 
         )
         
         self.torque_command_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
@@ -121,11 +126,13 @@ class RemoteRobotNode(Node):
         
         self.torque_command_pub_ = self.create_publisher(
             Float64MultiArray,  controller_command_topic, 10)
+            
+        self.ee_pose_pub_ = self.create_publisher(PointStamped, 'remote_robot/ee_pose', 10)
         
         self.control_timer_ = self.create_timer(
             self.dt_, self.control_loop_callback)
         
-        self.get_logger().info("Remote Robot Node initialized.")
+        self.get_logger().info(f"Remote Robot Node initialized with Config={self.delay_config_.name}, Seed={self.seed_}.")
 
     def target_command_callback(self, msg: JointState) -> None:
         """Callback for the AGENT's predicted target state."""
@@ -184,7 +191,6 @@ class RemoteRobotNode(Node):
         Equation: tau = M(q)*a_desired + C(q,v)*v + G(q)
         """
         # 1. Update MuJoCo with the CURRENT Robot State
-        # We must use the current state so M(q) and G(q) match reality
         self.mj_data_.qpos[:self.n_joints_] = q
         self.mj_data_.qvel[:self.n_joints_] = v
         
@@ -196,6 +202,14 @@ class RemoteRobotNode(Node):
         mujoco.mj_inverse(self.mj_model_, self.mj_data_)
 
         return self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
+
+    def _get_ee_position(self, q: np.ndarray) -> np.ndarray:
+        """Compute Forward Kinematics using MuJoCo."""
+        self.mj_data_.qpos[:self.n_joints_] = q
+        mujoco.mj_kinematics(self.mj_model_, self.mj_data_)
+        # Get body position (returns [x, y, z])
+        ee_pos = self.mj_data_.body(self.ee_body_name_).xpos.copy()
+        return ee_pos
 
     def control_loop_callback(self) -> None:
         
@@ -232,7 +246,7 @@ class RemoteRobotNode(Node):
             tau_rl[-2] = 0.0
             
             # Final Command
-            tau_command = tau_id + tau_rl 
+            tau_command = tau_id + tau_rl
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
             # Apply action delay
@@ -245,16 +259,28 @@ class RemoteRobotNode(Node):
             else:
                 torque_to_publish = self.torque_command_history_[-1 - action_delay_steps]
             
-            # Publish
+            # Publish Torque
             msg = Float64MultiArray()
             msg.data = torque_to_publish.tolist()
             self.torque_command_pub_.publish(msg)
+            
+            ee_pos = self._get_ee_position(q_current)
+            
+            ee_msg = PointStamped()
+            ee_msg.header.stamp = self.get_clock().now().to_msg()
+            ee_msg.header.frame_id = "world" # or "panda_link0" depending on your URDF
+            ee_msg.point.x = float(ee_pos[0])
+            ee_msg.point.y = float(ee_pos[1])
+            ee_msg.point.z = float(ee_pos[2])
+            
+            self.ee_pose_pub_.publish(ee_msg)
 
             self.get_logger().info(
                 f"\n--- DEBUG (throttled 0.1s) ---\n"
                 f"True q:       {np.round(self.current_local_q_, 3)}\n"
                 f"Predicted q:  {np.round(q_target, 3)}\n"
                 f"Remote q:     {np.round(q_current, 3)}\n"
+                f"EE Pos:       {np.round(ee_pos, 3)}\n"
                 f"Tau ID:       {np.round(tau_id, 3)} (Includes Gravity)\n"
                 f"Tau RL:       {np.round(tau_rl, 3)}\n",
                 throttle_duration_sec=0.1
