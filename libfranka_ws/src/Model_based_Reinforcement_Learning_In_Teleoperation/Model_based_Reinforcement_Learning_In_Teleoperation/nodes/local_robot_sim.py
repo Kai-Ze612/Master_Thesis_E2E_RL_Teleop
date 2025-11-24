@@ -1,8 +1,8 @@
 """
 The script is the local robot, using ROS2 node. This is a virtual trajectory generator.
 
-Pipineline:
-1. trajectory generation in Cartesian space
+Pipeline:
+1. trajectory generation in Cartesian space (with Z-axis Sine Wave)
 2. inverse kinematics to get joint space commands
 3. publish joint states to /local_robot/joint_states topic
 """
@@ -43,6 +43,8 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     TRAJECTORY_FREQUENCY,
     WARM_UP_DURATION,
 )
+
+Z_AMPLITUDE = 0.01
 
 class TrajectoryType(Enum):
     """Enumeration for different trajectory types."""
@@ -110,8 +112,9 @@ class SquareTrajectoryGenerator(TrajectoryGenerator):
         
         dx = self._params.scale[0] * position_2d[0]
         dy = self._params.scale[1] * position_2d[1]
+        dz = Z_AMPLITUDE * np.sin(phase)
         
-        return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
+        return self._params.center + np.array([dx, dy, dz], dtype=np.float64)
     
 class LissajousComplexGenerator(TrajectoryGenerator):
     """Complex Lissajous curve with 3:4 frequency ratio and phase shift."""
@@ -123,7 +126,9 @@ class LissajousComplexGenerator(TrajectoryGenerator):
         phase = self._compute_phase(t)
         dx = self._params.scale[0] * np.sin(self._FREQ_RATIO_X * phase + self._PHASE_SHIFT)
         dy = self._params.scale[1] * np.sin(self._FREQ_RATIO_Y * phase)
-        return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
+        dz = Z_AMPLITUDE * np.sin(phase)
+        
+        return self._params.center + np.array([dx, dy, dz], dtype=np.float64)
 
 class Figure8TrajectoryGenerator(TrajectoryGenerator):
     """Figure-8 trajectory using Lissajous curve with 1:2 frequency ratio."""
@@ -131,7 +136,9 @@ class Figure8TrajectoryGenerator(TrajectoryGenerator):
         phase = self._compute_phase(t)
         dx = self._params.scale[0] * np.sin(phase)
         dy = self._params.scale[1] * np.sin(phase / 2)
-        return self._params.center + np.array([dx, dy, 0.0], dtype=np.float64)
+        dz = Z_AMPLITUDE * np.sin(phase)
+        
+        return self._params.center + np.array([dx, dy, dz], dtype=np.float64)
 
 class LeaderRobotPublisher(Node):
     """ROS2 Node to simulate and publish the leader robot's trajectory."""
