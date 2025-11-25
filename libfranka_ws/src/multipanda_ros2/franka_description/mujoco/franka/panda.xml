@@ -44,6 +44,7 @@
     <material class="panda" name="green" rgba="0 1 0 1"/>
     <material class="panda" name="light_blue" rgba="0.039216 0.541176 0.780392 1"/>
 
+    <!-- Collision meshes -->
     <mesh name="link0_c" file="link0.stl"/>
     <mesh name="link1_c" file="link1.stl"/>
     <mesh name="link2_c" file="link2.stl"/>
@@ -56,6 +57,7 @@
     <mesh name="link7_c" file="link7.stl"/>
     <mesh name="hand_c" file="hand.stl"/>
 
+    <!-- Visual meshes -->
     <mesh file="link0_0.obj"/>
     <mesh file="link0_1.obj"/>
     <mesh file="link0_2.obj"/>
@@ -180,7 +182,7 @@
                   <site name="panda_joint6_site" pos="0 0.0 0.0" size=".01 .01 .01" type="ellipsoid" rgba=".8 .2 .1 0"/>
                   <inertial mass="1.666555" pos="6.0149e-2 -1.4117e-2 -1.0517e-2"
                       fullinertia="1.964e-3 4.354e-3 5.433e-3 1.09e-4 -1.158e-3 3.41e-4"/>
-                  <joint name="panda_joint6" range="-0.0175 3.7525" damping="-0.0132" frictionloss="0.1658"/>
+                  <joint name="panda_joint6" range="0.5445 4.5169" damping="-0.0132" frictionloss="0.1658"/>
                   <geom mesh="link6_0" material="off_white" class="visual"/>
                   <geom mesh="link6_1" material="white" class="visual"/>
                   <geom mesh="link6_2" material="black" class="visual"/>
