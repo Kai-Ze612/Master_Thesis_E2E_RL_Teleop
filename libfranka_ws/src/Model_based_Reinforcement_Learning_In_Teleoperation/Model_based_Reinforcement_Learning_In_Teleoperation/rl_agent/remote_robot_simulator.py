@@ -9,56 +9,81 @@ Pipelines:
 5. step the MuJoCo simulation
 """
 
+
 from __future__ import annotations
 from typing import Tuple, Optional, List
 import heapq
+import time
 import mujoco
+import mujoco.viewer
 import numpy as np
 from numpy.typing import NDArray
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    DEFAULT_MUJOCO_MODEL_PATH, DEFAULT_CONTROL_FREQ, N_JOINTS, EE_BODY_NAME,
-    TCP_OFFSET, JOINT_LIMITS_LOWER, JOINT_LIMITS_UPPER, TORQUE_LIMITS,
-    DEFAULT_KP_REMOTE, DEFAULT_KD_REMOTE
-)
+
+import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
+
 
 class RemoteRobotSimulator:
-    def __init__(self, delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY, seed: Optional[int] = None):
-        self.model_path = DEFAULT_MUJOCO_MODEL_PATH
+    def __init__(
+        self, 
+        delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY, 
+        seed: Optional[int] = None,
+        render: bool = True,
+        render_fps: Optional[int] = 60
+    ):
+        
+        # Load MuJoCo model
+        self.model_path = cfg.DEFAULT_MUJOCO_MODEL_PATH
         self.model = mujoco.MjModel.from_xml_path(self.model_path)
         
         # Separate Data: One for Physics, One for Math
         self.data = mujoco.MjData(self.model)
         self.data_control = mujoco.MjData(self.model)
-
-        self.n_joints = N_JOINTS
-        self.ee_body_name = EE_BODY_NAME
-        self.control_freq = DEFAULT_CONTROL_FREQ
-        
+        self.control_freq = cfg.DEFAULT_CONTROL_FREQ
         sim_freq = int(1.0 / self.model.opt.timestep)
         self.n_substeps = sim_freq // self.control_freq
 
-        self.torque_limits = TORQUE_LIMITS.copy()
-        self.joint_limits_lower = JOINT_LIMITS_LOWER.copy()
-        self.joint_limits_upper = JOINT_LIMITS_UPPER.copy()
-        self.tcp_offset = TCP_OFFSET.copy()
-        self.kp = DEFAULT_KP_REMOTE
-        self.kd = DEFAULT_KD_REMOTE
-
+        # Robot Parameters
+        self.torque_limits = cfg.TORQUE_LIMITS.copy()
+        self.joint_limits_lower = cfg.JOINT_LIMITS_LOWER.copy()
+        self.joint_limits_upper = cfg.JOINT_LIMITS_UPPER.copy()
+        self.tcp_offset = cfg.TCP_OFFSET.copy()
+        self.kp = cfg.DEFAULT_KP_REMOTE
+        self.kd = cfg.DEFAULT_KD_REMOTE
+        self.n_joints = cfg.N_JOINTS
+        self.ee_body_name = cfg.EE_BODY_NAME
+        
         self.last_q_target = np.zeros(self.n_joints)
         self.delay_simulator = DelaySimulator(self.control_freq, config=delay_config, seed=seed)
         self.action_queue: List[Tuple[int, np.ndarray]] = []
         self.internal_tick = 0
         self.last_executed_rl_torque = np.zeros(self.n_joints)
+        
+        # Rendering setup
+        self._render_enabled = render
+        self._viewer = None
+        self._render_fps = render_fps
+        self._render_interval = max(1, self.control_freq // self._render_fps)
+        self._last_render_time = 0.0
+        
+        if self._render_enabled:
+            self._init_viewer()
+
+    def _init_viewer(self) -> None:
+        """Initialize the MuJoCo passive viewer."""
+        self._viewer = mujoco.viewer.launch_passive(self.model, self.data)
+        self._viewer.cam.azimuth = 135
+        self._viewer.cam.elevation = -20
+        self._viewer.cam.distance = 2.0
+        self._viewer.cam.lookat[:] = [0.4, 0.0, 0.4]
+        print("MuJoCo Viewer initialized. Close the viewer window to stop.")
 
     def _reset_mujoco_data(self, mj_data: mujoco.MjData, q_init: NDArray[np.float64]) -> None:
         """
         Reset a MuJoCo data structure to a specific joint configuration.
-        
-        CRITICAL: Does NOT use mj_resetData because that sets qpos to XML defaults
-        first, which can cause visualization glitches and incorrect initial states.
         """
+        
         # Clear all velocities
         mj_data.qvel[:] = 0.0
         
@@ -113,6 +138,10 @@ class RemoteRobotSimulator:
             self.data.ctrl[:self.n_joints] = gravity_torque
             self.data.qvel[:self.n_joints] = 0.0  # Kill kinetic energy
             mujoco.mj_step(self.model, self.data)
+        
+        # Sync viewer after reset
+        if self._render_enabled and self._viewer is not None:
+            self._viewer.sync()
 
     def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
         return (angle + np.pi) % (2 * np.pi) - np.pi
@@ -148,16 +177,53 @@ class RemoteRobotSimulator:
 
         tau_total = tau_id + self.last_executed_rl_torque
         tau_clipped = np.clip(tau_total, -self.torque_limits, self.torque_limits)
-        limits_hit = np.any(tau_total != tau_clipped)
         
         self.data.ctrl[:self.n_joints] = tau_clipped
         for _ in range(self.n_substeps):
             mujoco.mj_step(self.model, self.data)
+        
+        # Render if enabled
+        if self._render_enabled:
+            self.render()
 
         return {
             "joint_error": np.linalg.norm(target_q - self.data.qpos[:self.n_joints]),
-            "tau_pd": tau_id, "tau_rl": self.last_executed_rl_torque, "tau_total": tau_total
+            "tau_pd": tau_id, 
+            "tau_rl": self.last_executed_rl_torque, 
+            "tau_total": tau_total
         }
+
+    def render(self) -> bool:
+        """
+        Render the current state in the MuJoCo viewer.
+        
+        Returns:
+            True if viewer is still open, False if closed.
+        """
+        if not self._render_enabled or self._viewer is None:
+            return True
+        
+        # Check if viewer was closed
+        if not self._viewer.is_running():
+            print("Viewer closed by user.")
+            return False
+        
+        # Throttle rendering to target FPS
+        if self.internal_tick % self._render_interval == 0:
+            self._viewer.sync()
+            
+        return True
 
     def get_joint_state(self):
         return self.data.qpos[:self.n_joints].copy(), self.data.qvel[:self.n_joints].copy()
+    
+    def close(self) -> None:
+        """Close the viewer and clean up resources."""
+        if self._viewer is not None:
+            self._viewer.close()
+            self._viewer = None
+            print("MuJoCo Viewer closed.")
+    
+    def __del__(self):
+        """Destructor to ensure viewer is closed."""
+        self.close()

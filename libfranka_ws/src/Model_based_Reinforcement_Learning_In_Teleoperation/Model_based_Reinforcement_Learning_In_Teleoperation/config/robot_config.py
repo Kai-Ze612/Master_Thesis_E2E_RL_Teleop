@@ -7,13 +7,13 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251123_183945/best_policy.pth"
-LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251123_174526/estimator_best.pth"
+# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251123_183945/best_policy.pth"
+# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251123_174526/estimator_best.pth"
 
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_MEDIUM_DELAY_20251124_180739/estimator_best.pth"
+DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251125_210647/estimator_best.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -34,11 +34,10 @@ MAX_TORQUE_COMPENSATION = np.array([20.0, 15.0, 15.0, 10.0, 10.0, 5.0, 5.0], dty
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], dtype=np.float32)
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
-KP_LOCAL = np.array([169.0, 169.0, 144.0, 144.0, 100.0, 60.0, 2.0], dtype=np.float32)
-KD_LOCAL = np.array([15.0,  15.0,  15.0,  15.0,  15.0, 10.0, 0.5], dtype=np.float32)
-
 WARM_UP_DURATION = 1  # sec (before starting moving)
 NO_DELAY_DURATION = 0.5 # sec (before starting delay simulation)
+
+MAX_JOINT_CHANGE_PER_STEP = 0.01 # radians, for IK solver continuity
 
 ######################################
 # Control Parameters
@@ -46,14 +45,14 @@ NO_DELAY_DURATION = 0.5 # sec (before starting delay simulation)
 DEFAULT_CONTROL_FREQ = 200
 DEFAULT_PUBLISH_FREQ = 200
 
-DEFAULT_KP_REMOTE = np.array([169.0, 169.0, 144.0, 144.0, 100.0, 60.0, 2.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([15.0,  15.0,  15.0,  15.0,  15.0, 8, 0.5], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([60.0, 60.0, 60.0, 40.0, 40.0, 10.0, 2.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([12.0,  12.0,  12.0,  10.0,  10.0, 3.0, 0.5], dtype=np.float32)
 
 ######################################
 # IK Solver Parameterss
 ######################################
 # 1. Tolerances & Iterations
-IK_POSITION_TOLERANCE = 0.005 # meters
+IK_POSITION_TOLERANCE = 0.01 # meters
 IK_JACOBIAN_MAX_ITER = 200
 IK_OPTIMIZATION_MAX_ITER = 100
 
@@ -86,8 +85,8 @@ IK_NULL_SPACE_GAIN = 0.5
 ######################################
 # Trajectory Generation Parameters
 ######################################
-TRAJECTORY_CENTER = np.array([0.3, 0, 0.4], dtype=np.float32)
-TRAJECTORY_SCALE = np.array([0.2, 0.2], dtype=np.float32)
+TRAJECTORY_CENTER = np.array([0.4, 0, 0.4], dtype=np.float32)
+TRAJECTORY_SCALE = np.array([0.2, 0.2, 0.02], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1  # Hz
 
 ######################################
@@ -116,7 +115,7 @@ DT = 1.0 / DEFAULT_CONTROL_FREQ
 ######################################
 # RL Environment Parameters
 ######################################
-MAX_JOINT_ERROR_TERMINATION = 1.0 
+MAX_JOINT_ERROR_TERMINATION = 0.5  # radians
 
 REMOTE_HISTORY_LEN = 5
 

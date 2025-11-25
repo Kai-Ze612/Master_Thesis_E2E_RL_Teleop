@@ -31,6 +31,9 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.training_env i
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import TrajectoryType
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import StateEstimator
+
+import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
+
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     RNN_SEQUENCE_LENGTH,

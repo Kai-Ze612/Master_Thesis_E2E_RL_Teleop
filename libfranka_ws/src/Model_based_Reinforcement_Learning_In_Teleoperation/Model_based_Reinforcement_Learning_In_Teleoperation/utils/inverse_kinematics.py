@@ -180,19 +180,11 @@ class IKSolver:
         success = q_sol is not None
 
         if not success:
-            print("IK WARNING: Jacobian method failed → falling back to optimization")
             q_sol, error = self._solve_optimization(target_pos, q_init, site_id)
             success = q_sol is not None
             if not success:
                 print(f"IK FAILED COMPLETELY! Final position error: {error:.6f} m")
-                print(f"   Target pos: {target_pos}")
-                print(f"   Last q tried: {q_init.round(4)}")
                 return None, False, error
-            else:
-                print(f"IK SUCCESS via optimization fallback (error: {error:.6f} m)")
-
-        if success:
-            print(f"IK SUCCESS (Jacobian) | Pos error: {error:.6f} m | Joint 6: {q_sol[5]:+.4f} rad")
 
         # Continuity limiting
         if enforce_continuity and self.q_previous is not None:

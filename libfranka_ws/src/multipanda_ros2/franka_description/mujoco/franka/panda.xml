@@ -182,7 +182,7 @@
                   <site name="panda_joint6_site" pos="0 0.0 0.0" size=".01 .01 .01" type="ellipsoid" rgba=".8 .2 .1 0"/>
                   <inertial mass="1.666555" pos="6.0149e-2 -1.4117e-2 -1.0517e-2"
                       fullinertia="1.964e-3 4.354e-3 5.433e-3 1.09e-4 -1.158e-3 3.41e-4"/>
-                  <joint name="panda_joint6" range="-0.0175 3.7525" damping="-0.0132" frictionloss="0.1658"/>
+                  <joint name="panda_joint6" range="0.5445 4.5169" damping="-0.0132" frictionloss="0.1658"/>
                   <geom mesh="link6_0" material="off_white" class="visual"/>
                   <geom mesh="link6_1" material="white" class="visual"/>
                   <geom mesh="link6_2" material="black" class="visual"/>
@@ -292,7 +292,7 @@
     <motor name="panda_act_trq6" joint="panda_joint6" ctrlrange="-12 12" ctrllimited="true"/>
     <motor name="panda_act_trq7" joint="panda_joint7" ctrlrange="-12 12" ctrllimited="true"/>
 
-    <position name="panda_act_pos1" joint="panda_joint1" kp="10" kv="1"/>
+    <!-- <position name="panda_act_pos1" joint="panda_joint1" kp="10" kv="1"/>
     <position name="panda_act_pos2" joint="panda_joint2" kp="10" kv="1"/>
     <position name="panda_act_pos3" joint="panda_joint3" kp="10" kv="1"/>
     <position name="panda_act_pos4" joint="panda_joint4" kp="10" kv="1"/>
@@ -306,10 +306,10 @@
     <velocity name="panda_act_vel4" joint="panda_joint4" kv="1"/>
     <velocity name="panda_act_vel5" joint="panda_joint5" kv="1"/>
     <velocity name="panda_act_vel6" joint="panda_joint6" kv="1"/>
-    <velocity name="panda_act_vel7" joint="panda_joint7" kv="1"/>
+    <velocity name="panda_act_vel7" joint="panda_joint7" kv="1"/> -->
 
-    <general class="panda" name="panda_act_gripper" tendon="split" forcerange="-100 100" ctrlrange="0 255"
-        gainprm="0.01568627451 0 0" biasprm="0 -100 -10"/>
+    <!-- <general class="panda" name="panda_act_gripper" tendon="split" forcerange="-100 100" ctrlrange="0 255"
+        gainprm="0.01568627451 0 0" biasprm="0 -100 -10"/> -->
   </actuator>
 
 
