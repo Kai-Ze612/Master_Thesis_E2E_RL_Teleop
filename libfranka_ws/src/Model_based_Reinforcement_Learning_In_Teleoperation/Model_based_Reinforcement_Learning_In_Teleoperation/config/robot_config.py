@@ -7,13 +7,13 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251123_183945/best_policy.pth"
-# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251123_174526/estimator_best.pth"
+DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251123_183945/best_policy.pth"
+LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251123_174526/estimator_best.pth"
 
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_MEDIUM_DELAY_20251124_180739/estimator_best.pth"
+# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_MEDIUM_DELAY_20251124_180739/estimator_best.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -24,16 +24,14 @@ CHECKPOINT_DIR_LSTM = "./lstm_training_output"
 ######################################
 N_JOINTS = 7
 EE_BODY_NAME = "panda_hand"
-TCP_OFFSET = np.array([0.0, 0.0, -0.1034], dtype=np.float32)
-JOINT_LIMITS_LOWER = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973], dtype=np.float32)
-JOINT_LIMITS_UPPER = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973], dtype=np.float32)
+TCP_OFFSET = np.array([0.0, 0.0, 0.1034], dtype=np.float32)
 
+JOINT_LIMITS_LOWER = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, 0.5445, -3.0159], dtype=np.float32)
+JOINT_LIMITS_UPPER = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 4.5169, 3.0159], dtype=np.float32)
 TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
-
 MAX_TORQUE_COMPENSATION = np.array([20.0, 15.0, 15.0, 10.0, 10.0, 5.0, 5.0], dtype=np.float32)
 
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], dtype=np.float32)
-
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
 KP_LOCAL = np.array([169.0, 169.0, 144.0, 144.0, 100.0, 60.0, 2.0], dtype=np.float32)
@@ -55,30 +53,28 @@ DEFAULT_KD_REMOTE = np.array([15.0,  15.0,  15.0,  15.0,  15.0, 8, 0.5], dtype=n
 # IK Solver Parameterss
 ######################################
 # 1. Tolerances & Iterations
-IK_POSITION_TOLERANCE = 0.002 
-IK_JACOBIAN_MAX_ITER = 500
+IK_POSITION_TOLERANCE = 0.005 # meters
+IK_JACOBIAN_MAX_ITER = 200
 IK_OPTIMIZATION_MAX_ITER = 100
 
 # 2. Damping & Step
-IK_JACOBIAN_STEP_SIZE = 0.5   # Increased speed (Geometry fix allows faster convergence)
-IK_JACOBIAN_DAMPING = 0.05    # Lower damping = Less "spongy" feel, more precise
+IK_JACOBIAN_STEP_SIZE = 0.01 # Larger = Faster but less stable
+IK_JACOBIAN_DAMPING = 0.1    # Larger = More stable but less responsive
 
 # 3. Continuity
 IK_MAX_JOINT_CHANGE = 0.2     # Allow reasonable speed
 IK_CONTINUITY_GAIN = 0.05     # Keep low to prioritize target tracking
 
 # 4. Joint Weighting Profile (Virtual Inertia)
-# [Base, Shoulder, Pan, Elbow, Forearm, WristFlex, WristTwist]
-# We give the main arm joints (0-4) very low added inertia so they flow naturally.
-# We give the wrist (5-6) massive inertia so it acts "stiff" relative to the arm.
+# Used to control which joints the IK solver prefers to use
 IK_JOINT_WEIGHTS = [
     0.0,   # J1 (Base): Natural motion
     0.0,   # J2 (Shoulder Lift): FREE (Main reacher)
     0.0,   # J3 (Shoulder Pan): Natural
     0.0,   # J4 (Elbow): FREE (Main reacher)
-    0.5,   # J5 (Forearm): Slight damping to prevent rolling
-    100.0,  # J6 (Wrist Flex): HEAVY. Acts like a stabilizer.
-    100.0   # J7 (Wrist Twist): Stiff.
+    1.0,   # J5 (Forearm): Slight damping to prevent rolling
+    10.0,  # J6 (Wrist Flex): HEAVY. Acts like a stabilizer.
+    10.0   # J7 (Wrist Twist): Stiff.
 ]
 
 # 5. Optimization Fallback

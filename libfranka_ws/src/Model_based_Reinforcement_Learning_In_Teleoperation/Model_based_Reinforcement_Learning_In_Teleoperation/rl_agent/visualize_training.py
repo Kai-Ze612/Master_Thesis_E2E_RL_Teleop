@@ -1,81 +1,71 @@
-import time
-import numpy as np
+# test_local_robot_simulator_figure8.py
 import mujoco
 import mujoco.viewer
+import numpy as np
+import time
 import sys
 import os
-
-# Ensure the project root is in the python path
 sys.path.append(os.getcwd())
 
-from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.training_env import TeleoperationEnvWithDelay
-from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
-from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import TrajectoryType
-from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import N_JOINTS, DEFAULT_CONTROL_FREQ
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import (
+    LocalRobotSimulator,
+    TrajectoryType
+)
+from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import DEFAULT_CONTROL_FREQ
 
-def visualize():
-    # 1. Initialize the Environment
-    # We use 'render_mode=None' because we handle the viewer manually here.
-    # You can change trajectory_type to 'SQUARE' or 'FIGURE_8' to see different paths.
-    env = TeleoperationEnvWithDelay(
-        delay_config=ExperimentConfig.LOW_DELAY,
-        trajectory_type=TrajectoryType.FIGURE_8,
-        render_mode=None 
-    )
+print("FINAL TEST: LocalRobotSimulator generating Figure-8")
+print("Watch the robot — this applies the logic from your working IK script.\n")
 
-    print("="*60)
-    print("Initializing MuJoCo Passive Viewer...")
-    print(f"Robot Model: {env.remote_robot.model_path}")
-    print("="*60)
+# 1. Initialize Simulator
+leader = LocalRobotSimulator(
+    trajectory_type=TrajectoryType.FIGURE_8,
+    randomize_params=False
+)
 
-    # 2. Launch the Passive Viewer
-    # This attaches a window to the existing physics model of the remote robot
-    with mujoco.viewer.launch_passive(env.remote_robot.model, env.remote_robot.data) as viewer:
-        
-        # Initial Reset
-        obs, info = env.reset()
-        
-        # Toggle options (optional, wireframe etc can be set in viewer GUI)
-        # viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = True
-        
-        print("Running Simulation... Press Ctrl+C in terminal to stop.")
-        
-        step_count = 0
-        
-        while viewer.is_running():
-            step_count += 1
-            
-            # 3. Define Action
-            # We send a 7-dimensional ZERO vector.
-            # In your training_env.py, sending 7 dims (instead of 21) triggers 
-            # the "Data Collection Mode" logic where the robot follows the 
-            # delayed target using only the baseline PD controller.
-            # This matches your log: "Predicted q: None (Data Collection Mode)"
-            action = np.zeros(N_JOINTS) 
-            
-            # 4. Step the Environment
-            obs, reward, terminated, truncated, info = env.step(action)
-            
-            # 5. Sync the Viewer
-            # This pushes the updated physics state (qpos, qvel) to the window
-            viewer.sync()
-            
-            # 6. Sleep to maintain Real-Time speed
-            # Without this, the simulation runs as fast as the CPU allows (too fast to watch)
-            time.sleep(1.0 / DEFAULT_CONTROL_FREQ)
-            
-            # Optional: Print info every 100 steps to verify tracking
-            if step_count % 100 == 0:
-                print(f"Step: {step_count} | Error: {info.get('real_time_joint_error', 0):.4f} | Delay: {info.get('current_delay_steps', 0)}")
+# 2. CRITICAL: Reset BEFORE getting the data handle
+# This ensures we get the active MjData object, not an old one.
+leader.reset()
 
-            # Handle Episode End
-            if terminated or truncated:
-                print(f"Episode finished at step {step_count}. Resetting...")
-                env.reset()
-                step_count = 0
+# 3. Get references (Just like in your working script)
+model = leader.model
+data = leader.data 
 
-if __name__ == "__main__":
-    try:
-        visualize()
-    except KeyboardInterrupt:
-        print("\nVisualization stopped by user.")
+with mujoco.viewer.launch_passive(model, data) as viewer:
+    step = 0
+    start_time = time.time()
+
+    while viewer.is_running():
+        step += 1
+        
+        # 4. Get the next joint configuration from the simulator
+        q, qd, _, _, _, _ = leader.step()
+        
+        # ---------------------------------------------------------
+        # THE FIX (Borrowed from test_ik_solver_trajectory.py)
+        # ---------------------------------------------------------
+        
+        # A. Explicitly write the new q to the viewer's data handle
+        # (This ensures the viewer sees exactly what the solver produced)
+        data.qpos[:len(q)] = q
+        data.qvel[:len(qd)] = qd
+        
+        # B. Force Forward Kinematics
+        # This calculates the 3D position of the robot meshes based on qpos
+        # Without this, the robot stays frozen even if numbers change.
+        mujoco.mj_forward(model, data)
+
+        # ---------------------------------------------------------
+
+        if step % 50 == 0:
+            j6 = q[5]
+            print(f"Step {step:4d} | Joint6: {j6:+.6f} rad ({np.degrees(j6):+7.1f}°)")
+        
+        # 5. Sync the viewer
+        viewer.sync()
+        
+        # Timing control (keep it real-time)
+        time_until_next_step = (start_time + (step / DEFAULT_CONTROL_FREQ)) - time.time()
+        if time_until_next_step > 0:
+            time.sleep(time_until_next_step)
+
+print("\nTest finished.")

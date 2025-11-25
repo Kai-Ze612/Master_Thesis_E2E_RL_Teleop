@@ -20,221 +20,198 @@ Features:
 from __future__ import annotations
 from typing import Optional, Tuple
 from numpy.typing import NDArray
-
 import numpy as np
 import mujoco
 from scipy.optimize import least_squares
 
+# Configuration import
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
 
-class IKSolver:
 
-    def __init__(
-        self,
-        model: mujoco.MjModel,
-        joint_limits_lower: NDArray[np.float64],
-        joint_limits_upper: NDArray[np.float64],
-    ) -> None:
-        
+class IKSolver:
+    def __init__(self, model: mujoco.MjModel, joint_limits_lower, joint_limits_upper):
         self.model = model
-        self.data = mujoco.MjData(model) # Internal data for IK calculations
+        self.data = mujoco.MjData(model)
         self.joint_limits_lower = joint_limits_lower.copy()
         self.joint_limits_upper = joint_limits_upper.copy()
         self.n_joints = len(joint_limits_lower)
         
-        # Preallocate Matrices
+        # Preallocate arrays
         self.jacp = np.zeros((3, self.model.nv))
         self.jacr = np.zeros((3, self.model.nv))
-        self.M_full = np.zeros((self.model.nv, self.model.nv)) # Full Mass Matrix
-
-        # Load self-defined joint weights
-        if len(cfg.IK_JOINT_WEIGHTS) != self.n_joints:
-             raise ValueError(f"Config weights mismatch: {len(cfg.IK_JOINT_WEIGHTS)} vs {self.n_joints}")
+        self.M_full = np.zeros((self.model.nv, self.model.nv))
         
+        # Weights and Config
         self.virtual_inertia = np.array(cfg.IK_JOINT_WEIGHTS, dtype=np.float64)
+        self.q_previous: Optional[NDArray[np.float64]] = cfg.INITIAL_JOINT_CONFIG.copy()
+        
+        # Define Rest Pose (using initial config or a custom comfortable pose)
+        self.q_rest = cfg.INITIAL_JOINT_CONFIG.copy() 
 
-        # State history for continuity
-        self.q_previous: Optional[NDArray[np.float64]] = None
-
-    def _get_inertia_weighted_inverse(self, J: NDArray) -> NDArray:
+    def _get_weighted_pseudoinverse_and_nullspace(self, J: NDArray, damping: float) -> Tuple[NDArray, NDArray]:
         """
-        Computes W^{-1} * J^T * (J * W^{-1} * J^T + lambda*I)^{-1}
-        Where W = MassMatrix(q) + VirtualInertia
+        Calculates the Damped Least Squares Pseudoinverse and the Null-Space Projector.
+        
+        Formula:
+        J_pinv = W^-1 J^T (J W^-1 J^T + lambda^2 I)^-1
+        N      = I - J_pinv * J
         """
-        # 1. Get Real Mass Matrix M(q) from MuJoCo
-        # This captures the physical reality: moving the shoulder is "harder" than moving the wrist.
+        # Mass Matrix Retrieval
         mujoco.mj_fullM(self.model, self.M_full, self.data.qM)
         M = self.M_full[:self.n_joints, :self.n_joints]
         
-        # 2. Add Virtual Inertia (The Preference)
-        # W = Real Physics + User Preference
+        # Weight Matrix (Inertia + Virtual Weights)
         W = M + np.diag(self.virtual_inertia)
-        
-        # 3. Compute W_inv (Inertia inverse)
-        # Since W is Positive Definite (Mass + Diagonal), we use linalg.solve or inv
         try:
             W_inv = np.linalg.inv(W)
         except np.linalg.LinAlgError:
-            # Fallback if singular (rare with diagonal addition)
-            W_inv = np.eye(self.n_joints)
+            W_inv = np.eye(self.n_joints) # Fallback
 
-        # 4. Compute Weighted Pseudo-Inverse
-        # Formula: dq = W_inv J.T (J W_inv J.T + lambda I)^-1 dx
-        
-        lambda_sq = cfg.IK_JACOBIAN_DAMPING ** 2
-        
-        # Core term: J * W_inv * J.T
+        # Damped Least Squares Calculation
+        lambda_sq = damping ** 2
         JWJt = J @ W_inv @ J.T
-        
-        # Damped inverse of the core term
         A = JWJt + lambda_sq * np.eye(3)
         
-        # Solve A * x = I  => x = A_inv
         try:
             A_inv = np.linalg.solve(A, np.eye(3))
         except np.linalg.LinAlgError:
-            return np.zeros((self.n_joints, 3)) # Fail safe
+            # Handle numerical instability
+            return np.zeros((self.n_joints, 3)), np.eye(self.n_joints)
 
-        # Combine: W_inv * J.T * A_inv
-        J_pinv_weighted = W_inv @ J.T @ A_inv
+        J_pinv = W_inv @ J.T @ A_inv
         
-        return J_pinv_weighted
+        # Null-Space Projector: N = I - J# J
+        N = np.eye(self.n_joints) - J_pinv @ J
+        
+        return J_pinv, N
 
-    def _solve_jacobian(
-        self,
-        target_pos: NDArray[np.float64],
-        q_init: NDArray[np.float64],
-        site_id: int,
-    ) -> Tuple[Optional[NDArray[np.float64]], float]:
-        
+    def _solve_jacobian(self, target_pos, q_init, site_id):
+        """
+        Iterative IK with Adaptive Damping and Null-Space Bias.
+        """
         q = q_init.copy()
         site_body_id = self.model.site_bodyid[site_id]
-
+        
+        # Adaptive Damping Initialization
+        # We start with the configured damping, but reduce it if error is small
+        current_damping = cfg.IK_JACOBIAN_DAMPING
+        
         for i in range(cfg.IK_JACOBIAN_MAX_ITER):
+            # 1. Forward Kinematics
             self.data.qpos[:self.n_joints] = q
             mujoco.mj_forward(self.model, self.data)
-            
-            # Current Site Position (End Effector)
             current_pos = self.data.site_xpos[site_id].copy()
+            
+            # 2. Error Calculation
             error = target_pos - current_pos
+            error_norm = np.linalg.norm(error)
             
-            # Check Convergence
-            if np.linalg.norm(error) < cfg.IK_POSITION_TOLERANCE:
-                return q, np.linalg.norm(error)
+            if error_norm < cfg.IK_POSITION_TOLERANCE:
+                return q, error_norm
             
-            # Compute Jacobian
-            # J maps joint velocities to site velocities
+            # 3. Adaptive Damping Logic
+            # If error is very small (< 1mm), reduce damping to allow fine convergence
+            if error_norm < 0.001: 
+                adaptive_lambda = current_damping * 0.1
+            else:
+                adaptive_lambda = current_damping
+
+            # 4. Jacobian Calculation
             mujoco.mj_jac(self.model, self.data, self.jacp, self.jacr, current_pos, site_body_id)
             J = self.jacp[:, :self.n_joints]
             
-            # --- INERTIA WEIGHTED CALCULATION ---
-            J_pinv_w = self._get_inertia_weighted_inverse(J)
-            dq = J_pinv_w @ error
-            # ------------------------------------
+            # 5. Compute Inverse and Null-Space
+            J_pinv, N = self._get_weighted_pseudoinverse_and_nullspace(J, adaptive_lambda)
             
-            # Update q
+            # 6. Primary Task (End-Effector Position)
+            dq_main = J_pinv @ error
+            
+            # 7. Secondary Task (Null-Space Projection towards Rest Pose)
+            # Objective: minimize 0.5 * || q - q_rest ||^2
+            # Gradient: (q - q_rest)
+            # We want to move OPPOSITE to the gradient: q_rest - q
+            k_null = 0.5  # Gain for the null-space task
+            dq_null = N @ (k_null * (self.q_rest - q))
+            
+            # 8. Update Joint State
+            dq = dq_main + dq_null
             q = q + cfg.IK_JACOBIAN_STEP_SIZE * dq
             q = np.clip(q, self.joint_limits_lower, self.joint_limits_upper)
             
-        # Final check
-        final_pos = self.data.site_xpos[site_id].copy()
-        return None, np.linalg.norm(target_pos - final_pos)
+        return None, error_norm
 
     def _solve_optimization(self, target_pos, q_init, site_id):
         """
-        Optimization fallback.
-        Minimizes Position Error + Weighted Joint Change (Kinetic Energy Proxy)
-        """
-        q_prev = self.q_previous if self.q_previous is not None else q_init
+        If IK fails using the Jacobian method, fall back to optimization-based IK.
+        Uses non-linear least squares to minimize position error and joint movement.
         
-        # Pre-calculate Mass Matrix at q_init for the weighting term
+        formula: minimize ||pos_err|| + ||kinetic_proxy||
+        where pos_err = target_pos - current_pos
+              kinetic_proxy = (q - q_prev) * sqrt(M_diag) * continuity_gain
+        """
+
+        q_prev = self.q_previous if self.q_previous is not None else q_init
         self.data.qpos[:self.n_joints] = q_init
         mujoco.mj_forward(self.model, self.data)
         mujoco.mj_fullM(self.model, self.M_full, self.data.qM)
-        
-        # W = M + Virtual Inertia
         M_diag = np.diag(self.M_full[:self.n_joints, :self.n_joints]) + self.virtual_inertia
-
-        def cost_function(q: NDArray[np.float64]) -> NDArray[np.float64]:
+        
+        def cost_function(q):
             self.data.qpos[:self.n_joints] = q
             mujoco.mj_forward(self.model, self.data)
-            
-            # 1. Position Error
             curr_pos = self.data.site_xpos[site_id]
             pos_err = target_pos - curr_pos
-            
-            # 2. Kinetic Energy Proxy (Smoothness)
-            # We weight the joint changes by sqrt(W). 
-            # This discourages moving 'heavy' joints (real or virtual)
             kinetic_proxy = (q - q_prev) * np.sqrt(M_diag) * cfg.IK_CONTINUITY_GAIN
-            
-            # Note: We don't use a specific Rest Pose term here anymore, 
-            # because the inertia weighting inherently discourages unnecessary movement.
-            
             return np.concatenate([pos_err, kinetic_proxy])
-
-        result = least_squares(
-            fun=cost_function,
-            x0=q_init,
-            bounds=(self.joint_limits_lower, self.joint_limits_upper),
-            method='trf',
-            max_nfev=cfg.IK_OPTIMIZATION_MAX_ITER,
-            ftol=cfg.IK_OPT_FTOL,
-            xtol=cfg.IK_OPT_XTOL,
-        )
         
-        final_error = np.linalg.norm(result.fun[:3])
-        success = final_error < cfg.IK_POSITION_TOLERANCE
-        return (result.x, final_error) if success else (None, final_error)
-
-    def solve(
-        self,
-        target_pos: NDArray[np.float64],
-        q_init: NDArray[np.float64],
-        body_name: str = None, # Kept for compatibility, but we strictly look for site
-        tcp_offset: Optional[NDArray[np.float64]] = None, # IGNORED (Handled by Site)
-        enforce_continuity: bool = True,
-        target_rot: Optional[NDArray[np.float64]] = None,
-    ) -> Tuple[Optional[NDArray[np.float64]], bool, float]:
+        result = least_squares(cost_function, q_init, bounds=(self.joint_limits_lower, self.joint_limits_upper),
+                               method='trf', max_nfev=cfg.IK_OPTIMIZATION_MAX_ITER, ftol=cfg.IK_OPT_FTOL, xtol=cfg.IK_OPT_XTOL)
+        success = np.linalg.norm(result.fun[:3]) < cfg.IK_POSITION_TOLERANCE
         
-        # 1. Locate the End Effector Site
+        return (result.x, np.linalg.norm(result.fun[:3])) if success else (None, np.linalg.norm(result.fun[:3]))
+
+    def solve(self, target_pos, q_init, body_name=None, tcp_offset=None, enforce_continuity=True, target_rot=None):
         try:
             site_id = self.model.site('panda_ee_site').id
         except KeyError:
-            raise ValueError("Site 'panda_ee_site' not found in XML model.")
-
-        # 2. Try Inertia-Weighted Jacobian Solver
+            raise ValueError("Site 'panda_ee_site' not found")
+        
         q_sol, error = self._solve_jacobian(target_pos, q_init, site_id)
         success = q_sol is not None
-        
-        # 3. Fallback to Optimization Solver
+
         if not success:
+            print("IK WARNING: Jacobian method failed → falling back to optimization")
             q_sol, error = self._solve_optimization(target_pos, q_init, site_id)
             success = q_sol is not None
-            if not success: 
+            if not success:
+                print(f"IK FAILED COMPLETELY! Final position error: {error:.6f} m")
+                print(f"   Target pos: {target_pos}")
+                print(f"   Last q tried: {q_init.round(4)}")
                 return None, False, error
+            else:
+                print(f"IK SUCCESS via optimization fallback (error: {error:.6f} m)")
 
-        # 4. Enforce Continuity (Velocity Limits)
+        if success:
+            print(f"IK SUCCESS (Jacobian) | Pos error: {error:.6f} m | Joint 6: {q_sol[5]:+.4f} rad")
+
+        # Continuity limiting
         if enforce_continuity and self.q_previous is not None:
             joint_change = q_sol - self.q_previous
-            change_norm = np.linalg.norm(joint_change)
-            
-            if change_norm > cfg.IK_MAX_JOINT_CHANGE:
-                # Scale down the change to limit max velocity
-                scale = cfg.IK_MAX_JOINT_CHANGE / change_norm
+            if np.linalg.norm(joint_change) > cfg.IK_MAX_JOINT_CHANGE:
+                scale = cfg.IK_MAX_JOINT_CHANGE / np.linalg.norm(joint_change)
+                old_q = q_sol.copy()
                 q_sol = self.q_previous + scale * joint_change
-                
-                # Recompute final error after scaling
-                self.data.qpos[:self.n_joints] = q_sol
-                mujoco.mj_forward(self.model, self.data)
-                final_pos = self.data.site_xpos[site_id]
-                error = np.linalg.norm(target_pos - final_pos)
+                print(f"IK: Continuity limit applied → scaled joint change from {np.linalg.norm(joint_change):.4f} to {cfg.IK_MAX_JOINT_CHANGE:.4f}")
 
         self.q_previous = q_sol.copy()
         return q_sol, success, error
 
-    def reset_trajectory(self, q_start: Optional[NDArray[np.float64]] = None) -> None:
-        if q_start is not None:
-            self.q_previous = q_start.copy()
-        else:
-            self.q_previous = None
+    def reset_trajectory(self, q_start: NDArray[np.float64] = None) -> None:
+        """
+        Reset the IK solver to a known initial configuration.
+        """
+        q_init = q_start.copy() if q_start is not None else cfg.INITIAL_JOINT_CONFIG.copy()
+        self.q_previous = q_init.copy()
+        self.data.qpos[:self.n_joints] = q_init
+        self.data.qvel[:self.n_joints] = 0.0
+        mujoco.mj_forward(self.model, self.data)
