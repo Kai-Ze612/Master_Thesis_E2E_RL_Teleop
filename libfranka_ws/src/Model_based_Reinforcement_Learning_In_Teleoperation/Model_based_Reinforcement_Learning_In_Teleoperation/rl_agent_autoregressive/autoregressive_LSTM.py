@@ -26,23 +26,25 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS, RNN_SEQUENCE_LENGTH, ESTIMATOR_LEARNING_RATE, ESTIMATOR_BATCH_SIZE,
     ESTIMATOR_BUFFER_SIZE, ESTIMATOR_TOTAL_UPDATES, NUM_ENVIRONMENTS, CHECKPOINT_DIR_LSTM,
-    TARGET_DELTA_SCALE, DT, RNN_HIDDEN_DIM, RNN_NUM_LAYERS, DELAY_INPUT_NORM_FACTOR
+    TARGET_DELTA_SCALE, DT, RNN_HIDDEN_DIM, RNN_NUM_LAYERS, DELAY_INPUT_NORM_FACTOR,
+    ESTIMATOR_VAL_FREQ, ESTIMATOR_PATIENCE # Required for Early Stopping
 )
 
 # ----------------------------------------------------------------------------
-# 1. LSTM Model
+# 1. LSTM Model (Must match sac_policy_network.py architecture)
 # ----------------------------------------------------------------------------
 class AutoregressiveStateEstimator(nn.Module):
-    def __init__(self, input_dim_total=N_JOINTS*2 + 1, output_dim=N_JOINTS*2):
+    def __init__(self, input_dim_total=15, output_dim=14):
         super().__init__()
+        # Hardcoded to match the architecture we agreed on (256 hidden, 2 layers)
         self.lstm = nn.LSTM(
             input_size=input_dim_total,
-            hidden_size=RNN_HIDDEN_DIM,
-            num_layers=RNN_NUM_LAYERS,
+            hidden_size=256, 
+            num_layers=2,
             batch_first=True
         )
         self.fc = nn.Sequential(
-            nn.Linear(RNN_HIDDEN_DIM, 128),
+            nn.Linear(256, 128),
             nn.ReLU(),
             nn.Linear(128, output_dim)
         )
@@ -55,6 +57,7 @@ class AutoregressiveStateEstimator(nn.Module):
 
     def forward_step(self, x_step, hidden_state):
         lstm_out, new_hidden = self.lstm(x_step, hidden_state)
+        # x_step is (Batch, 1, Input), lstm_out is (Batch, 1, Hidden)
         residual = self.fc(lstm_out[:, -1, :])
         return residual, new_hidden
 
@@ -63,8 +66,8 @@ class AutoregressiveStateEstimator(nn.Module):
 # ----------------------------------------------------------------------------
 def is_trajectory_stable(delayed_seq: np.ndarray, true_target: np.ndarray) -> bool:
     if np.isnan(delayed_seq).any() or np.isnan(true_target).any(): return False
-    if np.max(np.abs(delayed_seq[:, 7:14])) > 6.0: return False
-    if np.max(np.abs(delayed_seq[:, 0:7])) > 6.0: return False
+    # Simple outlier check (e.g. if robot exploded)
+    if np.max(np.abs(delayed_seq[:, 7:14])) > 10.0: return False 
     return True
 
 def setup_logging(output_dir: str) -> logging.Logger:
@@ -80,9 +83,9 @@ class ReplayBuffer:
         self.ptr = 0
         self.size = 0
         self.seq_len = RNN_SEQUENCE_LENGTH
-        self.state_dim = N_JOINTS * 2 + 1 
+        self.state_dim = 15 # Hardcoded 15D
         self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
-        self.true_targets = np.zeros((buffer_size, N_JOINTS * 2), dtype=np.float32)
+        self.true_targets = np.zeros((buffer_size, 14), dtype=np.float32)
 
     def add(self, delayed_seq: np.ndarray, true_target: np.ndarray) -> None:
         self.delayed_sequences[self.ptr] = delayed_seq
@@ -99,17 +102,61 @@ class ReplayBuffer:
     def __len__(self) -> int: return self.size
 
 def collect_data_from_envs(env: SubprocVecEnv, num_envs: int) -> Tuple[np.ndarray, np.ndarray]:
+    # Get data from Env
     delayed_flat_list = env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
     true_target_list = env.env_method("get_true_current_target")
-    raw_seqs = np.array([buf.reshape(RNN_SEQUENCE_LENGTH, N_JOINTS * 2 + 1) for buf in delayed_flat_list])
+    
+    # Reshape
+    raw_seqs = np.array([buf.reshape(RNN_SEQUENCE_LENGTH, 15) for buf in delayed_flat_list])
     raw_targets = np.array(true_target_list)
+    
     valid_seqs, valid_targets = [], []
     for i in range(num_envs):
         if is_trajectory_stable(raw_seqs[i], raw_targets[i]):
             valid_seqs.append(raw_seqs[i])
             valid_targets.append(raw_targets[i])
+            
     if len(valid_seqs) == 0: return np.array([]), np.array([])
     return np.array(valid_seqs), np.array(valid_targets)
+
+def evaluate_model(model, val_env, num_val_steps=50, device='cpu'):
+    """Run validation loop without training to check generalization."""
+    model.eval()
+    total_loss = 0.0
+    count = 0
+    
+    # Reset Validation Envs
+    val_env.reset()
+    # Warmup
+    for _ in range(20): val_env.step([np.zeros((val_env.num_envs, N_JOINTS))])
+    
+    with torch.no_grad():
+        for _ in range(num_val_steps):
+            seqs, targets = collect_data_from_envs(val_env, val_env.num_envs)
+            if len(seqs) == 0: 
+                val_env.step([np.zeros((val_env.num_envs, N_JOINTS))])
+                continue
+            
+            input_t = torch.tensor(seqs, dtype=torch.float32).to(device)
+            target_t = torch.tensor(targets, dtype=torch.float32).to(device)
+            
+            # Standard Forward (Open Loop) for validation metric
+            # Or should we validate Closed Loop? Usually standard forward is a good proxy for stability.
+            pred_residual, _ = model(input_t)
+            
+            # Reconstruct absolute state
+            # The model predicts residual relative to the END of the input sequence
+            last_obs = input_t[:, -1, :14]
+            pred_state = last_obs + (pred_residual / TARGET_DELTA_SCALE) # Descale
+            
+            loss = F.mse_loss(pred_state, target_t)
+            total_loss += loss.item()
+            count += 1
+            
+            val_env.step([np.zeros((val_env.num_envs, N_JOINTS))])
+            
+    model.train()
+    return total_loss / max(1, count)
 
 # ----------------------------------------------------------------------------
 # 3. Main Training
@@ -122,13 +169,13 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     
     logger = setup_logging(output_dir)    
     logger.info("="*80)
-    logger.info("AUTOREGRESSIVE LSTM TRAINING")
+    logger.info("AUTOREGRESSIVE LSTM TRAINING (With Early Stopping)")
     logger.info("="*80)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     tb_writer = SummaryWriter(log_dir=os.path.join(output_dir, "tensorboard"))
     
-    # Env Setup (PASSTHROUGH MODE: lstm_model_path=None)
+    # 1. Training Envs
     def make_env(rank: int):
         def _init():
             return TeleoperationEnvWithDelay(
@@ -136,48 +183,57 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
                 trajectory_type=args.trajectory_type,
                 randomize_trajectory=args.randomize_trajectory,
                 seed=args.seed + rank,
-                lstm_model_path=None # <--- IMPORTANT: Disable LSTM loading
+                lstm_model_path=None # Passthrough mode
             )
         return _init
     
-    n_envs = NUM_ENVIRONMENTS
-    train_env = SubprocVecEnv([make_env(i) for i in range(n_envs)])
+    train_env = SubprocVecEnv([make_env(i) for i in range(NUM_ENVIRONMENTS)])
+    
+    # 2. Validation Envs (Different Seeds)
+    val_env = SubprocVecEnv([make_env(i + 1000) for i in range(NUM_ENVIRONMENTS)])
     
     replay_buffer = ReplayBuffer(ESTIMATOR_BUFFER_SIZE, device)
     model = AutoregressiveStateEstimator().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=ESTIMATOR_LEARNING_RATE)
     
+    # Initial Collection
     logger.info("Collecting Initial Data...")
     train_env.reset()
-    for _ in range(100): train_env.step([np.zeros((n_envs, N_JOINTS))]) 
+    for _ in range(100): train_env.step([np.zeros((NUM_ENVIRONMENTS, N_JOINTS))]) 
     
     collected = 0
     while collected < ESTIMATOR_BUFFER_SIZE // 2:
-        seqs, targets = collect_data_from_envs(train_env, n_envs)
+        seqs, targets = collect_data_from_envs(train_env, NUM_ENVIRONMENTS)
         if len(seqs) > 0:
             for i in range(len(seqs)): replay_buffer.add(seqs[i], targets[i])
             collected += len(seqs)
-            train_env.step([np.zeros((n_envs, N_JOINTS))])
+            train_env.step([np.zeros((NUM_ENVIRONMENTS, N_JOINTS))])
         else:
             train_env.reset()
-            for _ in range(50): train_env.step([np.zeros((n_envs, N_JOINTS))])
+            for _ in range(50): train_env.step([np.zeros((NUM_ENVIRONMENTS, N_JOINTS))])
 
     logger.info(f"Buffer filled. Starting Training Loop.")
+    
+    # --- Early Stopping Vars ---
+    best_val_loss = float('inf')
+    patience_counter = 0
+    
     model.train()
     
-    for update in range(ESTIMATOR_TOTAL_UPDATES):
-        progress = update / ESTIMATOR_TOTAL_UPDATES
-        teacher_forcing_ratio = max(0.3, 1.0 - (progress * 1.5)) 
+    for update in range(1, ESTIMATOR_TOTAL_UPDATES + 1):
         
-        seqs, targets = collect_data_from_envs(train_env, n_envs)
+        # A. Data Collection
+        seqs, targets = collect_data_from_envs(train_env, NUM_ENVIRONMENTS)
         if len(seqs) > 0:
             for i in range(len(seqs)): replay_buffer.add(seqs[i], targets[i])
-        train_env.step([np.zeros((n_envs, N_JOINTS))])
+        train_env.step([np.zeros((NUM_ENVIRONMENTS, N_JOINTS))])
         
+        # B. Training Step
         batch = replay_buffer.sample(ESTIMATOR_BATCH_SIZE)
         input_seq = batch['delayed_sequences']
         true_final_target = batch['true_targets']
         
+        # Recursive Logic
         packet_loss_steps = np.random.randint(1, 15)
         cutoff_idx = RNN_SEQUENCE_LENGTH - packet_loss_steps
         safe_history = input_seq[:, :cutoff_idx, :]
@@ -204,13 +260,36 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
         
+        # C. Logging
         if update % 100 == 0:
             tb_writer.add_scalar('loss/train', loss.item(), update)
             print(f"Update {update} | Loss: {loss.item():.6f}")
             
-    torch.save({'state_estimator_state_dict': model.state_dict()}, os.path.join(output_dir, "autoregressive_estimator.pth"))
+        # D. Validation & Early Stopping
+        if update % ESTIMATOR_VAL_FREQ == 0:
+            val_loss = evaluate_model(model, val_env, device=device)
+            tb_writer.add_scalar('loss/validation', val_loss, update)
+            
+            logger.info(f"Validating at {update}: Val Loss = {val_loss:.6f} (Best: {best_val_loss:.6f})")
+            
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                patience_counter = 0
+                # Save Best Model
+                save_path = os.path.join(output_dir, "autoregressive_estimator.pth")
+                torch.save({'state_estimator_state_dict': model.state_dict()}, save_path)
+                logger.info(f"  -> New Best! Saved model.")
+            else:
+                patience_counter += 1
+                logger.info(f"  -> No improvement. Patience: {patience_counter}/{ESTIMATOR_PATIENCE}")
+                
+                if patience_counter >= ESTIMATOR_PATIENCE:
+                    logger.info("Early Stopping Triggered.")
+                    break
+            
     logger.info("Training Complete.")
     train_env.close()
+    val_env.close()
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
