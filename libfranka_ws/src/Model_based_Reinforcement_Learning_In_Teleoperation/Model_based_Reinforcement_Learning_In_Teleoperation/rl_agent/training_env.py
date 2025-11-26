@@ -82,6 +82,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.trajectory_type = trajectory_type
         self.randomize_trajectory = randomize_trajectory
         self.leader = LocalRobotSimulator(trajectory_type=self.trajectory_type, randomize_params=self.randomize_trajectory)
+        self.last_target_q: Optional[np.ndarray] = None 
+        self.last_action: Optional[np.ndarray] = None
         
         # Initialize remote robot
         self.remote_robot = RemoteRobotSimulator(delay_config=delay_config, seed=seed)
@@ -250,20 +252,43 @@ class TeleoperationEnvWithDelay(gym.Env):
             if self.render_mode == "human": self.render()
             return self._get_observation(), 0.0, False, self.current_step >= self.max_episode_steps, self._get_info()
 
-        # Determine target for remote robot
+        
+        ###################################################################
+        # Interpolation and Safety Ramp Logic
+        # 1. Get the RAW predicted target from LSTM
         if self._last_predicted_target is not None:
-            target_q_for_remote = self._last_predicted_target[:cfg.N_JOINTS]
-            target_qd_for_remote = self._last_predicted_target[cfg.N_JOINTS:] 
+            raw_target_q = self._last_predicted_target[:cfg.N_JOINTS]
+            raw_target_qd = self._last_predicted_target[cfg.N_JOINTS:] 
             torque_compensation_for_remote = actual_action
         else:
-            # Fallback if prediction missing (e.g. Data Collection Mode)
-            target_q_for_remote = delayed_q
-            target_qd_for_remote = delayed_qd
+            # Fallback if prediction missing
+            raw_target_q = delayed_q
+            raw_target_qd = delayed_qd
             torque_compensation_for_remote = np.zeros(cfg.N_JOINTS)
+
+        # 2. Calculate the difference from the PREVIOUS commanded target
+        # (This handles the logic: "Don't jump from where you are")
+        if self.last_target_q is None:
+            self.last_target_q = self.remote_robot.get_joint_state()[0] # Fallback init
+
+        delta_q = raw_target_q - self.last_target_q
+
+        # 3. SAFETY RAMP: Clip the delta to the physical max change per step
+        # This prevents teleportation spikes.
+        clamped_delta_q = np.clip(delta_q, -cfg.MAX_JOINT_CHANGE_PER_STEP, cfg.MAX_JOINT_CHANGE_PER_STEP)
+
+        # 4. Apply the clamped delta to get the SAFE target
+        safe_target_q = self.last_target_q + clamped_delta_q
+
+        # 5. Update state for next step
+        self.last_target_q = safe_target_q.copy()
+        ###############################################################
         
-        step_info = self.remote_robot.step(target_q_for_remote, target_qd_for_remote, torque_compensation_for_remote)
+        # Excute step on remote robot
+        step_info = self.remote_robot.step(safe_target_q, raw_target_qd, torque_compensation_for_remote)
         remote_q, remote_qd = self.remote_robot.get_joint_state()
         
+        # Calculate reward
         reward, r_tracking = self._calculate_reward(actual_action)
         self.hist_total_reward.append(reward)
         self.hist_tracking_reward.append(r_tracking)

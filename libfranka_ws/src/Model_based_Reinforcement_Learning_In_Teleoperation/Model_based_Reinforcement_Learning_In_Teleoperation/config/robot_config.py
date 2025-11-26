@@ -13,7 +13,7 @@ import numpy as np
 
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251125_210647/estimator_best.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Autoregressive_LSTM_LOW_DELAY_20251126_000248/autoregressive_estimator.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -45,8 +45,8 @@ MAX_JOINT_CHANGE_PER_STEP = 0.01 # radians, for IK solver continuity
 DEFAULT_CONTROL_FREQ = 200
 DEFAULT_PUBLISH_FREQ = 200
 
-DEFAULT_KP_REMOTE = np.array([60.0, 60.0, 60.0, 40.0, 40.0, 10.0, 2.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([12.0,  12.0,  12.0,  10.0,  10.0, 3.0, 0.5], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([81.0, 81.0, 64.0, 49.0, 49.0, 16.0, 4.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([18.0,  15.0,  16.0,  14.0,  14.0, 8.0, 4.0], dtype=np.float32)
 
 ######################################
 # IK Solver Parameterss
@@ -85,8 +85,8 @@ IK_NULL_SPACE_GAIN = 0.5
 ######################################
 # Trajectory Generation Parameters
 ######################################
-TRAJECTORY_CENTER = np.array([0.4, 0, 0.4], dtype=np.float32)
-TRAJECTORY_SCALE = np.array([0.2, 0.2, 0.02], dtype=np.float32)
+TRAJECTORY_CENTER = np.array([0.3, 0, 0.4], dtype=np.float32)
+TRAJECTORY_SCALE = np.array([0.1, 0.3, 0.02], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1  # Hz
 
 ######################################
@@ -98,7 +98,7 @@ ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_TOTAL_UPDATES = 500000
 ESTIMATOR_VAL_STEPS = 5000
 ESTIMATOR_VAL_FREQ = 5000
-ESTIMATOR_PATIENCE = 20
+ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 256

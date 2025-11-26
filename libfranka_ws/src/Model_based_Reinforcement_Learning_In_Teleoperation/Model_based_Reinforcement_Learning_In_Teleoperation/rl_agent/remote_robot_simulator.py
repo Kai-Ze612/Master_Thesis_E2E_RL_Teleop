@@ -29,7 +29,7 @@ class RemoteRobotSimulator:
         self, 
         delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY, 
         seed: Optional[int] = None,
-        render: bool = True,
+        render: bool = False,
         render_fps: Optional[int] = 60
     ):
         
@@ -59,6 +59,9 @@ class RemoteRobotSimulator:
         self.action_queue: List[Tuple[int, np.ndarray]] = []
         self.internal_tick = 0
         self.last_executed_rl_torque = np.zeros(self.n_joints)
+
+        # No delay time
+        self.no_delay_steps = int(cfg.NO_DELAY_DURATION * self.control_freq)
         
         # Rendering setup
         self._render_enabled = render
@@ -157,7 +160,13 @@ class RemoteRobotSimulator:
     def step(self, target_q, target_qd, torque_compensation) -> dict:
         self.internal_tick += 1
         
-        delay_steps = int(self.delay_simulator.get_action_delay_steps())
+        if self.internal_tick < self.no_delay_steps:
+            # During grace period: NO DELAY (Instant transmission)
+            delay_steps = 0
+        else:
+            # After grace period: Use configured delay simulator
+            delay_steps = int(self.delay_simulator.get_action_delay_steps())
+            
         arrival_time = self.internal_tick + delay_steps
         heapq.heappush(self.action_queue, (arrival_time, torque_compensation.copy()))
         

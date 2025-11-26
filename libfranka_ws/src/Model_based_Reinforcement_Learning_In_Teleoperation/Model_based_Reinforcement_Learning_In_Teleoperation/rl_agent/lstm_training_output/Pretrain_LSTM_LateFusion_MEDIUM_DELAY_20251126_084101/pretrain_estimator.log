@@ -1,0 +1,75 @@
+2025-11-26 08:41:01 [INFO] ================================================================================
+2025-11-26 08:41:01 [INFO] LSTM STATE ESTIMATOR (LATE FUSION + RESIDUAL + L1 LOSS)
+2025-11-26 08:41:01 [INFO] Config: MEDIUM_DELAY | Trajectory: TrajectoryType.FIGURE_8
+2025-11-26 08:41:01 [INFO] Randomize Trajectory: False | Seed: 50
+2025-11-26 08:41:01 [INFO] Control Freq (Hz):    200
+2025-11-26 08:41:01 [INFO] Publish Freq (Hz):    200
+2025-11-26 08:41:01 [INFO] Learning Rate:        0.0005
+2025-11-26 08:41:01 [INFO] Batch Size:           256
+2025-11-26 08:41:01 [INFO] Buffer Size:          200000
+2025-11-26 08:41:01 [INFO] Total Updates:        500000
+2025-11-26 08:41:01 [INFO] RNN Hidden Dim:       512
+2025-11-26 08:41:01 [INFO] RNN Layers:           3
+2025-11-26 08:41:01 [INFO] RNN Seq Length:       150
+2025-11-26 08:41:01 [INFO] Delay Norm Factor:    10.0
+2025-11-26 08:41:01 [INFO] Target Scale:         500.0
+2025-11-26 08:41:01 [INFO] ================================================================================
+2025-11-26 08:41:01 [INFO] Targeting Dataset Balance: 40000 Static / 160000 Dynamic
+2025-11-26 08:41:01 [INFO] Injected 40000 static hold samples (Augmented with Delay=0).
+2025-11-26 08:41:01 [INFO] Collecting dynamic trajectories...
+2025-11-26 08:41:07 [INFO]   -> 5000/160000 dynamic samples
+2025-11-26 08:41:12 [INFO]   -> 10000/160000 dynamic samples
+2025-11-26 08:41:18 [INFO]   -> 15000/160000 dynamic samples
+2025-11-26 08:41:23 [INFO]   -> 20000/160000 dynamic samples
+2025-11-26 08:41:29 [INFO]   -> 25000/160000 dynamic samples
+2025-11-26 08:41:34 [INFO]   -> 30000/160000 dynamic samples
+2025-11-26 08:41:40 [INFO]   -> 35000/160000 dynamic samples
+2025-11-26 08:41:45 [INFO]   -> 40000/160000 dynamic samples
+2025-11-26 08:41:51 [INFO]   -> 45000/160000 dynamic samples
+2025-11-26 08:41:56 [INFO]   -> 50000/160000 dynamic samples
+2025-11-26 08:42:01 [INFO]   -> 55000/160000 dynamic samples
+2025-11-26 08:42:07 [INFO]   -> 60000/160000 dynamic samples
+2025-11-26 08:42:12 [INFO]   -> 65000/160000 dynamic samples
+2025-11-26 08:42:18 [INFO]   -> 70000/160000 dynamic samples
+2025-11-26 08:42:23 [INFO]   -> 75000/160000 dynamic samples
+2025-11-26 08:42:29 [INFO]   -> 80000/160000 dynamic samples
+2025-11-26 08:42:35 [INFO]   -> 85000/160000 dynamic samples
+2025-11-26 08:42:40 [INFO]   -> 90000/160000 dynamic samples
+2025-11-26 08:42:46 [INFO]   -> 95000/160000 dynamic samples
+2025-11-26 08:42:51 [INFO]   -> 100000/160000 dynamic samples
+2025-11-26 08:42:56 [INFO]   -> 105000/160000 dynamic samples
+2025-11-26 08:43:02 [INFO]   -> 110000/160000 dynamic samples
+2025-11-26 08:43:07 [INFO]   -> 115000/160000 dynamic samples
+2025-11-26 08:43:13 [INFO]   -> 120000/160000 dynamic samples
+2025-11-26 08:43:18 [INFO]   -> 125000/160000 dynamic samples
+2025-11-26 08:43:24 [INFO]   -> 130000/160000 dynamic samples
+2025-11-26 08:43:29 [INFO]   -> 135000/160000 dynamic samples
+2025-11-26 08:43:34 [INFO]   -> 140000/160000 dynamic samples
+2025-11-26 08:43:40 [INFO]   -> 145000/160000 dynamic samples
+2025-11-26 08:43:45 [INFO]   -> 150000/160000 dynamic samples
+2025-11-26 08:43:51 [INFO]   -> 155000/160000 dynamic samples
+2025-11-26 08:43:56 [INFO]   -> 160000/160000 dynamic samples
+2025-11-26 08:43:56 [INFO] Data collection complete. Buffer size: 200000
+2025-11-26 08:43:56 [INFO] 
+========================================
+2025-11-26 08:43:56 [INFO]  BUFFER COVERAGE CHECK (Joint Positions)
+2025-11-26 08:43:56 [INFO] ========================================
+2025-11-26 08:43:56 [INFO] Joint | Min      | Max      | Range   
+2025-11-26 08:43:56 [INFO] ---------------------------------------------
+2025-11-26 08:43:56 [INFO] J0    | -0.554   | 0.561    | 1.116   
+2025-11-26 08:43:56 [INFO] J1    | -0.943   | -0.264   | 0.679   
+2025-11-26 08:43:56 [INFO] J2    | -0.200   | 0.188    | 0.389   
+2025-11-26 08:43:56 [INFO] J3    | -2.479   | -1.899   | 0.579   
+2025-11-26 08:43:56 [INFO] J4    | -0.236   | 0.237    | 0.473   
+2025-11-26 08:43:56 [INFO] J5    | 1.552    | 1.615    | 0.064   
+2025-11-26 08:43:56 [INFO] J6    | 0.785    | 0.785    | 0.001   
+2025-11-26 08:43:56 [WARNING]   [WARNING] Joint 6 range is very small!
+2025-11-26 08:43:56 [INFO] ========================================
+
+2025-11-26 08:43:56 [INFO] Filling Validation Buffer...
+2025-11-26 08:43:56 [INFO] Injected 1000 static hold samples (Augmented with Delay=0).
+2025-11-26 08:44:01 [INFO] Starting training on cuda...
+2025-11-26 08:44:01 [INFO] Update 00000 | Train 19.66152191 | Val 19.45818317
+2025-11-26 08:44:01 [INFO]   -> NEW BEST!
+2025-11-26 08:45:42 [INFO] Update 05000 | Train 6.39592844 | Val 6.56315615
+2025-11-26 08:45:42 [INFO]   -> NEW BEST!

@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from collections import deque
 import torch.nn.functional as F
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple
 import multiprocessing
 import time
 
@@ -31,9 +31,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.training_env i
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import TrajectoryType
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import StateEstimator
-
-import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
-
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     RNN_SEQUENCE_LENGTH,
@@ -54,9 +51,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     RNN_HIDDEN_DIM,
     RNN_NUM_LAYERS,
     DELAY_INPUT_NORM_FACTOR,
-    MAX_PACKET_LOSS_STEPS,
-    AUGMENTATION_STRIDE,
-    DT,
 )
 
 # Helper Functions to filter unstable trajectories data
@@ -72,21 +66,21 @@ def is_trajectory_stable(delayed_seq: np.ndarray, true_target: np.ndarray) -> bo
     
     # Check NaN values
     if np.isnan(delayed_seq).any() or np.isnan(true_target).any():
-        # print("   [Filter] Rejected: NaN values detected.")
+        print("   [Filter] Rejected: NaN values detected.")
         return False
         
     # Check Joint Velocities
     velocities = delayed_seq[:, 7:14]
     max_vel = np.max(np.abs(velocities))
-    if max_vel > 5.0:
-        # print(f"   [Filter] Rejected: Velocity spike ({max_vel:.4f} > 5.0)")
+    if max_vel > 6.0:
+        print(f"   [Filter] Rejected: Velocity spike ({max_vel:.4f} > 5.0)")
         return False
 
     # Check Joint Positions
     positions = delayed_seq[:, 0:7]
     max_pos = np.max(np.abs(positions))
     if max_pos > 6.0:
-        # print(f"   [Filter] Rejected: Position divergence ({max_pos:.4f} > 6.0)")
+        print(f"   [Filter] Rejected: Position divergence ({max_pos:.4f} > 6.0)")
         return False
         
     return True
@@ -131,8 +125,7 @@ def setup_logging(output_dir: str) -> logging.Logger:
     )
     return logging.getLogger(__name__)
 
-# --- FIX 1: Return valid_indices so we know WHICH robot produced WHICH data ---
-def collect_data_from_envs(env: VecEnv, num_envs: int) -> Tuple[np.ndarray, np.ndarray, List[int]]:
+def collect_data_from_envs(env: VecEnv, num_envs: int) -> Tuple[np.ndarray, np.ndarray]:
     delayed_flat_list = env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
     true_target_list = env.env_method("get_true_current_target")
     
@@ -146,79 +139,17 @@ def collect_data_from_envs(env: VecEnv, num_envs: int) -> Tuple[np.ndarray, np.n
     # Filter loop
     valid_seqs = []
     valid_targets = []
-    valid_indices = [] # Track the original index
     
     for i in range(num_envs):
         if is_trajectory_stable(raw_seqs[i], raw_targets[i]):
             valid_seqs.append(raw_seqs[i])
             valid_targets.append(raw_targets[i])
-            valid_indices.append(i)
             
     # Handle empty case (if all envs crashed)
     if len(valid_seqs) == 0:
-        return np.array([]), np.array([]), []
+        return np.array([]), np.array([])
         
-    return np.array(valid_seqs), np.array(valid_targets), valid_indices
-
-# --- FIX 2: Use valid_indices to access the correct history buffer ---
-def augment_and_add_to_buffer(
-    replay_buffer: ReplayBuffer, 
-    seqs: np.ndarray, 
-    targets: np.ndarray, 
-    histories: List[deque],
-    valid_indices: List[int], # NEW Argument
-    total_envs: int           # NEW Argument
-) -> int:
-    """
-    Adds standard samples AND generates synthetic packet loss samples.
-    Uses valid_indices to ensure data integrity.
-    """
-    added_count = 0
-    
-    valid_set = set(valid_indices)
-    
-    # 1. Process Valid Data
-    for k, env_idx in enumerate(valid_indices):
-        # seqs[k] corresponds to the robot at env_idx
-        current_seq = seqs[k]
-        current_target = targets[k]
-        
-        # Correctly access the history for THIS specific robot
-        env_history = histories[env_idx]
-        
-        # A. Standard Addition
-        replay_buffer.add(current_seq, current_target)
-        added_count += 1
-        
-        # B. Augmentation using History
-        for m, stale_seq in enumerate(reversed(env_history)):
-            # Stride check
-            if m % AUGMENTATION_STRIDE != 0 and m != len(env_history) - 1:
-                continue
-
-            steps_ago = m + 1
-            synthetic_seq = stale_seq.copy()
-            
-            # Calculate extra time
-            extra_time = steps_ago * DT
-            extra_time_norm = extra_time / DELAY_INPUT_NORM_FACTOR
-            
-            # Update delay scalar (assuming last dim is delay)
-            synthetic_seq[:, -1] += extra_time_norm
-            
-            replay_buffer.add(synthetic_seq, current_target)
-            added_count += 1
-            
-        # C. Update History
-        env_history.append(current_seq)
-    
-    # 2. Clean Invalid Histories
-    # If a robot was unstable this step, its history chain is broken. Reset it.
-    for i in range(total_envs):
-        if i not in valid_set:
-            histories[i].clear()
-        
-    return added_count
+    return np.array(valid_seqs), np.array(valid_targets)
 
 def evaluate_model(model: StateEstimator, val_buffer: ReplayBuffer, batch_size: int, num_batches: int = 50) -> float:
     model.eval()
@@ -263,38 +194,25 @@ def verify_buffer_coverage(buffer: ReplayBuffer, logger: logging.Logger):
     if buffer.size == 0:
         logger.warning("Buffer is empty! Cannot verify coverage.")
         return
-
-    targets = buffer.true_targets[:buffer.size]
+    
+    targets = buffer.true_targets[:buffer.size] 
     positions = targets[:, :N_JOINTS]
-
+    
     min_pos = np.min(positions, axis=0)
     max_pos = np.max(positions, axis=0)
-
+    
     logger.info("\n" + "="*40)
     logger.info(" BUFFER COVERAGE CHECK (Joint Positions)")
     logger.info("="*40)
     logger.info(f"{'Joint':<5} | {'Min':<8} | {'Max':<8} | {'Range':<8}")
     logger.info("-" * 45)
-
+    
     for i in range(N_JOINTS):
         p_range = max_pos[i] - min_pos[i]
         logger.info(f"J{i:<4} | {min_pos[i]:<8.3f} | {max_pos[i]:<8.3f} | {p_range:<8.3f}")
         if p_range < 0.01:
             logger.warning(f"  [WARNING] Joint {i} range is very small!")
-
-    # New: Check delay coverage (last dimension of sequences)
-    delays = buffer.delayed_sequences[:buffer.size, :, -1]
-    min_delay = np.min(delays)
-    max_delay = np.max(delays)
-    mean_delay = np.mean(delays)
-
-    logger.info("\n" + "="*40)
-    logger.info(" BUFFER COVERAGE CHECK (Delays)")
-    logger.info("="*40)
-    logger.info(f"Min: {min_delay:<8.3f} | Max: {max_delay:<8.3f} | Mean: {mean_delay:<8.3f}")
-    if max_delay > 1.0:
-        logger.warning("  [WARNING] Max normalized delay exceeds 1.0! Consider increasing DELAY_INPUT_NORM_FACTOR in robot_config.py.")
-
+            
     logger.info("="*40 + "\n")
 
 def pretrain_estimator(args: argparse.Namespace) -> None:
@@ -346,43 +264,32 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     logger.info(f"Targeting Dataset Balance: {num_static} Static / {num_dynamic} Dynamic")
     inject_static_samples(replay_buffer, num_static, logger)
     
-    env_histories = [deque(maxlen=MAX_PACKET_LOSS_STEPS) for _ in range(n_envs)]
-    
     logger.info("Collecting dynamic trajectories...")
     train_env.reset()
     
+    # Warmup
     for _ in range(100):
         train_env.step([np.zeros((n_envs, N_JOINTS))])
 
     collected = 0
     while collected < num_dynamic:
-        # --- FIX 3: Use updated signature ---
-        seqs, targets, valid_indices = collect_data_from_envs(train_env, n_envs)
+        seqs, targets = collect_data_from_envs(train_env, n_envs)
         
         if len(seqs) > 0:
-            # --- FIX 4: Pass indices and total envs ---
-            added = augment_and_add_to_buffer(
-                replay_buffer, 
-                seqs, 
-                targets, 
-                env_histories, 
-                valid_indices, 
-                n_envs
-            )
-            collected += added
-            
+            for i in range(len(seqs)):
+                replay_buffer.add(seqs[i], targets[i])
+            collected += len(seqs)
+            # Standard step if data is good
             train_env.step([np.zeros((n_envs, N_JOINTS))])
         else:
-            logger.warning("Unstable trajectory detected. Resetting environment...")
+            logger.warning("Unstable trajectory detected. Resetting environment to clear history...")
             train_env.reset()
-            for history in env_histories:
-                history.clear()
-            
+            # Warmup again to settle physics
             for _ in range(50):
                 train_env.step([np.zeros((n_envs, N_JOINTS))])
 
-        if collected % 5000 < 500:
-            logger.info(f"  -> {collected}/{num_dynamic} dynamic samples (Augmented)")
+        if collected % 5000 < n_envs:
+            logger.info(f"  -> {collected}/{num_dynamic} dynamic samples")
             
     logger.info(f"Data collection complete. Buffer size: {len(replay_buffer)}")
     verify_buffer_coverage(replay_buffer, logger)
@@ -401,8 +308,7 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
          val_env.step([np.zeros((1, N_JOINTS))])
          
     for _ in range(val_dynamic):
-        # Unpack 3 values (ignore valid_indices for single env)
-        seq, target, _ = collect_data_from_envs(val_env, 1)
+        seq, target = collect_data_from_envs(val_env, 1)
         if len(seq) > 0:
             val_buffer.add(seq[0], target[0])
         val_env.step([np.zeros((1, N_JOINTS))])
@@ -424,18 +330,12 @@ def pretrain_estimator(args: argparse.Namespace) -> None:
     for update in range(ESTIMATOR_TOTAL_UPDATES):
         # Refresh data if random
         if args.randomize_trajectory:
-            # --- FIX 5: Update loop call ---
-            delayed_seq_batch, true_target_batch, valid_indices = collect_data_from_envs(train_env, n_envs)
+            delayed_seq_batch, true_target_batch = collect_data_from_envs(train_env, n_envs)
             
+            # Only add valid data
             if len(delayed_seq_batch) > 0:
-                augment_and_add_to_buffer(
-                    replay_buffer, 
-                    delayed_seq_batch, 
-                    true_target_batch, 
-                    env_histories, 
-                    valid_indices, 
-                    n_envs
-                )
+                for i in range(len(delayed_seq_batch)):
+                    replay_buffer.add(delayed_seq_batch[i], true_target_batch[i])
             
             train_env.step([np.zeros((n_envs, N_JOINTS))])
 

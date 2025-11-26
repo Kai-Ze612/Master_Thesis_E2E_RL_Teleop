@@ -44,8 +44,8 @@ class TrajectoryParams:
         
         center = np.array([center_x, center_y, center_z], dtype=np.float64)
         
-        scale_x = np.random.uniform(0.1, 0.2)
-        scale_y = np.random.uniform(0.1, 0.2)
+        scale_x = np.random.uniform(0.1, 0.1)
+        scale_y = np.random.uniform(0.1, 0.3)
         scale_z = 0.02
         
         scale = np.array([scale_x, scale_y, scale_z], dtype=np.float64)
