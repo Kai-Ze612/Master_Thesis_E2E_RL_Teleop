@@ -45,7 +45,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         
         # Device setup for LSTM
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        
+       
         # Rendering setup
         self.render_mode = render_mode
         self.viewer = None
@@ -221,8 +221,7 @@ class TeleoperationEnvWithDelay(gym.Env):
 
     def _perform_ar_prediction_step(self) -> np.ndarray:
         """
-        Simulates the Autoregressive Loop.
-        If self.lstm is None, returns delayed state (Passthrough).
+        Simulates the Autoregressive Loop with correct scaling and delay updates.
         """
         # --- PASSTHROUGH LOGIC ---
         delay = self.delay_simulator.get_observation_delay_steps(len(self.leader_q_history))
@@ -240,9 +239,13 @@ class TeleoperationEnvWithDelay(gym.Env):
         else:
             delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
             
+        if delay_steps == 0:
+            return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
+            
         normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         most_recent_idx = -1 - delay_steps
         
+        # Build initial sequence
         seq_buffer = []
         start_idx = most_recent_idx - cfg.RNN_SEQUENCE_LENGTH + 1
         
@@ -256,27 +259,38 @@ class TeleoperationEnvWithDelay(gym.Env):
             seq_buffer.append(step_vec)
             
         input_tensor = torch.tensor(np.array(seq_buffer), dtype=torch.float32).unsqueeze(0).to(self.device)
-        
-        if delay_steps == 0:
-            return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
             
         steps_to_run = min(delay_steps, self.max_ar_steps)
-        current_seq_t = input_tensor.clone()
         
-        last_obs = current_seq_t[0, -1, :]
-        curr_q = last_obs[:self.n_joints]
-        curr_qd = last_obs[self.n_joints:2*self.n_joints]
+        # FIX 1: Initialize hidden state from the sequence
+        with torch.no_grad():
+            _, hidden_state = self.lstm.lstm(input_tensor)
         
-        delay_tensor = torch.tensor([normalized_delay], device=self.device)
+        # FIX 2: Start AR loop from last observation
+        last_obs = input_tensor[0, -1, :]
+        curr_q = last_obs[:self.n_joints].clone()
+        curr_qd = last_obs[self.n_joints:2*self.n_joints].clone()
+        current_delay_norm = normalized_delay
+        
+        dt = 1.0 / self.control_freq  # DT in seconds
         
         with torch.no_grad():
             for _ in range(steps_to_run):
-                residual_t, _ = self.lstm(current_seq_t)
-                residual = residual_t[0] / cfg.TARGET_DELTA_SCALE
+                # Build current input
+                delay_t = torch.tensor([current_delay_norm], device=self.device)
+                current_input = torch.cat([curr_q, curr_qd, delay_t], dim=0).view(1, 1, -1)
+                
+                # FIX 3: Use forward_step with hidden state
+                residual_t, hidden_state = self.lstm.forward_step(current_input, hidden_state)
+                
+                # FIX 4: Correct scaling - MULTIPLY by TARGET_DELTA_SCALE (matching training)
+                residual = residual_t[0] * cfg.TARGET_DELTA_SCALE
+                
                 curr_q = curr_q + residual[:self.n_joints]
                 curr_qd = curr_qd + residual[self.n_joints:]
-                new_input = torch.cat([curr_q, curr_qd, delay_tensor], dim=0).view(1, 1, -1)
-                current_seq_t = torch.cat([current_seq_t[:, 1:, :], new_input], dim=1)
+                
+                # FIX 5: Update delay (time since observation increases as we predict forward)
+                current_delay_norm = current_delay_norm + (dt / cfg.DELAY_INPUT_NORM_FACTOR)
                 
         return np.concatenate([curr_q.cpu().numpy(), curr_qd.cpu().numpy()])
 

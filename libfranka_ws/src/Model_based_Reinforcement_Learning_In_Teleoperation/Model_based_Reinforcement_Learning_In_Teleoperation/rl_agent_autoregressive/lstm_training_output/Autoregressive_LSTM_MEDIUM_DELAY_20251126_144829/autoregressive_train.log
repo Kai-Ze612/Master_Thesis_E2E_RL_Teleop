@@ -1,0 +1,21 @@
+2025-11-26 14:48:29,307 [INFO] ================================================================================
+2025-11-26 14:48:29,307 [INFO] AUTOREGRESSIVE LSTM TRAINING
+2025-11-26 14:48:29,307 [INFO] ================================================================================
+2025-11-26 14:48:32,960 [INFO] Collecting Initial Data...
+2025-11-26 14:51:04,222 [INFO] Buffer filled. Starting Training Loop.
+2025-11-26 14:53:33,027 [INFO] Validating at 5000: Val Loss = 0.000289 (Best: inf)
+2025-11-26 14:53:33,033 [INFO]   -> New Best! Saved model.
+2025-11-26 14:56:04,736 [INFO] Validating at 10000: Val Loss = 0.000287 (Best: 0.000289)
+2025-11-26 14:56:04,776 [INFO]   -> New Best! Saved model.
+2025-11-26 14:58:35,197 [INFO] Validating at 15000: Val Loss = 0.000289 (Best: 0.000287)
+2025-11-26 14:58:35,198 [INFO]   -> No improvement. Patience: 1/10
+2025-11-26 15:00:55,341 [INFO] Validating at 20000: Val Loss = 0.000288 (Best: 0.000287)
+2025-11-26 15:00:55,341 [INFO]   -> No improvement. Patience: 2/10
+2025-11-26 15:03:13,843 [INFO] Validating at 25000: Val Loss = 0.000290 (Best: 0.000287)
+2025-11-26 15:03:13,843 [INFO]   -> No improvement. Patience: 3/10
+2025-11-26 15:05:33,068 [INFO] Validating at 30000: Val Loss = 0.000291 (Best: 0.000287)
+2025-11-26 15:05:33,068 [INFO]   -> No improvement. Patience: 4/10
+2025-11-26 15:07:52,909 [INFO] Validating at 35000: Val Loss = 0.000295 (Best: 0.000287)
+2025-11-26 15:07:52,909 [INFO]   -> No improvement. Patience: 5/10
+2025-11-26 15:10:16,302 [INFO] Validating at 40000: Val Loss = 0.000287 (Best: 0.000287)
+2025-11-26 15:10:16,303 [INFO]   -> No improvement. Patience: 6/10

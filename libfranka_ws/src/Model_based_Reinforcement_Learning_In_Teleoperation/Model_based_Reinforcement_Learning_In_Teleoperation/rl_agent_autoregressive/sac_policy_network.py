@@ -8,6 +8,7 @@ import torch.nn as nn
 import numpy as np
 from typing import Tuple
 from torch.distributions import Normal
+from typing import Optional
 
 # Import configs for Actor/Critic
 # We use hardcoded values for StateEstimator to ensure it matches the checkpoint
@@ -20,6 +21,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     LOG_STD_MIN,
     LOG_STD_MAX,
 )
+
 
 class StateEstimator(nn.Module):
     """
@@ -39,6 +41,10 @@ class StateEstimator(nn.Module):
     ):
         super().__init__()
         
+        # Store dimensions for later use
+        self.hidden_dim = hidden_dim
+        self.num_layers = num_layers
+        
         # 1. LSTM Core
         self.lstm = nn.LSTM(
             input_size=input_dim_total,
@@ -56,11 +62,16 @@ class StateEstimator(nn.Module):
         
         # NOTE: Removed 'input_ln' as it does not exist in the checkpoint
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Forward pass.
-        x: (Batch, Seq_Len, 15)
-        Returns: (residual, last_hidden_state)
+        Forward pass for full sequence.
+        
+        Args:
+            x: (Batch, Seq_Len, 15) - Input sequence
+            
+        Returns:
+            residual: (Batch, 14) - Predicted state residual
+            last_hidden: (Batch, hidden_dim) - Last hidden state output
         """
         # LSTM forward
         lstm_out, _ = self.lstm(x)
@@ -72,6 +83,34 @@ class StateEstimator(nn.Module):
         residual = self.fc(last_hidden)
         
         return residual, last_hidden
+
+    def forward_step(
+        self, 
+        x_step: torch.Tensor, 
+        hidden_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
+    ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+        """
+        Single-step forward for autoregressive inference.
+        
+        This method maintains hidden state across multiple prediction steps,
+        which is essential for proper autoregressive rollout.
+        
+        Args:
+            x_step: (Batch, 1, 15) - Single timestep input
+            hidden_state: Optional tuple of (h, c) from previous step
+                          Each has shape (num_layers, batch, hidden_dim)
+        
+        Returns:
+            residual: (Batch, 14) - Predicted state residual
+            new_hidden: Tuple of (h, c) for next step
+        """
+        # LSTM forward with hidden state
+        lstm_out, new_hidden = self.lstm(x_step, hidden_state)
+        
+        # Predict residual from the output (only one timestep)
+        residual = self.fc(lstm_out[:, -1, :])
+        
+        return residual, new_hidden
 
 
 class Actor(nn.Module):

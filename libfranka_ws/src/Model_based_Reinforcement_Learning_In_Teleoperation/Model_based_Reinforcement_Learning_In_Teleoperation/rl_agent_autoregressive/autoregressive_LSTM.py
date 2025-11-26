@@ -84,7 +84,7 @@ class ReplayBuffer:
         self.device = device
         self.ptr = 0  # Pointer to the next insertion index
         self.size = 0
-        self.seq_len = RNN_SEQUENCE_LENGTH
+        self.seq_len = cfg.RNN_SEQUENCE_LENGTH
         self.state_dim = 15 
         self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
         self.true_targets = np.zeros((buffer_size, 14), dtype=np.float32)
@@ -104,10 +104,10 @@ class ReplayBuffer:
     def __len__(self) -> int: return self.size
 
 def collect_data_from_envs(env: SubprocVecEnv, num_envs: int) -> Tuple[np.ndarray, np.ndarray]:
-    delayed_flat_list = env.env_method("get_delayed_target_buffer", RNN_SEQUENCE_LENGTH)
+    delayed_flat_list = env.env_method("get_delayed_target_buffer", cfg.RNN_SEQUENCE_LENGTH)
     true_target_list = env.env_method("get_true_current_target")
     
-    raw_seqs = np.array([buf.reshape(RNN_SEQUENCE_LENGTH, 15) for buf in delayed_flat_list])
+    raw_seqs = np.array([buf.reshape(cfg.RNN_SEQUENCE_LENGTH, 15) for buf in delayed_flat_list])
     raw_targets = np.array(true_target_list)
     
     valid_seqs, valid_targets = [], []
@@ -132,9 +132,9 @@ def evaluate_model(model, val_env, num_val_steps, device='cpu'):
     val_env.reset()
     
     # 2. Warmup (Pass static phase)
-    warmup_steps = int(WARM_UP_DURATION * DEFAULT_CONTROL_FREQ) + 20
+    warmup_steps = int(cfg.WARM_UP_DURATION * cfg.DEFAULT_CONTROL_FREQ) + 20
     for _ in range(warmup_steps): 
-        val_env.step([np.zeros((val_env.num_envs, N_JOINTS))])
+        val_env.step([np.zeros((val_env.num_envs, cfg.N_JOINTS))])
     
     with torch.no_grad():
         for i in range(num_val_steps):
@@ -145,7 +145,7 @@ def evaluate_model(model, val_env, num_val_steps, device='cpu'):
             seqs, targets = collect_data_from_envs(val_env, val_env.num_envs)
             
             if len(seqs) == 0: 
-                val_env.step([np.zeros((val_env.num_envs, N_JOINTS))])
+                val_env.step([np.zeros((val_env.num_envs, cfg.N_JOINTS))])
                 continue
             
             input_t = torch.tensor(seqs, dtype=torch.float32).to(device)
@@ -155,13 +155,13 @@ def evaluate_model(model, val_env, num_val_steps, device='cpu'):
             pred_residual, _ = model(input_t)
             
             last_obs = input_t[:, -1, :14]
-            pred_state = last_obs + (pred_residual / TARGET_DELTA_SCALE)
+            pred_state = last_obs + (pred_residual / cfg.TARGET_DELTA_SCALE)
             
             loss = F.mse_loss(pred_state, target_t)
             total_loss += loss.item()
             count += 1
             
-            val_env.step([np.zeros((val_env.num_envs, N_JOINTS))])
+            val_env.step([np.zeros((val_env.num_envs, cfg.N_JOINTS))])
             
     model.train()
     print(f"Validating... Done.                 ")
@@ -178,7 +178,7 @@ def evaluate_model(model, val_env, num_val_steps, device='cpu'):
 def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"Autoregressive_LSTM_{args.config.name}_{timestamp}"
-    output_dir = os.path.join(CHECKPOINT_DIR_LSTM, run_name)
+    output_dir = os.path.join(cfg.CHECKPOINT_DIR_LSTM, run_name)
     os.makedirs(output_dir, exist_ok=True)
     
     logger = setup_logging(output_dir)    
@@ -201,31 +201,31 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             )
         return _init
     
-    train_env = SubprocVecEnv([make_env(i) for i in range(NUM_ENVIRONMENTS)])
-    val_env = SubprocVecEnv([make_env(i + 1000) for i in range(NUM_ENVIRONMENTS)])
+    train_env = SubprocVecEnv([make_env(i) for i in range(cfg.NUM_ENVIRONMENTS)])
+    val_env = SubprocVecEnv([make_env(i + 1000) for i in range(cfg.NUM_ENVIRONMENTS)])
     
-    replay_buffer = ReplayBuffer(ESTIMATOR_BUFFER_SIZE, device)
+    replay_buffer = ReplayBuffer(cfg.ESTIMATOR_BUFFER_SIZE, device)
     model = AutoregressiveStateEstimator().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=ESTIMATOR_LEARNING_RATE)
+    optimizer = torch.optim.Adam(model.parameters(), lr=cfg.ESTIMATOR_LEARNING_RATE)
     
     # Initial Data Collection
     logger.info("Collecting Initial Data...")
     train_env.reset()
     
     # Training Warmup
-    init_warmup = int(WARM_UP_DURATION * DEFAULT_CONTROL_FREQ) + 50
-    for _ in range(init_warmup): train_env.step([np.zeros((NUM_ENVIRONMENTS, N_JOINTS))]) 
+    init_warmup = int(cfg.WARM_UP_DURATION * cfg.DEFAULT_CONTROL_FREQ) + 50
+    for _ in range(init_warmup): train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))]) 
     
     collected = 0
-    while collected < ESTIMATOR_BUFFER_SIZE // 2:
-        seqs, targets = collect_data_from_envs(train_env, NUM_ENVIRONMENTS)
+    while collected < cfg.ESTIMATOR_BUFFER_SIZE // 2:
+        seqs, targets = collect_data_from_envs(train_env, cfg.NUM_ENVIRONMENTS)
         if len(seqs) > 0:
             for i in range(len(seqs)): replay_buffer.add(seqs[i], targets[i])
             collected += len(seqs)
-            train_env.step([np.zeros((NUM_ENVIRONMENTS, N_JOINTS))])
+            train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))])
         else:
             train_env.reset()
-            for _ in range(50): train_env.step([np.zeros((NUM_ENVIRONMENTS, N_JOINTS))])
+            for _ in range(50): train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))])
 
     logger.info(f"Buffer filled. Starting Training Loop.")
     
@@ -234,20 +234,20 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     
     model.train()
     
-    for update in range(1, ESTIMATOR_TOTAL_UPDATES + 1):
+    for update in range(1, cfg.ESTIMATOR_TOTAL_UPDATES + 1):
         # A. Data Collection
-        seqs, targets = collect_data_from_envs(train_env, NUM_ENVIRONMENTS)
+        seqs, targets = collect_data_from_envs(train_env, cfg.NUM_ENVIRONMENTS)
         if len(seqs) > 0:
             for i in range(len(seqs)): replay_buffer.add(seqs[i], targets[i])
-        train_env.step([np.zeros((NUM_ENVIRONMENTS, N_JOINTS))])
+        train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))])
         
         # B. Training Step
-        batch = replay_buffer.sample(ESTIMATOR_BATCH_SIZE)
+        batch = replay_buffer.sample(cfg.ESTIMATOR_BATCH_SIZE)
         input_seq = batch['delayed_sequences']
         true_final_target = batch['true_targets']
         
         packet_loss_steps = np.random.randint(1, 15)
-        cutoff_idx = RNN_SEQUENCE_LENGTH - packet_loss_steps
+        cutoff_idx = cfg.RNN_SEQUENCE_LENGTH - packet_loss_steps
         safe_history = input_seq[:, :cutoff_idx, :]
         
         _, hidden_state = model.lstm(safe_history)
@@ -257,10 +257,10 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             pred_delta, hidden_state = model.forward_step(current_input, hidden_state)
             
             last_known_state = current_input[:, :, :14] 
-            predicted_next_state = last_known_state + (pred_delta.unsqueeze(1) * TARGET_DELTA_SCALE)
+            predicted_next_state = last_known_state + (pred_delta.unsqueeze(1) * cfg.TARGET_DELTA_SCALE)
             
             current_delay_norm = current_input[:, :, 14]
-            next_delay_norm = current_delay_norm + (DT / DELAY_INPUT_NORM_FACTOR)
+            next_delay_norm = current_delay_norm + (cfg.DT / cfg.DELAY_INPUT_NORM_FACTOR)
             next_input = torch.cat([predicted_next_state, next_delay_norm.unsqueeze(2)], dim=2)
             current_input = next_input 
             
@@ -277,7 +277,7 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             print(f"Update {update} | Loss: {loss.item():.6f}")
             
         # C. Validation (Robust 21,000 steps)
-        if update % ESTIMATOR_VAL_FREQ == 0:
+        if update % cfg.ESTIMATOR_VAL_FREQ == 0:
             # USER REQUEST: 4200 * 5 = 21000 steps
             val_steps_needed = 4200 * 5 
             val_loss = evaluate_model(model, val_env, num_val_steps=val_steps_needed, device=device)
@@ -293,8 +293,8 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
                 logger.info(f"  -> New Best! Saved model.")
             else:
                 patience_counter += 1
-                logger.info(f"  -> No improvement. Patience: {patience_counter}/{ESTIMATOR_PATIENCE}")
-                if patience_counter >= ESTIMATOR_PATIENCE:
+                logger.info(f"  -> No improvement. Patience: {patience_counter}/{cfg.ESTIMATOR_PATIENCE}")
+                if patience_counter >= cfg.ESTIMATOR_PATIENCE:
                     logger.info("Early Stopping Triggered.")
                     break
             
