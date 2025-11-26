@@ -1,0 +1,12 @@
+2025-11-26 12:29:24 [INFO] __main__ - Training Configuration:
+2025-11-26 12:29:24 [INFO] __main__ -   Delay: LOW_DELAY
+2025-11-26 12:29:24 [INFO] __main__ -   Trajectory: figure_8
+2025-11-26 12:29:24 [INFO] __main__ - Creating vectorized environment...
+2025-11-26 12:29:26 [INFO] __main__ - Initializing SACTrainer...
+2025-11-26 12:29:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Tensorboard logs at: ./rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251126_122924/tensorboard_sac
+2025-11-26 12:29:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - ======================================================================
+2025-11-26 12:29:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Starting SAC Training (Environment-Centric Prediction)
+2025-11-26 12:29:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm -   Input Dim: 113 | Output Dim: 7
+2025-11-26 12:29:28 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - ======================================================================
+2025-11-26 12:29:38 [WARNING] __main__ - Interrupted.
+2025-11-26 12:29:38 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251126_122924/interrupted_policy.pth
