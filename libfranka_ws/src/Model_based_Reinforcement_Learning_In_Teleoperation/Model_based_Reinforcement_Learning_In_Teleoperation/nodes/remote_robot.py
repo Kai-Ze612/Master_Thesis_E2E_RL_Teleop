@@ -23,14 +23,14 @@ import mujoco
 
 # Python imports
 import numpy as np
-from numpy.typing import NDArray
 from collections import deque
 
 # Custom imports
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
+
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
-    DEFAULT_MUJOCO_MODEL_PATH, 
+    DEFAULT_MUJOCO_MODEL_PATH,
     DEFAULT_CONTROL_FREQ,
     INITIAL_JOINT_CONFIG,
     TORQUE_LIMITS,
@@ -241,12 +241,12 @@ class RemoteRobotNode(Node):
             tau_rl = self.current_tau_rl_
             
             # Safety: No torque on last joint
-            tau_id[-1] = 0.0 
+            tau_id[-1] = 0.0
             tau_rl[-1] = 0.0
             tau_rl[-2] = 0.0
             
             # Final Command
-            tau_command = tau_id + tau_rl * 0 # NOTE: RL is currently multiplied by 0
+            tau_command = tau_id + tau_rl * 0
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
             # Apply action delay
@@ -281,9 +281,9 @@ class RemoteRobotNode(Node):
                 f"Predicted q:   {np.round(q_target, 3)}\n"
                 f"Remote q:      {np.round(q_current, 3)}\n"
                 f"EE Pos:        {np.round(ee_pos, 3)}\n"
-                f"Tau ID:        {np.round(tau_id, 3)} (Includes Gravity)\n"
+                f"Tau ID:        {np.round(tau_id, 3)}\n"
                 f"Tau RL:        {np.round(tau_rl, 3)}\n",
-                throttle_duration_sec=0.001
+                throttle_duration_sec=0.005
             )
 
         except Exception as e:

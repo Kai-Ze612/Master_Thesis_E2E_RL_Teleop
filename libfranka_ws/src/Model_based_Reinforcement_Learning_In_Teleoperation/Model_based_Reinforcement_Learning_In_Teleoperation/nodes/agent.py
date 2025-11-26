@@ -32,9 +32,7 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray 
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import (
-    StateEstimator, Actor
-)
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_policy_network import StateEstimator, Actor
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     DEFAULT_CONTROL_FREQ,
@@ -43,7 +41,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     RNN_SEQUENCE_LENGTH,
     RL_MODEL_PATH,
     LSTM_MODEL_PATH,
-    TRAJECTORY_FREQUENCY,
     DELAY_INPUT_NORM_FACTOR,
     TARGET_DELTA_SCALE,
     WARM_UP_DURATION,
@@ -146,13 +143,14 @@ class AgentNode(Node):
                 weights_only=False
             )
             self.state_estimator_.load_state_dict(lstm_ckpt.get('state_estimator_state_dict', lstm_ckpt))
-            self.state_estimator_.eval()
+            self.state_estimator_.eval()  # Freeze for inference
             
             sac_ckpt = torch.load(
                 self.sac_model_path_, 
                 map_location=self.device_, 
                 weights_only=False
             )
+            
             self.actor_.load_state_dict(sac_ckpt['actor_state_dict'])
             self.actor_.eval()
         except Exception as e:
@@ -167,8 +165,7 @@ class AgentNode(Node):
         q_init = INITIAL_JOINT_CONFIG.astype(np.float32)
         qd_init = np.zeros(N_JOINTS, dtype=np.float32)
         
-        # We add a bit more than RNN sequence length
-        self.num_prefill_ = self.rnn_seq_len_ + 20
+        self.num_prefill_ = self.rnn_seq_len_ + 20  # Make sure more than RNN length
         
         for _ in range(self.num_prefill_):
             self.leader_q_history_.append(q_init)
@@ -238,17 +235,8 @@ class AgentNode(Node):
         return buffer, current_delay_scalar
 
     def _autoregressive_inference(self, initial_seq_t, steps_to_predict, current_delay_scalar):
-        """
-        Performs autoregressive rollout to close the delay gap.
+        """Performs autoregressive rollout to close the delay gap."""
         
-        Args:
-            initial_seq_t: Tensor (1, RNN_SEQ_LEN, Input_Dim) - The delayed history.
-            steps_to_predict: int - Number of steps to simulate forward.
-            current_delay_scalar: float - The normalized network delay (context).
-            
-        Returns:
-            predicted_q, predicted_qd: Final estimated state at t_now.
-        """
         # Clone to avoid modifying the actual history buffer logic outside
         current_seq_t = initial_seq_t.clone()
         
@@ -351,7 +339,6 @@ class AgentNode(Node):
                 pred_qd_t = full_seq_t[0, -1, N_JOINTS:2*N_JOINTS]
 
             # --- Actor Inference ---
-            
             # Convert tensors to numpy for Actor
             pred_q = pred_q_t.cpu().numpy()
             pred_qd = pred_qd_t.cpu().numpy()
