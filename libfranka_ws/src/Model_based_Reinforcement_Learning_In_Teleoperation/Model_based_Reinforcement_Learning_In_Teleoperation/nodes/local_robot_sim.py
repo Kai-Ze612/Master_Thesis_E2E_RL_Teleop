@@ -322,11 +322,6 @@ class LeaderRobotPublisher(Node):
         self._q_previous = self._q_start.copy()
         self.ik_solver.reset_trajectory(q_start=self._q_start)
         
-        # Note: In simulator, reset() might re-randomize params if configured.
-        # Here we largely keep the params unless the node is restarted, 
-        # or we could add logic to re-call randomized() here if desired.
-        # For now, we align state reset.
-        
         self.get_logger().info("Trajectory reset to initial state.")
 
 

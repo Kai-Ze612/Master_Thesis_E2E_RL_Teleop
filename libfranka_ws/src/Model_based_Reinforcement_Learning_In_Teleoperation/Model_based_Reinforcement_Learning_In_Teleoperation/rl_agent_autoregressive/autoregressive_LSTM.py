@@ -14,16 +14,14 @@ import numpy as np
 import argparse
 import logging
 from datetime import datetime
-from collections import deque
 import torch.nn.functional as F
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple
 import multiprocessing
-import random
 
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from torch.utils.tensorboard import SummaryWriter
 
-# Imports
+
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.training_env import TeleoperationEnvWithDelay
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.local_robot_simulator import TrajectoryType
@@ -40,16 +38,21 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
 # ----------------------------------------------------------------------------
 class AutoregressiveStateEstimator(nn.Module):
     def __init__(self, input_dim_total=15, output_dim=14):
+        """
+        input_dim: 14D(q + qd) + 1D (normalized delay)
+        output_dim: 14D (predicted q + qd)
+        """
         super().__init__()
         # Hardcoded to match checkpoint architecture (256 hidden, 2 layers)
         self.lstm = nn.LSTM(
             input_size=input_dim_total,
-            hidden_size=256, 
-            num_layers=2,
+            hidden_size=RNN_HIDDEN_DIM, 
+            num_layers=RNN_NUM_LAYERS,
             batch_first=True
         )
+        
         self.fc = nn.Sequential(
-            nn.Linear(256, 128),
+            nn.Linear(RNN_HIDDEN_DIM, 128),
             nn.ReLU(),
             nn.Linear(128, output_dim)
         )
@@ -65,9 +68,6 @@ class AutoregressiveStateEstimator(nn.Module):
         residual = self.fc(lstm_out[:, -1, :])
         return residual, new_hidden
 
-# ----------------------------------------------------------------------------
-# 2. Helpers
-# ----------------------------------------------------------------------------
 def is_trajectory_stable(delayed_seq: np.ndarray, true_target: np.ndarray) -> bool:
     if np.isnan(delayed_seq).any() or np.isnan(true_target).any(): return False
     if np.max(np.abs(delayed_seq[:, 7:14])) > 10.0: return False 
@@ -83,7 +83,7 @@ class ReplayBuffer:
     def __init__(self, buffer_size: int, device: torch.device):
         self.buffer_size = buffer_size
         self.device = device
-        self.ptr = 0
+        self.ptr = 0  # Pointer to the next insertion index
         self.size = 0
         self.seq_len = RNN_SEQUENCE_LENGTH
         self.state_dim = 15 
