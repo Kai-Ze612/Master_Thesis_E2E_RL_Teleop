@@ -195,13 +195,24 @@ class RemoteRobotSimulator:
         if self._render_enabled:
             self.render()
 
-        q_error_norm = np.linalg.norm(target_q - self.data.qpos[:self.n_joints])
+        # 1. Calculate Tracking Error (Target vs Actual Remote)
+        raw_tracking_diff = target_q - q_current
+        tracking_error_vec = self._normalize_angle(raw_tracking_diff)
+        tracking_error_norm = np.linalg.norm(tracking_error_vec)
+
+        # 2. Calculate Prediction Error (Target vs True Local Leader)
+        # [FIX] Compare against current_local_q_, NOT last_q_target
+        raw_pred_diff = target_q - q_current
+        prediction_error_vec = self._normalize_angle(raw_pred_diff)
+        prediction_error_norm = np.linalg.norm(prediction_error_vec)
         
         np.set_printoptions(precision=3, suppress=True, linewidth=200)
         print(f"\n[Sim Step {self.internal_tick}]")
+        print(f"  True Q:          {q_current}")
         print(f"  Predicted Target Q: {target_q}")
+        print(f"  Prediction Error Norm: {prediction_error_norm:.6f}\n")
         print(f"  Actual Remote Q:    {self.data.qpos[:self.n_joints]}")
-        print(f"  Joint Error Norm:   {q_error_norm:.6f} rad")
+        print(f"  Tracking Error Norm:  {tracking_error_norm:.6f}") 
         print(f"  ------------------------------------------------")
         print(f"  Tau PD (Baseline):  {tau_id}")
         print(f"  Tau RL (Action):    {self.last_executed_rl_torque}")
