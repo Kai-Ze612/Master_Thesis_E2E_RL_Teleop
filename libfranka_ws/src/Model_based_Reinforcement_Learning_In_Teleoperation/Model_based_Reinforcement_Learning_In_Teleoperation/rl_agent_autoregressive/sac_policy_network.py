@@ -1,14 +1,12 @@
 """
 Define the Network Architecture.
-Matches EXACTLY the structure of the 'autoregressive_estimator.pth' checkpoint.
 """
 
 import torch
 import torch.nn as nn
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Optional
 from torch.distributions import Normal
-from typing import Optional
 
 # Import configs for Actor/Critic
 # We use hardcoded values for StateEstimator to ensure it matches the checkpoint
@@ -21,7 +19,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     LOG_STD_MIN,
     LOG_STD_MAX,
 )
-
 
 class StateEstimator(nn.Module):
     """

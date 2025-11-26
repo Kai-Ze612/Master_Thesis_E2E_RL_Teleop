@@ -7,6 +7,11 @@ Pipeline:
 3. StateEstimator (Internal): Performs Autoregressive Rollout on delayed data to predict T_now.
 4. Observation: Assembled from RemoteState + PredictedState + History.
 5. RL Agent: Receives Observation, outputs Torque (7D).
+
+FIXES APPLIED:
+1. Residual scaling: MULTIPLY by TARGET_DELTA_SCALE (not divide)
+2. Delay update: INCREMENT delay during AR rollout
+3. Hidden state: MAINTAIN across AR steps using forward_step()
 """
 
 import gymnasium as gym
@@ -39,7 +44,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         randomize_trajectory: bool = False,
         seed: Optional[int] = None,
         render_mode: Optional[str] = None,
-        lstm_model_path: Optional[str] = cfg.LSTM_MODEL_PATH, # Changed to Optional
+        lstm_model_path: Optional[str] = cfg.LSTM_MODEL_PATH,
     ):
         super().__init__()
         
@@ -93,7 +98,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         if lstm_model_path is not None:
             self._load_lstm_model(lstm_model_path)
         else:
-            # print("Env initialized WITHOUT LSTM model (Passthrough Mode).")
             pass
 
         self._last_predicted_target: Optional[np.ndarray] = None
@@ -221,9 +225,14 @@ class TeleoperationEnvWithDelay(gym.Env):
 
     def _perform_ar_prediction_step(self) -> np.ndarray:
         """
-        Simulates the Autoregressive Loop with correct scaling and delay updates.
+        Autoregressive prediction using LSTM with CORRECTED behavior:
+        
+        FIX 1: Hidden state is initialized from input sequence and maintained
+        FIX 2: Uses forward_step() for single-step predictions
+        FIX 3: Residual is MULTIPLIED by TARGET_DELTA_SCALE (matching training)
+        FIX 4: Delay is INCREMENTED at each AR step (matching training)
         """
-        # --- PASSTHROUGH LOGIC ---
+        # --- PASSTHROUGH LOGIC (when no LSTM) ---
         delay = self.delay_simulator.get_observation_delay_steps(len(self.leader_q_history))
         idx = -1 - delay
         delayed_state = np.concatenate([self.leader_q_history[idx], self.leader_qd_history[idx]])
@@ -234,22 +243,26 @@ class TeleoperationEnvWithDelay(gym.Env):
 
         history_len = len(self.leader_q_history)
         
+        # During grace period, no delay
         if self.current_step < self.grace_period_steps:
             delay_steps = 0
         else:
             delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
-            
+        
+        # If no delay, return most recent observation directly
         if delay_steps == 0:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
             
+        # Compute normalized delay
         normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         most_recent_idx = -1 - delay_steps
         
-        # Build initial sequence
+        # Build initial sequence for LSTM
         seq_buffer = []
         start_idx = most_recent_idx - cfg.RNN_SEQUENCE_LENGTH + 1
         
         for i in range(start_idx, most_recent_idx + 1):
+            # Clamp index to valid range
             idx = max(-len(self.leader_q_history), i)
             step_vec = np.concatenate([
                 self.leader_q_history[idx],
@@ -260,36 +273,41 @@ class TeleoperationEnvWithDelay(gym.Env):
             
         input_tensor = torch.tensor(np.array(seq_buffer), dtype=torch.float32).unsqueeze(0).to(self.device)
             
+        # Limit AR steps to prevent runaway
         steps_to_run = min(delay_steps, self.max_ar_steps)
         
-        # FIX 1: Initialize hidden state from the sequence
+        # Time step for delay increment
+        dt = 1.0 / self.control_freq
+        
         with torch.no_grad():
+            # FIX 1: Initialize hidden state from the full input sequence
             _, hidden_state = self.lstm.lstm(input_tensor)
         
-        # FIX 2: Start AR loop from last observation
-        last_obs = input_tensor[0, -1, :]
-        curr_q = last_obs[:self.n_joints].clone()
-        curr_qd = last_obs[self.n_joints:2*self.n_joints].clone()
-        current_delay_norm = normalized_delay
-        
-        dt = 1.0 / self.control_freq  # DT in seconds
-        
-        with torch.no_grad():
+            # FIX 2: Extract last observation for AR loop initialization
+            last_obs = input_tensor[0, -1, :]
+            curr_q = last_obs[:self.n_joints].clone()
+            curr_qd = last_obs[self.n_joints:2*self.n_joints].clone()
+            current_delay_norm = normalized_delay
+            
+            # Autoregressive prediction loop
             for _ in range(steps_to_run):
-                # Build current input
+                # Build single-step input: (1, 1, 15)
                 delay_t = torch.tensor([current_delay_norm], device=self.device)
                 current_input = torch.cat([curr_q, curr_qd, delay_t], dim=0).view(1, 1, -1)
                 
-                # FIX 3: Use forward_step with hidden state
+                # FIX 3: Use forward_step with hidden state maintenance
                 residual_t, hidden_state = self.lstm.forward_step(current_input, hidden_state)
                 
-                # FIX 4: Correct scaling - MULTIPLY by TARGET_DELTA_SCALE (matching training)
+                # FIX 4: MULTIPLY by TARGET_DELTA_SCALE (matching AR training loop line 260)
+                # NOT divide - this was the critical bug!
                 residual = residual_t[0] * cfg.TARGET_DELTA_SCALE
                 
+                # Update state with residual
                 curr_q = curr_q + residual[:self.n_joints]
                 curr_qd = curr_qd + residual[self.n_joints:]
                 
-                # FIX 5: Update delay (time since observation increases as we predict forward)
+                # FIX 5: Update delay for next step (time since observation increases)
+                # Matches line 263 in autoregressive_LSTM.py training
                 current_delay_norm = current_delay_norm + (dt / cfg.DELAY_INPUT_NORM_FACTOR)
                 
         return np.concatenate([curr_q.cpu().numpy(), curr_qd.cpu().numpy()])
@@ -382,5 +400,6 @@ class TeleoperationEnvWithDelay(gym.Env):
 
     def render(self):
         pass
+        
     def close(self):
         if self.viewer is not None: plt.close(self.viewer)
