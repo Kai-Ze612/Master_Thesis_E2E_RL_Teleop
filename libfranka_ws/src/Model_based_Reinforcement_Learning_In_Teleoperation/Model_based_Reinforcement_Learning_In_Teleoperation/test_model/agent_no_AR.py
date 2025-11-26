@@ -62,7 +62,6 @@ class AgentNode(Node):
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
         self.last_leader_msg_arrival_time_ = self.get_clock().now().nanoseconds / 1e9
-        
         # Experiment config setup
         self.default_experiment_config_ = ExperimentConfig.LOW_DELAY.value
         self.declare_parameter('experiment_config', self.default_experiment_config_)
@@ -111,9 +110,6 @@ class AgentNode(Node):
         self.target_joint_names_ = [f'panda_joint{i+1}' for i in range(N_JOINTS)]
         self.rnn_seq_len_ = RNN_SEQUENCE_LENGTH
         
-        # Autoregressive Safety Limits
-        self.max_ar_steps_ = 50  # Cap prediction horizon to prevent compute freeze
-
         # Pre-fill with CORRECT Initial Config
         self._prefill_buffers()
         
@@ -134,9 +130,9 @@ class AgentNode(Node):
         self.remote_robot_state_subscriber_ = self.create_subscription(
             JointState, 'remote_robot/joint_states', self.remote_robot_state_callback, 100
         )
-        
+       
         self.control_timer_ = self.create_timer(self.dt_, self.control_loop_callback)
-        self.get_logger().info("Agent Node initialized (Autoregressive Mode).")
+        self.get_logger().info("Agent Node initialized.")
 
     def _load_models(self):
         try:
@@ -161,8 +157,8 @@ class AgentNode(Node):
 
     def _prefill_buffers(self) -> None:
         """
-        Pre-fill with INITIAL_JOINT_CONFIG.
-        Ensures the LSTM sees a valid state (Stationary Robot) instead of a discontinuity.
+        [FIX 1] Pre-fill with INITIAL_JOINT_CONFIG instead of Zeros.
+        This ensures the LSTM sees a valid state (Stationary Robot) instead of a discontinuity.
         """
         q_init = INITIAL_JOINT_CONFIG.astype(np.float32)
         qd_init = np.zeros(N_JOINTS, dtype=np.float32)
@@ -236,57 +232,6 @@ class AgentNode(Node):
         
         buffer = np.array(buffer_seq).flatten().astype(np.float32)
         return buffer, current_delay_scalar
-
-    def _autoregressive_inference(self, initial_seq_t, steps_to_predict, current_delay_scalar):
-        """
-        Performs autoregressive rollout to close the delay gap.
-        
-        Args:
-            initial_seq_t: Tensor (1, RNN_SEQ_LEN, Input_Dim) - The delayed history.
-            steps_to_predict: int - Number of steps to simulate forward.
-            current_delay_scalar: float - The normalized network delay (context).
-            
-        Returns:
-            predicted_q, predicted_qd: Final estimated state at t_now.
-        """
-        # Clone to avoid modifying the actual history buffer logic outside
-        current_seq_t = initial_seq_t.clone()
-        
-        # Extract the most recent known state (the "Anchor" for the first step)
-        last_obs = current_seq_t[0, -1, :] 
-        current_q = last_obs[:N_JOINTS]
-        current_qd = last_obs[N_JOINTS:2*N_JOINTS]
-
-        # Limit steps to ensure real-time performance
-        steps_to_run = min(steps_to_predict, self.max_ar_steps_)
-
-        for _ in range(steps_to_run):
-            # 1. Predict Next Step Residual
-            # AR Model predicts delta for t+1 given H_t
-            with torch.no_grad():
-                scaled_residual_t, _ = self.state_estimator_(current_seq_t)
-
-            # 2. Descale and Integrate
-            # residual = (q_next - q_curr) * Scale
-            pred_residual = scaled_residual_t[0] / TARGET_DELTA_SCALE
-            
-            # Update State
-            current_q = current_q + pred_residual[:N_JOINTS]
-            current_qd = current_qd + pred_residual[N_JOINTS:]
-            
-            # 3. Construct New Input Vector for Next Step
-            # Structure: [q, qd, delay_scalar]
-            # We assume delay_scalar remains constant (network condition context)
-            delay_tensor = torch.tensor([current_delay_scalar], device=self.device_)
-            new_step_input = torch.cat([current_q, current_qd, delay_tensor], dim=0)
-            
-            # 4. Update Sliding Window Sequence
-            # Remove oldest step (index 0), append new step
-            # current_seq_t shape: (1, Seq, Dim)
-            new_step_input = new_step_input.view(1, 1, -1)
-            current_seq_t = torch.cat([current_seq_t[:, 1:, :], new_step_input], dim=1)
-
-        return current_q, current_qd
         
     def control_loop_callback(self) -> None:
         if not self.is_leader_ready_ or not self.is_remote_ready_:
@@ -294,7 +239,7 @@ class AgentNode(Node):
         
         self.warmup_steps_count_ += 1
 
-        if self.warmup_steps_count_ < self.warmup_steps_:     
+        if self.warmup_steps_count_ < self.warmup_steps_:    
             if self.warmup_steps_count_ % 50 == 0:
                  self.get_logger().info(f"STANDBY... {self.warmup_steps_ - self.warmup_steps_count_} steps left")
             
@@ -321,68 +266,69 @@ class AgentNode(Node):
             current_time = self.get_clock().now().nanoseconds / 1e9
             time_since_last_msg = current_time - self.last_leader_msg_arrival_time_
             
-            # Calculate how many packets we are "missing" (staleness)
             packet_staleness_seconds = max(0.0, time_since_last_msg - self.dt_)
             
-            # Get normalized delayed leader data
+            # get normalized delayed leader data WITH staleness
             raw_delayed_sequence, normalized_delay_scalar = self._get_delayed_leader_data(
                 force_no_delay=is_in_grace_period,
                 extra_delay_seconds=packet_staleness_seconds
             )
             
-            # Calculate Total Steps to Predict
-            # normalized_delay_scalar was computed as (obs_delay_steps + staleness) / NORM_FACTOR
-            total_delay_seconds = normalized_delay_scalar * DELAY_INPUT_NORM_FACTOR
-            total_steps_to_predict = int(total_delay_seconds / self.dt_)
-            
             # 15D data per step: [q(7), qd(7), delay(1)]
             full_seq_t = torch.tensor(raw_delayed_sequence, dtype=torch.float32).to(self.device_).reshape(1, self.rnn_seq_len_, -1)
             
-            # --- AUTOREGRESSIVE INFERENCE ---
-            if total_steps_to_predict > 0:
-                pred_q_t, pred_qd_t = self._autoregressive_inference(
-                    full_seq_t, 
-                    total_steps_to_predict, 
-                    normalized_delay_scalar
-                )
-            else:
-                # Fallback: Delay is effectively zero, use last observed
-                pred_q_t = full_seq_t[0, -1, :N_JOINTS]
-                pred_qd_t = full_seq_t[0, -1, N_JOINTS:2*N_JOINTS]
+            # Remote State (Batch=1, 14)
+            raw_remote_state = np.concatenate([self.current_remote_q_, self.current_remote_qd_])
+            remote_state_t = torch.tensor(raw_remote_state, dtype=torch.float32).to(self.device_).reshape(1, -1)
 
-            # --- Actor Inference ---
-            
-            # Convert tensors to numpy for Actor
-            pred_q = pred_q_t.cpu().numpy()
-            pred_qd = pred_qd_t.cpu().numpy()
-            
-            # Remote State History
-            rem_q_hist = np.concatenate(list(self.remote_q_history_))
-            rem_qd_hist = np.concatenate(list(self.remote_qd_history_))
-            
-            error_q = pred_q - self.current_remote_q_
-            error_qd = pred_qd - self.current_remote_qd_
-            
-            obs_vec = np.concatenate([
-                self.current_remote_q_,
-                self.current_remote_qd_,
-                rem_q_hist,
-                rem_qd_hist,
-                pred_q,
-                pred_qd,
-                error_q,
-                error_qd,
-                [normalized_delay_scalar]
-            ]).astype(np.float32)
-            
-            actor_input_t = torch.tensor(obs_vec, dtype=torch.float32).to(self.device_).unsqueeze(0)
-            action_t, _, _ = self.actor_.sample(actor_input_t, deterministic=True)
+            # Local robot state prediction
+            with torch.no_grad():
+                # Get Scaled Residual from LSTM
+                scaled_residual_t, _ = self.state_estimator_(full_seq_t)
+                
+                # Descale
+                predicted_residual_t = scaled_residual_t / TARGET_DELTA_SCALE
+                
+                # Add to Delayed Observation (The "Anchor")
+                last_delayed_obs_t = full_seq_t[:, -1, :N_JOINTS*2] 
+                
+                # Recover Absolute State
+                predicted_state_t = last_delayed_obs_t + predicted_residual_t
+                
+                pred_state_np = predicted_state_t.cpu().numpy().flatten()
+                pred_q = pred_state_np[:N_JOINTS]
+                pred_qd = pred_state_np[N_JOINTS:]
+                
+                rem_q_hist = np.concatenate(list(self.remote_q_history_))
+                rem_qd_hist = np.concatenate(list(self.remote_qd_history_))
+                
+                error_q = pred_q - self.current_remote_q_
+                error_qd = pred_qd - self.current_remote_qd_
+                
+                obs_vec = np.concatenate([
+                    self.current_remote_q_,
+                    self.current_remote_qd_,
+                    rem_q_hist,
+                    rem_qd_hist,
+                    pred_q,
+                    pred_qd,
+                    error_q,
+                    error_qd,
+                    [normalized_delay_scalar]
+                ]).astype(np.float32)
+                
+                actor_input_t = torch.tensor(obs_vec, dtype=torch.float32).to(self.device_).unsqueeze(0)
+                action_t, _, _ = self.actor_.sample(actor_input_t, deterministic=True)
 
             # Publish Results
+            predicted_state_np = predicted_state_t.cpu().numpy().flatten()
+            predicted_q = predicted_state_np[:N_JOINTS]
+            predicted_qd = predicted_state_np[N_JOINTS:] 
+
             tau_rl = action_t.cpu().numpy().flatten()
             tau_rl[-1] = 0.0 # Safety: No torque on gripper
             
-            self.publish_predicted_target(pred_q, pred_qd)
+            self.publish_predicted_target(predicted_q, predicted_qd)
             self.publish_tau_compensation(tau_rl)
             
         except Exception as e:

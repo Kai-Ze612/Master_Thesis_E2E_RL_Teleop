@@ -10,6 +10,7 @@ Pipelines:
 6. publish to '/joint_tau/torques_desired' (Float64MultiArray) for robot control
 """
 
+
 # ROS2 imports
 import rclpy
 from rclpy.node import Node
@@ -218,6 +219,7 @@ class RemoteRobotNode(Node):
             self.get_logger().warn(f"Waiting for data...", throttle_duration_sec=2.0)
             return
 
+        # [REVERTED] Use raw target directly without Slew Rate Limiting
         q_target = self.target_q_ 
         qd_target = self.target_qd_ 
         
@@ -225,16 +227,14 @@ class RemoteRobotNode(Node):
             q_current = self.current_q_
             qd_current = self.current_qd_
             
-            # PD Control now outputs Acceleration ---
+            # PD Control
             q_error = self._normalize_angle(q_target - q_current)
             qd_error = qd_target - qd_current
             
             # acc_desired is in rad/s^2
-            # stiffness in Acceleration space, not Torque space.
             acc_desired = self.kp_ * q_error + self.kd_ * qd_error
             
             # Use Computed Torque (Inverse Dynamics)
-            # This calculates: tau = M(q)*acc_desired + C(q,qd)*qd + G(q)
             tau_id = self._get_inverse_dynamics(q_current, qd_current, acc_desired)
             
             # RL compensation
@@ -246,7 +246,7 @@ class RemoteRobotNode(Node):
             tau_rl[-2] = 0.0
             
             # Final Command
-            tau_command = tau_id + tau_rl * 0
+            tau_command = tau_id + tau_rl * 0 # NOTE: RL is currently multiplied by 0
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
             # Apply action delay
@@ -268,7 +268,7 @@ class RemoteRobotNode(Node):
             
             ee_msg = PointStamped()
             ee_msg.header.stamp = self.get_clock().now().to_msg()
-            ee_msg.header.frame_id = "world" # or "panda_link0" depending on your URDF
+            ee_msg.header.frame_id = "world" 
             ee_msg.point.x = float(ee_pos[0])
             ee_msg.point.y = float(ee_pos[1])
             ee_msg.point.z = float(ee_pos[2])
@@ -277,13 +277,13 @@ class RemoteRobotNode(Node):
 
             self.get_logger().info(
                 f"\n--- DEBUG (throttled 0.1s) ---\n"
-                f"True q:       {np.round(self.current_local_q_, 3)}\n"
-                f"Predicted q:  {np.round(q_target, 3)}\n"
-                f"Remote q:     {np.round(q_current, 3)}\n"
-                f"EE Pos:       {np.round(ee_pos, 3)}\n"
-                f"Tau ID:       {np.round(tau_id, 3)} (Includes Gravity)\n"
-                f"Tau RL:       {np.round(tau_rl, 3)}\n",
-                throttle_duration_sec=0.005
+                f"True q:        {np.round(self.current_local_q_, 3)}\n"
+                f"Predicted q:   {np.round(q_target, 3)}\n"
+                f"Remote q:      {np.round(q_current, 3)}\n"
+                f"EE Pos:        {np.round(ee_pos, 3)}\n"
+                f"Tau ID:        {np.round(tau_id, 3)} (Includes Gravity)\n"
+                f"Tau RL:        {np.round(tau_rl, 3)}\n",
+                throttle_duration_sec=0.001
             )
 
         except Exception as e:

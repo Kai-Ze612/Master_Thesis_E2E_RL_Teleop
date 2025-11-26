@@ -7,13 +7,12 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251123_183945/best_policy.pth"
-# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Pretrain_LSTM_LateFusion_LOW_DELAY_20251123_174526/estimator_best.pth"
-
+DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251126_000433/best_policy.pth"
+LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/Autoregressive_LSTM_LOW_DELAY_20251126_000248/autoregressive_estimator.pth"
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Autoregressive_LSTM_LOW_DELAY_20251126_000248/autoregressive_estimator.pth"
+# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/lstm_training_output/Autoregressive_LSTM_LOW_DELAY_20251126_000248/autoregressive_estimator.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -37,7 +36,7 @@ JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 WARM_UP_DURATION = 1  # sec (before starting moving)
 NO_DELAY_DURATION = 0.5 # sec (before starting delay simulation)
 
-MAX_JOINT_CHANGE_PER_STEP = 0.01 # radians, for IK solver continuity
+MAX_JOINT_CHANGE_PER_STEP = 0.01
 
 ######################################
 # Control Parameters
@@ -45,8 +44,8 @@ MAX_JOINT_CHANGE_PER_STEP = 0.01 # radians, for IK solver continuity
 DEFAULT_CONTROL_FREQ = 200
 DEFAULT_PUBLISH_FREQ = 200
 
-DEFAULT_KP_REMOTE = np.array([81.0, 81.0, 64.0, 49.0, 49.0, 16.0, 4.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([18.0,  15.0,  16.0,  14.0,  14.0, 8.0, 4.0], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([64.0, 64.0, 64.0, 36.0, 36.0, 16.0, 4.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([10.0,  10.0,  10.0,  8.0,  8.0, 4.0, 4.0], dtype=np.float32)
 
 ######################################
 # IK Solver Parameterss
@@ -85,8 +84,8 @@ IK_NULL_SPACE_GAIN = 0.5
 ######################################
 # Trajectory Generation Parameters
 ######################################
-TRAJECTORY_CENTER = np.array([0.3, 0, 0.4], dtype=np.float32)
-TRAJECTORY_SCALE = np.array([0.1, 0.3, 0.02], dtype=np.float32)
+TRAJECTORY_CENTER = np.array([0.4, 0, 0.4], dtype=np.float32)
+TRAJECTORY_SCALE = np.array([0.1, 0.2, 0.02], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1  # Hz
 
 ######################################
