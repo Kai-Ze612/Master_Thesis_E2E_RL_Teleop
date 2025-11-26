@@ -1,102 +1,212 @@
 """
-Define the Network Architecture of:
-1. LSTM state predicter
-2. Actor: The SAC stochastic policy, which takes the *predicted* state
-    and outputs a residual torque compensation.
-3. Critic: The SAC Q-function, which evaluates the value of a
-    (predicted_state, action) pair.
+Define the Network Architecture.
+Matches EXACTLY the structure of the 'autoregressive_estimator.pth' checkpoint.
 """
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import numpy as np
+from typing import Tuple
 from torch.distributions import Normal
 
-# Constants matching your config
-N_JOINTS = 7
-# Input to LSTM: (q, qd, delay_scalar) -> 7 + 7 + 1 = 15
-LSTM_INPUT_DIM = 2 * N_JOINTS + 1 
-HIDDEN_DIM = 1024
-SEQ_LEN = 20  # RNN_SEQUENCE_LENGTH
+# Import configs for Actor/Critic
+# We use hardcoded values for StateEstimator to ensure it matches the checkpoint
+from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+    N_JOINTS,
+    OBS_DIM,
+    MAX_TORQUE_COMPENSATION,
+    SAC_MLP_HIDDEN_DIMS,
+    SAC_ACTIVATION,
+    LOG_STD_MIN,
+    LOG_STD_MAX,
+)
 
 class StateEstimator(nn.Module):
     """
-    LSTM-based State Estimator for Autoregressive Prediction.
-    Input: Sequence of [q, qd, delay_scalar] (Dim 15)
-    Output: Residual prediction for ONE step ahead [delta_q, delta_qd] (Dim 14)
+    LSTM-based State Estimator.
+    Structure matches the pre-trained checkpoint exactly:
+    - Input: 15 (7 q + 7 qd + 1 delay)
+    - Hidden: 256
+    - Head: 'fc' (not 'prediction_head')
+    - No LayerNorm ('input_ln')
     """
-    def __init__(self, input_dim=LSTM_INPUT_DIM, hidden_dim=HIDDEN_DIM, num_layers=2):
-        super(StateEstimator, self).__init__()
+    def __init__(
+        self,
+        input_dim_total: int = 15,  # FIXED: Checkpoint expects 15 inputs
+        hidden_dim: int = 256,      # FIXED: Checkpoint expects 256 hidden size
+        num_layers: int = 2,
+        output_dim: int = 14,
+    ):
+        super().__init__()
         
-        self.hidden_dim = hidden_dim
-        self.num_layers = num_layers
-        
-        # Layer Norm on input for stability
-        self.input_ln = nn.LayerNorm(input_dim)
-        
-        # LSTM Core
-        self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
-        
-        # Prediction Head (Predicts 14-dim residual)
-        self.prediction_head = nn.Sequential(
-            nn.Linear(hidden_dim, 256),
-            nn.Mish(),
-            nn.Linear(256, 2 * N_JOINTS) # Output: 14 (q + qd)
+        # 1. LSTM Core
+        self.lstm = nn.LSTM(
+            input_size=input_dim_total,
+            hidden_size=hidden_dim,
+            num_layers=num_layers,
+            batch_first=True
         )
+        
+        # 2. Prediction Head (Must be named 'fc')
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_dim, 128),
+            nn.ReLU(),
+            nn.Linear(128, output_dim)
+        )
+        
+        # NOTE: Removed 'input_ln' as it does not exist in the checkpoint
 
     def forward(self, x):
-        # x shape: (Batch, Seq_Len, 15)
-        x = self.input_ln(x)
-        
+        """
+        Forward pass.
+        x: (Batch, Seq_Len, 15)
+        Returns: (residual, last_hidden_state)
+        """
         # LSTM forward
-        out, _ = self.lstm(x)
+        lstm_out, _ = self.lstm(x)
         
         # Take the last time step output
-        last_hidden = out[:, -1, :]
+        last_hidden = lstm_out[:, -1, :]
         
         # Predict residual
-        residual = self.prediction_head(last_hidden)
+        residual = self.fc(last_hidden)
         
         return residual, last_hidden
 
+
 class Actor(nn.Module):
     """
-    SAC Actor Network.
+    SAC Actor Network (Stochastic).
     """
-    def __init__(self, state_dim, action_dim=N_JOINTS, hidden_dim=256, log_std_min=-20, log_std_max=2):
-        super(Actor, self).__init__()
+    def __init__(
+        self,
+        state_dim: int = OBS_DIM,         # Defaults to Config (112D)
+        action_dim: int = N_JOINTS,       # Defaults to Config (7D)
+        hidden_dims: list = SAC_MLP_HIDDEN_DIMS,
+        activation: str = SAC_ACTIVATION
+    ):
+        super().__init__()
+        self.activation_fn = self._get_activation(activation)
         
-        self.log_std_min = log_std_min
-        self.log_std_max = log_std_max
+        # Build MLP Backbone
+        layers = []
+        last_dim = state_dim
+        for h_dim in hidden_dims:
+            layers.append(nn.Linear(last_dim, h_dim))
+            layers.append(self.activation_fn())
+            last_dim = h_dim
+            
+        self.backbone = nn.Sequential(*layers)
         
-        self.l1 = nn.Linear(state_dim, hidden_dim)
-        self.l2 = nn.Linear(hidden_dim, hidden_dim)
-        self.l3 = nn.Linear(hidden_dim, hidden_dim)
+        # Output Heads
+        self.fc_mean = nn.Linear(last_dim, action_dim)
+        self.fc_log_std = nn.Linear(last_dim, action_dim)
         
-        self.mean_linear = nn.Linear(hidden_dim, action_dim)
-        self.log_std_linear = nn.Linear(hidden_dim, action_dim)
+        self._initialize_weights()
+        
+        # register buffers to handle device movement automatically
+        self.register_buffer('action_scale', torch.tensor(MAX_TORQUE_COMPENSATION, dtype=torch.float32))
+        self.register_buffer('action_bias', torch.tensor(0.0, dtype=torch.float32))
 
-    def forward(self, state):
-        x = F.relu(self.l1(state))
-        x = F.relu(self.l2(x))
-        x = F.relu(self.l3(x))
-        
-        mean = self.mean_linear(x)
-        log_std = self.log_std_linear(x)
-        log_std = torch.clamp(log_std, self.log_std_min, self.log_std_max)
-        
+    def _get_activation(self, activation_name: str) -> nn.Module:
+        if activation_name.lower() == "relu": return nn.ReLU
+        elif activation_name.lower() == "tanh": return nn.Tanh
+        elif activation_name.lower() == "elu": return nn.ELU
+        elif activation_name.lower() == "mish": return nn.Mish
+        else: raise ValueError(f"Unsupported activation: {activation_name}")
+
+    def _initialize_weights(self):
+        for module in self.modules():
+            if isinstance(module, nn.Linear):
+                nn.init.orthogonal_(module.weight, gain=np.sqrt(2))
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0.0)
+
+    def forward(self, state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        x = self.backbone(state)
+        mean = self.fc_mean(x)
+        log_std = self.fc_log_std(x)
+        # Clamp log_std to maintain numerical stability
+        log_std = torch.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
         return mean, log_std
 
-    def sample(self, state, deterministic=False):
+    def sample(self, state: torch.Tensor, deterministic: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         mean, log_std = self.forward(state)
         std = log_std.exp()
         
-        if deterministic:
-            return torch.tanh(mean), mean, log_std
-            
-        normal = Normal(mean, std)
-        x_t = normal.rsample()  # Reparameterization trick
-        action = torch.tanh(x_t)
+        normal_dist = Normal(mean, std)
         
-        # Enforce action bounds if necessary (usually handled by tanh scaling outside)
-        return action, normal.log_prob(x_t), x_t
+        if deterministic:
+            raw_action = mean
+        else:
+            raw_action = normal_dist.rsample() # Reparameterization trick
+            
+        # Apply Tanh to squash to [-1, 1]
+        tanh_action = torch.tanh(raw_action)
+        
+        # Calculate Log Prob
+        log_prob = normal_dist.log_prob(raw_action)
+        log_prob -= torch.log(1.0 - tanh_action.pow(2) + 1e-6)
+        log_prob = log_prob.sum(dim=-1, keepdim=True)
+        
+        # Scale to physical torque limits
+        scaled_action = self.action_scale * tanh_action + self.action_bias
+        
+        return scaled_action, log_prob, raw_action
+
+
+class Critic(nn.Module):
+    """
+    SAC Critic Network (Twin Q-Networks).
+    """
+    def __init__(
+        self,
+        state_dim: int = OBS_DIM,         # Defaults to Config (112D)
+        action_dim: int = N_JOINTS,       # Defaults to Config (7D)
+        hidden_dims: list = SAC_MLP_HIDDEN_DIMS,
+        activation: str = SAC_ACTIVATION
+    ):
+        super().__init__()
+        self.activation_fn = self._get_activation(activation)
+        
+        # Q1 Architecture
+        layers_q1 = []
+        last_dim_q1 = state_dim + action_dim
+        for h_dim in hidden_dims:
+            layers_q1.append(nn.Linear(last_dim_q1, h_dim))
+            layers_q1.append(self.activation_fn())
+            last_dim_q1 = h_dim
+        layers_q1.append(nn.Linear(last_dim_q1, 1))
+        self.q1_net = nn.Sequential(*layers_q1)
+
+        # Q2 Architecture (Twin)
+        layers_q2 = []
+        last_dim_q2 = state_dim + action_dim
+        for h_dim in hidden_dims:
+            layers_q2.append(nn.Linear(last_dim_q2, h_dim))
+            layers_q2.append(self.activation_fn())
+            last_dim_q2 = h_dim
+        layers_q2.append(nn.Linear(last_dim_q2, 1))
+        self.q2_net = nn.Sequential(*layers_q2)
+        
+        self._initialize_weights()
+
+    def _get_activation(self, activation_name: str) -> nn.Module:
+        if activation_name.lower() == "relu": return nn.ReLU
+        elif activation_name.lower() == "tanh": return nn.Tanh
+        elif activation_name.lower() == "elu": return nn.ELU
+        elif activation_name.lower() == "mish": return nn.Mish
+        else: raise ValueError(f"Unsupported activation: {activation_name}")
+
+    def _initialize_weights(self):
+        for module in self.modules():
+            if isinstance(module, nn.Linear):
+                nn.init.orthogonal_(module.weight, gain=np.sqrt(2))
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0.0)
+
+    def forward(self, state: torch.Tensor, action: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        sa = torch.cat([state, action], dim=1)
+        q1 = self.q1_net(sa)
+        q2 = self.q2_net(sa)
+        return q1, q2

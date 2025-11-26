@@ -39,7 +39,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         randomize_trajectory: bool = False,
         seed: Optional[int] = None,
         render_mode: Optional[str] = None,
-        lstm_model_path: str = cfg.LSTM_MODEL_PATH, 
+        lstm_model_path: Optional[str] = cfg.LSTM_MODEL_PATH, # Changed to Optional
     ):
         super().__init__()
         
@@ -89,12 +89,17 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.grace_period_steps = int(cfg.NO_DELAY_DURATION * self.control_freq)
 
         # --- LSTM State Estimator Setup ---
-        self._load_lstm_model(lstm_model_path)
+        self.lstm = None
+        if lstm_model_path is not None:
+            self._load_lstm_model(lstm_model_path)
+        else:
+            # print("Env initialized WITHOUT LSTM model (Passthrough Mode).")
+            pass
+
         self._last_predicted_target: Optional[np.ndarray] = None
-        self.max_ar_steps = 50 # Safety cap matching AgentNode
+        self.max_ar_steps = 50 
         
         # --- Action Space (TORQUE ONLY) ---
-        # 7 Dimensions
         self.action_space = spaces.Box(
             low=-cfg.MAX_TORQUE_COMPENSATION,
             high=cfg.MAX_TORQUE_COMPENSATION, 
@@ -103,10 +108,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         )
         
         # --- Observation Space ---
-        # Matches OBS_DIM (112D)
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(cfg.OBS_DIM,), dtype=np.float32)
         
-        # State tracking
         self.last_target_q: Optional[np.ndarray] = None 
 
     def _load_lstm_model(self, path):
@@ -116,20 +119,16 @@ class TeleoperationEnvWithDelay(gym.Env):
             
         try:
             self.lstm = StateEstimator().to(self.device)
-            # Load checkpoint
             checkpoint = torch.load(path, map_location=self.device, weights_only=False)
             
-            # Handle dictionary vs direct state_dict
             if 'state_estimator_state_dict' in checkpoint:
                 self.lstm.load_state_dict(checkpoint['state_estimator_state_dict'])
             else:
                 self.lstm.load_state_dict(checkpoint)
                 
-            self.lstm.eval() # Set to evaluation mode
+            self.lstm.eval()
             for param in self.lstm.parameters():
-                param.requires_grad = False # Freeze weights
-            
-            # print(f"Environment loaded LSTM model from {path}")
+                param.requires_grad = False
         except Exception as e:
             raise RuntimeError(f"Failed to load LSTM in Environment: {e}")
 
@@ -140,23 +139,19 @@ class TeleoperationEnvWithDelay(gym.Env):
         self._step_counter = 0
         self._last_predicted_target = None
         
-        # Reset Simulators
         leader_start_q, _ = self.leader.reset(seed=seed)
         self.remote_robot.reset(initial_qpos=self.initial_qpos)
         
-        # Clear Buffers
         self.leader_q_history.clear()
         self.leader_qd_history.clear()
         self.remote_q_history.clear()
         self.remote_qd_history.clear()
         
-        # Pre-fill Leader Buffer (to allow LSTM inputs immediately)
         prefill_count = cfg.RNN_SEQUENCE_LENGTH + 20
         for _ in range(prefill_count):
             self.leader_q_history.append(leader_start_q.copy())
             self.leader_qd_history.append(np.zeros(self.n_joints))
             
-        # Reset Remote History
         start_target_q = leader_start_q.copy()
         for _ in range(cfg.REMOTE_HISTORY_LEN):
             self.remote_q_history.append(start_target_q.copy())
@@ -171,26 +166,22 @@ class TeleoperationEnvWithDelay(gym.Env):
         self._step_counter += 1
         self.current_step += 1
         
-        # 1. Step Leader (Ground Truth)
+        # 1. Step Leader
         new_leader_q, new_leader_qd, _, _, _, _ = self.leader.step()
         self.leader_q_history.append(new_leader_q.copy())
         self.leader_qd_history.append(new_leader_qd.copy())
 
-        # 2. Perform LSTM Inference (Autoregressive)
-        # We perform prediction based on the delayed view of the leader state
+        # 2. LSTM Inference
         current_predicted_target = self._perform_ar_prediction_step()
         self._last_predicted_target = current_predicted_target
 
         if self.steps_remaining_in_warmup > 0:
             self.steps_remaining_in_warmup -= 1
-            # During warmup, hold current delayed position
             safe_target_q = self._get_delayed_q()
             torque_compensation = np.zeros(self.n_joints)
         else:
-            # Normal Operation
             raw_target_q = current_predicted_target[:self.n_joints]
             
-            # --- Safety Ramp Logic ---
             if self.last_target_q is None:
                 self.last_target_q = self.remote_robot.get_joint_state()[0]
 
@@ -199,31 +190,26 @@ class TeleoperationEnvWithDelay(gym.Env):
             safe_target_q = self.last_target_q + clamped_delta_q
             self.last_target_q = safe_target_q.copy()
             
-            torque_compensation = action # RL Output (7D)
+            torque_compensation = action
 
-        # 3. Step Remote Robot
-        # Use prediction velocity as feedforward
+        # 3. Step Remote
         target_qd = current_predicted_target[self.n_joints:]
-        
         self.remote_robot.step(safe_target_q, target_qd, torque_compensation)
         
-        # 4. Reward Calculation
+        # 4. Reward & Term
         reward, r_tracking = self._calculate_reward(action)
         self.hist_total_reward.append(reward)
         self.hist_tracking_reward.append(r_tracking)
         
-        # 5. Check Termination
         remote_q, _ = self.remote_robot.get_joint_state()
         true_target = self.get_true_current_target()
         
-        # Check physical limits
         joint_error_norm = np.linalg.norm(true_target[:self.n_joints] - remote_q)
         terminated, term_penalty = self._check_termination(joint_error_norm, remote_q)
         if terminated: reward += term_penalty
         
         truncated = self.current_step >= self.max_episode_steps
 
-        # 6. Render
         if self.render_mode == "human": self.render()
 
         return self._get_observation(), reward, terminated, truncated, self._get_info()
@@ -235,21 +221,26 @@ class TeleoperationEnvWithDelay(gym.Env):
 
     def _perform_ar_prediction_step(self) -> np.ndarray:
         """
-        Simulates the Autoregressive Loop found in AgentNode.
-        Returns: 14D vector [pred_q, pred_qd] at t_now.
+        Simulates the Autoregressive Loop.
+        If self.lstm is None, returns delayed state (Passthrough).
         """
+        # --- PASSTHROUGH LOGIC ---
+        delay = self.delay_simulator.get_observation_delay_steps(len(self.leader_q_history))
+        idx = -1 - delay
+        delayed_state = np.concatenate([self.leader_q_history[idx], self.leader_qd_history[idx]])
+        
+        if self.lstm is None:
+            return delayed_state
+        # -------------------------
+
         history_len = len(self.leader_q_history)
         
-        # Determine Delay
         if self.current_step < self.grace_period_steps:
             delay_steps = 0
         else:
             delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
             
         normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
-        
-        # Prepare History Sequence (Input to LSTM)
-        # We need seq [T_delayed - seq_len : T_delayed]
         most_recent_idx = -1 - delay_steps
         
         seq_buffer = []
@@ -264,17 +255,14 @@ class TeleoperationEnvWithDelay(gym.Env):
             ])
             seq_buffer.append(step_vec)
             
-        # Shape: (1, Seq_Len, 15)
         input_tensor = torch.tensor(np.array(seq_buffer), dtype=torch.float32).unsqueeze(0).to(self.device)
         
-        # Autoregressive Loop
         if delay_steps == 0:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
             
         steps_to_run = min(delay_steps, self.max_ar_steps)
         current_seq_t = input_tensor.clone()
         
-        # Anchor state
         last_obs = current_seq_t[0, -1, :]
         curr_q = last_obs[:self.n_joints]
         curr_qd = last_obs[self.n_joints:2*self.n_joints]
@@ -283,51 +271,36 @@ class TeleoperationEnvWithDelay(gym.Env):
         
         with torch.no_grad():
             for _ in range(steps_to_run):
-                # Predict Residual
                 residual_t, _ = self.lstm(current_seq_t)
                 residual = residual_t[0] / cfg.TARGET_DELTA_SCALE
-                
-                # Update State
                 curr_q = curr_q + residual[:self.n_joints]
                 curr_qd = curr_qd + residual[self.n_joints:]
-                
-                # Update Sequence
                 new_input = torch.cat([curr_q, curr_qd, delay_tensor], dim=0).view(1, 1, -1)
                 current_seq_t = torch.cat([current_seq_t[:, 1:, :], new_input], dim=1)
                 
         return np.concatenate([curr_q.cpu().numpy(), curr_qd.cpu().numpy()])
 
     def _get_observation(self) -> np.ndarray:
-        """Constructs the 112D observation."""
-        
-        # 1. Remote State
         remote_q, remote_qd = self.remote_robot.get_joint_state()
-        
-        # 2. Update History Buffers
         self.remote_q_history.append(remote_q.copy())
         self.remote_qd_history.append(remote_qd.copy())
         
-        # 3. Get Prediction
         if self._last_predicted_target is None:
              self._last_predicted_target = self._perform_ar_prediction_step()
              
         pred_q = self._last_predicted_target[:self.n_joints]
         pred_qd = self._last_predicted_target[self.n_joints:]
         
-        # 4. Calc Error
         error_q = pred_q - remote_q
         error_qd = pred_qd - remote_qd
         
-        # 5. Flatten History
         rem_q_hist = np.concatenate(list(self.remote_q_history))
         rem_qd_hist = np.concatenate(list(self.remote_qd_history))
         
-        # 6. Delay Scalar
         hist_len = len(self.leader_q_history)
         d_steps = 0 if self.current_step < self.grace_period_steps else self.delay_simulator.get_observation_delay_steps(hist_len)
         norm_delay = float(d_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         
-        # Concatenate
         obs = np.concatenate([
             remote_q, remote_qd, 
             rem_q_hist, rem_qd_hist,
@@ -343,73 +316,57 @@ class TeleoperationEnvWithDelay(gym.Env):
             return np.concatenate([self.initial_qpos, np.zeros(self.n_joints)])
         return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
 
+    def get_delayed_target_buffer(self, buffer_length: int) -> np.ndarray:
+        """Helper for LSTM pre-training data collection."""
+        history_len = len(self.leader_q_history)
+        if history_len == 0:
+             # Just return initial state padded
+             init_vec = np.concatenate([self.initial_qpos, np.zeros(self.n_joints), [0.0]])
+             return np.tile(init_vec, (buffer_length, 1)).flatten().astype(np.float32)
+
+        delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
+        normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
+        most_recent_idx = -1 - delay_steps
+        
+        buffer_seq = []
+        for i in range(-buffer_length + 1, 1): 
+            target_history_idx = most_recent_idx + i 
+            safe_idx = np.clip(target_history_idx, -history_len, -1)
+            
+            step_vector = np.concatenate([
+                self.leader_q_history[safe_idx],
+                self.leader_qd_history[safe_idx],
+                [normalized_delay]
+            ])
+            buffer_seq.append(step_vector)
+            
+        return np.array(buffer_seq).flatten().astype(np.float32)
+
     def _calculate_reward(self, action: np.ndarray) -> Tuple[float, float]:
         remote_q, remote_qd = self.remote_robot.get_joint_state()
         true_target = self.get_true_current_target()
         
         pos_err = true_target[:self.n_joints] - remote_q
         vel_err = true_target[self.n_joints:] - remote_qd
-        
         r_pos = -cfg.TRACKING_ERROR_SCALE * np.sum(pos_err**2)
         r_vel = -cfg.VELOCITY_ERROR_SCALE * np.sum(vel_err**2)
         r_tracking = r_pos + r_vel
-        
         r_action = -cfg.ACTION_PENALTY_WEIGHT * np.mean(action**2)
-        
         return float(r_tracking + r_action), float(r_tracking)
 
     def _check_termination(self, joint_error: float, remote_q: np.ndarray) -> Tuple[bool, float]:
         if not np.all(np.isfinite(remote_q)): return True, -100.0
-        
         at_limits = (np.any(remote_q <= self.joint_limits_lower + cfg.JOINT_LIMIT_MARGIN) or 
                      np.any(remote_q >= self.joint_limits_upper - cfg.JOINT_LIMIT_MARGIN))
-                     
         high_error = joint_error > self.max_joint_error
-        
         terminated = at_limits or high_error
         penalty = -10.0 if terminated else 0.0
         return terminated, penalty
 
     def _get_info(self) -> Dict[str, Any]:
-        remote_q, _ = self.remote_robot.get_joint_state()
-        true_target = self.get_true_current_target()[:self.n_joints]
-        
-        info = {
-            'real_time_joint_error': np.linalg.norm(true_target - remote_q),
-            'prediction_error': 0.0
-        }
-        
-        if self._last_predicted_target is not None:
-             pred_q = self._last_predicted_target[:self.n_joints]
-             info['prediction_error'] = np.linalg.norm(true_target - pred_q)
-             
-        return info
+        return {}
 
     def render(self):
-        if self.render_mode != "human":
-            return
-        if self.viewer is None:
-            self.viewer, self.ax = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-            self.viewer.suptitle(f'Live Teleoperation Tracking - Run {self.episode_count}', fontsize=12)
-            self.line1, = self.ax[0].plot([], [], label='TOTAL Step Reward', color='green')
-            self.ax[0].set_ylabel('Total Reward')
-            self.ax[0].legend(loc='upper right')
-            self.line2, = self.ax[1].plot([], [], label='Tracking Reward', color='blue')
-            self.ax[1].set_ylabel('Tracking Reward')
-            self.ax[1].set_xlabel('Steps')
-            plt.ion()
-            plt.show(block=False)
-
-        x_data = np.arange(max(0, self._step_counter - len(self.hist_total_reward)), self._step_counter)
-        self.line1.set_data(x_data, self.hist_total_reward)
-        self.line2.set_data(x_data, self.hist_tracking_reward)
-        for ax in self.ax:
-            ax.relim()
-            ax.autoscale_view()
-        self.viewer.canvas.draw_idle()
-        self.viewer.canvas.flush_events()
-        
+        pass
     def close(self):
-        if self.viewer is not None:
-            plt.close(self.viewer)
-            self.viewer = None
+        if self.viewer is not None: plt.close(self.viewer)
