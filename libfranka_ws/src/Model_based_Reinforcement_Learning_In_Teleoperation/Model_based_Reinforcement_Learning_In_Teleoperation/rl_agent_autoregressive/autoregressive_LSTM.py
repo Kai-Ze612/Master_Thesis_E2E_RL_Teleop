@@ -1,9 +1,14 @@
 """
-Pre-training script for the Autoregressive State Estimator (Closed-Loop LSTM).
-Includes:
-- Scheduled Sampling (Teacher Forcing Decay)
-- Recursive Inference (Packet Loss Simulation)
-- Validation & Early Stopping (Robust Validation Horizon)
+Autoregressive LSTM state estimator training script.
+
+Features:
+1. Early fusion LSTM:
+    - Inputs: Sequence of delayed observations + normalized delay value (15D: 7D q, 7D qd, 1D delay)
+    - Delay is encoded because the LSTM needs to know how far back in time the last observation was.
+2. Autoregressive prediction:
+    - During packet loss simulation(no new input period), the model predicts multiple steps ahead by feeding its own predictions back
+    - If there is new data, it resets the hidden state with the new observation, so that the data won't be polluted by old predictions.
+    - Risk: When the delay is very large, the model has to predict many steps ahead, which can lead to divergence.
 """
 
 import os
@@ -21,38 +26,32 @@ import multiprocessing
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from torch.utils.tensorboard import SummaryWriter
 
-
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.training_env import TeleoperationEnvWithDelay
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.local_robot_simulator import TrajectoryType
-from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    N_JOINTS, RNN_SEQUENCE_LENGTH, ESTIMATOR_LEARNING_RATE, ESTIMATOR_BATCH_SIZE,
-    ESTIMATOR_BUFFER_SIZE, ESTIMATOR_TOTAL_UPDATES, NUM_ENVIRONMENTS, CHECKPOINT_DIR_LSTM,
-    TARGET_DELTA_SCALE, DT, RNN_HIDDEN_DIM, RNN_NUM_LAYERS, DELAY_INPUT_NORM_FACTOR,
-    ESTIMATOR_VAL_FREQ, ESTIMATOR_PATIENCE,
-    WARM_UP_DURATION, DEFAULT_CONTROL_FREQ
-)
 
-# ----------------------------------------------------------------------------
-# 1. LSTM Model (Matches sac_policy_network.py)
-# ----------------------------------------------------------------------------
+import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
+
+
 class AutoregressiveStateEstimator(nn.Module):
     def __init__(self, input_dim_total=15, output_dim=14):
         """
         input_dim: 14D(q + qd) + 1D (normalized delay)
         output_dim: 14D (predicted q + qd)
         """
+        
         super().__init__()
-        # Hardcoded to match checkpoint architecture (256 hidden, 2 layers)
+        
         self.lstm = nn.LSTM(
             input_size=input_dim_total,
-            hidden_size=RNN_HIDDEN_DIM, 
-            num_layers=RNN_NUM_LAYERS,
+            hidden_size=cfg.RNN_HIDDEN_DIM, 
+            num_layers=cfg.RNN_NUM_LAYERS,
             batch_first=True
         )
         
+        # 
         self.fc = nn.Sequential(
-            nn.Linear(RNN_HIDDEN_DIM, 128),
+            nn.Linear(cfg.RNN_HIDDEN_DIM, 128),
             nn.ReLU(),
             nn.Linear(128, output_dim)
         )
