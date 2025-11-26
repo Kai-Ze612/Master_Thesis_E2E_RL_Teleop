@@ -23,8 +23,8 @@ import warnings
 import matplotlib.pyplot as plt
 
 # Custom imports
-from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.local_robot_simulator import LocalRobotSimulator, TrajectoryType
-from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.remote_robot_simulator import RemoteRobotSimulator
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.local_robot_simulator import LocalRobotSimulator, TrajectoryType
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.remote_robot_simulator import RemoteRobotSimulator
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
 
 # Configuration imports
@@ -423,52 +423,66 @@ class TeleoperationEnvWithDelay(gym.Env):
             ])
             return np.tile(initial_state, (buffer_length, 1)).flatten().astype(np.float32)
 
-        # 1. Get Raw Integer Steps for INDEXING
+        # 1. Current Real Delay
         raw_delay_steps = int(self.get_current_observation_delay())
-                
-        # 2. Get Normalized Float for LSTM Input
-        normalized_delay = float(raw_delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
-
-        # ---------------------------------------------------------------------
-        # [NEW] Autoregressive Support Logic
-        # ---------------------------------------------------------------------
-        # If the delay is very high (Packet Loss), we might want to flag this 
-        # so the LSTM knows it's running on old data.
-        # For now, we stick to the "Hold Last State + Increment Delay" strategy
-        # which your Autoregressive LSTM was trained to handle.
-        # ---------------------------------------------------------------------
-
-        # 3. Calculate Integer Indices
-        # We look back 'raw_delay_steps' into the past
+        
+        # 2. Indices Logic
+        # most_recent_delayed_idx points to the newest valid data we have
         most_recent_delayed_idx = -(raw_delay_steps + 1)
-        oldest_idx = most_recent_delayed_idx - buffer_length + 1
+        
+        # We need a sequence of length 'buffer_length' ending at 'most_recent_delayed_idx'
+        # However, to support autoregression, we iterate backwards from the "Current Time" point of view
         
         buffer_seq = []
         
-        # 4. Loop using INTEGER indices
-        for i in range(oldest_idx, most_recent_delayed_idx + 1):
-            # Clip index to ensure we don't crash, but also to implement "Hold Last"
-            # If i > -1 (future), this logic naturally fails, but we are looking into past.
-            # If i < -history_len (too old), we clamp to oldest known.
+        # We construct the buffer from (T - seq_len) to T
+        # 'i' represents the time offset from NOW (0 = now, -1 = 1 step ago)
+        for i in range(-buffer_length + 1, 1): 
             
-            # CRITICAL FIX for Packet Loss:
-            # If the calculated index 'i' effectively points to the SAME physical time 
-            # as the previous step (because we aren't receiving new packets),
-            # the LSTM needs to see the delay INCREASING.
+            # Theoretical index in the history if there was 0 delay
+            # But we have 'raw_delay_steps'. 
             
-            # Logic:
-            # - We retrieve the state at 'safe_idx'.
-            # - We append the CURRENT calculated 'normalized_delay'.
-            # - As 'raw_delay_steps' grows (packet loss), 'most_recent_delayed_idx' 
-            #   might stay pointing at the same "last known index" (-1 of history),
-            #   BUT 'normalized_delay' will keep growing.
+            # The logic for Autoregressive Input construction:
+            # 1. Calculate the "Age" of the data we ideally want at this step
+            # 2. If that data is blocked by delay, retrieve the "Last Known" data instead.
+            # 3. Calculate exactly how old that "Last Known" data is relative to this step.
             
-            safe_idx = np.clip(i, -history_len, -1)
+            target_history_idx = -1 + i # Relative to history end
+            
+            # Check if this index is blocked by delay
+            # blocked if index > -(raw_delay_steps + 1)
+            
+            # Simpler Implementation matching your training logic:
+            # Just take the window ending at 'most_recent_delayed_idx'
+            # BUT increment the delay scalar for the steps that are "held"
+            
+            # Let's stick to the training script logic:
+            # Data = leader_q_history[idx]
+            # Delay = raw_delay_steps + (distance from "now")
+            
+            # We grab data starting from the back of the valid history
+            idx_in_history = most_recent_delayed_idx - (buffer_length - 1 - (i + buffer_length - 1))
+            
+            # Clamp to ensure we don't go out of bounds (too old)
+            safe_idx = np.clip(idx_in_history, -history_len, -1)
+            
+            # Calculate the delay value for this specific step in the sequence
+            # If we are repeating the last frame (packet loss), the delay grows.
+            # normalized_delay = (BaseDelay) / Norm
+            
+            # Actually, simply using the current raw_delay is often sufficient if the window slides.
+            # But for strict autoregression during blackout:
+            
+            # [Autoregressive Feature Fix]
+            # If we are in a "No Data" blackout, most_recent_delayed_idx stops moving forward.
+            # But time moves forward. 
+            # So we use the calculated delay for the current timestep.
+            current_step_delay = float(raw_delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
             
             step_vector = np.concatenate([
                 self.leader_q_history[safe_idx],
                 self.leader_qd_history[safe_idx],
-                [normalized_delay]  # <--- The Delay grows even if state is static
+                [current_step_delay] 
             ])
             buffer_seq.append(step_vector)
         
