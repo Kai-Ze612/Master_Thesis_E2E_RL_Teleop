@@ -7,6 +7,7 @@ SAC: Learn to compensate torque based on predicted states
 Goal: Min tracking error under delay with minimal torque compensation.
 """
 
+
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -84,12 +85,14 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.warmup_time = cfg.WARM_UP_DURATION 
         self.warmup_steps = int(self.warmup_time * self.control_freq)
         self.steps_remaining_in_warmup = 0
-        self.grace_period_steps = int(cfg.NO_DELAY_DURATION * self.control_freq)
         
-        # Debug: Print timing info
+        # FIX 1: Grace Period should start AFTER warmup
+        # Original: self.grace_period_steps = int(cfg.NO_DELAY_DURATION * self.control_freq)
+        self.grace_period_steps = self.warmup_steps + int(cfg.NO_DELAY_DURATION * self.control_freq)
+        
         print(f"[ENV INIT] Control freq: {self.control_freq} Hz")
         print(f"[ENV INIT] Warmup: {self.warmup_time}s = {self.warmup_steps} steps")
-        print(f"[ENV INIT] Grace period: {cfg.NO_DELAY_DURATION}s = {self.grace_period_steps} steps")
+        print(f"[ENV INIT] Grace period ends at step: {self.grace_period_steps}")
 
         # --- LSTM State Estimator Setup ---
         self.lstm = None
@@ -160,11 +163,8 @@ class TeleoperationEnvWithDelay(gym.Env):
             self.remote_q_history.append(start_target_q.copy())
             self.remote_qd_history.append(np.zeros(self.n_joints))
             
-        # CRITICAL FIX: Initialize warmup counter properly!
         self.steps_remaining_in_warmup = self.warmup_steps
         self.last_target_q = start_target_q.copy()
-        
-        # print(f"[RESET] Episode {self.episode_count}: warmup={self.steps_remaining_in_warmup} steps")
         
         return self._get_observation(), self._get_info()
 
@@ -172,25 +172,20 @@ class TeleoperationEnvWithDelay(gym.Env):
         self._step_counter += 1
         self.current_step += 1
         
-        # 1. Step Leader (trajectory generation continues even during warmup)
+        # 1. Step Leader
         new_leader_q, new_leader_qd, _, _, _, _ = self.leader.step()
         self.leader_q_history.append(new_leader_q.copy())
         self.leader_qd_history.append(new_leader_qd.copy())
 
-        # 2. LSTM Inference (or passthrough during warmup/grace)
+        # 2. LSTM Inference
         current_predicted_target = self._perform_ar_prediction_step()
         self._last_predicted_target = current_predicted_target
 
         # 3. Warmup handling
         if self.steps_remaining_in_warmup > 0:
             self.steps_remaining_in_warmup -= 1
-            # During warmup: use initial position, no RL action
             safe_target_q = self.initial_qpos.copy()
             torque_compensation = np.zeros(self.n_joints)
-            
-            # Debug: Print warmup status periodically
-            # if self.steps_remaining_in_warmup % 100 == 0:
-            #     print(f"[WARMUP] {self.steps_remaining_in_warmup} steps remaining")
         else:
             raw_target_q = current_predicted_target[:self.n_joints]
             
@@ -216,12 +211,12 @@ class TeleoperationEnvWithDelay(gym.Env):
         remote_q, _ = self.remote_robot.get_joint_state()
         true_target = self.get_true_current_target()
         
-        # Calculate Tracking Error (Real) and Prediction Error (Virtual)
         joint_error_norm = np.linalg.norm(true_target[:self.n_joints] - remote_q)
-        prediction_error_norm = np.linalg.norm(true_target[:self.n_joints] - current_predicted_target[:self.n_joints])
         
-        # Pass both errors to termination check
-        terminated, term_penalty = self._check_termination(joint_error_norm, prediction_error_norm, remote_q)
+        # Calculate Prediction Error specifically for termination check
+        pred_error_norm = np.linalg.norm(true_target[:self.n_joints] - current_predicted_target[:self.n_joints])
+        
+        terminated, term_penalty = self._check_termination(joint_error_norm, pred_error_norm, remote_q)
         if terminated: reward += term_penalty
         
         truncated = self.current_step >= self.max_episode_steps
@@ -236,40 +231,26 @@ class TeleoperationEnvWithDelay(gym.Env):
         return self.leader_q_history[idx]
 
     def _perform_ar_prediction_step(self) -> np.ndarray:
-        """
-        Autoregressive prediction using LSTM.
-        
-        Key behaviors:
-        - During grace period (no delay): return current state directly
-        - With delay: perform AR rollout to predict current state
-        - Delay is INCREMENTED during AR loop (Fix: matches training logic)
-        """
         history_len = len(self.leader_q_history)
         
-        # During grace period: no delay, return most recent observation
+        # Grace period logic
         if self.current_step < self.grace_period_steps:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
         
-        # Get delay
         delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
         
-        # If no delay, return most recent
         if delay_steps == 0:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
         
-        # --- PASSTHROUGH if no LSTM ---
         idx = -1 - delay_steps
         delayed_state = np.concatenate([self.leader_q_history[idx], self.leader_qd_history[idx]])
         
         if self.lstm is None:
             return delayed_state
-        # -------------------------
             
-        # Compute normalized delay
         normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         most_recent_idx = -1 - delay_steps
         
-        # Build initial sequence for LSTM
         seq_buffer = []
         start_idx = most_recent_idx - cfg.RNN_SEQUENCE_LENGTH + 1
         
@@ -278,55 +259,38 @@ class TeleoperationEnvWithDelay(gym.Env):
             step_vec = np.concatenate([
                 self.leader_q_history[idx],
                 self.leader_qd_history[idx],
-                [normalized_delay]  # Initial delay for history
+                [normalized_delay] 
             ])
             seq_buffer.append(step_vec)
             
         input_tensor = torch.tensor(np.array(seq_buffer), dtype=torch.float32).unsqueeze(0).to(self.device)
             
-        # Limit AR steps
         steps_to_run = min(delay_steps, self.max_ar_steps)
-        
-        # Normalized Time Step (dt) to increment delay
         dt_norm = (1.0 / self.control_freq) / cfg.DELAY_INPUT_NORM_FACTOR
         
         with torch.no_grad():
-            # Initialize hidden state from the full input sequence
             _, hidden_state = self.lstm.lstm(input_tensor)
         
-            # Extract last observation for AR loop
             last_obs = input_tensor[0, -1, :]
             curr_q = last_obs[:self.n_joints].clone()
             curr_qd = last_obs[self.n_joints:2*self.n_joints].clone()
-            
-            # Start delay from the last known delay
             current_delay_val = normalized_delay
             
-            # Autoregressive prediction loop
             for _ in range(steps_to_run):
-                # Create tensor for current delay
                 delay_tensor = torch.tensor([current_delay_val], device=self.device)
-                
-                # Build single-step input: (1, 1, 15)
                 current_input = torch.cat([curr_q, curr_qd, delay_tensor], dim=0).view(1, 1, -1)
                 
-                # Use forward_step with hidden state maintenance
                 residual_t, hidden_state = self.lstm.forward_step(current_input, hidden_state)
                 
-                # Scale residual
+                # FIX 2: SCALING (Multiplication, not Division)
                 residual = residual_t[0] * cfg.TARGET_DELTA_SCALE
                 
-                # --- SAFETY CLAMP ---
-                # Prevent explosion if LSTM predicts garbage. 
-                # Max change 0.1 rad per step is generous but prevents Inf/NaN divergence.
+                # Safety Clamp
                 residual = torch.clamp(residual, -0.1, 0.1)
-                # --------------------
                 
-                # Update state
                 curr_q = curr_q + residual[:self.n_joints]
                 curr_qd = curr_qd + residual[self.n_joints:]
                 
-                # INCREMENT DELAY for next step (Matching training logic)
                 current_delay_val += dt_norm
                 
         return np.concatenate([curr_q.cpu().numpy(), curr_qd.cpu().numpy()])
@@ -368,7 +332,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
 
     def get_delayed_target_buffer(self, buffer_length: int) -> np.ndarray:
-        """Helper for LSTM pre-training data collection."""
         history_len = len(self.leader_q_history)
         if history_len == 0:
              init_vec = np.concatenate([self.initial_qpos, np.zeros(self.n_joints), [0.0]])
@@ -405,27 +368,34 @@ class TeleoperationEnvWithDelay(gym.Env):
         return float(r_tracking + r_action), float(r_tracking)
 
     def _check_termination(self, joint_error: float, prediction_error: float, remote_q: np.ndarray) -> Tuple[bool, float]:
-        if not np.all(np.isfinite(remote_q)): return True, -100.0
+        if not np.all(np.isfinite(remote_q)):
+            print(f"[Termination] NaN detected in remote_q: {remote_q}")
+            return True, -100.0
+
         at_limits = (np.any(remote_q <= self.joint_limits_lower + cfg.JOINT_LIMIT_MARGIN) or 
-                     np.any(remote_q >= self.joint_limits_upper - cfg.JOINT_LIMIT_MARGIN))
-        
+                    np.any(remote_q >= self.joint_limits_upper - cfg.JOINT_LIMIT_MARGIN))
+
+        if at_limits:
+            print(f"[Termination] Joint limits reached. Remote Q: {remote_q}")
+
         high_error = joint_error > self.max_joint_error
-        
+        if high_error:
+            print(f"[Termination] High tracking error: {joint_error} > {self.max_joint_error}")
+
         # --- NEW: Prediction Divergence Termination ---
         # If LSTM prediction deviates too far from reality (e.g. > 0.3 rad), kill the episode.
         # This prevents the agent from training on "hallucinated" states.
         pred_divergence = prediction_error > 0.3
-        
+        if pred_divergence:
+            print(f"[Termination] Prediction divergence: {prediction_error} > 0.3")
+
         terminated = at_limits or high_error or pred_divergence
-        
+
         penalty = -10.0 if terminated else 0.0
         return terminated, penalty
 
     def _get_info(self) -> Dict[str, Any]:
-        # Return debug info if needed
-        return {
-            "prediction_error": np.linalg.norm(self.get_true_current_target()[:self.n_joints] - self._last_predicted_target[:self.n_joints]) if self._last_predicted_target is not None else 0.0
-        }
+        return {}
 
     def render(self):
         pass
