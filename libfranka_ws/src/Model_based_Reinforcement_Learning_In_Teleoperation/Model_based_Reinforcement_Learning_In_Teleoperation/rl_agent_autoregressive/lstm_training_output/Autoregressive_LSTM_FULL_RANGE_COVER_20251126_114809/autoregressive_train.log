@@ -39,3 +39,7 @@
 2025-11-26 12:27:45,578 [INFO]   -> No improvement. Patience: 3/10
 2025-11-26 12:29:49,823 [INFO] Validating at 90000: Val Loss = 0.000272 (Best: 0.000269)
 2025-11-26 12:29:49,823 [INFO]   -> No improvement. Patience: 4/10
+2025-11-26 12:31:38,400 [INFO] Validating at 95000: Val Loss = 0.000278 (Best: 0.000269)
+2025-11-26 12:31:38,401 [INFO]   -> No improvement. Patience: 5/10
+2025-11-26 12:33:24,923 [INFO] Validating at 100000: Val Loss = 0.000278 (Best: 0.000269)
+2025-11-26 12:33:24,924 [INFO]   -> No improvement. Patience: 6/10

@@ -29,7 +29,7 @@ class RemoteRobotSimulator:
         self, 
         delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY, 
         seed: Optional[int] = None,
-        render: bool = True,
+        render: bool = False,
         render_fps: Optional[int] = 120
     ):
         
@@ -194,6 +194,19 @@ class RemoteRobotSimulator:
         # Render if enabled
         if self._render_enabled:
             self.render()
+
+        q_error_norm = np.linalg.norm(target_q - self.data.qpos[:self.n_joints])
+        
+        np.set_printoptions(precision=3, suppress=True, linewidth=200)
+        print(f"\n[Sim Step {self.internal_tick}]")
+        print(f"  Predicted Target Q: {target_q}")
+        print(f"  Actual Remote Q:    {self.data.qpos[:self.n_joints]}")
+        print(f"  Joint Error Norm:   {q_error_norm:.6f} rad")
+        print(f"  ------------------------------------------------")
+        print(f"  Tau PD (Baseline):  {tau_id}")
+        print(f"  Tau RL (Action):    {self.last_executed_rl_torque}")
+        print(f"  Tau Total:          {tau_total}")
+        print(f"  ------------------------------------------------")
 
         return {
             "joint_error": np.linalg.norm(target_q - self.data.qpos[:self.n_joints]),
