@@ -19,3 +19,35 @@
 2025-11-26 15:07:52,909 [INFO]   -> No improvement. Patience: 5/10
 2025-11-26 15:10:16,302 [INFO] Validating at 40000: Val Loss = 0.000287 (Best: 0.000287)
 2025-11-26 15:10:16,303 [INFO]   -> No improvement. Patience: 6/10
+2025-11-26 15:12:37,648 [INFO] Validating at 45000: Val Loss = 0.000293 (Best: 0.000287)
+2025-11-26 15:12:37,648 [INFO]   -> No improvement. Patience: 7/10
+2025-11-26 15:15:20,187 [INFO] Validating at 50000: Val Loss = 0.000287 (Best: 0.000287)
+2025-11-26 15:15:20,229 [INFO]   -> New Best! Saved model.
+2025-11-26 15:18:12,150 [INFO] Validating at 55000: Val Loss = 0.000286 (Best: 0.000287)
+2025-11-26 15:18:12,155 [INFO]   -> New Best! Saved model.
+2025-11-26 15:20:45,672 [INFO] Validating at 60000: Val Loss = 0.000290 (Best: 0.000286)
+2025-11-26 15:20:45,672 [INFO]   -> No improvement. Patience: 1/10
+2025-11-26 15:23:10,150 [INFO] Validating at 65000: Val Loss = 0.000285 (Best: 0.000286)
+2025-11-26 15:23:10,190 [INFO]   -> New Best! Saved model.
+2025-11-26 15:25:44,641 [INFO] Validating at 70000: Val Loss = 0.000290 (Best: 0.000285)
+2025-11-26 15:25:44,641 [INFO]   -> No improvement. Patience: 1/10
+2025-11-26 15:28:21,460 [INFO] Validating at 75000: Val Loss = 0.000290 (Best: 0.000285)
+2025-11-26 15:28:21,460 [INFO]   -> No improvement. Patience: 2/10
+2025-11-26 15:30:42,362 [INFO] Validating at 80000: Val Loss = 0.000289 (Best: 0.000285)
+2025-11-26 15:30:42,363 [INFO]   -> No improvement. Patience: 3/10
+2025-11-26 15:33:02,520 [INFO] Validating at 85000: Val Loss = 0.000290 (Best: 0.000285)
+2025-11-26 15:33:02,520 [INFO]   -> No improvement. Patience: 4/10
+2025-11-26 15:35:20,790 [INFO] Validating at 90000: Val Loss = 0.000288 (Best: 0.000285)
+2025-11-26 15:35:20,791 [INFO]   -> No improvement. Patience: 5/10
+2025-11-26 15:37:39,002 [INFO] Validating at 95000: Val Loss = 0.000288 (Best: 0.000285)
+2025-11-26 15:37:39,002 [INFO]   -> No improvement. Patience: 6/10
+2025-11-26 15:40:09,230 [INFO] Validating at 100000: Val Loss = 0.000287 (Best: 0.000285)
+2025-11-26 15:40:09,230 [INFO]   -> No improvement. Patience: 7/10
+2025-11-26 15:43:00,973 [INFO] Validating at 105000: Val Loss = 0.000290 (Best: 0.000285)
+2025-11-26 15:43:00,973 [INFO]   -> No improvement. Patience: 8/10
+2025-11-26 15:45:23,893 [INFO] Validating at 110000: Val Loss = 0.000288 (Best: 0.000285)
+2025-11-26 15:45:23,893 [INFO]   -> No improvement. Patience: 9/10
+2025-11-26 15:47:55,494 [INFO] Validating at 115000: Val Loss = 0.000288 (Best: 0.000285)
+2025-11-26 15:47:55,494 [INFO]   -> No improvement. Patience: 10/10
+2025-11-26 15:47:55,494 [INFO] Early Stopping Triggered.
+2025-11-26 15:47:55,494 [INFO] Training Complete.

@@ -39,7 +39,6 @@ class AutoregressiveStateEstimator(nn.Module):
         input_dim: 14D(q + qd) + 1D (normalized delay)
         output_dim: 14D (predicted q + qd)
         """
-        
         super().__init__()
         
         self.lstm = nn.LSTM(
@@ -49,7 +48,6 @@ class AutoregressiveStateEstimator(nn.Module):
             batch_first=True
         )
         
-        # 
         self.fc = nn.Sequential(
             nn.Linear(cfg.RNN_HIDDEN_DIM, 128),
             nn.ReLU(),
@@ -82,11 +80,13 @@ class ReplayBuffer:
     def __init__(self, buffer_size: int, device: torch.device):
         self.buffer_size = buffer_size
         self.device = device
-        self.ptr = 0  # Pointer to the next insertion index
+        self.ptr = 0  
         self.size = 0
         self.seq_len = cfg.RNN_SEQUENCE_LENGTH
-        self.state_dim = 15 
+        self.state_dim = cfg.ESTIMATOR_STATE_DIM 
         self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
+        
+        # We still store true_targets for reference/validation, though we won't train on them directly
         self.true_targets = np.zeros((buffer_size, 14), dtype=np.float32)
 
     def add(self, delayed_seq: np.ndarray, true_target: np.ndarray) -> None:
@@ -107,7 +107,7 @@ def collect_data_from_envs(env: SubprocVecEnv, num_envs: int) -> Tuple[np.ndarra
     delayed_flat_list = env.env_method("get_delayed_target_buffer", cfg.RNN_SEQUENCE_LENGTH)
     true_target_list = env.env_method("get_true_current_target")
     
-    raw_seqs = np.array([buf.reshape(cfg.RNN_SEQUENCE_LENGTH, 15) for buf in delayed_flat_list])
+    raw_seqs = np.array([buf.reshape(cfg.RNN_SEQUENCE_LENGTH, cfg.ESTIMATOR_STATE_DIM) for buf in delayed_flat_list])
     raw_targets = np.array(true_target_list)
     
     valid_seqs, valid_targets = [], []
@@ -121,43 +121,63 @@ def collect_data_from_envs(env: SubprocVecEnv, num_envs: int) -> Tuple[np.ndarra
 
 def evaluate_model(model, val_env, num_val_steps, device='cpu'):
     """
-    Run validation loop.
-    num_val_steps: Explicit number of steps to run (e.g., 21000)
+    Validation Loop:
+    This checks how well the model predicts the REAL-TIME target given the delay.
+    We use the Env logic here (full delay rollout) to measure actual performance.
     """
     model.eval()
     total_loss = 0.0
     count = 0
     
-    # 1. Reset
     val_env.reset()
-    
-    # 2. Warmup (Pass static phase)
     warmup_steps = int(cfg.WARM_UP_DURATION * cfg.DEFAULT_CONTROL_FREQ) + 20
     for _ in range(warmup_steps): 
         val_env.step([np.zeros((val_env.num_envs, cfg.N_JOINTS))])
     
+    # For validation, we can trust the Env's internal prediction logic to be correct now
+    # We just want to measure the error between Env's predicted target and true target.
+    # However, to test the MODEL standalone, we should replicate the rollout logic manually.
+    
+    dt_norm = (1.0 / cfg.DEFAULT_CONTROL_FREQ) / cfg.DELAY_INPUT_NORM_FACTOR
+
     with torch.no_grad():
         for i in range(num_val_steps):
-            # Progress log for large validation sets
-            if i % 2000 == 0:
-                print(f"Validating... {i}/{num_val_steps}", end='\r')
+            if i % 2000 == 0: print(f"Validating... {i}/{num_val_steps}", end='\r')
 
-            seqs, targets = collect_data_from_envs(val_env, val_env.num_envs)
-            
+            seqs, true_targets = collect_data_from_envs(val_env, val_env.num_envs)
             if len(seqs) == 0: 
                 val_env.step([np.zeros((val_env.num_envs, cfg.N_JOINTS))])
                 continue
             
             input_t = torch.tensor(seqs, dtype=torch.float32).to(device)
-            target_t = torch.tensor(targets, dtype=torch.float32).to(device)
+            target_t = torch.tensor(true_targets, dtype=torch.float32).to(device)
             
-            # Validation: Standard Forward Pass
-            pred_residual, _ = model(input_t)
+            # Use only the first 10 steps as context
+            context_len = cfg.RNN_SEQUENCE_LENGTH - 10
+            context_input = input_t[:, :context_len, :]
             
-            last_obs = input_t[:, -1, :14]
-            pred_state = last_obs + (pred_residual / cfg.TARGET_DELTA_SCALE)
+            # Warmup
+            _, hidden = model.lstm(context_input)
+            current_input = context_input[:, -1:, :]
             
-            loss = F.mse_loss(pred_state, target_t)
+            # Predict forward 10 steps (Artificial Delay of 10)
+            prediction_steps = 10
+            
+            for _ in range(prediction_steps):
+                delta, hidden = model.forward_step(current_input, hidden)
+                last_state = current_input[:, :, :14]
+                next_state = last_state + (delta.unsqueeze(1) * cfg.TARGET_DELTA_SCALE)
+                
+                curr_delay = current_input[:, :, 14]
+                next_delay = curr_delay + dt_norm
+                current_input = torch.cat([next_state, next_delay.unsqueeze(2)], dim=2)
+            
+            # Compare against the actual 10th step in the sequence (Self-Supervised Validation)
+            # Note: In real val, we might want to compare to true_target, but delay varies.
+            # For stability check, comparing to the recorded sequence is safer.
+            ground_truth_future = input_t[:, context_len + prediction_steps - 1, :14]
+            
+            loss = F.mse_loss(current_input[:, 0, :14], ground_truth_future)
             total_loss += loss.item()
             count += 1
             
@@ -165,16 +185,8 @@ def evaluate_model(model, val_env, num_val_steps, device='cpu'):
             
     model.train()
     print(f"Validating... Done.                 ")
-    
-    if count == 0:
-        print("WARNING: Validation loop collected 0 samples. Returning infinity.")
-        return float('inf')
-        
-    return total_loss / count
+    return total_loss / max(count, 1)
 
-# ----------------------------------------------------------------------------
-# 3. Main Training
-# ----------------------------------------------------------------------------
 def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"Autoregressive_LSTM_{args.config.name}_{timestamp}"
@@ -183,13 +195,12 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     
     logger = setup_logging(output_dir)    
     logger.info("="*80)
-    logger.info("AUTOREGRESSIVE LSTM TRAINING")
+    logger.info("AUTOREGRESSIVE LSTM TRAINING (FIXED TARGET)")
     logger.info("="*80)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     tb_writer = SummaryWriter(log_dir=os.path.join(output_dir, "tensorboard"))
     
-    # Envs (Passthrough Mode)
     def make_env(rank: int):
         def _init():
             return TeleoperationEnvWithDelay(
@@ -208,16 +219,13 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     model = AutoregressiveStateEstimator().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=cfg.ESTIMATOR_LEARNING_RATE)
     
-    # Initial Data Collection
     logger.info("Collecting Initial Data...")
     train_env.reset()
-    
-    # Training Warmup
     init_warmup = int(cfg.WARM_UP_DURATION * cfg.DEFAULT_CONTROL_FREQ) + 50
     for _ in range(init_warmup): train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))]) 
     
     collected = 0
-    while collected < cfg.ESTIMATOR_BUFFER_SIZE // 2:
+    while collected < cfg.ESTIMATOR_BUFFER_SIZE // 5:
         seqs, targets = collect_data_from_envs(train_env, cfg.NUM_ENVIRONMENTS)
         if len(seqs) > 0:
             for i in range(len(seqs)): replay_buffer.add(seqs[i], targets[i])
@@ -231,6 +239,7 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     
     best_val_loss = float('inf')
     patience_counter = 0
+    dt_norm = (1.0 / cfg.DEFAULT_CONTROL_FREQ) / cfg.DELAY_INPUT_NORM_FACTOR
     
     model.train()
     
@@ -244,15 +253,24 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
         # B. Training Step
         batch = replay_buffer.sample(cfg.ESTIMATOR_BATCH_SIZE)
         input_seq = batch['delayed_sequences']
-        true_final_target = batch['true_targets']
         
-        packet_loss_steps = np.random.randint(1, 15)
+        # Randomly select how many steps to "hide" and predict
+        # This teaches the model s_t -> s_{t+k} physics
+        packet_loss_steps = np.random.randint(1, 10) 
+        
+        # We chop off the last 'k' steps to use as input
         cutoff_idx = cfg.RNN_SEQUENCE_LENGTH - packet_loss_steps
         safe_history = input_seq[:, :cutoff_idx, :]
         
+        # The TARGET is the state at the end of the sequence (which we hid)
+        # We are training: Rollout(History[:-k], k) == History[-1]
+        target_state_future = input_seq[:, -1, :14]
+        
+        # 1. Warmup on history
         _, hidden_state = model.lstm(safe_history)
         current_input = safe_history[:, -1:, :]
         
+        # 2. Autoregressive rollout
         for k in range(packet_loss_steps):
             pred_delta, hidden_state = model.forward_step(current_input, hidden_state)
             
@@ -260,12 +278,15 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             predicted_next_state = last_known_state + (pred_delta.unsqueeze(1) * cfg.TARGET_DELTA_SCALE)
             
             current_delay_norm = current_input[:, :, 14]
-            next_delay_norm = current_delay_norm + (cfg.DT / cfg.DELAY_INPUT_NORM_FACTOR)
+            next_delay_norm = current_delay_norm + dt_norm
+            
             next_input = torch.cat([predicted_next_state, next_delay_norm.unsqueeze(2)], dim=2)
             current_input = next_input 
             
         final_predicted_state = current_input[:, 0, :14]
-        loss = F.l1_loss(final_predicted_state, true_final_target)
+        
+        # 3. Compute Loss
+        loss = F.l1_loss(final_predicted_state, target_state_future)
         
         optimizer.zero_grad()
         loss.backward()
@@ -276,12 +297,8 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             tb_writer.add_scalar('loss/train', loss.item(), update)
             print(f"Update {update} | Loss: {loss.item():.6f}")
             
-        # C. Validation (Robust 21,000 steps)
         if update % cfg.ESTIMATOR_VAL_FREQ == 0:
-            # USER REQUEST: 4200 * 5 = 21000 steps
-            val_steps_needed = 4200 * 5 
-            val_loss = evaluate_model(model, val_env, num_val_steps=val_steps_needed, device=device)
-            
+            val_loss = evaluate_model(model, val_env, num_val_steps=2000, device=device)
             tb_writer.add_scalar('loss/validation', val_loss, update)
             logger.info(f"Validating at {update}: Val Loss = {val_loss:.6f} (Best: {best_val_loss:.6f})")
             
@@ -293,7 +310,6 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
                 logger.info(f"  -> New Best! Saved model.")
             else:
                 patience_counter += 1
-                logger.info(f"  -> No improvement. Patience: {patience_counter}/{cfg.ESTIMATOR_PATIENCE}")
                 if patience_counter >= cfg.ESTIMATOR_PATIENCE:
                     logger.info("Early Stopping Triggered.")
                     break

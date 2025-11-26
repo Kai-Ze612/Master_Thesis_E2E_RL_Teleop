@@ -18,6 +18,8 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     SAC_ACTIVATION,
     LOG_STD_MIN,
     LOG_STD_MAX,
+    RNN_NUM_LAYERS,
+    RNN_HIDDEN_DIM,
 )
 
 class StateEstimator(nn.Module):
@@ -32,8 +34,8 @@ class StateEstimator(nn.Module):
     def __init__(
         self,
         input_dim_total: int = 15,  # FIXED: Checkpoint expects 15 inputs
-        hidden_dim: int = 256,      # FIXED: Checkpoint expects 256 hidden size
-        num_layers: int = 2,
+        hidden_dim: int = RNN_HIDDEN_DIM,      # FIXED: Checkpoint expects 256 hidden size
+        num_layers: int = RNN_NUM_LAYERS,
         output_dim: int = 14,
     ):
         super().__init__()
