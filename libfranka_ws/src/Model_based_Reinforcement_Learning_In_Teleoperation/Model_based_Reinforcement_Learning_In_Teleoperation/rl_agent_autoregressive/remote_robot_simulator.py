@@ -29,7 +29,7 @@ class RemoteRobotSimulator:
         self, 
         delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY, 
         seed: Optional[int] = None,
-        render: bool = True,
+        render: bool = False,
         render_fps: Optional[int] = 60
     ):
         
