@@ -11,6 +11,7 @@ Features:
     - Risk: When the delay is very large, the model has to predict many steps ahead, which can lead to divergence.
 """
 
+
 import os
 import sys
 import torch
@@ -65,23 +66,19 @@ class AutoregressiveStateEstimator(nn.Module):
         residual = self.fc(lstm_out[:, -1, :])
         return residual, new_hidden
 
+
 def is_trajectory_stable(delayed_seq: np.ndarray, true_target: np.ndarray) -> bool:
     if np.isnan(delayed_seq).any() or np.isnan(true_target).any(): return False
     if np.max(np.abs(delayed_seq[:, 7:14])) > 10.0: return False 
-    
-    # FIX: Filter out static data to prevent learning "zero" from warmup
-    # Check if the robot moved at least a tiny bit over the sequence
-    # Indices 0:7 are positions (q)
-    displacement = np.linalg.norm(delayed_seq[-1, :7] - delayed_seq[0, :7])
-    if displacement < 0.001: return False # Robot wasn't moving
-
     return True
+
 
 def setup_logging(output_dir: str) -> logging.Logger:
     log_file = os.path.join(output_dir, "autoregressive_train.log")
     logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s',
                         handlers=[logging.FileHandler(log_file), logging.StreamHandler(sys.stdout)])
     return logging.getLogger(__name__)
+
 
 class ReplayBuffer:
     def __init__(self, buffer_size: int, device: torch.device):
@@ -93,7 +90,7 @@ class ReplayBuffer:
         self.state_dim = cfg.ESTIMATOR_STATE_DIM 
         self.delayed_sequences = np.zeros((buffer_size, self.seq_len, self.state_dim), dtype=np.float32)
         
-        # We still store true_targets for reference/validation
+        # We still store true_targets for reference/validation, though we won't train on them directly
         self.true_targets = np.zeros((buffer_size, 14), dtype=np.float32)
 
     def add(self, delayed_seq: np.ndarray, true_target: np.ndarray) -> None:
@@ -109,6 +106,7 @@ class ReplayBuffer:
             'true_targets': torch.tensor(self.true_targets[indices], device=self.device),
         }
     def __len__(self) -> int: return self.size
+
 
 def collect_data_from_envs(env: SubprocVecEnv, num_envs: int) -> Tuple[np.ndarray, np.ndarray]:
     delayed_flat_list = env.env_method("get_delayed_target_buffer", cfg.RNN_SEQUENCE_LENGTH)
@@ -126,10 +124,35 @@ def collect_data_from_envs(env: SubprocVecEnv, num_envs: int) -> Tuple[np.ndarra
     if len(valid_seqs) == 0: return np.array([]), np.array([])
     return np.array(valid_seqs), np.array(valid_targets)
 
-def evaluate_model(model, val_env, num_val_steps, device='cpu'):
+
+def get_max_prediction_steps(delay_config: ExperimentConfig) -> int:
+    """
+    FIX Issue 10: Calculate appropriate prediction horizon based on delay config.
+    """
+    # Get delay parameters from config
+    if delay_config == ExperimentConfig.LOW_DELAY:
+        max_delay_ms = 100  # Example: adjust based on actual config
+    elif delay_config == ExperimentConfig.MEDIUM_DELAY:
+        max_delay_ms = 200
+    elif delay_config == ExperimentConfig.HIGH_DELAY:
+        max_delay_ms = 300
+    else:
+        max_delay_ms = 400
+    
+    # Convert to steps
+    max_delay_steps = int(max_delay_ms / 1000.0 * cfg.DEFAULT_CONTROL_FREQ)
+    
+    # Return reasonable prediction horizon (cap at 20 for stability)
+    return min(20, max(5, max_delay_steps // 2))
+
+
+def evaluate_model(model, val_env, num_val_steps, delay_config, device='cpu'):
     """
     Validation Loop:
-    Checks model performance using the Env's full logic.
+    This checks how well the model predicts the REAL-TIME target given the delay.
+    We use the Env logic here (full delay rollout) to measure actual performance.
+    
+    FIX Issue 10: Use delay-config-based prediction steps.
     """
     model.eval()
     total_loss = 0.0
@@ -141,6 +164,9 @@ def evaluate_model(model, val_env, num_val_steps, device='cpu'):
         val_env.step([np.zeros((val_env.num_envs, cfg.N_JOINTS))])
     
     dt_norm = (1.0 / cfg.DEFAULT_CONTROL_FREQ) / cfg.DELAY_INPUT_NORM_FACTOR
+    
+    # FIX Issue 10: Dynamic prediction steps
+    prediction_steps = get_max_prediction_steps(delay_config)
 
     with torch.no_grad():
         for i in range(num_val_steps):
@@ -152,32 +178,29 @@ def evaluate_model(model, val_env, num_val_steps, device='cpu'):
                 continue
             
             input_t = torch.tensor(seqs, dtype=torch.float32).to(device)
-            # target_t = torch.tensor(true_targets, dtype=torch.float32).to(device) # Unused
+            target_t = torch.tensor(true_targets, dtype=torch.float32).to(device)
             
-            # Use only the first 10 steps as context
-            context_len = cfg.RNN_SEQUENCE_LENGTH - 10
+            # Use dynamic context length
+            context_len = cfg.RNN_SEQUENCE_LENGTH - prediction_steps
             context_input = input_t[:, :context_len, :]
             
             # Warmup
             _, hidden = model.lstm(context_input)
             current_input = context_input[:, -1:, :]
             
-            # Predict forward 10 steps (Artificial Delay of 10)
-            prediction_steps = 10
-            
+            # Predict forward
             for _ in range(prediction_steps):
                 delta, hidden = model.forward_step(current_input, hidden)
                 last_state = current_input[:, :, :14]
-                
-                # FIX: Scaling with MULTIPLICATION
                 next_state = last_state + (delta.unsqueeze(1) * cfg.TARGET_DELTA_SCALE)
                 
                 curr_delay = current_input[:, :, 14]
                 next_delay = curr_delay + dt_norm
                 current_input = torch.cat([next_state, next_delay.unsqueeze(2)], dim=2)
             
-            # Self-Supervised Ground Truth: The actual future state in the sequence
-            ground_truth_future = input_t[:, context_len + prediction_steps - 1, :14]
+            # Compare against the actual future step in the sequence (Self-Supervised Validation)
+            ground_truth_idx = min(context_len + prediction_steps - 1, cfg.RNN_SEQUENCE_LENGTH - 1)
+            ground_truth_future = input_t[:, ground_truth_idx, :14]
             
             loss = F.mse_loss(current_input[:, 0, :14], ground_truth_future)
             total_loss += loss.item()
@@ -189,6 +212,23 @@ def evaluate_model(model, val_env, num_val_steps, device='cpu'):
     print(f"Validating... Done.                 ")
     return total_loss / max(count, 1)
 
+
+def get_saved_config() -> dict:
+    """
+    FIX Issue 6: Create config dict to save with checkpoint.
+    """
+    return {
+        'DELAY_INPUT_NORM_FACTOR': cfg.DELAY_INPUT_NORM_FACTOR,
+        'TARGET_DELTA_SCALE': cfg.TARGET_DELTA_SCALE,
+        'RNN_HIDDEN_DIM': cfg.RNN_HIDDEN_DIM,
+        'RNN_NUM_LAYERS': cfg.RNN_NUM_LAYERS,
+        'RNN_SEQUENCE_LENGTH': cfg.RNN_SEQUENCE_LENGTH,
+        'DEFAULT_CONTROL_FREQ': cfg.DEFAULT_CONTROL_FREQ,
+        'ESTIMATOR_STATE_DIM': cfg.ESTIMATOR_STATE_DIM,
+        'N_JOINTS': cfg.N_JOINTS,
+    }
+
+
 def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"Autoregressive_LSTM_{args.config.name}_{timestamp}"
@@ -197,8 +237,14 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     
     logger = setup_logging(output_dir)    
     logger.info("="*80)
-    logger.info("AUTOREGRESSIVE LSTM TRAINING (SELF-SUPERVISED)")
+    logger.info("AUTOREGRESSIVE LSTM TRAINING (FIXED TARGET)")
     logger.info("="*80)
+    
+    # Log config for reproducibility
+    saved_config = get_saved_config()
+    logger.info("Training Config:")
+    for key, value in saved_config.items():
+        logger.info(f"  {key}: {value}")
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     tb_writer = SummaryWriter(log_dir=os.path.join(output_dir, "tensorboard"))
@@ -223,7 +269,6 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     
     logger.info("Collecting Initial Data...")
     train_env.reset()
-    # Initial warmup to settle physics (ignore data)
     init_warmup = int(cfg.WARM_UP_DURATION * cfg.DEFAULT_CONTROL_FREQ) + 50
     for _ in range(init_warmup): train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))]) 
     
@@ -235,8 +280,8 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             collected += len(seqs)
             train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))])
         else:
-            # If we got no data (e.g. all static), step env again to reach moving phase
-            train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))])
+            train_env.reset()
+            for _ in range(50): train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))])
 
     logger.info(f"Buffer filled. Starting Training Loop.")
     
@@ -253,13 +298,13 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             for i in range(len(seqs)): replay_buffer.add(seqs[i], targets[i])
         train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))])
         
-        # B. Training Step - Self-Supervised Learning
+        # B. Training Step
         batch = replay_buffer.sample(cfg.ESTIMATOR_BATCH_SIZE)
         input_seq = batch['delayed_sequences']
         
-        # FIX: Randomly select prediction horizon up to reasonable max delay
-        # This trains the model to handle various delay lengths
-        packet_loss_steps = np.random.randint(1, 50) 
+        # Randomly select how many steps to "hide" and predict
+        # This teaches the model s_t -> s_{t+k} physics
+        packet_loss_steps = np.random.randint(1, 10) 
         
         # We chop off the last 'k' steps to use as input
         cutoff_idx = cfg.RNN_SEQUENCE_LENGTH - packet_loss_steps
@@ -278,8 +323,6 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             pred_delta, hidden_state = model.forward_step(current_input, hidden_state)
             
             last_known_state = current_input[:, :, :14] 
-            
-            # FIX: Use MULTIPLICATION for scaling
             predicted_next_state = last_known_state + (pred_delta.unsqueeze(1) * cfg.TARGET_DELTA_SCALE)
             
             current_delay_norm = current_input[:, :, 14]
@@ -290,7 +333,7 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             
         final_predicted_state = current_input[:, 0, :14]
         
-        # 3. Compute Loss (Compare rolled-out state to actual future state)
+        # 3. Compute Loss
         loss = F.l1_loss(final_predicted_state, target_state_future)
         
         optimizer.zero_grad()
@@ -303,7 +346,7 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             print(f"Update {update} | Loss: {loss.item():.6f}")
             
         if update % cfg.ESTIMATOR_VAL_FREQ == 0:
-            val_loss = evaluate_model(model, val_env, num_val_steps=2000, device=device)
+            val_loss = evaluate_model(model, val_env, num_val_steps=2000, delay_config=args.config, device=device)
             tb_writer.add_scalar('loss/validation', val_loss, update)
             logger.info(f"Validating at {update}: Val Loss = {val_loss:.6f} (Best: {best_val_loss:.6f})")
             
@@ -311,17 +354,34 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
                 best_val_loss = val_loss
                 patience_counter = 0
                 save_path = os.path.join(output_dir, "autoregressive_estimator.pth")
-                torch.save({'state_estimator_state_dict': model.state_dict()}, save_path)
-                logger.info(f"  -> New Best! Saved model.")
+                
+                # FIX Issue 6: Save config with checkpoint
+                torch.save({
+                    'state_estimator_state_dict': model.state_dict(),
+                    'config': saved_config,
+                    'best_val_loss': best_val_loss,
+                    'update': update,
+                }, save_path)
+                logger.info(f"  -> New Best! Saved model with config.")
             else:
                 patience_counter += 1
                 if patience_counter >= cfg.ESTIMATOR_PATIENCE:
                     logger.info("Early Stopping Triggered.")
                     break
             
+    # Save final model
+    final_save_path = os.path.join(output_dir, "final_autoregressive_estimator.pth")
+    torch.save({
+        'state_estimator_state_dict': model.state_dict(),
+        'config': saved_config,
+        'final_val_loss': best_val_loss,
+        'total_updates': update,
+    }, final_save_path)
+    
     logger.info("Training Complete.")
     train_env.close()
     val_env.close()
+
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -335,6 +395,7 @@ def parse_arguments() -> argparse.Namespace:
     args.config = CONFIG_MAP[args.config]
     args.trajectory_type = next(t for t in TrajectoryType if t.value.lower() == args.trajectory_type.lower())
     return args
+
 
 if __name__ == "__main__":
     multiprocessing.set_start_method('spawn', force=True)

@@ -481,14 +481,27 @@ class TeleoperationEnvWithDelay(gym.Env):
         penalty = -10.0 if terminated else 0.0
         return terminated, penalty
 
-    def _get_info(self) -> Dict[str, Any]:
+    def _get_info(self, phase="unknown"):
+        # Required for SACTrainer
+        true_target = np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
+        remote_q, _ = self.remote_robot.get_joint_state()
         
+        rt_error = np.linalg.norm(true_target[:7] - remote_q)
+        
+        pred_error = 0.0
+        if self._last_predicted_target is not None:
+            pred_error = np.linalg.norm(true_target[:7] - self._last_predicted_target[:7])
+
+        delay_steps = 0
+        if phase == "deployment":
+             delay_steps = self.delay_simulator.get_observation_delay_steps(len(self.leader_q_history))
+
         return {
-            "real_time_joint_error": self._cached_real_time_error,
-            "prediction_error": self._cached_prediction_error,
-            "current_delay_steps": self._cached_delay_steps,
-            "episode": self.episode_count,
-            "step": self.current_step,
+            "real_time_joint_error": rt_error,
+            "prediction_error": pred_error,
+            "current_delay_steps": delay_steps,
+            "is_in_warmup": (phase == "warmup"),
+            "phase": phase  # <--- THIS LINE WAS MISSING
         }
 
     def render(self):
