@@ -102,7 +102,7 @@ ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 2
-RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
+RNN_SEQUENCE_LENGTH = 150 # Input sequence for LSTM
 
 DELAY_INPUT_NORM_FACTOR = 10.0
 TARGET_DELTA_SCALE = 500.0
@@ -117,7 +117,7 @@ MAX_AR_STEPS = 240 / (1/DEFAULT_CONTROL_FREQ * 1000) + 5
 ######################################
 # RL Environment Parameters
 ######################################
-MAX_JOINT_ERROR_TERMINATION = 0.5  # radians
+MAX_JOINT_ERROR_TERMINATION = 2.0  # radians
 
 REMOTE_HISTORY_LEN = 5
 

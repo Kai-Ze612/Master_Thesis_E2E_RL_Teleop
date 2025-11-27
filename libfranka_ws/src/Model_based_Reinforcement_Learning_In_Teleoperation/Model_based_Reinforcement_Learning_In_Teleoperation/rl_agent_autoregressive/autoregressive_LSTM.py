@@ -304,7 +304,7 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
         
         # Randomly select how many steps to "hide" and predict
         # This teaches the model s_t -> s_{t+k} physics
-        packet_loss_steps = np.random.randint(1, 10) 
+        packet_loss_steps = np.random.randint(1, 53) 
         
         # We chop off the last 'k' steps to use as input
         cutoff_idx = cfg.RNN_SEQUENCE_LENGTH - packet_loss_steps

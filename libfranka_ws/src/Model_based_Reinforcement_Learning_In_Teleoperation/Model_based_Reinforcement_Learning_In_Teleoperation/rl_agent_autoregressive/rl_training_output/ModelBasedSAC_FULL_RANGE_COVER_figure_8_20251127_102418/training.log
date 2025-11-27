@@ -8,3 +8,11 @@
 2025-11-27 10:24:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Starting SAC Training (Environment-Centric Prediction)
 2025-11-27 10:24:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm -   Input Dim: 113 | Output Dim: 7
 2025-11-27 10:24:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - ======================================================================
+2025-11-27 10:29:55 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -7557.8810
+2025-11-27 10:29:55 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_FULL_RANGE_COVER_figure_8_20251127_102418/best_policy.pth
+2025-11-27 10:32:40 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -683.2246
+2025-11-27 10:32:40 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_FULL_RANGE_COVER_figure_8_20251127_102418/best_policy.pth
+2025-11-27 10:35:08 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -643.8080
+2025-11-27 10:35:08 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_FULL_RANGE_COVER_figure_8_20251127_102418/best_policy.pth
+2025-11-27 10:36:56 [WARNING] __main__ - Interrupted.
+2025-11-27 10:36:56 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_FULL_RANGE_COVER_figure_8_20251127_102418/interrupted_policy.pth
