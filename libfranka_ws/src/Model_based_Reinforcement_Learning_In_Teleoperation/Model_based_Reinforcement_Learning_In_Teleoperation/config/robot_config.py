@@ -12,7 +12,7 @@ import numpy as np
 # LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/Autoregressive_LSTM_LOW_DELAY_20251126_000248/autoregressive_estimator.pth"
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/Autoregressive_LSTM_FULL_RANGE_COVER_20251126_234602/autoregressive_estimator.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/Autoregressive_LSTM_FULL_RANGE_COVER_20251127_192658/autoregressive_estimator.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -44,8 +44,8 @@ MAX_JOINT_CHANGE_PER_STEP = 0.01
 DEFAULT_CONTROL_FREQ = 200
 DEFAULT_PUBLISH_FREQ = 200
 
-DEFAULT_KP_REMOTE = np.array([64.0, 64.0, 64.0, 36.0, 36.0, 16.0, 4.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([10.0,  10.0,  10.0,  8.0,  8.0, 4.0, 4.0], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([64.0, 49.0, 49.0, 36.0, 36.0, 16.0, 9.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([16.0, 14.0, 14.0, 12.0, 12.0,  8.0, 6.0], dtype=np.float32)
 
 ######################################
 # IK Solver Parameterss
@@ -70,8 +70,8 @@ IK_JOINT_WEIGHTS = [
     0.0,   # J2 (Shoulder Lift): FREE (Main reacher)
     0.0,   # J3 (Shoulder Pan): Natural
     0.0,   # J4 (Elbow): FREE (Main reacher)
-    1.0,   # J5 (Forearm): Slight damping to prevent rolling
-    10.0,  # J6 (Wrist Flex): HEAVY. Acts like a stabilizer.
+    0.0,   # J5 (Forearm): Slight damping to prevent rolling
+    0.0,  # J6 (Wrist Flex): HEAVY. Acts like a stabilizer.
     10.0   # J7 (Wrist Twist): Stiff.
 ]
 
@@ -85,7 +85,7 @@ IK_NULL_SPACE_GAIN = 0.5
 # Trajectory Generation Parameters
 ######################################
 TRAJECTORY_CENTER = np.array([0.4, 0, 0.4], dtype=np.float32)
-TRAJECTORY_SCALE = np.array([0.1, 0.2, 0.02], dtype=np.float32)
+TRAJECTORY_SCALE = np.array([0.2, 0.2, 0.02], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1  # Hz
 
 ######################################
@@ -101,7 +101,7 @@ ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 256
-RNN_NUM_LAYERS = 2
+RNN_NUM_LAYERS = 3
 RNN_SEQUENCE_LENGTH = 150 # Input sequence for LSTM
 
 DELAY_INPUT_NORM_FACTOR = 10.0
@@ -118,7 +118,7 @@ MAX_AR_STEPS = 240 / (1/DEFAULT_CONTROL_FREQ * 1000) + 5
 ######################################
 # RL Environment Parameters
 ######################################
-MAX_JOINT_ERROR_TERMINATION = 2.0  # radians
+MAX_JOINT_ERROR_TERMINATION = 0.5  # radians
 
 REMOTE_HISTORY_LEN = 5
 

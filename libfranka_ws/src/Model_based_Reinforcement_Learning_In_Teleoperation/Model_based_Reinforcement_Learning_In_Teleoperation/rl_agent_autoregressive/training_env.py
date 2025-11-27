@@ -472,9 +472,9 @@ class TeleoperationEnvWithDelay(gym.Env):
             print(f"[Termination] High tracking error: {joint_error} > {self.max_joint_error}")
 
         # if high prediction error (0.3 rad)        
-        pred_divergence = prediction_error > 2.0
+        pred_divergence = prediction_error > 0.3
         if pred_divergence:
-            print(f"[Termination] Prediction divergence: {prediction_error} > 2.0")
+            print(f"[Termination] Prediction divergence: {prediction_error} > 0.3")
 
         terminated = at_limits or high_error or pred_divergence
 

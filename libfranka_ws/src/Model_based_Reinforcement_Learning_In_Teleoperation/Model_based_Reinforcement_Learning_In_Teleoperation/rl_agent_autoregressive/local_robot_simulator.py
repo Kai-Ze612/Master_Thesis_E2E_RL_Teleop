@@ -68,10 +68,15 @@ class TrajectoryGenerator(ABC):
 
 class Figure8TrajectoryGenerator(TrajectoryGenerator):
     def compute_position(self, t: float) -> np.ndarray:
+
         phase = self._compute_phase(t)
+
         dx = self._params.scale[0] * np.sin(phase)
+
         dy = self._params.scale[1] * np.sin(phase / 2)
+
         dz = self._params.scale[2] * np.sin(phase)
+
         return self._params.center + np.array([dx, dy, dz], dtype=np.float64)
 
 
@@ -124,15 +129,14 @@ class LocalRobotSimulator(gym.Env):
         # Get start position via FK
         self.data.qpos[:self.n_joints] = cfg.INITIAL_JOINT_CONFIG
         mujoco.mj_forward(self.model, self.data)
-        
         ee_site_id = self.model.site('panda_ee_site').id
-        actual_start_pos = self.data.site_xpos[ee_site_id].copy()
+        self.actual_spawn_pos = self.data.site_xpos[ee_site_id].copy()
         
         # Trajectory Generator Setup
         if self._randomize_params:
-            self._params = TrajectoryParams.randomize(actual_start_pos)
+            self._params = TrajectoryParams.randomize(self.actual_spawn_pos)
         else:
-            self._params = TrajectoryParams(center=actual_start_pos.copy())
+            self._params = TrajectoryParams()
         self._trajectory_type = trajectory_type
        
         # Trajectory Generator Selection
@@ -142,6 +146,7 @@ class LocalRobotSimulator(gym.Env):
             TrajectoryType.LISSAJOUS_COMPLEX: LissajousTrajectoryGenerator,
         }
         self._generator = generators[trajectory_type](self._params)
+        self.traj_start_pos = self._generator.compute_position(0.0)
         
         # State
         self._q_start = cfg.INITIAL_JOINT_CONFIG.copy()
@@ -173,37 +178,42 @@ class LocalRobotSimulator(gym.Env):
         - truncated: Always False
         - info: Empty dict
         """
+        
         self._trajectory_time += self._dt
         self._tick += 1
         t = self._trajectory_time
         
+        # 1. Get the Raw Target from Trajectory/IK (Your existing logic)
         if t < cfg.WARM_UP_DURATION:
-            # Hold at start during warm-up
-            q_desired = self._q_start.copy()
+            progress = t / cfg.WARM_UP_DURATION
+            current_target_pos = (1 - progress) * self.actual_spawn_pos + progress * self.traj_start_pos
+            q_target_raw, ik_success, _ = self.ik_solver.solve(current_target_pos, self._q_current)
         else:
-            # Follow trajectory
             movement_time = t - cfg.WARM_UP_DURATION
             cartesian_target = self._generator.compute_position(movement_time)
+            q_target_raw, ik_success, _ = self.ik_solver.solve(cartesian_target, self._q_current)
             
-            q_desired, ik_success, _ = self.ik_solver.solve(cartesian_target, self._q_current)
-            
-            if not ik_success or q_desired is None:
-                q_desired = self._q_current.copy()
+        if not ik_success or q_target_raw is None:
+            q_target_raw = self._q_current.copy()
         
-        # Compute velocity via finite difference
-        qd_desired = (q_desired - self._q_previous) / self._dt
+        qd_raw = (q_target_raw - self._q_previous) / self._dt
+        
+        max_velocity = 1.5 
+        qd_safe = np.clip(qd_raw, -max_velocity, max_velocity)
+  
+        q_safe = self._q_previous + (qd_safe * self._dt)
         
         # Update state
         self._q_previous = self._q_current.copy()
-        self._q_current = q_desired.copy()
+        self._q_current = q_safe.copy() # Store the SAFE position, not the RAW one
         
         return (
-            self._q_current.astype(np.float32),   # q_desired
-            qd_desired.astype(np.float32),        # qd_desired
-            0.0,                                   # reward (not used)
-            False,                                 # terminated
-            False,                                 # truncated
-            {}                                     # info
+            self._q_current.astype(np.float32),   
+            qd_safe.astype(np.float32),        
+            0.0, 
+            False,
+            False,
+            {}
         )
     
     @property

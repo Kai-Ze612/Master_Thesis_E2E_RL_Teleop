@@ -77,7 +77,7 @@ def is_trajectory_stable(delayed_seq: np.ndarray, true_target: np.ndarray) -> bo
     if np.isnan(delayed_seq).any() or np.isnan(true_target).any(): 
         return False
     # Check for extreme joint velocities
-    if np.max(np.abs(delayed_seq[:, 7:14])) > 6.0: 
+    if np.max(np.abs(delayed_seq[:, 7:14])) > 10.0: 
         return False 
     return True
 
