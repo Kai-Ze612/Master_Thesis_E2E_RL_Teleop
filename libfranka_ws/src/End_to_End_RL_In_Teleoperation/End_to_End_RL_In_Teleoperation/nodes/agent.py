@@ -31,9 +31,9 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray 
 
-from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_policy_network import StateEstimator, Actor
-from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
+from End_to_End_RL_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
+from End_to_End_RL_In_Teleoperation.rl_agent_autoregressive.sac_policy_network import StateEstimator, Actor
+from End_to_End_RL_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     DEFAULT_CONTROL_FREQ,
     INITIAL_JOINT_CONFIG,

@@ -25,7 +25,7 @@ import mujoco
 from scipy.optimize import least_squares
 
 # Configuration import
-import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
+import End_to_End_RL_In_Teleoperation.config.robot_config as cfg
 
 
 class IKSolver:
