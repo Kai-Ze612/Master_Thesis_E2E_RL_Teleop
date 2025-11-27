@@ -66,3 +66,12 @@
 2025-11-27 09:23:15,413 [INFO] Validating at 200000: Val Loss = 0.000376 (Best: 0.000256)
 2025-11-27 09:24:16,129 [INFO] Validating at 205000: Val Loss = 0.000303 (Best: 0.000256)
 2025-11-27 09:25:16,447 [INFO] Validating at 210000: Val Loss = 0.000383 (Best: 0.000256)
+2025-11-27 09:26:16,699 [INFO] Validating at 215000: Val Loss = 0.000329 (Best: 0.000256)
+2025-11-27 09:27:15,356 [INFO] Validating at 220000: Val Loss = 0.000365 (Best: 0.000256)
+2025-11-27 09:28:14,276 [INFO] Validating at 225000: Val Loss = 0.000343 (Best: 0.000256)
+2025-11-27 09:29:12,770 [INFO] Validating at 230000: Val Loss = 0.000397 (Best: 0.000256)
+2025-11-27 09:30:11,356 [INFO] Validating at 235000: Val Loss = 0.000333 (Best: 0.000256)
+2025-11-27 09:31:09,832 [INFO] Validating at 240000: Val Loss = 0.000335 (Best: 0.000256)
+2025-11-27 09:32:10,036 [INFO] Validating at 245000: Val Loss = 0.000345 (Best: 0.000256)
+2025-11-27 09:32:10,037 [INFO] Early Stopping Triggered.
+2025-11-27 09:32:10,039 [INFO] Training Complete.

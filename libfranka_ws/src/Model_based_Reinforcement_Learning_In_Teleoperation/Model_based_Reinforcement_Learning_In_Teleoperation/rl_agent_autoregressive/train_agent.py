@@ -88,7 +88,9 @@ def train_agent(args: argparse.Namespace) -> None:
     trainer = None
     try:
         # Trainer no longer needs the path, the Env handles it
-        trainer = SACTrainer(env=env) 
+        trainer = SACTrainer(
+            env=env,
+            val_delay_config=args.config)
         trainer.checkpoint_dir = output_dir
     except Exception as e:
         logger.error(f"Failed to initialize trainer: {e}", exc_info=True)
