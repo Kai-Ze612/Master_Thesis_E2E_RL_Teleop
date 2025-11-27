@@ -33,8 +33,8 @@ MAX_TORQUE_COMPENSATION = np.array([20.0, 15.0, 15.0, 10.0, 10.0, 5.0, 5.0], dty
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], dtype=np.float32)
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
-WARM_UP_DURATION = 1  # sec (before starting moving)
-NO_DELAY_DURATION = 2 # sec (before starting delay simulation)
+WARM_UP_DURATION = 1 # sec (before starting moving)
+NO_DELAY_DURATION = 1 # sec (before starting delay simulation)
 
 MAX_JOINT_CHANGE_PER_STEP = 0.01
 
@@ -44,8 +44,8 @@ MAX_JOINT_CHANGE_PER_STEP = 0.01
 DEFAULT_CONTROL_FREQ = 200
 DEFAULT_PUBLISH_FREQ = 200
 
-DEFAULT_KP_REMOTE = np.array([64.0, 49.0, 49.0, 36.0, 36.0, 16.0, 9.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([16.0, 14.0, 14.0, 12.0, 12.0,  8.0, 6.0], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([64.0, 49.0, 49.0, 36.0, 36.0, 25.0, 9.0], dtype=np.float32)
+DEFAULT_KD_REMOTE = np.array([16.0, 14.0, 14.0, 12.0, 12.0,  10.0, 6.0], dtype=np.float32)
 
 ######################################
 # IK Solver Parameterss
@@ -84,7 +84,7 @@ IK_NULL_SPACE_GAIN = 0.5
 ######################################
 # Trajectory Generation Parameters
 ######################################
-TRAJECTORY_CENTER = np.array([0.4, 0, 0.4], dtype=np.float32)
+TRAJECTORY_CENTER = np.array([0.3, 0, 0.4], dtype=np.float32)
 TRAJECTORY_SCALE = np.array([0.2, 0.2, 0.02], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1  # Hz
 

@@ -86,7 +86,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         # No delay grace period
         self.grace_period_steps = self.warmup_steps + int(cfg.NO_DELAY_DURATION * self.control_freq)
         
-        
         ################################################################
         # LSTM Model Loading
         self.lstm = None

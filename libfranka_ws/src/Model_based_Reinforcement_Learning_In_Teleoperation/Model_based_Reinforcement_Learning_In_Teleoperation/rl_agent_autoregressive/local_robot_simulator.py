@@ -182,7 +182,7 @@ class LocalRobotSimulator(gym.Env):
         self._trajectory_time += self._dt
         self._tick += 1
         t = self._trajectory_time
-        
+
         # 1. Get the Raw Target from Trajectory/IK (Your existing logic)
         if t < cfg.WARM_UP_DURATION:
             progress = t / cfg.WARM_UP_DURATION

@@ -28,7 +28,7 @@ class RemoteRobotSimulator:
         self, 
         delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY, 
         seed: Optional[int] = None,
-        render: bool = True,
+        render: bool = False,
         render_fps: Optional[int] = 120
     ):
         
@@ -60,7 +60,8 @@ class RemoteRobotSimulator:
         self.last_executed_rl_torque = np.zeros(self.n_joints)
 
         # No delay time
-        self.no_delay_steps = int(cfg.NO_DELAY_DURATION * self.control_freq)
+        total_grace_time = cfg.WARM_UP_DURATION + cfg.NO_DELAY_DURATION
+        self.no_delay_steps = int(total_grace_time * self.control_freq)
         
         # Rendering setup
         self._render_enabled = render
@@ -198,34 +199,36 @@ class RemoteRobotSimulator:
         if self._render_enabled:
             self.render()
 
-        # 1. Calculate Tracking Error (Target vs Actual Remote)
-        raw_tracking_diff = target_q - q_current
-        tracking_error_vec = self._normalize_angle(raw_tracking_diff)
-        tracking_error_norm = np.linalg.norm(tracking_error_vec)
-
-        # 2. Calculate Prediction Error (LSTM Prediction vs True Local Leader)
-        # FIX Issue 8: Use true_local_q if provided for accurate prediction error
         if true_local_q is not None:
             raw_pred_diff = target_q - true_local_q
             prediction_error_vec = self._normalize_angle(raw_pred_diff)
             prediction_error_norm = np.linalg.norm(prediction_error_vec)
         else:
-            # Fallback: compare against current remote (less meaningful)
             prediction_error_norm = 0.0
+
+        q_current = self.data.qpos[:self.n_joints].copy()
         
+        if true_local_q is not None:
+            raw_tracking_diff = true_local_q - q_current # <--- FIX HERE
+        else:
+            # Fallback if true_local_q is missing
+            raw_tracking_diff = target_q - q_current 
+
+        tracking_error_vec = self._normalize_angle(raw_tracking_diff)
+        tracking_error_norm = np.linalg.norm(tracking_error_vec)
+
         np.set_printoptions(precision=3, suppress=True, linewidth=200)
         print(f"\n[Sim Step {self.internal_tick}]")
         print(f"  True Local Q:       {true_local_q}")
         print(f"  Predicted Target Q: {target_q}")
         print(f"  Prediction Error Norm: {prediction_error_norm:.6f}\n")
         print(f"  Actual Remote Q:    {self.data.qpos[:self.n_joints]}")
-        print(f"  Tracking Error Norm:  {tracking_error_norm:.6f}") 
-        print(f"  ------------------------------------------------")
-        print(f"  Tau PD (Baseline):  {tau_id}")
-        print(f"  Tau RL (Action):    {self.last_executed_rl_torque}")
-        print(f"  Tau Total:          {tau_total}")
-        print(f"  ------------------------------------------------")
+        print(f"  Tracking Error Norm:  {tracking_error_norm:.6f}")
 
+        print(f"  Applied Tau ID:     {tau_id}")
+        print(f"  Applied Tau RL:     {self.last_executed_rl_torque}")
+        print(f"  Applied Tau Total:  {tau_total}")
+        
         return {
             "joint_error": np.linalg.norm(target_q - self.data.qpos[:self.n_joints]),
             "tracking_error": tracking_error_norm,
