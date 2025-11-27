@@ -5,3 +5,45 @@
 2025-11-26 23:47:43,707 [INFO] Buffer filled. Starting Training Loop.
 2025-11-26 23:49:35,467 [INFO] Validating at 5000: Val Loss = 0.000947 (Best: inf)
 2025-11-26 23:49:35,471 [INFO]   -> New Best! Saved model.
+2025-11-26 23:51:26,317 [INFO] Validating at 10000: Val Loss = 0.000304 (Best: 0.000947)
+2025-11-26 23:51:26,354 [INFO]   -> New Best! Saved model.
+2025-11-26 23:53:14,391 [INFO] Validating at 15000: Val Loss = 0.000120 (Best: 0.000304)
+2025-11-26 23:53:14,428 [INFO]   -> New Best! Saved model.
+2025-11-26 23:55:04,286 [INFO] Validating at 20000: Val Loss = 0.000084 (Best: 0.000120)
+2025-11-26 23:55:04,322 [INFO]   -> New Best! Saved model.
+2025-11-26 23:56:53,239 [INFO] Validating at 25000: Val Loss = 0.000077 (Best: 0.000084)
+2025-11-26 23:56:53,250 [INFO]   -> New Best! Saved model.
+2025-11-26 23:58:46,163 [INFO] Validating at 30000: Val Loss = 0.000056 (Best: 0.000077)
+2025-11-26 23:58:46,166 [INFO]   -> New Best! Saved model.
+2025-11-27 00:00:39,889 [INFO] Validating at 35000: Val Loss = 0.000053 (Best: 0.000056)
+2025-11-27 00:00:39,925 [INFO]   -> New Best! Saved model.
+2025-11-27 00:02:31,339 [INFO] Validating at 40000: Val Loss = 0.000041 (Best: 0.000053)
+2025-11-27 00:02:31,342 [INFO]   -> New Best! Saved model.
+2025-11-27 00:04:23,575 [INFO] Validating at 45000: Val Loss = 0.000047 (Best: 0.000041)
+2025-11-27 00:06:12,980 [INFO] Validating at 50000: Val Loss = 0.000038 (Best: 0.000041)
+2025-11-27 00:06:12,983 [INFO]   -> New Best! Saved model.
+2025-11-27 00:08:04,934 [INFO] Validating at 55000: Val Loss = 0.000050 (Best: 0.000038)
+2025-11-27 00:09:56,866 [INFO] Validating at 60000: Val Loss = 0.000037 (Best: 0.000038)
+2025-11-27 00:09:56,875 [INFO]   -> New Best! Saved model.
+2025-11-27 00:11:50,342 [INFO] Validating at 65000: Val Loss = 0.000050 (Best: 0.000037)
+2025-11-27 00:13:42,457 [INFO] Validating at 70000: Val Loss = 0.000051 (Best: 0.000037)
+2025-11-27 00:15:32,848 [INFO] Validating at 75000: Val Loss = 0.000044 (Best: 0.000037)
+2025-11-27 00:17:23,901 [INFO] Validating at 80000: Val Loss = 0.000038 (Best: 0.000037)
+2025-11-27 00:19:16,059 [INFO] Validating at 85000: Val Loss = 0.000045 (Best: 0.000037)
+2025-11-27 00:21:09,460 [INFO] Validating at 90000: Val Loss = 0.000040 (Best: 0.000037)
+2025-11-27 00:23:03,293 [INFO] Validating at 95000: Val Loss = 0.000050 (Best: 0.000037)
+2025-11-27 00:24:54,974 [INFO] Validating at 100000: Val Loss = 0.000041 (Best: 0.000037)
+2025-11-27 00:26:49,323 [INFO] Validating at 105000: Val Loss = 0.000034 (Best: 0.000037)
+2025-11-27 00:26:49,361 [INFO]   -> New Best! Saved model.
+2025-11-27 00:28:43,744 [INFO] Validating at 110000: Val Loss = 0.000044 (Best: 0.000034)
+2025-11-27 00:30:37,436 [INFO] Validating at 115000: Val Loss = 0.000042 (Best: 0.000034)
+2025-11-27 00:32:26,983 [INFO] Validating at 120000: Val Loss = 0.000046 (Best: 0.000034)
+2025-11-27 00:34:21,956 [INFO] Validating at 125000: Val Loss = 0.000042 (Best: 0.000034)
+2025-11-27 00:36:15,553 [INFO] Validating at 130000: Val Loss = 0.000047 (Best: 0.000034)
+2025-11-27 00:38:10,907 [INFO] Validating at 135000: Val Loss = 0.000037 (Best: 0.000034)
+2025-11-27 00:40:05,790 [INFO] Validating at 140000: Val Loss = 0.000043 (Best: 0.000034)
+2025-11-27 00:41:59,914 [INFO] Validating at 145000: Val Loss = 0.000051 (Best: 0.000034)
+2025-11-27 00:43:52,071 [INFO] Validating at 150000: Val Loss = 0.000040 (Best: 0.000034)
+2025-11-27 00:45:43,942 [INFO] Validating at 155000: Val Loss = 0.000034 (Best: 0.000034)
+2025-11-27 00:45:43,942 [INFO] Early Stopping Triggered.
+2025-11-27 00:45:43,942 [INFO] Training Complete.

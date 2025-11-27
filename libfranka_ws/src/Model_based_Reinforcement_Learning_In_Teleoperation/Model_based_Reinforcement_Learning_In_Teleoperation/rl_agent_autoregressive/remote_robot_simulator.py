@@ -20,7 +20,6 @@ import numpy as np
 from numpy.typing import NDArray
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
 
 
@@ -111,13 +110,10 @@ class RemoteRobotSimulator:
         mujoco.mj_forward(self.model, mj_data)
         
     def reset(self, initial_qpos: NDArray[np.float64]) -> None:
-        """
-        Reset simulation and stabilize physics at the exact initial config.
         
-        CRITICAL: Does NOT use mj_resetData to avoid MuJoCo XML defaults.
-        """
         # 1. Reset internal state
         self.action_queue = []
+        heapq.heapify(self.action_queue)  # FIX Issue 9: Explicit heapify
         self.internal_tick = 0
         self.last_executed_rl_torque = np.zeros(self.n_joints)
         self.last_q_target = initial_qpos.copy()
@@ -157,7 +153,14 @@ class RemoteRobotSimulator:
         mujoco.mj_inverse(self.model, self.data_control)
         return self.data_control.qfrc_inverse[:self.n_joints].copy()
     
-    def step(self, target_q, target_qd, torque_compensation) -> dict:
+    def step(
+        self, 
+        target_q: np.ndarray, 
+        target_qd: np.ndarray, 
+        torque_compensation: np.ndarray,
+        true_local_q: Optional[np.ndarray] = None
+    ) -> dict:
+        
         self.internal_tick += 1
         
         if self.internal_tick < self.no_delay_steps:
@@ -200,15 +203,19 @@ class RemoteRobotSimulator:
         tracking_error_vec = self._normalize_angle(raw_tracking_diff)
         tracking_error_norm = np.linalg.norm(tracking_error_vec)
 
-        # 2. Calculate Prediction Error (Target vs True Local Leader)
-        # [FIX] Compare against current_local_q_, NOT last_q_target
-        raw_pred_diff = target_q - q_current
-        prediction_error_vec = self._normalize_angle(raw_pred_diff)
-        prediction_error_norm = np.linalg.norm(prediction_error_vec)
+        # 2. Calculate Prediction Error (LSTM Prediction vs True Local Leader)
+        # FIX Issue 8: Use true_local_q if provided for accurate prediction error
+        if true_local_q is not None:
+            raw_pred_diff = target_q - true_local_q
+            prediction_error_vec = self._normalize_angle(raw_pred_diff)
+            prediction_error_norm = np.linalg.norm(prediction_error_vec)
+        else:
+            # Fallback: compare against current remote (less meaningful)
+            prediction_error_norm = 0.0
         
         np.set_printoptions(precision=3, suppress=True, linewidth=200)
         print(f"\n[Sim Step {self.internal_tick}]")
-        print(f"  True Q:          {q_current}")
+        print(f"  True Local Q:       {true_local_q}")
         print(f"  Predicted Target Q: {target_q}")
         print(f"  Prediction Error Norm: {prediction_error_norm:.6f}\n")
         print(f"  Actual Remote Q:    {self.data.qpos[:self.n_joints]}")
@@ -221,17 +228,15 @@ class RemoteRobotSimulator:
 
         return {
             "joint_error": np.linalg.norm(target_q - self.data.qpos[:self.n_joints]),
+            "tracking_error": tracking_error_norm,
+            "prediction_error": prediction_error_norm,
             "tau_pd": tau_id, 
             "tau_rl": self.last_executed_rl_torque, 
             "tau_total": tau_total
         }
-
     def render(self) -> bool:
         """
         Render the current state in the MuJoCo viewer.
-        
-        Returns:
-            True if viewer is still open, False if closed.
         """
         if not self._render_enabled or self._viewer is None:
             return True

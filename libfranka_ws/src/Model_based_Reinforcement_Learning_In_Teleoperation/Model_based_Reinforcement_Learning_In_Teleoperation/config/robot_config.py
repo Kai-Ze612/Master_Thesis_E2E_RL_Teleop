@@ -12,7 +12,7 @@ import numpy as np
 # LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/Autoregressive_LSTM_LOW_DELAY_20251126_000248/autoregressive_estimator.pth"
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/Autoregressive_LSTM_FULL_RANGE_COVER_20251126_231216/autoregressive_estimator.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/Autoregressive_LSTM_FULL_RANGE_COVER_20251126_234602/autoregressive_estimator.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -34,7 +34,7 @@ INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], 
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
 WARM_UP_DURATION = 1  # sec (before starting moving)
-NO_DELAY_DURATION = 0.5 # sec (before starting delay simulation)
+NO_DELAY_DURATION = 2 # sec (before starting delay simulation)
 
 MAX_JOINT_CHANGE_PER_STEP = 0.01
 
@@ -101,7 +101,7 @@ ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
 
 RNN_HIDDEN_DIM = 256
-RNN_NUM_LAYERS = 3
+RNN_NUM_LAYERS = 2
 RNN_SEQUENCE_LENGTH = 100 # Input sequence for LSTM
 
 DELAY_INPUT_NORM_FACTOR = 10.0
@@ -112,6 +112,7 @@ AUGMENTATION_STRIDE = 4
 DT = 1.0 / DEFAULT_CONTROL_FREQ
 
 ESTIMATOR_STATE_DIM = 15  # 7 q + 7 qd + 1 delay
+MAX_AR_STEPS = 240 / (1/DEFAULT_CONTROL_FREQ * 1000) + 5
 
 ######################################
 # RL Environment Parameters

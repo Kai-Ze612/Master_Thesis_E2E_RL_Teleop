@@ -1,5 +1,9 @@
 """
 Define the Network Architecture.
+1. LSTM State Estimator
+2. SAC Actor Network
+3. SAC Critic Network
+
 """
 
 import torch
@@ -8,43 +12,25 @@ import numpy as np
 from typing import Tuple, Optional
 from torch.distributions import Normal
 
-# Import configs for Actor/Critic
-# We use hardcoded values for StateEstimator to ensure it matches the checkpoint
-from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    N_JOINTS,
-    OBS_DIM,
-    MAX_TORQUE_COMPENSATION,
-    SAC_MLP_HIDDEN_DIMS,
-    SAC_ACTIVATION,
-    LOG_STD_MIN,
-    LOG_STD_MAX,
-    RNN_NUM_LAYERS,
-    RNN_HIDDEN_DIM,
-)
+import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
+
 
 class StateEstimator(nn.Module):
-    """
-    LSTM-based State Estimator.
-    Structure matches the pre-trained checkpoint exactly:
-    - Input: 15 (7 q + 7 qd + 1 delay)
-    - Hidden: 256
-    - Head: 'fc' (not 'prediction_head')
-    - No LayerNorm ('input_ln')
-    """
     def __init__(
         self,
-        input_dim_total: int = 15,  # FIXED: Checkpoint expects 15 inputs
-        hidden_dim: int = RNN_HIDDEN_DIM,      # FIXED: Checkpoint expects 256 hidden size
-        num_layers: int = RNN_NUM_LAYERS,
+        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM,
+        hidden_dim: int = cfg.RNN_HIDDEN_DIM,
+        num_layers: int = cfg.RNN_NUM_LAYERS,
         output_dim: int = 14,
     ):
+        
         super().__init__()
         
-        # Store dimensions for later use
+        # LSTM network parameters
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
         
-        # 1. LSTM Core
+        # LSTM Layer
         self.lstm = nn.LSTM(
             input_size=input_dim_total,
             hidden_size=hidden_dim,
@@ -52,26 +38,23 @@ class StateEstimator(nn.Module):
             batch_first=True
         )
         
-        # 2. Prediction Head (Must be named 'fc')
+        # Prediction head
         self.fc = nn.Sequential(
             nn.Linear(hidden_dim, 128),
             nn.ReLU(),
             nn.Linear(128, output_dim)
         )
-        
-        # NOTE: Removed 'input_ln' as it does not exist in the checkpoint
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Forward pass for full sequence.
+        Forward pass for sequence input.
         
-        Args:
-            x: (Batch, Seq_Len, 15) - Input sequence
-            
-        Returns:
-            residual: (Batch, 14) - Predicted state residual
-            last_hidden: (Batch, hidden_dim) - Last hidden state output
+        input: (Batch, Seq_Len, input_dim_total(15D))
+        output: 
+            residual: (Batch, output_dim)
+            last_hidden: (Batch, hidden_dim)
         """
+        
         # LSTM forward
         lstm_out, _ = self.lstm(x)
         
@@ -91,18 +74,13 @@ class StateEstimator(nn.Module):
         """
         Single-step forward for autoregressive inference.
         
-        This method maintains hidden state across multiple prediction steps,
-        which is essential for proper autoregressive rollout.
-        
-        Args:
-            x_step: (Batch, 1, 15) - Single timestep input
-            hidden_state: Optional tuple of (h, c) from previous step
-                          Each has shape (num_layers, batch, hidden_dim)
-        
-        Returns:
-            residual: (Batch, 14) - Predicted state residual
-            new_hidden: Tuple of (h, c) for next step
+        Pipeline:
+        1. Input: (Batch, 1, input_dim_total(15D))
+        2. LSTM with hidden state
+        3. Output residual: (Batch, output_dim)
+        4. Return new hidden state for next step
         """
+        
         # LSTM forward with hidden state
         lstm_out, new_hidden = self.lstm(x_step, hidden_state)
         
@@ -118,10 +96,10 @@ class Actor(nn.Module):
     """
     def __init__(
         self,
-        state_dim: int = OBS_DIM,         # Defaults to Config (112D)
-        action_dim: int = N_JOINTS,       # Defaults to Config (7D)
-        hidden_dims: list = SAC_MLP_HIDDEN_DIMS,
-        activation: str = SAC_ACTIVATION
+        state_dim: int = cfg.OBS_DIM,
+        action_dim: int = cfg.N_JOINTS,
+        hidden_dims: list = cfg.SAC_MLP_HIDDEN_DIMS,
+        activation: str = cfg.SAC_ACTIVATION
     ):
         super().__init__()
         self.activation_fn = self._get_activation(activation)
@@ -143,7 +121,7 @@ class Actor(nn.Module):
         self._initialize_weights()
         
         # register buffers to handle device movement automatically
-        self.register_buffer('action_scale', torch.tensor(MAX_TORQUE_COMPENSATION, dtype=torch.float32))
+        self.register_buffer('action_scale', torch.tensor(cfg.MAX_TORQUE_COMPENSATION, dtype=torch.float32))
         self.register_buffer('action_bias', torch.tensor(0.0, dtype=torch.float32))
 
     def _get_activation(self, activation_name: str) -> nn.Module:
@@ -165,7 +143,7 @@ class Actor(nn.Module):
         mean = self.fc_mean(x)
         log_std = self.fc_log_std(x)
         # Clamp log_std to maintain numerical stability
-        log_std = torch.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
+        log_std = torch.clamp(log_std, cfg.LOG_STD_MIN, cfg.LOG_STD_MAX)
         return mean, log_std
 
     def sample(self, state: torch.Tensor, deterministic: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -199,10 +177,10 @@ class Critic(nn.Module):
     """
     def __init__(
         self,
-        state_dim: int = OBS_DIM,         # Defaults to Config (112D)
-        action_dim: int = N_JOINTS,       # Defaults to Config (7D)
-        hidden_dims: list = SAC_MLP_HIDDEN_DIMS,
-        activation: str = SAC_ACTIVATION
+        state_dim: int = cfg.OBS_DIM,
+        action_dim: int = cfg.N_JOINTS,
+        hidden_dims: list = cfg.SAC_MLP_HIDDEN_DIMS,
+        activation: str = cfg.SAC_ACTIVATION
     ):
         super().__init__()
         self.activation_fn = self._get_activation(activation)

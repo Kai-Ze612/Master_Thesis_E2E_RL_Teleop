@@ -35,7 +35,7 @@ class LSTMTestNode(Node):
         self.last_local_update_time_ = 0.0
         
         # Config
-        self.default_experiment_config_ = ExperimentConfig.HIGH_DELAY.value
+        self.default_experiment_config_ = ExperimentConfig.FULL_RANGE_COVER.value
         self.declare_parameter('experiment_config', self.default_experiment_config_)
         self.experiment_config_int_ = self.get_parameter('experiment_config').value
         self.delay_config_ = ExperimentConfig(self.experiment_config_int_)

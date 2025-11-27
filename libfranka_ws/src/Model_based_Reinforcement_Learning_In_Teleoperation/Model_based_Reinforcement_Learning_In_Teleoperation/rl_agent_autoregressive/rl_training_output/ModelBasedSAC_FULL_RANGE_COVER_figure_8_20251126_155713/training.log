@@ -1,4 +1,0 @@
-2025-11-26 15:57:13 [INFO] __main__ - Training Configuration:
-2025-11-26 15:57:13 [INFO] __main__ -   Delay: FULL_RANGE_COVER
-2025-11-26 15:57:13 [INFO] __main__ -   Trajectory: figure_8
-2025-11-26 15:57:13 [INFO] __main__ - Creating vectorized environment...
