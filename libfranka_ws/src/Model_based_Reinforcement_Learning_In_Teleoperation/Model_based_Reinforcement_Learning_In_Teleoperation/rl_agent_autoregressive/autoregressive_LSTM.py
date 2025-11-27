@@ -28,22 +28,24 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 from torch.utils.tensorboard import SummaryWriter
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.training_env import TeleoperationEnvWithDelay
-from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
+from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig, DelaySimulator
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.local_robot_simulator import TrajectoryType
 
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
 
 
 class AutoregressiveStateEstimator(nn.Module):
-    def __init__(self, input_dim_total=15, output_dim=14):
+    def __init__(self):
         """
         input_dim: 14D(q + qd) + 1D (normalized delay)
         output_dim: 14D (predicted q + qd)
         """
         super().__init__()
         
+        self.output_dim = cfg.ESTIMATOR_OUTPUT_DIM  # q and qd
+        
         self.lstm = nn.LSTM(
-            input_size=input_dim_total,
+            input_size=cfg.ESTIMATOR_STATE_DIM,
             hidden_size=cfg.RNN_HIDDEN_DIM, 
             num_layers=cfg.RNN_NUM_LAYERS,
             batch_first=True
@@ -52,7 +54,7 @@ class AutoregressiveStateEstimator(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(cfg.RNN_HIDDEN_DIM, 128),
             nn.ReLU(),
-            nn.Linear(128, output_dim)
+            nn.Linear(128, self.output_dim)
         )
 
     def forward(self, x):
@@ -68,8 +70,15 @@ class AutoregressiveStateEstimator(nn.Module):
 
 
 def is_trajectory_stable(delayed_seq: np.ndarray, true_target: np.ndarray) -> bool:
-    if np.isnan(delayed_seq).any() or np.isnan(true_target).any(): return False
-    if np.max(np.abs(delayed_seq[:, 7:14])) > 10.0: return False 
+    """
+    Helper function to filter out unstable trajectories.
+    """
+    # Check for NaNs and extreme values
+    if np.isnan(delayed_seq).any() or np.isnan(true_target).any(): 
+        return False
+    # Check for extreme joint velocities
+    if np.max(np.abs(delayed_seq[:, 7:14])) > 6.0: 
+        return False 
     return True
 
 
@@ -124,35 +133,21 @@ def collect_data_from_envs(env: SubprocVecEnv, num_envs: int) -> Tuple[np.ndarra
     if len(valid_seqs) == 0: return np.array([]), np.array([])
     return np.array(valid_seqs), np.array(valid_targets)
 
-
 def get_max_prediction_steps(delay_config: ExperimentConfig) -> int:
     """
-    FIX Issue 10: Calculate appropriate prediction horizon based on delay config.
+    Retrieve max prediction horizon dynamically from DelaySimulator settings.
     """
-    # Get delay parameters from config
-    if delay_config == ExperimentConfig.LOW_DELAY:
-        max_delay_ms = 100  # Example: adjust based on actual config
-    elif delay_config == ExperimentConfig.MEDIUM_DELAY:
-        max_delay_ms = 200
-    elif delay_config == ExperimentConfig.HIGH_DELAY:
-        max_delay_ms = 300
-    else:
-        max_delay_ms = 400
     
-    # Convert to steps
-    max_delay_steps = int(max_delay_ms / 1000.0 * cfg.DEFAULT_CONTROL_FREQ)
+    params = DelaySimulator._DELAY_CONFIGS[delay_config]
+    max_delay_ms = params.obs_delay_max
     
-    # Return reasonable prediction horizon (cap at 20 for stability)
-    return min(20, max(5, max_delay_steps // 2))
-
+    max_steps = int((max_delay_ms / 1000.0) * cfg.DEFAULT_CONTROL_FREQ)
+    
+    return max_steps + 2  # Add small buffer
 
 def evaluate_model(model, val_env, num_val_steps, delay_config, device='cpu'):
     """
     Validation Loop:
-    This checks how well the model predicts the REAL-TIME target given the delay.
-    We use the Env logic here (full delay rollout) to measure actual performance.
-    
-    FIX Issue 10: Use delay-config-based prediction steps.
     """
     model.eval()
     total_loss = 0.0
@@ -164,8 +159,7 @@ def evaluate_model(model, val_env, num_val_steps, delay_config, device='cpu'):
         val_env.step([np.zeros((val_env.num_envs, cfg.N_JOINTS))])
     
     dt_norm = (1.0 / cfg.DEFAULT_CONTROL_FREQ) / cfg.DELAY_INPUT_NORM_FACTOR
-    
-    # FIX Issue 10: Dynamic prediction steps
+
     prediction_steps = get_max_prediction_steps(delay_config)
 
     with torch.no_grad():
@@ -229,16 +223,15 @@ def get_saved_config() -> dict:
     }
 
 
-def train_autoregressive_estimator(args: argparse.Namespace) -> None:
+def train(args: argparse.Namespace) -> None:
+    """Main training loop for autoregressive LSTM state estimator."""
+    
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"Autoregressive_LSTM_{args.config.name}_{timestamp}"
     output_dir = os.path.join(cfg.CHECKPOINT_DIR_LSTM, run_name)
     os.makedirs(output_dir, exist_ok=True)
     
     logger = setup_logging(output_dir)    
-    logger.info("="*80)
-    logger.info("AUTOREGRESSIVE LSTM TRAINING (FIXED TARGET)")
-    logger.info("="*80)
     
     # Log config for reproducibility
     saved_config = get_saved_config()
@@ -285,6 +278,8 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
 
     logger.info(f"Buffer filled. Starting Training Loop.")
     
+    max_arg_steps = get_max_prediction_steps(args.config)
+    
     best_val_loss = float('inf')
     patience_counter = 0
     dt_norm = (1.0 / cfg.DEFAULT_CONTROL_FREQ) / cfg.DELAY_INPUT_NORM_FACTOR
@@ -292,33 +287,28 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
     model.train()
     
     for update in range(1, cfg.ESTIMATOR_TOTAL_UPDATES + 1):
-        # A. Data Collection
+        # Data Collection
         seqs, targets = collect_data_from_envs(train_env, cfg.NUM_ENVIRONMENTS)
         if len(seqs) > 0:
             for i in range(len(seqs)): replay_buffer.add(seqs[i], targets[i])
         train_env.step([np.zeros((cfg.NUM_ENVIRONMENTS, cfg.N_JOINTS))])
         
-        # B. Training Step
+        # Training Step
         batch = replay_buffer.sample(cfg.ESTIMATOR_BATCH_SIZE)
         input_seq = batch['delayed_sequences']
         
-        # Randomly select how many steps to "hide" and predict
-        # This teaches the model s_t -> s_{t+k} physics
-        packet_loss_steps = np.random.randint(1, 53) 
+        packet_loss_steps = np.random.randint(1, max_arg_steps)
         
-        # We chop off the last 'k' steps to use as input
+        # clear out the last k steps to simulate packet loss
         cutoff_idx = cfg.RNN_SEQUENCE_LENGTH - packet_loss_steps
         safe_history = input_seq[:, :cutoff_idx, :]
-        
-        # The TARGET is the state at the end of the sequence (which we hid)
-        # We are training: Rollout(History[:-k], k) == History[-1]
         target_state_future = input_seq[:, -1, :14]
         
-        # 1. Warmup on history
+        # Warmup on history
         _, hidden_state = model.lstm(safe_history)
         current_input = safe_history[:, -1:, :]
         
-        # 2. Autoregressive rollout
+        # Autoregressive rollout
         for k in range(packet_loss_steps):
             pred_delta, hidden_state = model.forward_step(current_input, hidden_state)
             
@@ -333,7 +323,7 @@ def train_autoregressive_estimator(args: argparse.Namespace) -> None:
             
         final_predicted_state = current_input[:, 0, :14]
         
-        # 3. Compute Loss
+        # Compute Loss
         loss = F.l1_loss(final_predicted_state, target_state_future)
         
         optimizer.zero_grad()
@@ -399,4 +389,4 @@ def parse_arguments() -> argparse.Namespace:
 
 if __name__ == "__main__":
     multiprocessing.set_start_method('spawn', force=True)
-    train_autoregressive_estimator(parse_arguments())
+    train(parse_arguments())
