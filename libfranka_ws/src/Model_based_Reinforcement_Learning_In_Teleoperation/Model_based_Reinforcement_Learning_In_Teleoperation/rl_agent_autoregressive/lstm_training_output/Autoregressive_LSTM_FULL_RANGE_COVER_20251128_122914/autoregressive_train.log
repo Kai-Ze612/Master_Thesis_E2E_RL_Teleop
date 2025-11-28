@@ -15,3 +15,6 @@
 2025-11-28 12:40:56,089 [INFO] Validating at 15000: Val Loss = 0.000887 (Best: 0.002517)
 2025-11-28 12:40:56,163 [INFO]   -> New Best! Saved model with config.
 2025-11-28 12:43:54,131 [INFO] Validating at 20000: Val Loss = 0.000946 (Best: 0.000887)
+2025-11-28 12:46:54,710 [INFO] Validating at 25000: Val Loss = 0.001625 (Best: 0.000887)
+2025-11-28 12:49:54,453 [INFO] Validating at 30000: Val Loss = 0.000141 (Best: 0.000887)
+2025-11-28 12:49:54,511 [INFO]   -> New Best! Saved model with config.
