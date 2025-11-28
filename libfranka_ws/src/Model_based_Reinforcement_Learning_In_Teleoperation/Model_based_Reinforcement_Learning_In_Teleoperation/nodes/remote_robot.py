@@ -50,8 +50,8 @@ class RemoteRobotNode(Node):
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
         self.tcp_offset_ = TCP_OFFSET
-        self.kp_ = DEFAULT_KP_REMOTE
-        self.kd_ = DEFAULT_KD_REMOTE
+        self.kp_ = DEFAULT_KP_REMOTE / 5
+        self.kd_ = DEFAULT_KD_REMOTE / 5
         self.torque_limits_ = TORQUE_LIMITS
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
         self.initial_joint_config_ = INITIAL_JOINT_CONFIG
@@ -100,14 +100,6 @@ class RemoteRobotNode(Node):
         )
         
         self.torque_command_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
-        
-        # ============================================================
-        # FIX 2: RL Torque Scaling Parameter for Safe Deployment
-        # Start with 0.0 for baseline testing, increase gradually
-        # ============================================================
-        self.declare_parameter('rl_torque_scale', 1.0)  # Default: fully enabled
-        self.rl_torque_scale_ = self.get_parameter('rl_torque_scale').value
-        self.get_logger().info(f"RL Torque Scale: {self.rl_torque_scale_}")
         
         # State flags
         self.robot_state_ready_ = False
@@ -198,20 +190,29 @@ class RemoteRobotNode(Node):
     
     def _get_inverse_dynamics(self, q: np.ndarray, v: np.ndarray, a_desired: np.ndarray) -> np.ndarray:
         """
-        Compute Torque using MuJoCo Inverse Dynamics.
-        Equation: tau = M(q)*a_desired + C(q,v)*v + G(q)
+        Compute Torque: tau = M*a_des + C*v + G
+        FIX: We must return (M*a_des + C*v) only, because Franka hardware adds G automatically.
         """
-        # 1. Update MuJoCo with the CURRENT Robot State
+        # 1. Calculate Full Inverse Dynamics (M*a + C*v + G)
         self.mj_data_.qpos[:self.n_joints_] = q
         self.mj_data_.qvel[:self.n_joints_] = v
-        
-        # 2. Set the DESIRED Acceleration (from PD)
         self.mj_data_.qacc[:self.n_joints_] = a_desired
-
-        # 3. Compute Inverse Dynamics
         mujoco.mj_inverse(self.mj_model_, self.mj_data_)
+        tau_full = self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
 
-        return self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
+        # 2. Calculate Gravity Component Only (G)
+        # We assume qacc=0 and qvel=0
+        self.mj_data_.qpos[:self.n_joints_] = q
+        self.mj_data_.qvel[:self.n_joints_] = np.zeros(self.n_joints_)
+        self.mj_data_.qacc[:self.n_joints_] = np.zeros(self.n_joints_)
+        mujoco.mj_inverse(self.mj_model_, self.mj_data_)
+        tau_gravity = self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
+
+        # 3. Subtract Gravity to get Feedforward Torque
+        # Result = M*a_desired + C*v
+        tau_inertial_pd = tau_full - tau_gravity
+        
+        return tau_inertial_pd
 
     def _get_ee_position(self, q: np.ndarray) -> np.ndarray:
         """Compute Forward Kinematics using MuJoCo."""
@@ -251,12 +252,7 @@ class RemoteRobotNode(Node):
             tau_id[-1] = 0.0
             tau_rl[-1] = 0.0
             
-            # ============================================================
-            # FIX 3: RL Torque Now ENABLED with scaling factor
-            # Previous: tau_command = tau_id + tau_rl * 0  (DISABLED)
-            # Fixed:    tau_command = tau_id + tau_rl * scale
-            # ============================================================
-            tau_command = tau_id + tau_rl * self.rl_torque_scale_
+            tau_command = tau_id + tau_rl * 0
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
             # Apply action delay
@@ -285,6 +281,12 @@ class RemoteRobotNode(Node):
             
             self.ee_pose_pub_.publish(ee_msg)
 
+            # prediction error
+            prediction_error = np.linalg.norm(self.current_local_q_ - q_target)
+            
+            # tracking error
+            tracking_error = np.linalg.norm(self.current_local_q_ - q_current)
+            
             self.get_logger().info(
                 f"\n--- DEBUG (throttled 0.1s) ---\n"
                 f"True q:        {np.round(self.current_local_q_, 3)}\n"
@@ -293,7 +295,8 @@ class RemoteRobotNode(Node):
                 f"EE Pos:        {np.round(ee_pos, 3)}\n"
                 f"Tau ID:        {np.round(tau_id, 3)}\n"
                 f"Tau RL:        {np.round(tau_rl, 3)}\n"
-                f"Tau RL (scaled): {np.round(tau_rl * self.rl_torque_scale_, 3)}\n",
+                f"Prediction Error: {prediction_error:.4f}\n"
+                f"Tracking Error: {tracking_error:.4f}\n",
                 throttle_duration_sec=0.005
             )
 

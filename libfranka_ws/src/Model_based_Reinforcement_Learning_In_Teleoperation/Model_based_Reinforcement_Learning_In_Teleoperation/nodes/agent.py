@@ -23,6 +23,7 @@ import numpy as np
 import torch
 from collections import deque
 import os
+import time
 
 # ROS2 imports
 import rclpy
@@ -35,6 +36,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     DEFAULT_CONTROL_FREQ,
+    INITIAL_JOINT_CONFIG,
     DEPLOYMENT_HISTORY_BUFFER_SIZE,
     RNN_SEQUENCE_LENGTH,
     RL_MODEL_PATH,
@@ -45,7 +47,6 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config imp
     NO_DELAY_DURATION,
     REMOTE_HISTORY_LEN,
     OBS_DIM,
-    INITIAL_JOINT_CONFIG,
 )
 
 
@@ -60,15 +61,11 @@ class AgentNode(Node):
         self.dt_ = 1.0 / self.control_freq_
         self.last_leader_msg_arrival_time_ = self.get_clock().now().nanoseconds / 1e9
         
-        # Unified Delay Configuration
-        self.default_experiment_config_ = ExperimentConfig.HIGH_DELAY.value
+        # Experiment config
+        self.default_experiment_config_ = ExperimentConfig.LOW_DELAY.value
         self.declare_parameter('experiment_config', self.default_experiment_config_)
         self.experiment_config_int_ = self.get_parameter('experiment_config').value
         self.delay_config_ = ExperimentConfig(self.experiment_config_int_)
-        
-        # Seed parameter
-        self.declare_parameter('seed', 50)
-        self.seed_ = self.get_parameter('seed').value
         
         # Load Models
         self.sac_model_path_ = RL_MODEL_PATH
@@ -79,52 +76,47 @@ class AgentNode(Node):
         
         self._load_models()
 
-        # Initialize Delay Simulator
+        # Delay Simulator
         self.delay_simulator_ = DelaySimulator(
             control_freq=self.control_freq_,
             config=self.delay_config_,
-            seed=self.seed_
+            seed=50
         )
         
-        # Initialize Buffers
+        # Buffers
         self.leader_q_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
         self.leader_qd_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
 
-        # Remote History Buffers
         self.remote_q_history_ = deque(maxlen=REMOTE_HISTORY_LEN)
         self.remote_qd_history_ = deque(maxlen=REMOTE_HISTORY_LEN)
 
         self.current_remote_q_ = np.zeros(N_JOINTS, dtype=np.float32)
         self.current_remote_qd_ = np.zeros(N_JOINTS, dtype=np.float32)
         
-        # Warmup Logic
+        # --- PHASE CONTROL ---
         self.warmup_time_ = WARM_UP_DURATION 
         self.warmup_steps_ = int(self.warmup_time_ * self.control_freq_)
         self.warmup_steps_count_ = 0
-        self.buffer_flushed_ = False
         
-        # No_delay Logic
         self.no_delay_time_ = NO_DELAY_DURATION 
         self.no_delay_steps_ = int(self.no_delay_time_ * self.control_freq_)
         self.no_delay_steps_count_ = 0
         
+        self.buffer_flushed_ = False
+        
         self.target_joint_names_ = [f'panda_joint{i+1}' for i in range(N_JOINTS)]
         self.rnn_seq_len_ = RNN_SEQUENCE_LENGTH
-        
-        # Autoregressive Safety Limits
         self.max_ar_steps_ = 50 
         
-        # Initialize remote history with initial config
-        initial_q = INITIAL_JOINT_CONFIG.copy().astype(np.float32)
-        initial_qd = np.zeros(N_JOINTS, dtype=np.float32)
+        # Init remote history
         for _ in range(REMOTE_HISTORY_LEN):
-            self.remote_q_history_.append(initial_q.copy())
-            self.remote_qd_history_.append(initial_qd.copy())
+            self.remote_q_history_.append(np.zeros(N_JOINTS, dtype=np.float32))
+            self.remote_qd_history_.append(np.zeros(N_JOINTS, dtype=np.float32))
         
         self.is_leader_ready_ = False
         self.is_remote_ready_ = False
         
-        # Publishers & Subscribers
+        # Communication
         self.tau_pub_ = self.create_publisher(Float64MultiArray, 'agent/tau_rl', 100)
         self.desired_q_pub_ = self.create_publisher(JointState, 'agent/predict_target', 100)
 
@@ -136,7 +128,7 @@ class AgentNode(Node):
         )
         
         self.control_timer_ = self.create_timer(self.dt_, self.control_loop_callback)
-        self.get_logger().info(f"Agent Node initialized (Config={self.delay_config_.name}, Seed={self.seed_}).")
+        self.get_logger().info("Agent Node initialized.")
 
     def _load_models(self):
         try:
@@ -156,8 +148,12 @@ class AgentNode(Node):
             raise
 
     def local_robot_state_callback(self, msg: JointState) -> None:
+        """
+        BUFFER FILLING LOGIC.
+        This runs continuously in the background, ensuring the deque is full
+        of valid history (Sequence Filling) for when the LSTM is eventually needed.
+        """
         self.last_leader_msg_arrival_time_ = self.get_clock().now().nanoseconds / 1e9
-
         try:
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
             pos = [msg.position[name_to_index_map[name]] for name in self.target_joint_names_]
@@ -167,19 +163,18 @@ class AgentNode(Node):
             qd_new = np.array(vel, dtype=np.float32)
             
             if not self.is_leader_ready_:
+                # Physics fix: Use Zero velocity for artificial stationary history
                 qd_zero = np.zeros_like(qd_new)
                 prefill_count = self.rnn_seq_len_ + 20
-                self.get_logger().info(f"Initializing leader buffer with first state: {q_new[:3]}...")
-                
+                self.get_logger().info(f"Initializing buffer with Leader State: {q_new[:3]}...")
                 for _ in range(prefill_count):
                     self.leader_q_history_.append(q_new.copy())
                     self.leader_qd_history_.append(qd_zero.copy())
-                
                 self.is_leader_ready_ = True
             else:
+                # Normal Filling
                 self.leader_q_history_.append(q_new)
                 self.leader_qd_history_.append(qd_new)
-
         except (KeyError, IndexError):
             pass
 
@@ -188,36 +183,21 @@ class AgentNode(Node):
             name_to_index_map = {name: i for i, name in enumerate(msg.name)}
             pos = [msg.position[name_to_index_map[name]] for name in self.target_joint_names_]
             vel = [msg.velocity[name_to_index_map[name]] for name in self.target_joint_names_]
-            
             self.current_remote_q_ = np.array(pos, dtype=np.float32)
             self.current_remote_qd_ = np.array(vel, dtype=np.float32)
-            
-            # Update remote history
-            self.remote_q_history_.append(self.current_remote_q_.copy())
-            self.remote_qd_history_.append(self.current_remote_qd_.copy())
-            
             self.is_remote_ready_ = True
-            
-        except (KeyError, IndexError) as e:
-            self.get_logger().warn(f"Error processing remote robot state: {e}")
-
-    def _get_delayed_leader_data(self, force_no_delay: bool = False, extra_delay_steps: float = 0.0):
-        """
-        Get delayed leader data for LSTM input.
-        Returns the FULL sequence and the normalized delay value.
-        """
+        except:
+            pass
+    
+    def _get_delayed_leader_data(self, extra_delay_steps: float = 0.0) -> tuple[np.ndarray, float]:
+        """ Fetches input sequence for LSTM based on calculated delay. """
         history_len = len(self.leader_q_history_)
-        
-        if force_no_delay:
-            obs_delay_steps = 0
-        else:
-            obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
+        obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
         
         base_delay_norm = float(obs_delay_steps) / DELAY_INPUT_NORM_FACTOR
         extra_delay_norm = extra_delay_steps / DELAY_INPUT_NORM_FACTOR
         current_delay_scalar = base_delay_norm + extra_delay_norm
         
-        # Get history slice based on delay
         most_recent_delayed_idx = -(obs_delay_steps + 1)
         oldest_idx = most_recent_delayed_idx - self.rnn_seq_len_ + 1
         
@@ -231,154 +211,134 @@ class AgentNode(Node):
             ])
             buffer_seq.append(step_vector)
         
-        buffer = np.array(buffer_seq).astype(np.float32)  # Shape: (seq_len, 15)
-        return buffer, current_delay_scalar, obs_delay_steps
+        buffer = np.array(buffer_seq).flatten().astype(np.float32)
+        return buffer, current_delay_scalar
 
-    def _autoregressive_inference_fixed(self, full_sequence: np.ndarray, steps_to_predict: int, normalized_delay: float):
-        """
-        FIXED Autoregressive inference that matches training procedure EXACTLY.
-        
-        Training procedure (autoregressive_LSTM.py lines 303-324):
-        1. cutoff_idx = RNN_SEQUENCE_LENGTH - packet_loss_steps
-        2. safe_history = input_seq[:, :cutoff_idx, :]
-        3. _, hidden_state = model.lstm(safe_history)
-        4. current_input = safe_history[:, -1:, :]  # Shape (B, 1, 15)
-        5. AR loop using current_input tensor directly
-        
-        Key differences from original deployment:
-        - Hidden state built from TRUNCATED sequence (not full)
-        - AR loop uses 3D tensor format throughout
-        - State update happens on tensor, not separate q/qd variables
-        """
-        
-        steps_to_run = min(steps_to_predict, self.max_ar_steps_)
-        
-        if steps_to_run <= 0:
-            # No prediction needed, return last observation
-            return full_sequence[-1, :N_JOINTS], full_sequence[-1, N_JOINTS:2*N_JOINTS]
-        
-        # Convert to tensor: (1, seq_len, 15)
-        input_seq_t = torch.tensor(full_sequence, dtype=torch.float32).unsqueeze(0).to(self.device_)
-        
-        # ============================================================
-        # CRITICAL FIX: Match training's truncation strategy
-        # ============================================================
-        # In training: cutoff_idx = RNN_SEQUENCE_LENGTH - packet_loss_steps
-        # safe_history = input_seq[:, :cutoff_idx, :]
-        
-        cutoff_idx = self.rnn_seq_len_ - steps_to_run
-        
-        # Ensure we have at least some context
-        cutoff_idx = max(cutoff_idx, 1)
-        
-        # Truncate sequence (simulate packet loss like training)
-        safe_history = input_seq_t[:, :cutoff_idx, :]
-        
-        # Build hidden state from TRUNCATED sequence
+    def _autoregressive_inference(self, initial_seq_t, steps_to_predict, current_delay_scalar):
         with torch.no_grad():
-            _, hidden_state = self.state_estimator_.lstm(safe_history)
+            _, hidden_state = self.state_estimator_.lstm(initial_seq_t)
+
+        last_obs = initial_seq_t[0, -1, :] 
+        current_q = last_obs[:N_JOINTS].clone()
+        current_qd = last_obs[N_JOINTS:2*N_JOINTS].clone()
         
-        # Start from the END of the truncated sequence
-        # Shape: (1, 1, 15) - matching training exactly
-        current_input = safe_history[:, -1:, :].clone()
-        
-        # Normalized time step for delay increment
         dt_norm = self.dt_ / DELAY_INPUT_NORM_FACTOR
-        
-        # ============================================================
-        # AR Loop - matching training structure exactly
-        # (autoregressive_LSTM.py lines 312-322)
-        # ============================================================
-        with torch.no_grad():
-            for k in range(steps_to_run):
-                # Forward step
-                pred_delta, hidden_state = self.state_estimator_.forward_step(current_input, hidden_state)
-                
-                # Extract current state from input tensor
-                last_known_state = current_input[:, :, :14]  # (1, 1, 14)
-                
-                # Apply scaled delta (matching training line 316)
-                predicted_next_state = last_known_state + (pred_delta.unsqueeze(1) * TARGET_DELTA_SCALE)
-                
-                # Optional: clamp to prevent divergence
-                # predicted_next_state = torch.clamp(predicted_next_state, -10.0, 10.0)
-                
-                # Update delay
-                current_delay_norm = current_input[:, :, 14:15]  # (1, 1, 1)
-                next_delay_norm = current_delay_norm + dt_norm
-                
-                # Build next input (matching training line 321)
-                current_input = torch.cat([predicted_next_state, next_delay_norm], dim=2)
-        
-        # Extract final prediction
-        final_q = current_input[0, 0, :N_JOINTS].cpu().numpy()
-        final_qd = current_input[0, 0, N_JOINTS:2*N_JOINTS].cpu().numpy()
-        
-        return final_q, final_qd
+        steps_to_run = min(steps_to_predict, self.max_ar_steps_)
 
+        for _ in range(steps_to_run):
+            delay_tensor = torch.tensor([current_delay_scalar], device=self.device_)
+            step_input = torch.cat([current_q, current_qd, delay_tensor], dim=0).view(1, 1, -1)
+
+            with torch.no_grad():
+                scaled_residual_t, hidden_state = self.state_estimator_.forward_step(step_input, hidden_state)
+
+            pred_residual = scaled_residual_t[0] * TARGET_DELTA_SCALE
+            pred_residual = torch.clamp(pred_residual, -0.2, 0.2)
+            
+            current_q = current_q + pred_residual[:N_JOINTS]
+            current_qd = current_qd + pred_residual[N_JOINTS:]
+            current_delay_scalar += dt_norm
+
+        return current_q, current_qd
+        
     def control_loop_callback(self) -> None:
         if not self.is_leader_ready_ or not self.is_remote_ready_:
             return
         
         self.warmup_steps_count_ += 1
 
-        # --- PHASE 1: WARMUP ---
+        # ==========================================================================
+        # PHASE 1: WARMUP & HOMING
+        # Goal: Move robot to Leader Start. Buffer fills with Stationary data.
+        # LSTM: OFF
+        # ==========================================================================
         if self.warmup_steps_count_ < self.warmup_steps_:      
             if self.warmup_steps_count_ % 50 == 0:
-                 self.get_logger().info(f"STANDBY... {self.warmup_steps_ - self.warmup_steps_count_} steps left")
+                 self.get_logger().info(f"HOMING... {self.warmup_steps_ - self.warmup_steps_count_} steps left")
             
-            safe_q = self.current_remote_q_.copy()
-            safe_qd = np.zeros(N_JOINTS)
-            safe_tau = np.zeros(N_JOINTS)
-            self.publish_predicted_target(safe_q, safe_qd)
-            self.publish_tau_compensation(safe_tau)
+            if not hasattr(self, 'initial_remote_q_'):
+                self.initial_remote_q_ = self.current_remote_q_.copy()
+                self.get_logger().info(f"Homing Start Position: {self.initial_remote_q_}")
+
+            target_leader_q = self.leader_q_history_[-1]
+            alpha = float(self.warmup_steps_count_) / float(self.warmup_steps_)
+            alpha = np.clip(alpha, 0.0, 1.0)
+
+            homing_q = (1.0 - alpha) * self.initial_remote_q_ + alpha * target_leader_q
+            homing_qd = np.zeros(N_JOINTS) 
+            homing_tau = np.zeros(N_JOINTS)
+
+            self.publish_predicted_target(homing_q, homing_qd)
+            self.publish_tau_compensation(homing_tau)
             return
         
-        # --- TRANSITION: BUFFER FLUSH ---
+        # Flush artificial history once warmup is done
         if not self.buffer_flushed_:
             self.buffer_flushed_ = True
-            self.get_logger().info("WARMUP COMPLETE! Flushing artificial pre-fill...")
+            self.get_logger().info("HOMING COMPLETE! Flushing artificial history...")
             num_to_pop = min(len(self.leader_q_history_), self.rnn_seq_len_ + 10) 
             for _ in range(num_to_pop):
                 self.leader_q_history_.popleft()
                 self.leader_qd_history_.popleft()
-            self.get_logger().info(f"Buffer flushed. New size: {len(self.leader_q_history_)}")
+            self.get_logger().info("Buffer flushed.")
         
-        # --- PHASE 2: DEPLOYMENT ---
         try:            
-            self.no_delay_steps_count_ += 1
-            is_in_grace_period = (self.no_delay_steps_count_ < self.no_delay_steps_)
-            
-            current_time = self.get_clock().now().nanoseconds / 1e9
-            time_since_last_msg = current_time - self.last_leader_msg_arrival_time_
-            
-            # Convert staleness to steps
-            packet_staleness_seconds = max(0.0, time_since_last_msg - self.dt_)
-            packet_staleness_steps = packet_staleness_seconds / self.dt_
-            
-            # Get delayed leader data
-            full_sequence, normalized_delay_scalar, delay_steps = self._get_delayed_leader_data(
-                force_no_delay=is_in_grace_period,
-                extra_delay_steps=packet_staleness_steps
-            )
-            
-            # Total steps to predict = delay_steps + staleness
-            total_steps_to_predict = int(normalized_delay_scalar * DELAY_INPUT_NORM_FACTOR)
-            
-            # ============================================================
-            # Use FIXED AR inference
-            # ============================================================
-            if total_steps_to_predict > 0:
-                pred_q, pred_qd = self._autoregressive_inference_fixed(
-                    full_sequence, 
-                    total_steps_to_predict, 
-                    normalized_delay_scalar
-                )
-            else:
-                pred_q = full_sequence[-1, :N_JOINTS]
-                pred_qd = full_sequence[-1, N_JOINTS:2*N_JOINTS]
+            pred_q = None
+            pred_qd = None
+            normalized_delay_scalar = 0.0
 
-            # Build SAC observation
+            # ======================================================================
+            # PHASE 2: SEQUENCE FILLING (No Delay)
+            # Goal: Buffer fills with Movement Data (Sine wave start).
+            # LSTM: OFF (Pass-through Leader data directly)
+            # ======================================================================
+            if self.no_delay_steps_count_ < self.no_delay_steps_:
+                self.no_delay_steps_count_ += 1
+                
+                # Direct Pass-Through
+                pred_q = self.leader_q_history_[-1]
+                pred_qd = self.leader_qd_history_[-1]
+                normalized_delay_scalar = 0.0
+                
+                if self.no_delay_steps_count_ % 100 == 0:
+                    self.get_logger().info("Grace Period: Direct Tracking (Buffer Filling)")
+
+            # ======================================================================
+            # PHASE 3: DEPLOYMENT (LSTM Enabled)
+            # Goal: Handle Delay.
+            # LSTM: ON (Using buffer filled in Phase 2)
+            # ======================================================================
+            else:
+                current_time = self.get_clock().now().nanoseconds / 1e9
+                time_since_last_msg = current_time - self.last_leader_msg_arrival_time_
+                
+                packet_staleness_seconds = max(0.0, time_since_last_msg - self.dt_)
+                packet_staleness_steps = packet_staleness_seconds / self.dt_
+                
+                raw_delayed_sequence, normalized_delay_scalar = self._get_delayed_leader_data(
+                    extra_delay_steps=packet_staleness_steps
+                )
+                
+                total_steps_to_predict = int(normalized_delay_scalar * DELAY_INPUT_NORM_FACTOR)
+                
+                # Run LSTM
+                full_seq_t = torch.tensor(raw_delayed_sequence, dtype=torch.float32).to(self.device_).reshape(1, self.rnn_seq_len_, -1)
+                
+                if total_steps_to_predict > 0:
+                    pred_q_t, pred_qd_t = self._autoregressive_inference(
+                        full_seq_t, 
+                        total_steps_to_predict, 
+                        normalized_delay_scalar
+                    )
+                    pred_q = pred_q_t.cpu().numpy()
+                    pred_qd = pred_qd_t.cpu().numpy()
+                else:
+                    pred_q = full_seq_t[0, -1, :N_JOINTS].cpu().numpy()
+                    pred_qd = full_seq_t[0, -1, N_JOINTS:2*N_JOINTS].cpu().numpy()
+
+            # ======================================================================
+            # SAC Policy (Always Active for Correction)
+            # ======================================================================
             rem_q_hist = np.concatenate(list(self.remote_q_history_))
             rem_qd_hist = np.concatenate(list(self.remote_qd_history_))
             
@@ -397,28 +357,17 @@ class AgentNode(Node):
                 [normalized_delay_scalar]
             ]).astype(np.float32)
             
-            # Actor Inference
             actor_input_t = torch.tensor(obs_vec, dtype=torch.float32).to(self.device_).unsqueeze(0)
             action_t, _, _ = self.actor_.sample(actor_input_t, deterministic=True)
 
-            # Publish Results
             tau_rl = action_t.detach().cpu().numpy().flatten()
-            tau_rl[-1] = 0.0
+            tau_rl[-1] = 0.0 # Safety
             
             self.publish_predicted_target(pred_q, pred_qd)
             self.publish_tau_compensation(tau_rl)
             
-            # Debug logging
-            if self.no_delay_steps_count_ % 100 == 0:
-                self.get_logger().info(
-                    f"Steps to predict: {total_steps_to_predict}, "
-                    f"Pred q[0:3]: {np.round(pred_q[:3], 3)}"
-                )
-            
         except Exception as e:
             self.get_logger().error(f"Error: {e}")
-            import traceback
-            traceback.print_exc()
 
     def publish_predicted_target(self, q, qd):
         msg = JointState()
@@ -433,14 +382,12 @@ class AgentNode(Node):
         msg.data = tau.tolist()
         self.tau_pub_.publish(msg)
     
-
 def main(args=None):
     rclpy.init(args=args)
     agent_node = AgentNode()
     rclpy.spin(agent_node)
     agent_node.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
