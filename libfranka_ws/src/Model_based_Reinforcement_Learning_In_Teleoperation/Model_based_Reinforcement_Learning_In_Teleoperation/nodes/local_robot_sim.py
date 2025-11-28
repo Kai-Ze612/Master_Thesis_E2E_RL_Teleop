@@ -201,7 +201,7 @@ class LeaderRobotPublisher(Node):
             self._params = TrajectoryParams.randomized(actual_start_pos)
             self.get_logger().info("Trajectory parameters Randomized.")
         else:
-            self._params = TrajectoryParams(center=actual_start_pos.copy())
+            self._params = TrajectoryParams()
             self.get_logger().info("Using default Trajectory parameters.")
 
         self._generator = self._create_generator(self._trajectory_type, self._params)
