@@ -69,19 +69,21 @@ class RemoteRobotNode(Node):
         
         # Initialize target joint states and velocities
         self.target_q_ = INITIAL_JOINT_CONFIG.copy()
-        self.target_qd_ = np.zeros(self.n_joints_)  # Store target velocity
+        self.target_qd_ = np.zeros(self.n_joints_)
         self.current_tau_rl_ = np.zeros(self.n_joints_)
 
-        # Vairables for storing true local state (for debugging)
+        # Variables for storing true local state (for debugging)
         self.current_local_q_ = INITIAL_JOINT_CONFIG.copy()
         self.current_local_qd_ = np.zeros(self.n_joints_)
         
-        # Action delay
+        # ============================================================
+        # FIX 1: Unified Delay Configuration (matching agent default)
+        # ============================================================
         self.default_experiment_config_ = ExperimentConfig.HIGH_DELAY.value
         self.declare_parameter('experiment_config', self.default_experiment_config_)
         self.experiment_config_int_ = self.get_parameter('experiment_config').value
         
-        # Read Seed
+        # Read Seed (matching agent default)
         self.declare_parameter('seed', 50)
         self.seed_ = self.get_parameter('seed').value
 
@@ -98,6 +100,14 @@ class RemoteRobotNode(Node):
         )
         
         self.torque_command_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
+        
+        # ============================================================
+        # FIX 2: RL Torque Scaling Parameter for Safe Deployment
+        # Start with 0.0 for baseline testing, increase gradually
+        # ============================================================
+        self.declare_parameter('rl_torque_scale', 1.0)  # Default: fully enabled
+        self.rl_torque_scale_ = self.get_parameter('rl_torque_scale').value
+        self.get_logger().info(f"RL Torque Scale: {self.rl_torque_scale_}")
         
         # State flags
         self.robot_state_ready_ = False
@@ -199,7 +209,6 @@ class RemoteRobotNode(Node):
         self.mj_data_.qacc[:self.n_joints_] = a_desired
 
         # 3. Compute Inverse Dynamics
-        # MuJoCo solves: tau = M*qacc + C*qvel + G
         mujoco.mj_inverse(self.mj_model_, self.mj_data_)
 
         return self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
@@ -208,7 +217,6 @@ class RemoteRobotNode(Node):
         """Compute Forward Kinematics using MuJoCo."""
         self.mj_data_.qpos[:self.n_joints_] = q
         mujoco.mj_kinematics(self.mj_model_, self.mj_data_)
-        # Get body position (returns [x, y, z])
         ee_pos = self.mj_data_.body(self.ee_body_name_).xpos.copy()
         return ee_pos
 
@@ -219,7 +227,6 @@ class RemoteRobotNode(Node):
             self.get_logger().warn(f"Waiting for data...", throttle_duration_sec=2.0)
             return
 
-        # [REVERTED] Use raw target directly without Slew Rate Limiting
         q_target = self.target_q_ 
         qd_target = self.target_qd_ 
         
@@ -243,10 +250,13 @@ class RemoteRobotNode(Node):
             # Safety: No torque on last joint
             tau_id[-1] = 0.0
             tau_rl[-1] = 0.0
-            tau_rl[-2] = 0.0
             
-            # Final Command
-            tau_command = tau_id + tau_rl * 0
+            # ============================================================
+            # FIX 3: RL Torque Now ENABLED with scaling factor
+            # Previous: tau_command = tau_id + tau_rl * 0  (DISABLED)
+            # Fixed:    tau_command = tau_id + tau_rl * scale
+            # ============================================================
+            tau_command = tau_id + tau_rl * self.rl_torque_scale_
             tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
             # Apply action delay
@@ -282,7 +292,8 @@ class RemoteRobotNode(Node):
                 f"Remote q:      {np.round(q_current, 3)}\n"
                 f"EE Pos:        {np.round(ee_pos, 3)}\n"
                 f"Tau ID:        {np.round(tau_id, 3)}\n"
-                f"Tau RL:        {np.round(tau_rl, 3)}\n",
+                f"Tau RL:        {np.round(tau_rl, 3)}\n"
+                f"Tau RL (scaled): {np.round(tau_rl * self.rl_torque_scale_, 3)}\n",
                 throttle_duration_sec=0.005
             )
 
