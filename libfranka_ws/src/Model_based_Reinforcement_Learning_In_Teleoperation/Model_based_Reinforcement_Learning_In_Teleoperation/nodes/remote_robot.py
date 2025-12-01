@@ -50,8 +50,8 @@ class RemoteRobotNode(Node):
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
         self.tcp_offset_ = TCP_OFFSET
-        self.kp_ = DEFAULT_KP_REMOTE / 5
-        self.kd_ = DEFAULT_KD_REMOTE / 5
+        self.kp_ = DEFAULT_KP_REMOTE
+        self.kd_ = DEFAULT_KD_REMOTE
         self.torque_limits_ = TORQUE_LIMITS
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
         self.initial_joint_config_ = INITIAL_JOINT_CONFIG
@@ -190,29 +190,20 @@ class RemoteRobotNode(Node):
     
     def _get_inverse_dynamics(self, q: np.ndarray, v: np.ndarray, a_desired: np.ndarray) -> np.ndarray:
         """
-        Compute Torque: tau = M*a_des + C*v + G
-        FIX: We must return (M*a_des + C*v) only, because Franka hardware adds G automatically.
+        Compute Torque using MuJoCo Inverse Dynamics.
+        Equation: tau = M(q)*a_desired + C(q,v)*v + G(q)
         """
-        # 1. Calculate Full Inverse Dynamics (M*a + C*v + G)
+        # 1. Update MuJoCo with the CURRENT Robot State
         self.mj_data_.qpos[:self.n_joints_] = q
         self.mj_data_.qvel[:self.n_joints_] = v
-        self.mj_data_.qacc[:self.n_joints_] = a_desired
-        mujoco.mj_inverse(self.mj_model_, self.mj_data_)
-        tau_full = self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
-
-        # 2. Calculate Gravity Component Only (G)
-        # We assume qacc=0 and qvel=0
-        self.mj_data_.qpos[:self.n_joints_] = q
-        self.mj_data_.qvel[:self.n_joints_] = np.zeros(self.n_joints_)
-        self.mj_data_.qacc[:self.n_joints_] = np.zeros(self.n_joints_)
-        mujoco.mj_inverse(self.mj_model_, self.mj_data_)
-        tau_gravity = self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
-
-        # 3. Subtract Gravity to get Feedforward Torque
-        # Result = M*a_desired + C*v
-        tau_inertial_pd = tau_full - tau_gravity
         
-        return tau_inertial_pd
+        # 2. Set the DESIRED Acceleration (from PD)
+        self.mj_data_.qacc[:self.n_joints_] = a_desired
+
+        # 3. Compute Inverse Dynamics
+        mujoco.mj_inverse(self.mj_model_, self.mj_data_)
+
+        return self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
 
     def _get_ee_position(self, q: np.ndarray) -> np.ndarray:
         """Compute Forward Kinematics using MuJoCo."""
