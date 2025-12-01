@@ -21,7 +21,7 @@ class StateEstimator(nn.Module):
         input_dim_total: int = cfg.ESTIMATOR_STATE_DIM,
         hidden_dim: int = cfg.RNN_HIDDEN_DIM,
         num_layers: int = cfg.RNN_NUM_LAYERS,
-        output_dim: int = 14,
+        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,
     ):
         
         super().__init__()

@@ -30,7 +30,7 @@ class TeleoperationEnvWithDelay(gym.Env):
     
     def __init__(
         self,
-        delay_config: ExperimentConfig = ExperimentConfig.LOW_DELAY,
+        delay_config: ExperimentConfig = ExperimentConfig.FULL_RANGE_COVER,
         trajectory_type: TrajectoryType = TrajectoryType.FIGURE_8,
         randomize_trajectory: bool = False,
         seed: Optional[int] = None,
@@ -39,7 +39,6 @@ class TeleoperationEnvWithDelay(gym.Env):
     ):
         super().__init__()
         
-        # Device setup for LSTM
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # Rendering setup
@@ -82,9 +81,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.warmup_time = cfg.WARM_UP_DURATION 
         self.warmup_steps = int(self.warmup_time * self.control_freq)
         self.steps_remaining_in_warmup = 0
-        
-        # No delay grace period
-        self.grace_period_steps = self.warmup_steps + int(cfg.NO_DELAY_DURATION * self.control_freq)
+        self.grace_period_steps = self.warmup_steps + int(cfg.NO_DELAY_DURATION * self.control_freq)  # No delay period
         
         ################################################################
         # LSTM Model Loading
@@ -250,105 +247,65 @@ class TeleoperationEnvWithDelay(gym.Env):
         return self.leader_q_history[idx]
 
     def _perform_ar_prediction_step(self) -> np.ndarray:
-        """
-        Autoregressive prediction using LSTM.
-
-        
-        pipeline:
-        1. During grace period (no delay): return current state directly
-        2. With delay: perform AR rollout to predict current state
-        3. Delay is INCREMENTED during AR loop
-        """
-        
         history_len = len(self.leader_q_history)
-        
-        ################################################################
-        # No delay period
-        # During grace period: no delay, return most recent observation
         if self.current_step < self.grace_period_steps:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
         
-        # Get delay
         delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
-        
-        # If no delay, return most recent
         if delay_steps == 0:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
         
-        idx = -1 - delay_steps
-        delayed_state = np.concatenate([self.leader_q_history[idx], self.leader_qd_history[idx]])
-        
-        if self.lstm is None:
-            return delayed_state
-        
-        ################################################################
-        
-        
-        ################################################################
-        # perform Autoregressive Prediction
-        # Compute normalized delay
         normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         most_recent_idx = -1 - delay_steps
         
-        # Build initial sequence for LSTM
         seq_buffer = []
         start_idx = most_recent_idx - cfg.RNN_SEQUENCE_LENGTH + 1
-        
         for i in range(start_idx, most_recent_idx + 1):
             idx = max(-len(self.leader_q_history), i)
             step_vec = np.concatenate([
                 self.leader_q_history[idx],
                 self.leader_qd_history[idx],
-                [normalized_delay]  # Initial delay for history
+                [normalized_delay]
             ])
             seq_buffer.append(step_vec)
             
         input_tensor = torch.tensor(np.array(seq_buffer), dtype=torch.float32).unsqueeze(0).to(self.device)
-            
-        # Limit AR steps
-        steps_to_run = min(delay_steps, self.max_ar_steps)
-        
-        # Normalized Time Step (dt) to increment delay
-        dt_norm = (1.0 / self.control_freq) / cfg.DELAY_INPUT_NORM_FACTOR
+  
+        steps_to_predict = min(delay_steps, self.max_ar_steps)
+        shot_size = cfg.ESTIMATOR_PREDICTION_HORIZON
+        dt_norm_chunk = (1.0 / self.control_freq * shot_size) / cfg.DELAY_INPUT_NORM_FACTOR
         
         with torch.no_grad():
-            # Initialize hidden state from the full input sequence
-            _, hidden_state = self.lstm.lstm(input_tensor)
+            _, hidden = self.lstm.lstm(input_tensor)
+            
+            curr_input = input_tensor[:, -1:, :]
+            current_q = curr_input[:, :, :self.n_joints].clone()
+            current_qd = curr_input[:, :, self.n_joints:2*self.n_joints].clone()
+            curr_delay_scalar = normalized_delay
+            
+            steps_covered = 0
+            while steps_covered < steps_to_predict:
+                pred_shot, hidden = self.lstm.forward_shot(curr_input, hidden)
+                
+                deltas = pred_shot * cfg.TARGET_DELTA_SCALE
+                deltas = torch.clamp(deltas, -0.2, 0.2)
+                
+                delta_q = deltas[:, :, :self.n_joints]
+                delta_qd = deltas[:, :, self.n_joints:]
+                
+                traj_q = torch.cumsum(delta_q, dim=1) + current_q
+                traj_qd = torch.cumsum(delta_qd, dim=1) + current_qd
+                
+                current_q = traj_q[:, -1:, :]
+                current_qd = traj_qd[:, -1:, :]
+                
+                curr_delay_scalar += dt_norm_chunk
+                delay_t = torch.tensor([curr_delay_scalar], device=self.device).view(1, 1, 1)
+                curr_input = torch.cat([current_q, current_qd, delay_t], dim=2)
+                
+                steps_covered += shot_size
         
-            # Extract last observation for AR loop
-            last_obs = input_tensor[0, -1, :]
-            curr_q = last_obs[:self.n_joints].clone()
-            curr_qd = last_obs[self.n_joints:2*self.n_joints].clone()
-            
-            # Start delay from the last known delay
-            current_delay_val = normalized_delay
-            
-            # Autoregressive prediction loop
-            for _ in range(steps_to_run):
-                # Create tensor for current delay
-                delay_tensor = torch.tensor([current_delay_val], device=self.device)
-                
-                # Build single-step input: (1, 1, 15)
-                current_input = torch.cat([curr_q, curr_qd, delay_tensor], dim=0).view(1, 1, -1)
-                
-                # Use forward_step with hidden state maintenance
-                residual_t, hidden_state = self.lstm.forward_step(current_input, hidden_state)
-                
-                # Scale residual
-                residual = residual_t[0] * cfg.TARGET_DELTA_SCALE
-                
-                # Clamp residual to prevent large jumps
-                residual = torch.clamp(residual, -0.2, 0.2)
-                
-                # Update state
-                curr_q = curr_q + residual[:self.n_joints]
-                curr_qd = curr_qd + residual[self.n_joints:]
-                
-                # Increment delay for next step
-                current_delay_val += dt_norm
-        ################################################################
-                
-        return np.concatenate([curr_q.cpu().numpy(), curr_qd.cpu().numpy()])
+        return np.concatenate([current_q.cpu().numpy()[0,0], current_qd.cpu().numpy()[0,0]])
 
     def _get_observation(self) -> np.ndarray:
         """

@@ -1,11 +1,12 @@
 import torch
 import torch.nn as nn
+import torch.quantization
 import time
 import numpy as np
 import os
 import sys
 
-# Update path to find your modules
+# --- IMPORTS ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
 workspace_root = os.path.dirname(current_dir)
 if workspace_root not in sys.path:
@@ -14,7 +15,7 @@ if workspace_root not in sys.path:
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_policy_network import StateEstimator
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
 
-# --- JIT WRAPPER MODULE ---
+# --- WRAPPER FOR BENCHMARKING ---
 class AutoregressiveLoop(nn.Module):
     def __init__(self, state_estimator, n_joints, target_delta_scale, delay_input_norm_factor, dt):
         super().__init__()
@@ -24,29 +25,15 @@ class AutoregressiveLoop(nn.Module):
         self.dt_norm = dt / delay_input_norm_factor
         
     def forward(self, current_q, current_qd, hidden_h, hidden_c, start_delay, steps: int):
-        """
-        This entire loop will be compiled into C++/CUDA code.
-        """
-        # We need to decompose the LSTM hidden state tuple for JIT
         current_delay = start_delay
-        
-        # Lists to store outputs if needed, or just keep the last state
-        # For control, we usually just need the final state or the sequence
-        
         for _ in range(steps):
-            # 1. Create Input Tensor on device immediately
-            # Shape: (1, 1, 1) -> view -> (1, 1, 1)
             delay_t = current_delay.view(1, 1, 1)
-            
-            # Cat: (1, 1, 14) + (1, 1, 1) -> (1, 1, 15)
             step_input = torch.cat([current_q, current_qd, delay_t], dim=2)
             
-            # 2. Forward Step (Manually unrolled for JIT compatibility if needed)
-            # calling self.state_estimator.forward_step
+            # Forward step
             lstm_out, (hidden_h, hidden_c) = self.state_estimator.lstm(step_input, (hidden_h, hidden_c))
             residual = self.state_estimator.fc(lstm_out[:, -1, :])
             
-            # 3. Physics Update
             pred_residual = residual * self.target_delta_scale
             pred_residual = torch.clamp(pred_residual, -0.2, 0.2)
             
@@ -54,60 +41,70 @@ class AutoregressiveLoop(nn.Module):
             current_qd = current_qd + pred_residual[:, self.n_joints:].unsqueeze(1)
             current_delay = current_delay + self.dt_norm
             
-        return current_q, current_qd, (hidden_h, hidden_c)
+        return current_q, current_qd
 
-def run_test():
-    device = torch.device('cuda') # Test on GPU to see improvement
-    print(f"Testing JIT Compilation on {device}...")
+def run_quantization_test():
+    device = torch.device('cpu')
+    torch.set_num_threads(1)
     
-    # Load Weights
-    raw_model = StateEstimator().to(device)
-    # (Load your weights here if needed, skipping for speed test)
-    raw_model.eval()
+    print(f"==================================================")
+    print(f"--- QUANTIZATION (INT8) SPEED TEST ---")
+    print(f"==================================================")
+    print(f"Original Model: Hidden={cfg.RNN_HIDDEN_DIM}, Layers={cfg.RNN_NUM_LAYERS}")
+    print(f"Steps: 100 (Worst Case)")
     
-    # Create Wrapper
+    # 1. Load Float32 Model
+    float_model = StateEstimator().to(device)
+    float_model.eval()
+    
+    # 2. Quantize to INT8
+    print("\n[1] Quantizing Model (Float32 -> Int8)...")
+    # PyTorch Dynamic Quantization targets Linear and LSTM layers
+    quantized_model = torch.quantization.quantize_dynamic(
+        float_model, 
+        {nn.LSTM, nn.Linear}, 
+        dtype=torch.qint8
+    )
+    print("    Model size reduced significantly.")
+
+    # 3. Create Wrapper
     jit_module = AutoregressiveLoop(
-        raw_model, 
+        quantized_model, # Use the quantized estimator
         cfg.N_JOINTS, 
         cfg.TARGET_DELTA_SCALE, 
         cfg.DELAY_INPUT_NORM_FACTOR, 
         1.0/cfg.DEFAULT_CONTROL_FREQ
     ).to(device)
-    
-    # -------------------------------------------------
-    # COMPILE (The Magic Step)
-    # -------------------------------------------------
-    # Create dummy inputs for tracing
+
+    # 4. Prepare Inputs
     dummy_q = torch.zeros(1, 1, 7).to(device)
     dummy_qd = torch.zeros(1, 1, 7).to(device)
-    dummy_h = torch.zeros(3, 1, 256).to(device) # Layers=3, Batch=1, Hidden=256
-    dummy_c = torch.zeros(3, 1, 256).to(device)
+    dummy_h = torch.zeros(cfg.RNN_NUM_LAYERS, 1, cfg.RNN_HIDDEN_DIM).to(device)
+    dummy_c = torch.zeros(cfg.RNN_NUM_LAYERS, 1, cfg.RNN_HIDDEN_DIM).to(device)
     dummy_delay = torch.tensor([0.1]).to(device)
-    dummy_steps = torch.tensor(100) # JIT prefers tensors or constant ints
+
+    # 5. Benchmark
+    print("\n[2] Running Benchmark (100 iters)...")
     
-    print("Compiling via TorchScript...")
-    # We use script() instead of trace() for loops with variable steps
-    scripted_model = torch.jit.script(jit_module)
-    print("Compilation Complete.")
-    
-    # -------------------------------------------------
-    # SPEED TEST
-    # -------------------------------------------------
     # Warmup
-    for _ in range(50):
-        scripted_model(dummy_q, dummy_qd, dummy_h, dummy_c, dummy_delay, 100)
-    torch.cuda.synchronize()
+    for _ in range(10): jit_module(dummy_q, dummy_qd, dummy_h, dummy_c, dummy_delay, 100)
     
-    print("Running Benchmark (1000 iters)...")
     times = []
-    for _ in range(1000):
+    for _ in range(100):
         t0 = time.perf_counter()
-        _ = scripted_model(dummy_q, dummy_qd, dummy_h, dummy_c, dummy_delay, 100)
-        torch.cuda.synchronize()
+        jit_module(dummy_q, dummy_qd, dummy_h, dummy_c, dummy_delay, 100)
         times.append((time.perf_counter() - t0) * 1000)
         
-    print(f"Avg JIT Time: {np.mean(times):.3f} ms")
-    print(f"Max JIT Time: {np.max(times):.3f} ms")
+    avg_time = np.mean(times)
+    
+    print(f"\n--- RESULTS ---")
+    print(f"INT8 Time: {avg_time:.3f} ms")
+    
+    if avg_time > 5.0:
+        print(f"[FAIL] INT8 is still too slow ({avg_time:.2f}ms).")
+        print("VERDICT: You MUST reduce the model size (Hidden=64). Quantization is not enough.")
+    else:
+        print(f"[PASS] INT8 saved the day! ({avg_time:.2f}ms)")
 
 if __name__ == "__main__":
-    run_test()
+    run_quantization_test()
