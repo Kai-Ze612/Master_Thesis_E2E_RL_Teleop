@@ -10,10 +10,6 @@ Features:
    - Optimizes a secondary objective (staying close to Rest Pose) within the null space
      of the primary task, ensuring the end-effector position is not disturbed.
    - The 'pull' towards the rest pose is also weighted by the joint weights.
-
-3. Optimization Fallback:
-   - Uses non-linear least squares if the Jacobian method fails to converge.
-   - Includes terms for Cartesian accuracy, smoothness, and weighted rest-pose adherence.
 """
 
 
@@ -44,23 +40,31 @@ class IKSolver:
 
     def _get_inertia_weighted_pseudoinverse(self, J: NDArray, damping: float) -> Tuple[NDArray, NDArray]:
         """
-        Calculates the Dynamically Consistent Jacobian Inverse.
-        Formula: J_bar = M^-1 J^T (J M^-1 J^T + lambda^2 I)^-1
+        Jacobian Inertia-Weighted Pseudo-Inverse with Damping
+        Formula:
+        1. J_pinv = M^-1 * J^T * (J * M^-1 * J^T + λ^2 * I)^-1
+        2. N = I - J_pinv * J
+        
+        Where:
+        - J: Jacobian matrix (m x n)
+        - M: Mass/Inertia matrix (n x n)
+        - λ: Damping factor
+        - J_pinv: Inertia-weighted pseudo-inverse of J (n x m)
+        - N: Dynamically consistent null-space projector (n x n)
         """
         rows, cols = J.shape # (3, 7)
         
-        # 1. Get Mass Matrix M(q)
+        # Get Mass Matrix M(q) and Inversion
         mujoco.mj_fullM(self.model, self.M_full, self.data.qM)
         M = self.M_full[:self.n_joints, :self.n_joints]
         
-        # 2. Invert M
-        # M is positive definite, so inversion is generally safe unless joint limits are violated
         try:
             M_inv = np.linalg.inv(M)
         except np.linalg.LinAlgError:
-            M_inv = np.eye(self.n_joints) # Fallback
+            print(f"Mass matrix inversion failed, using identity matrix as fallback.")  # If inversion fails, use identity (not ideal)
+            M_inv = np.eye(self.n_joints)
 
-        # 3. Calculate Weighted Pseudo-Inverse
+        # Calculate Weighted Pseudo-Inverse
         # Intermediate term: A = J * M^-1 * J^T
         JMJ = J @ M_inv @ J.T
         
@@ -71,12 +75,13 @@ class IKSolver:
         try:
             JMJ_inv = np.linalg.inv(damped_JMJ)
         except np.linalg.LinAlgError:
+            print(f"Damped JMJ inversion failed, using identity matrix as fallback.")  # If inversion fails, use identity (not ideal)
             JMJ_inv = np.eye(rows)
 
         # J_bar = M^-1 * J^T * (JMJ)^-1
         J_pinv = M_inv @ J.T @ JMJ_inv
         
-        # 4. Dynamically Consistent Null-Space Projector
+        # Dynamically Consistent Null-Space Projector
         # N = I - J_bar * J
         N = np.eye(cols) - J_pinv @ J
         
@@ -94,7 +99,7 @@ class IKSolver:
         # Parameters
         max_iter = cfg.IK_JACOBIAN_MAX_ITER
         damping = cfg.IK_JACOBIAN_DAMPING
-        step_size = 0.5 
+        step_size = cfg.IK_JACOBIAN_STEP_SIZE
         tolerance = cfg.IK_POSITION_TOLERANCE
         null_gain = cfg.IK_NULL_SPACE_GAIN
 
@@ -102,12 +107,12 @@ class IKSolver:
         final_error = 0.0
 
         for i in range(max_iter):
-            # 1. FK
+            # FK
             self.data.qpos[:self.n_joints] = q
             mujoco.mj_forward(self.model, self.data)
             current_pos = self.data.site_xpos[site_id].copy()
             
-            # 2. Error
+            # Error
             error = target_pos - current_pos
             final_error = np.linalg.norm(error)
             
@@ -115,27 +120,24 @@ class IKSolver:
                 success = True
                 break
             
-            # 3. Jacobian
+            # Jacobian
             mujoco.mj_jac(self.model, self.data, self.jacp, self.jacr, current_pos, site_body_id)
             J_pos = self.jacp[:, :self.n_joints]
             
-            # 4. Compute Inertia-Weighted Pinv & Nullspace
+            # Get Jacobian Pseudo-Inverse and Null-Space Projector
             J_pinv, N = self._get_inertia_weighted_pseudoinverse(J_pos, damping)
             
-            # 5. Calculate Steps
-            dq_main = J_pinv @ error
+            # qd calculation
+            qd_main = J_pinv @ error
             
             # Null-Space torque towards rest pose (Weighted by Mass implicitly via N)
-            dq_null = N @ (null_gain * (self.q_rest - q))
+            qd_null = N @ (null_gain * (self.q_rest - q))
             
-            dq = dq_main + dq_null
+            qd = qd_main + qd_null
             
-            # 6. Apply Step
-            q = q + step_size * dq
+            # Apply Step
+            q = q + step_size * qd
             q = np.clip(q, self.joint_limits_lower, self.joint_limits_upper)
-
-        # REMOVED: Continuity Limit / Jump Rejection
-        # We implicitly trust that M(q) prevents high-energy jumps.
         
         self.q_previous = q.copy()
         return q, success, final_error

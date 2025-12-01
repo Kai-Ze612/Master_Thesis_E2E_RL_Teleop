@@ -59,26 +59,6 @@ IK_OPTIMIZATION_MAX_ITER = 100
 IK_JACOBIAN_STEP_SIZE = 0.01 # Larger = Faster but less stable
 IK_JACOBIAN_DAMPING = 0.1    # Larger = More stable but less responsive
 
-# 3. Continuity
-IK_MAX_JOINT_CHANGE = 0.02    
-IK_CONTINUITY_GAIN = 0.05     # Keep low to prioritize target tracking
-
-# 4. Joint Weighting Profile (Virtual Inertia)
-# Used to control which joints the IK solver prefers to use
-IK_JOINT_WEIGHTS = [
-    0.0,   # J1 (Base): Natural motion
-    0.0,   # J2 (Shoulder Lift): FREE (Main reacher)
-    0.0,   # J3 (Shoulder Pan): Natural
-    0.0,   # J4 (Elbow): FREE (Main reacher)
-    0.0,   # J5 (Forearm): Slight damping to prevent rolling
-    0.0,  # J6 (Wrist Flex): HEAVY. Acts like a stabilizer.
-    10.0   # J7 (Wrist Twist): Stiff.
-]
-
-# 5. Optimization Fallback
-IK_OPT_FTOL = 1e-4
-IK_OPT_XTOL = 1e-4
-
 IK_NULL_SPACE_GAIN = 0.5
 
 ######################################
