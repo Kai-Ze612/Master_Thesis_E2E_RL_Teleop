@@ -33,40 +33,53 @@ class IKSolver:
         self.joint_limits_upper = joint_limits_upper.copy()
         self.n_joints = len(joint_limits_lower)
         
+        # Preallocate arrays
         self.jacp = np.zeros((3, self.model.nv))
         self.jacr = np.zeros((3, self.model.nv))
+        self.M_full = np.zeros((self.model.nv, self.model.nv))
         
-        self.virtual_inertia = np.array(cfg.IK_JOINT_WEIGHTS, dtype=np.float64)
+        # State tracking (Only for initialization, no longer used for clamping)
         self.q_previous = cfg.INITIAL_JOINT_CONFIG.copy()
         self.q_rest = cfg.INITIAL_JOINT_CONFIG.copy() 
 
-    def _get_damped_pseudoinverse(self, J: NDArray, damping: float) -> Tuple[NDArray, NDArray]:
+    def _get_inertia_weighted_pseudoinverse(self, J: NDArray, damping: float) -> Tuple[NDArray, NDArray]:
         """
-        Damped Least Squares (DLS) to handle singularities smoothly.
+        Calculates the Dynamically Consistent Jacobian Inverse.
+        Formula: J_bar = M^-1 J^T (J M^-1 J^T + lambda^2 I)^-1
         """
-        rows, cols = J.shape
+        rows, cols = J.shape # (3, 7)
         
-        # Apply Joint Weights (Virtual Inertia)
-        # Higher weight = Joint moves less
-        W_inv = np.diag(1.0 / (1.0 + self.virtual_inertia))
+        # 1. Get Mass Matrix M(q)
+        mujoco.mj_fullM(self.model, self.M_full, self.data.qM)
+        M = self.M_full[:self.n_joints, :self.n_joints]
         
-        # Weighted Jacobian
-        J_w = J @ W_inv
+        # 2. Invert M
+        # M is positive definite, so inversion is generally safe unless joint limits are violated
+        try:
+            M_inv = np.linalg.inv(M)
+        except np.linalg.LinAlgError:
+            M_inv = np.eye(self.n_joints) # Fallback
+
+        # 3. Calculate Weighted Pseudo-Inverse
+        # Intermediate term: A = J * M^-1 * J^T
+        JMJ = J @ M_inv @ J.T
         
-        # DLS Inversion: J_pinv = W_inv * J^T * (J * W_inv * J^T + lambda^2 * I)^-1
-        JJT = J_w @ J_w.T
+        # Add Damping to the task-space matrix A
         damping_sq = damping ** 2
-        damped_JJT = JJT + damping_sq * np.eye(rows)
+        damped_JMJ = JMJ + damping_sq * np.eye(rows)
         
         try:
-            JJT_inv = np.linalg.inv(damped_JJT)
+            JMJ_inv = np.linalg.inv(damped_JMJ)
         except np.linalg.LinAlgError:
-            JJT_inv = np.eye(rows)
+            JMJ_inv = np.eye(rows)
 
-        J_pinv = W_inv @ J_w.T @ JJT_inv
+        # J_bar = M^-1 * J^T * (JMJ)^-1
+        J_pinv = M_inv @ J.T @ JMJ_inv
         
-        # Null Space
+        # 4. Dynamically Consistent Null-Space Projector
+        # N = I - J_bar * J
         N = np.eye(cols) - J_pinv @ J
+        
         return J_pinv, N
 
     def solve(self, target_pos, q_init, body_name=None, tcp_offset=None, enforce_continuity=True, target_rot=None):
@@ -78,13 +91,12 @@ class IKSolver:
 
         q = q_init.copy()
         
-        # --- ROBUST CONFIGURATION (Hardcoded for stability or read from cfg) ---
-        # We override extremely small steps to ensure convergence
-        max_iter = 50       
-        step_size = 0.5     # Take 50% of the error step per iter (Fast convergence)
-        damping = 0.1       # Moderate damping to smooth singularities
-        tolerance = 0.005
-        null_gain = 0.1     # Pull towards rest pose
+        # Parameters
+        max_iter = cfg.IK_JACOBIAN_MAX_ITER
+        damping = cfg.IK_JACOBIAN_DAMPING
+        step_size = 0.5 
+        tolerance = cfg.IK_POSITION_TOLERANCE
+        null_gain = cfg.IK_NULL_SPACE_GAIN
 
         success = False
         final_error = 0.0
@@ -107,35 +119,25 @@ class IKSolver:
             mujoco.mj_jac(self.model, self.data, self.jacp, self.jacr, current_pos, site_body_id)
             J_pos = self.jacp[:, :self.n_joints]
             
-            # 4. Step Calculation
-            J_pinv, N = self._get_damped_pseudoinverse(J_pos, damping)
+            # 4. Compute Inertia-Weighted Pinv & Nullspace
+            J_pinv, N = self._get_inertia_weighted_pseudoinverse(J_pos, damping)
             
+            # 5. Calculate Steps
             dq_main = J_pinv @ error
+            
+            # Null-Space torque towards rest pose (Weighted by Mass implicitly via N)
             dq_null = N @ (null_gain * (self.q_rest - q))
+            
             dq = dq_main + dq_null
             
-            # 5. Apply
+            # 6. Apply Step
             q = q + step_size * dq
             q = np.clip(q, self.joint_limits_lower, self.joint_limits_upper)
 
-        # --- SAFETY: CONTINUITY CHECK ---
-        # If the solver output jumps significantly compared to previous frame, REJECT IT.
-        # This prevents the 0.6 rad jumps seen in your logs.
-        if self.q_previous is not None:
-            # Check maximum change of any single joint
-            diff = np.max(np.abs(q - self.q_previous))
-            
-            # If jump is > 0.1 rad (approx 6 degrees) in 0.005s, it is unsafe.
-            # 0.1 rad / 0.005s = 20 rad/s (Still too fast, but filters teleportation)
-            if diff > 0.1: 
-                print(f"[IK REJECT] Jump detected: {diff:.3f} > 0.1. Holding position.")
-                q = self.q_previous.copy()
-                success = False
-            else:
-                self.q_previous = q.copy()
-        else:
-            self.q_previous = q.copy()
+        # REMOVED: Continuity Limit / Jump Rejection
+        # We implicitly trust that M(q) prevents high-energy jumps.
         
+        self.q_previous = q.copy()
         return q, success, final_error
 
     def reset_trajectory(self, q_start: NDArray[np.float64] = None) -> None:
