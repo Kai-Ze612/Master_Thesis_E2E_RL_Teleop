@@ -14,6 +14,7 @@ Features:
     - This allows to lower the inference time
 """
 
+
 import os
 import sys
 import torch
@@ -40,13 +41,13 @@ class AutoregressiveStateEstimator(nn.Module):
     def __init__(self):
         """
         input_dim: 14D(q + qd) + 1D (normalized delay)
-        output_dim: 14D (predicted q + qd)
+        output_dim: 14D (predicted q + qd) * shot_size (10)
         """
         
         super().__init__()
 
-        self.shot_size = cfg.ESTIMATOR_PREDICTION_HORIZON
-        self.output_dim = cfg.ESTIMATOR_OUTPUT_DIM  # q and qd
+        self.shot_size = cfg.ESTIMATOR_PREDICTION_HORIZON # 10 steps
+        self.state_dim = cfg.ESTIMATOR_OUTPUT_DIM  # 14 (q + qd)
 
         self.lstm = nn.LSTM(
             input_size=cfg.ESTIMATOR_STATE_DIM,
@@ -58,19 +59,41 @@ class AutoregressiveStateEstimator(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(cfg.RNN_HIDDEN_DIM, 128),
             nn.ReLU(),
-            nn.Linear(128, self.output_dim)
+            nn.Linear(128, self.state_dim * self.shot_size) 
         )
 
     def forward(self, x):
+        """
+        Training forward pass.
+        Input: Sequence of delayed observations (Batch, Seq_Len, 15)
+        Output: Prediction shot (Batch, 10, 14)
+        """
         lstm_out, _ = self.lstm(x)
         last_hidden = lstm_out[:, -1, :]
-        residual = self.fc(last_hidden)
-        return residual, None
+        
+        # Predict flattened shot (Batch, 140)
+        flat_shot = self.fc(last_hidden)
+        
+        # Reshape to (Batch, 10, 14)
+        pred_shot = flat_shot.view(-1, self.shot_size, self.state_dim)
+        
+        return pred_shot, None
 
-    def forward_step(self, x_step, hidden_state):
+    def forward_shot(self, x_step, hidden_state):
+        """
+        Inference forward pass (used by Env).
+        Input: Single step input (Batch, 1, 15) and previous hidden state
+        Output: Prediction shot (Batch, 10, 14) and new hidden state
+        """
         lstm_out, new_hidden = self.lstm(x_step, hidden_state)
-        residual = self.fc(lstm_out[:, -1, :])
-        return residual, new_hidden
+        
+        # Only take the last step's hidden state
+        last_hidden_step = lstm_out[:, -1, :]
+        
+        flat_shot = self.fc(last_hidden_step)
+        pred_shot = flat_shot.view(-1, self.shot_size, self.state_dim)
+        
+        return pred_shot, new_hidden
 
 def setup_logging(output_dir: str) -> logging.Logger:
     log_file = os.path.join(output_dir, "autoregressive_train.log")

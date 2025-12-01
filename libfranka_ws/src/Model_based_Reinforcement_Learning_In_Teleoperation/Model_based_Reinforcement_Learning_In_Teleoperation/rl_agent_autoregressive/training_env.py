@@ -16,6 +16,7 @@ from collections import deque
 from typing import Tuple, Dict, Any, Optional
 import matplotlib.pyplot as plt
 import os
+import copy
 
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.local_robot_simulator import LocalRobotSimulator, TrajectoryType
@@ -77,6 +78,10 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.remote_q_history = deque(maxlen=cfg.REMOTE_HISTORY_LEN)
         self.remote_qd_history = deque(maxlen=cfg.REMOTE_HISTORY_LEN)
         
+        # Pre-computed Trajectory Buffers (For Lookahead)
+        self._precomputed_trajectory_q: Optional[np.ndarray] = None
+        self._precomputed_trajectory_qd: Optional[np.ndarray] = None
+        
         # Warmup / Phase Logic
         self.warmup_time = cfg.WARM_UP_DURATION 
         self.warmup_steps = int(self.warmup_time * self.control_freq)
@@ -89,6 +94,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         if lstm_model_path is not None:
             self._load_lstm_model(lstm_model_path)
         else:
+            # This is expected during LSTM training phase
             pass
 
         self._last_predicted_target: Optional[np.ndarray] = None
@@ -118,6 +124,8 @@ class TeleoperationEnvWithDelay(gym.Env):
     def _load_lstm_model(self, path):
         """Loads the frozen Autoregressive LSTM."""
         if not os.path.exists(path):
+            # If path provided but file missing, warn but don't crash immediately? 
+            # Ideally raising error is safer, but for now we keep strictness.
             raise FileNotFoundError(f"LSTM model not found at {path}")
             
         try:
@@ -151,7 +159,32 @@ class TeleoperationEnvWithDelay(gym.Env):
         self._cached_prediction_error = 0.0
         self._cached_delay_steps = 0
         
+        # 1. Reset Leader Normally
         leader_start_q, _ = self.leader.reset(seed=seed)
+        
+        # 2. Pre-compute Trajectory
+        # We use the ACTUAL leader to roll out the trajectory to ensure parameters (random or not) match perfectly.
+        # We roll out enough steps to cover the episode + prediction horizon.
+        rollout_steps = self.max_episode_steps + cfg.ESTIMATOR_PREDICTION_HORIZON + 50
+        temp_q_list = []
+        temp_qd_list = []
+        
+        # Initial state (t=0)
+        temp_q_list.append(leader_start_q.copy())
+        temp_qd_list.append(np.zeros(self.n_joints))
+        
+        for _ in range(rollout_steps):
+            q, qd, _, _, _, _ = self.leader.step()
+            temp_q_list.append(q.copy())
+            temp_qd_list.append(qd.copy())
+            
+        self._precomputed_trajectory_q = np.array(temp_q_list)
+        self._precomputed_trajectory_qd = np.array(temp_qd_list)
+        
+        # 3. CRITICAL: Reset leader AGAIN to bring it back to t=0 for the actual episode run
+        # Since LocalRobotSimulator logic is deterministic based on reset() and seed, this restores state.
+        self.leader.reset(seed=seed)
+        
         self.remote_robot.reset(initial_qpos=self.initial_qpos)
         
         self.leader_q_history.clear()
@@ -247,14 +280,33 @@ class TeleoperationEnvWithDelay(gym.Env):
         return self.leader_q_history[idx]
 
     def _perform_ar_prediction_step(self) -> np.ndarray:
+        """
+        Perform the autoregressive prediction step.
+        If LSTM is missing (Training Mode), returns the naive delayed observation.
+        """
         history_len = len(self.leader_q_history)
+        
+        # 1. Grace Period Check
         if self.current_step < self.grace_period_steps:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
         
         delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
+        
+        # 2. No Delay Check
         if delay_steps == 0:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
         
+        # 3. LSTM Missing Check (The Fix!)
+        if self.lstm is None:
+            # Fallback to naive delayed observation
+            idx = -1 - delay_steps
+            idx = max(idx, -len(self.leader_q_history)) # Safety
+            return np.concatenate([
+                self.leader_q_history[idx],
+                self.leader_qd_history[idx]
+            ])
+            
+        # 4. Normal LSTM Inference (Deployment Mode)
         normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         most_recent_idx = -1 - delay_steps
         
@@ -386,6 +438,41 @@ class TeleoperationEnvWithDelay(gym.Env):
             buffer_seq.append(step_vector)
             
         return np.array(buffer_seq).flatten().astype(np.float32)
+
+    def get_future_target_chunk(self, chunk_size: int) -> np.ndarray:
+        """
+        Get FUTURE ground-truth states for LSTM training targets.
+        Uses pre-computed trajectory to access actual future states efficiently.
+        
+        Args:
+            chunk_size (int): Number of steps to predict ahead.
+            
+        Returns:
+            np.ndarray: Shape (chunk_size, 14) containing future [q, qd] targets.
+        """
+        # Safety check: if precomputed trajectory is missing, fallback to static
+        if self._precomputed_trajectory_q is None:
+            init_state = np.concatenate([self.initial_qpos, np.zeros(self.n_joints)])
+            return np.tile(init_state, (chunk_size, 1)).astype(np.float32)
+            
+        # The 'current_step' counts from 0. 
+        # leader_q_history[-1] corresponds to _precomputed_trajectory_q[current_step]
+        # We want to look AHEAD from the current step.
+        
+        current_idx = self.current_step
+        max_idx = len(self._precomputed_trajectory_q) - 1
+        
+        future_chunk = []
+        for i in range(chunk_size):
+            future_idx = min(current_idx + i + 1, max_idx)
+            
+            state = np.concatenate([
+                self._precomputed_trajectory_q[future_idx],
+                self._precomputed_trajectory_qd[future_idx]
+            ])
+            future_chunk.append(state)
+            
+        return np.array(future_chunk).astype(np.float32)
 
     def _calculate_reward(self, action: np.ndarray) -> Tuple[float, float]:
         """
