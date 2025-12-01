@@ -38,7 +38,7 @@ class IKSolver:
         self.jacr = np.zeros((3, self.model.nv))
         self.M_full = np.zeros((self.model.nv, self.model.nv))
         
-        # State tracking (Only for initialization, no longer used for clamping)
+        # State tracking
         self.q_previous = cfg.INITIAL_JOINT_CONFIG.copy()
         self.q_rest = cfg.INITIAL_JOINT_CONFIG.copy() 
 

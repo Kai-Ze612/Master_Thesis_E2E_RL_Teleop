@@ -11,6 +11,7 @@ Current trajectory types:
 The trajectory parameters can be randomized within reasonable bounds to enhance robustness during training.
 """
 
+
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -41,15 +42,11 @@ class TrajectoryParams:
         center_x = np.random.uniform(0.3, 0.4)
         center_y = np.random.uniform(-0.1, 0.1)
         center_z = actual_start_pos[2]
-        
         center = np.array([center_x, center_y, center_z], dtype=np.float64)
-        
         scale_x = np.random.uniform(0.1, 0.1)
         scale_y = np.random.uniform(0.1, 0.3)
         scale_z = 0.02
-        
         scale = np.array([scale_x, scale_y, scale_z], dtype=np.float64)
-        
         frequency = np.random.uniform(0.05, 0.15)
         return cls(center=center, scale=scale, frequency=frequency, initial_phase=0.0)
 
@@ -68,15 +65,10 @@ class TrajectoryGenerator(ABC):
 
 class Figure8TrajectoryGenerator(TrajectoryGenerator):
     def compute_position(self, t: float) -> np.ndarray:
-
         phase = self._compute_phase(t)
-
         dx = self._params.scale[0] * np.sin(phase)
-
         dy = self._params.scale[1] * np.sin(phase / 2)
-
         dz = self._params.scale[2] * np.sin(phase)
-
         return self._params.center + np.array([dx, dy, dz], dtype=np.float64)
 
 
@@ -119,27 +111,23 @@ class LocalRobotSimulator(gym.Env):
         self._randomize_params = randomize_params
         self._tick = 0
         
-        # Load model for IK/FK only
         self.model = mujoco.MjModel.from_xml_path(model_path)
         self.data = mujoco.MjData(self.model)
         
-        # Setup IK Solver
         self.ik_solver = IKSolver(self.model, cfg.JOINT_LIMITS_LOWER, cfg.JOINT_LIMITS_UPPER)
         
-        # Get start position via FK
+        # Initial config
         self.data.qpos[:self.n_joints] = cfg.INITIAL_JOINT_CONFIG
         mujoco.mj_forward(self.model, self.data)
         ee_site_id = self.model.site('panda_ee_site').id
         self.actual_spawn_pos = self.data.site_xpos[ee_site_id].copy()
         
-        # Trajectory Generator Setup
         if self._randomize_params:
-            self._params = TrajectoryParams.randomize(self.actual_spawn_pos)
+            self._params = TrajectoryParams.randomized(self.actual_spawn_pos)
         else:
             self._params = TrajectoryParams()
         self._trajectory_type = trajectory_type
        
-        # Trajectory Generator Selection
         generators = {
             TrajectoryType.FIGURE_8: Figure8TrajectoryGenerator,
             TrajectoryType.SQUARE: SquareTrajectoryGenerator,
@@ -148,7 +136,6 @@ class LocalRobotSimulator(gym.Env):
         self._generator = generators[trajectory_type](self._params)
         self.traj_start_pos = self._generator.compute_position(0.0)
         
-        # State
         self._q_start = cfg.INITIAL_JOINT_CONFIG.copy()
         self._q_current = self._q_start.copy()
         self._q_previous = self._q_start.copy()
@@ -167,23 +154,11 @@ class LocalRobotSimulator(gym.Env):
         return self._q_current.astype(np.float32), {}
 
     def step(self, action=None):
-        """
-        Generate next desired joint positions and velocities
-        
-        Returns:
-        - q_desired: Desired joint positions
-        - qd_desired: Desired joint velocities
-        - reward: Always 0.0 (not used)
-        - terminated: Always False
-        - truncated: Always False
-        - info: Empty dict
-        """
-        
         self._trajectory_time += self._dt
         self._tick += 1
         t = self._trajectory_time
 
-        # 1. Get the Raw Target from Trajectory/IK (Your existing logic)
+        # 1. Generate Cartesian Target
         if t < cfg.WARM_UP_DURATION:
             progress = t / cfg.WARM_UP_DURATION
             current_target_pos = (1 - progress) * self.actual_spawn_pos + progress * self.traj_start_pos
@@ -194,22 +169,21 @@ class LocalRobotSimulator(gym.Env):
             q_target_raw, ik_success, _ = self.ik_solver.solve(cartesian_target, self._q_current)
             
         if not ik_success or q_target_raw is None:
+            # If IK fails, we hold position. 
+            # In unconstrained mode, we trust the IK solver to handle jumps if it wants to.
             q_target_raw = self._q_current.copy()
         
+        # 2. Calculate Raw Velocity (Unconstrained)
+        # No more clipping. We want to see if the physics are broken.
         qd_raw = (q_target_raw - self._q_previous) / self._dt
         
-        max_velocity = 1.5 
-        qd_safe = np.clip(qd_raw, -max_velocity, max_velocity)
-  
-        q_safe = self._q_previous + (qd_safe * self._dt)
-        
-        # Update state
+        # 3. Update State
         self._q_previous = self._q_current.copy()
-        self._q_current = q_safe.copy() # Store the SAFE position, not the RAW one
+        self._q_current = q_target_raw.copy() 
         
         return (
             self._q_current.astype(np.float32),   
-            qd_safe.astype(np.float32),        
+            qd_raw.astype(np.float32),  # Return RAW velocity
             0.0, 
             False,
             False,
@@ -222,5 +196,4 @@ class LocalRobotSimulator(gym.Env):
     
     @property
     def current_tick(self):
-        """Current tick count."""
         return self._tick
