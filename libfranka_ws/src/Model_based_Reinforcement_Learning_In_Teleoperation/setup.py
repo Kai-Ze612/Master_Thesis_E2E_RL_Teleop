@@ -30,7 +30,8 @@ setup(
         'console_scripts': [
             'remote_node = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.remote_robot:main',
             'local_node = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.local_robot_sim:main',
-            'agent_node = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.agent:main'
+            'agent_node = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.agent:main',
+            'remote_sim = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.remote_sim:main',
         ],
     },
 )

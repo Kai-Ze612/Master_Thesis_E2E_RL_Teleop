@@ -1,98 +1,135 @@
-import time
 import torch
+import time
 import numpy as np
-from collections import deque
-import statistics
+import os
+import sys
 
-from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent.sac_policy_network import StateEstimator
-from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    N_JOINTS,
-    RNN_SEQUENCE_LENGTH,
-    LSTM_MODEL_PATH
-)
+# --- IMPORTS ---
+current_dir = os.path.dirname(os.path.abspath(__file__))
+workspace_root = os.path.dirname(current_dir)
+if workspace_root not in sys.path:
+    sys.path.append(workspace_root)
 
-def benchmark():
-    # 1. Setup
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Benchmarking on device: {device}")
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_policy_network import StateEstimator, Actor
+import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
+
+# --- CONFIGURATION ---
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# DEVICE = torch.device('cpu') # Uncomment to force CPU test (often faster for small batches!)
+print(f"Using device: {DEVICE}")
+
+CONTROL_FREQ = 200  # Hz
+BUDGET_MS = (1.0 / CONTROL_FREQ) * 1000
+
+# Worst case scenario: How many steps do we predict if delay is max?
+# Example: 500ms delay @ 200Hz = 100 steps
+MAX_DELAY_STEPS = 50
+ITERATIONS = 1000  # How many times to repeat the test
+
+def run_timing_test():
+    print(f"==================================================")
+    print(f"--- INFERENCE LATENCY STRESS TEST ---")
+    print(f"==================================================")
+    print(f"Device:           {DEVICE}")
+    print(f"Control Freq:     {CONTROL_FREQ} Hz")
+    print(f"Time Budget:      {BUDGET_MS:.2f} ms")
+    print(f"Simulating Delay: {MAX_DELAY_STEPS} steps (Worst Case)")
+    print(f"==================================================")
+
+    # 1. Initialize Models (Random weights are fine for speed testing)
+    print("Initializing models...")
+    lstm = StateEstimator().to(DEVICE)
+    actor = Actor(state_dim=cfg.OBS_DIM).to(DEVICE)
+    lstm.eval()
+    actor.eval()
+
+    # 2. Prepare Dummy Data
+    # Batch size 1, Sequence length 150
+    seq_len = cfg.RNN_SEQUENCE_LENGTH
+    # Input dim: q(7) + qd(7) + delay(1) = 15
+    dummy_input_seq = torch.randn(1, seq_len, 15).to(DEVICE)
     
-    model = StateEstimator().to(device)
-    try:
-        checkpoint = torch.load(LSTM_MODEL_PATH, map_location=device)
-        model.load_state_dict(checkpoint.get('state_estimator_state_dict', checkpoint))
-    except:
-        print("Using random weights.")
-
-    model.eval()
-
-    # --- APPLY OPTIMIZATIONS ---
-    if device.type == 'cuda':
-        model.half()
-        print("Enabled FP16.")
-        
-    # JIT Trace
-    dummy_input = torch.randn(1, RNN_SEQUENCE_LENGTH, N_JOINTS*2+1).to(device)
-    if device.type == 'cuda':
-        dummy_input = dummy_input.half()
-        
-    model = torch.jit.trace(model, dummy_input)
-    print("Enabled JIT Tracing.")
-    # ---------------------------
-
-    buffer_len = RNN_SEQUENCE_LENGTH + 20
-    leader_q_history = deque([np.random.randn(N_JOINTS).astype(np.float32) for _ in range(buffer_len)], maxlen=buffer_len)
-    leader_qd_history = deque([np.random.randn(N_JOINTS).astype(np.float32) for _ in range(buffer_len)], maxlen=buffer_len)
+    # Pre-calculate constants
+    dt_norm = (1.0 / CONTROL_FREQ) / cfg.DELAY_INPUT_NORM_FACTOR
     
-    SEQ_LEN = RNN_SEQUENCE_LENGTH
-    TEST_ITERATIONS = 1000
+    # 3. Warmup (Crucial for CUDA)
+    print("Warming up JIT/CUDA...")
+    with torch.no_grad():
+        for _ in range(50):
+            _, hidden = lstm.lstm(dummy_input_seq)
+            curr_input = dummy_input_seq[:, -1:, :]
+            for _ in range(10): # Short loop
+                _, hidden = lstm.forward_step(curr_input, hidden)
+            _ = actor(torch.randn(1, cfg.OBS_DIM).to(DEVICE))
     
-    # Warmup
-    with torch.no_grad(): _ = model(dummy_input)
-    torch.cuda.synchronize()
+    if DEVICE.type == 'cuda':
+        torch.cuda.synchronize()
 
-    # Store timings
-    t_total = []
-
-    print(f"\nStarting Optimized Benchmark...")
-
-    for i in range(TEST_ITERATIONS):
-        t0 = time.perf_counter()
-
-        # Data Prep
-        buffer_q = list(leader_q_history)[-SEQ_LEN:]
-        buffer_qd = list(leader_qd_history)[-SEQ_LEN:]
-        current_delay_scalar = 50.0
+    # 4. The Critical Path Loop
+    # This matches `agent.py` logic exactly
+    times = []
+    
+    print(f"Running {ITERATIONS} iterations...")
+    
+    for i in range(ITERATIONS):
+        t_start = time.perf_counter()
         
-        batch_list = []
-        for q, qd in zip(buffer_q, buffer_qd):
-            vec = np.concatenate([q, qd, [current_delay_scalar]])
-            batch_list.append(vec)
-        
-        raw_data = np.array(batch_list, dtype=np.float32).flatten()
-        
-        # Transfer & Cast
-        full_seq_t = torch.tensor(raw_data, dtype=torch.float32).to(device).reshape(1, SEQ_LEN, -1)
-        if device.type == 'cuda':
-            full_seq_t = full_seq_t.half()
-        
-        # Inference
         with torch.no_grad():
-            _ = model(full_seq_t)
-        
-        if device.type == 'cuda':
+            # --- BLOCK A: LSTM INITIALIZATION ---
+            # Run history sequence
+            _, hidden_state = lstm.lstm(dummy_input_seq)
+            
+            # Setup for AR loop
+            # (In real code we slice, here we just take last for speed test consistency)
+            current_input = dummy_input_seq[:, -1:, :].clone()
+            
+            # --- BLOCK B: AUTOREGRESSIVE LOOP (The Bottleneck) ---
+            # This is the heavy part: running the LSTM cell N times
+            for _ in range(MAX_DELAY_STEPS):
+                # 1. Forward
+                pred_delta, hidden_state = lstm.forward_step(current_input, hidden_state)
+                
+                # 2. Math Overhead (Scale/Clamp/Add)
+                # We simulate the cost of tensor operations
+                last_known_state = current_input[:, :, :14]
+                predicted_next_state = last_known_state + (pred_delta.unsqueeze(1) * 0.1)
+                
+                # 3. Next Input Construction
+                # (Simulating concatenation cost)
+                next_delay = torch.tensor([[[0.5]]], device=DEVICE) 
+                current_input = torch.cat([predicted_next_state, next_delay], dim=2)
+
+            # --- BLOCK C: ACTOR INFERENCE ---
+            # Once LSTM finishes, we run Actor once
+            # Construct dummy observation 113D
+            dummy_obs = torch.randn(1, cfg.OBS_DIM).to(DEVICE)
+            _ = actor(dummy_obs)
+
+        if DEVICE.type == 'cuda':
             torch.cuda.synchronize()
             
-        t3 = time.perf_counter()
-        t_total.append((t3 - t0) * 1000) 
+        t_end = time.perf_counter()
+        times.append((t_end - t_start) * 1000.0) # Convert to ms
 
-    print("-" * 60)
-    print(f"{'TOTAL Latency':<20} | {statistics.mean(t_total):<10.4f} ms")
-    print("-" * 60)
+    # 5. Analysis
+    avg_time = np.mean(times)
+    max_time = np.max(times)
+    min_time = np.min(times)
+    p99_time = np.percentile(times, 99)
+
+    print(f"\n--- RESULTS ---")
+    print(f"Avg Time:  {avg_time:.3f} ms")
+    print(f"Min Time:  {min_time:.3f} ms")
+    print(f"Max Time:  {max_time:.3f} ms")
+    print(f"99%ile:   {p99_time:.3f} ms")
     
-    if statistics.mean(t_total) > 4.0:
-        print("\n[CRITICAL] Still too slow! Reduce RNN_HIDDEN_DIM in robot_config.py.")
+    print(f"--------------------------------------------------")
+    if p99_time > BUDGET_MS:
+        print(f"[FAIL] SPEED TOO SLOW. {p99_time:.2f}ms > {BUDGET_MS:.2f}ms Limit")
+        print("Recommendation: Use CPU instead of GPU, or reduce Control Freq.")
     else:
-        print("\n[OK] Speed is good for 250Hz.")
+        margin = BUDGET_MS - p99_time
+        print(f"[PASS] System is Real-Time Safe. Margin: {margin:.2f} ms")
 
 if __name__ == "__main__":
-    benchmark()
+    run_timing_test()

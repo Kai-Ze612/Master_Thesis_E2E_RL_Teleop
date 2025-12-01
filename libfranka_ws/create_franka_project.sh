@@ -21,16 +21,16 @@ source /opt/ros/humble/setup.bash
 # Create package
 ## Modify here if want to use CPP - change ament_python to ament_cmake
 echo "Creating ROS2 package..."
-ros2 pkg create --build-type ament_python {Project namez} \
+ros2 pkg create --build-type ament_python End-to-End_Teleoperation \
   --dependencies rclpy sensor_msgs std_msgs geometry_msgs
 
-cd {Project name}
+cd End-to-End_Teleoperation
 
-mkdir -p {Project name}/{nodes,controllers,utils}
+mkdir -p End-to-End_Teleoperation/{nodes,controllers,utils}
 mkdir -p {launch,config,models,meshes,textures,urdf,test,resource}
 
-touch {Project name}/resource/{Project name}
-touch {Project name}/__init__.py
-touch {Project name}/nodes/__init__.py
-touch {Project name}/controllers/__init__.py
-touch {Project name}/utils/__init__.py
+touch End-to-End_Teleoperation/resource/End-to-End_Teleoperation
+touch End-to-End_Teleoperation/__init__.py
+touch End-to-End_Teleoperation/nodes/__init__.py
+touch End-to-End_Teleoperation/controllers/__init__.py
+touch End-to-End_Teleoperation/utils/__init__.py

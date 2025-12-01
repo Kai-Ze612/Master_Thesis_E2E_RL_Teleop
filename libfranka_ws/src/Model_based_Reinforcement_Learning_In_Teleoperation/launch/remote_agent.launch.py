@@ -35,7 +35,7 @@ def generate_launch_description():
 
     # RL agent arguments
     config_param_name = 'config'
-    default_config = str(ExperimentConfig.LOW_DELAY.value) # Default to 1
+    default_config = str(ExperimentConfig.FULL_RANGE_COVER.value) # Default to 1
     config = LaunchConfiguration(config_param_name)
 
     seed_param_name = 'seed'
@@ -67,7 +67,7 @@ def generate_launch_description():
     # Add All Launch Arguments
     ld.add_action(DeclareLaunchArgument(
         robot_ip_parameter_name,
-        default_value='172.16.0.2', 
+        default_value='192.168.3.108', 
         description='Hostname or IP address of the robot.'))
     ld.add_action(DeclareLaunchArgument(
         use_rviz_parameter_name,
