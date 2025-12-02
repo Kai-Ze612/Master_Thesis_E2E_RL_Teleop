@@ -8,6 +8,7 @@ Goal: Min tracking error under delay with minimal torque compensation.
 """
 
 
+
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -18,13 +19,11 @@ import matplotlib.pyplot as plt
 import os
 import copy
 
-
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.local_robot_simulator import LocalRobotSimulator, TrajectoryType
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.remote_robot_simulator import RemoteRobotSimulator
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_policy_network import StateEstimator 
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
-
 
 class TeleoperationEnvWithDelay(gym.Env):
 
@@ -77,7 +76,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.remote_robot = RemoteRobotSimulator(
             delay_config=delay_config, 
             seed=seed,
-            render=should_render_remote # <--- CRITICAL FIX for Segfault
+            render=should_render_remote 
         )
         
         # Buffers
