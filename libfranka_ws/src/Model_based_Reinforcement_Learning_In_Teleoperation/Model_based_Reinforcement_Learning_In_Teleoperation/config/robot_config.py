@@ -95,7 +95,7 @@ DT = 1.0 / DEFAULT_CONTROL_FREQ
 ESTIMATOR_STATE_DIM = 15  # 7 q + 7 qd + 1 delay
 ESTIMATOR_OUTPUT_DIM = 14  # 7 predicted q + 7 predicted qd
 
-MAX_AR_STEPS = 240 / (1/DEFAULT_CONTROL_FREQ * 1000) + 5
+MAX_AR_STEPS = int(240 / (1/DEFAULT_CONTROL_FREQ * 1000) + 5)
 
 ######################################
 # RL Environment Parameters

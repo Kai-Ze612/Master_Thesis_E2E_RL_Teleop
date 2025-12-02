@@ -22,15 +22,14 @@ import argparse
 import logging
 from datetime import datetime
 from typing import Tuple, Dict, Optional, Any, List
-
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from torch.utils.tensorboard import SummaryWriter
 from stable_baselines3.common.vec_env import DummyVecEnv 
 
-# Project Imports
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.training_env import TeleoperationEnvWithDelay
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.local_robot_simulator import TrajectoryType
@@ -38,7 +37,15 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
 
 
-def make_env_factory(rank: int, config: ExperimentConfig, traj_type: TrajectoryType, seed: int, randomize: bool, render_mode: Optional[str] = None):
+# Environment Creation
+def make_env_factory(
+    rank: int,
+    config: ExperimentConfig,
+    traj_type: TrajectoryType,
+    seed: int,
+    randomize: bool,
+    render_mode: Optional[str] = None
+    ):
     def _init():
         return TeleoperationEnvWithDelay(
             delay_config=config,
@@ -46,27 +53,27 @@ def make_env_factory(rank: int, config: ExperimentConfig, traj_type: TrajectoryT
             randomize_trajectory=randomize,
             seed=seed + rank,
             render_mode=render_mode, 
-            lstm_model_path=None
+            lstm_model_path=None # We inject the model manually during validation
         )
     return _init
 
 
-class SequenceReplayBuffer:
+class ReplayBuffer:
     """
     Modified to store multi-step targets for AR training.
     Target Shape: (Batch, Horizon, Output_Dim)
     """
     def __init__(self, buffer_size: int, device: torch.device):
-        # [FIX] Explicit int cast to handle float config values
-        self.max_size = int(buffer_size)
+        
+        self.max_size = buffer_size
         self.device = device
         self.ptr = 0
         self.current_size = 0
         
-        self.seq_length = int(cfg.RNN_SEQUENCE_LENGTH)
-        self.input_dim = int(cfg.ESTIMATOR_STATE_DIM)
-        self.output_dim = int(cfg.N_JOINTS * 2)
-        self.ar_horizon = int(cfg.MAX_AR_STEPS)
+        self.seq_length = cfg.RNN_SEQUENCE_LENGTH
+        self.input_dim = cfg.ESTIMATOR_STATE_DIM
+        self.output_dim = cfg.ESTIMATOR_OUTPUT_DIM
+        self.ar_horizon = cfg.MAX_AR_STEPS
 
         self.input_sequences = np.zeros((self.max_size, self.seq_length, self.input_dim), dtype=np.float32)
         self.target_sequences = np.zeros((self.max_size, self.ar_horizon, self.output_dim), dtype=np.float32)
@@ -95,6 +102,7 @@ class SequenceReplayBuffer:
 
 class LSTMTrainer:
     def __init__(self, args: argparse.Namespace):
+        
         self.args = args
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
@@ -109,8 +117,7 @@ class LSTMTrainer:
         self.model = StateEstimator(output_dim=int(cfg.N_JOINTS * 2)).to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.ESTIMATOR_LEARNING_RATE)
         
-        # [FIX] Explicit int cast for buffer size
-        self.buffer = SequenceReplayBuffer(int(cfg.ESTIMATOR_BUFFER_SIZE), self.device)
+        self.buffer = ReplayBuffer(int(cfg.ESTIMATOR_BUFFER_SIZE), self.device)
         self.train_env, self.val_env = self._setup_environments()
         
         self.global_step = 0
@@ -128,29 +135,28 @@ class LSTMTrainer:
 
     def _setup_environments(self) -> Tuple[DummyVecEnv, DummyVecEnv]:
         render_mode = "human" if self.args.render else None
+        
+        # Training Environment (Vectorized)
         train_env = DummyVecEnv([
             make_env_factory(i, self.args.config, self.args.trajectory_type, self.args.seed, self.args.randomize_trajectory, render_mode)
             for i in range(cfg.NUM_ENVIRONMENTS)
         ])
+        
         val_env = DummyVecEnv([
-            make_env_factory(10000, self.args.config, self.args.trajectory_type, self.args.seed, self.args.randomize_trajectory, None)
+            make_env_factory(0, self.args.config, self.args.trajectory_type, 10000, self.args.randomize_trajectory, None)
             for _ in range(1)
         ])
         return train_env, val_env
 
     def _collect_rollouts(self, env: DummyVecEnv) -> Tuple[np.ndarray, np.ndarray]:
-        # Collect Input Sequence
-        # [FIX] Explicit int cast to resolve TypeError inside env_method
-        delayed_flat_list = env.env_method("get_delayed_target_buffer", int(cfg.RNN_SEQUENCE_LENGTH))
         
-        # Collect Target Sequence (Horizon = MAX_AR_STEPS)
-        # [FIX] Explicit int cast to resolve TypeError inside env_method
+        # Explicit int casting to prevent TypeError
+        delayed_flat_list = env.env_method("get_delayed_target_buffer", int(cfg.RNN_SEQUENCE_LENGTH))
         ar_targets_flat = env.env_method("get_future_target_sequence", int(cfg.MAX_AR_STEPS))
         
         input_dim = int(cfg.ESTIMATOR_STATE_DIM)
         output_dim = int(cfg.N_JOINTS * 2)
         
-        # Reshape using int dimensions
         raw_inputs = np.array([buf.reshape(int(cfg.RNN_SEQUENCE_LENGTH), input_dim) for buf in delayed_flat_list])
         raw_targets = np.array([buf.reshape(int(cfg.MAX_AR_STEPS), output_dim) for buf in ar_targets_flat])
         
@@ -165,40 +171,28 @@ class LSTMTrainer:
     def _autoregressive_loss(self, batch_inputs, batch_targets):
         """
         Calculates loss over the AR horizon with Scheduled Sampling.
-        Implements the same 15D feature construction logic as training_env.py
+        Logic matches deployment: decrements delay and reconstructs 15D input.
         """
-        batch_size = batch_inputs.shape[0]
         loss = 0
         
         # 1. Initial State (Process History)
-        # Forward pass on history -> Get 'hidden' and first prediction
-        # We need to manually unroll because StateEstimator.forward() consumes the whole seq.
         _, hidden = self.model.lstm(batch_inputs)
         
-        # Initial Input for AR loop is the last step of the input sequence
-        # Shape: (Batch, 1, 15)
         curr_input = batch_inputs[:, -1:, :]
-        
-        # Extract initial delay from the input (last element)
-        # Assuming delay is at index -1. Shape (Batch, 1, 1)
         curr_delay = curr_input[:, :, -1:] 
         dt_norm_step = (1.0 / cfg.DEFAULT_CONTROL_FREQ) / cfg.DELAY_INPUT_NORM_FACTOR
         
-        # Loop over the horizon
         horizon = batch_targets.shape[1]
         
         for t in range(horizon):
-            # Predict
-            # Output: (B, 1, 14)
             pred_state, hidden = self.model.forward_step(curr_input, hidden) 
             
-            # Ground Truth for this step
-            gt_state = batch_targets[:, t:t+1, :] # (B, 1, 14)
+            gt_state = batch_targets[:, t:t+1, :] 
             
-            # Accumulate Loss
+            # Loss is always calculated against Ground Truth
             loss += F.mse_loss(pred_state, gt_state)
             
-            # Scheduled Sampling Logic
+            # Scheduled Sampling: Choose input for NEXT step
             use_ground_truth = (np.random.random() < self.ss_prob)
             
             if use_ground_truth:
@@ -206,15 +200,54 @@ class LSTMTrainer:
             else:
                 next_state = pred_state
             
-            # Prepare Next Input:
-            # 1. Decrement Delay
             curr_delay = torch.clamp(curr_delay - dt_norm_step, min=0.0)
-            
-            # 2. Concatenate State + Delay -> (B, 1, 15)
-            # This is the crucial step to ensure the 14D prediction becomes a 15D input
             curr_input = torch.cat([next_state, curr_delay], dim=2)
 
         return loss / horizon
+
+    def _validate_full_trajectory(self, duration_sec: float = 60.0) -> float:
+        """
+        Rigorous Validation:
+        Injects the current model into the Validation Environment and runs a 
+        full 60-second episode. This forces the Env to use the internal 
+        AR Prediction Loop (Pure Autoregression), testing true deployment stability.
+        """
+        self.model.eval()
+        
+        # 1. Inject Model into Env
+        # We access the unwrapped env to set the 'lstm' attribute
+        val_env_instance = self.val_env.envs[0].unwrapped
+        
+        # Save previous state just in case (though usually None)
+        prev_lstm = val_env_instance.lstm
+        val_env_instance.lstm = self.model 
+        
+        # 2. Run Episode
+        steps_to_run = int(duration_sec * cfg.DEFAULT_CONTROL_FREQ)
+        total_pred_error = 0.0
+        
+        # Reset with fixed seed implied by env creation (10000)
+        self.val_env.reset()
+        
+        with torch.no_grad():
+            for _ in range(steps_to_run):
+                # Step with zero action (we only care about State Estimation here)
+                _, _, done, infos = self.val_env.step([np.zeros(cfg.N_JOINTS)])
+                
+                # The Env calculates prediction error internally in _get_info
+                # "prediction_error": distance between AR_Prediction and GT
+                error = infos[0].get("prediction_error", 0.0)
+                total_pred_error += error
+                
+                if done[0]:
+                    self.val_env.reset()
+                    
+        # 3. Cleanup
+        val_env_instance.lstm = prev_lstm
+        self.model.train()
+        
+        avg_error = total_pred_error / steps_to_run
+        return avg_error
 
     def run(self):
         self.logger.info(">>> Filling Replay Buffer...")
@@ -240,8 +273,6 @@ class LSTMTrainer:
             batch_inputs, batch_targets = self.buffer.sample(cfg.ESTIMATOR_BATCH_SIZE)
             
             self.optimizer.zero_grad()
-            
-            # Custom AR Loss Calculation
             train_loss = self._autoregressive_loss(batch_inputs, batch_targets)
             
             train_loss.backward()
@@ -254,8 +285,27 @@ class LSTMTrainer:
             self.tb_writer.add_scalar("Train/Loss", train_loss.item(), update)
             self.tb_writer.add_scalar("Train/SS_Prob", self.ss_prob, update)
             
+            # Validation Step
             if update % cfg.ESTIMATOR_VAL_FREQ == 0:
-                self.logger.info(f"Update {update} | Loss: {train_loss.item():.6f} | SS Prob: {self.ss_prob:.4f}")
+                # Run the rigorous 60s test
+                val_error = self._validate_full_trajectory(duration_sec=60.0)
+                
+                self.logger.info(f"Update {update} | Loss: {train_loss.item():.6f} | Val Error (60s avg): {val_error:.6f} | SS: {self.ss_prob:.4f}")
+                self.tb_writer.add_scalar("Val/Prediction_Error_60s", val_error, update)
+                
+                # Save Best Model
+                if val_error < self.best_val_loss:
+                    self.best_val_loss = val_error
+                    self.patience_counter = 0
+                    self._save_checkpoint("best_model.pth")
+                    self.logger.info(f"  [>] New Best Model Saved! ({val_error:.6f})")
+                else:
+                    self.patience_counter += 1
+                    if self.patience_counter >= cfg.ESTIMATOR_PATIENCE:
+                        self.logger.info("Early stopping triggered.")
+                        break
+                
+                # Always save latest
                 self._save_checkpoint("latest_model.pth")
 
         self._save_checkpoint("final_model.pth")
@@ -276,8 +326,6 @@ def parse_arguments():
     parser.add_argument("--trajectory-type", type=str, default="figure_8", help="Trajectory Type")
     parser.add_argument("--seed", type=int, default=50, help="Random Seed")
     parser.add_argument("--randomize-trajectory", action="store_true", help="Randomize trajectory parameters")
-    
-    # NEW ARGUMENT: --render
     parser.add_argument("--render", action="store_true", help="Enable MuJoCo rendering (Debug only, slows training)")
     
     args = parser.parse_args()
