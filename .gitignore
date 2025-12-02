@@ -22,7 +22,7 @@ checkpoints/
 logs/
 runs/
 wandb/
-
+*.tfevents.*
 # Data files
 *.csv
 *.json
