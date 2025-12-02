@@ -53,16 +53,12 @@ def make_env_factory(
             randomize_trajectory=randomize,
             seed=seed + rank,
             render_mode=render_mode, 
-            lstm_model_path=None # We inject the model manually during validation
+            lstm_model_path=None
         )
     return _init
 
 
 class ReplayBuffer:
-    """
-    Modified to store multi-step targets for AR training.
-    Target Shape: (Batch, Horizon, Output_Dim)
-    """
     def __init__(self, buffer_size: int, device: torch.device):
         
         self.max_size = buffer_size
