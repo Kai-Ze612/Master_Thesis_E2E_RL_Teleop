@@ -113,6 +113,13 @@ class LSTMTrainer:
         self.model = StateEstimator(output_dim=int(cfg.N_JOINTS * 2)).to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.ESTIMATOR_LEARNING_RATE)
         
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self.optimizer, 
+            mode='min', 
+            factor=0.5, 
+            patience=3,
+        )
+        
         self.buffer = ReplayBuffer(int(cfg.ESTIMATOR_BUFFER_SIZE), self.device)
         self.train_env, self.val_env = self._setup_environments()
         
@@ -278,16 +285,24 @@ class LSTMTrainer:
             # Decay Scheduled Sampling
             self.ss_prob = max(0.0, self.ss_prob * self.ss_decay_rate)
             
+            # Logging
             self.tb_writer.add_scalar("Train/Loss", train_loss.item(), update)
             self.tb_writer.add_scalar("Train/SS_Prob", self.ss_prob, update)
             
+            # [NEW] Log Learning Rate
+            current_lr = self.optimizer.param_groups[0]['lr']
+            self.tb_writer.add_scalar("Train/Learning_Rate", current_lr, update)
+            
             # Validation Step
             if update % cfg.ESTIMATOR_VAL_FREQ == 0:
-                # Run the rigorous 60s test
                 val_error = self._validate_full_trajectory(duration_sec=30.0)
                 
-                self.logger.info(f"Update {update} | Loss: {train_loss.item():.6f} | Val Error (60s avg): {val_error:.6f} | SS: {self.ss_prob:.4f}")
+                self.logger.info(f"Update {update} | Loss: {train_loss.item():.6f} | Val Error: {val_error:.6f} | SS: {self.ss_prob:.4f} | LR: {current_lr:.2e}")
                 self.tb_writer.add_scalar("Val/Prediction_Error_60s", val_error, update)
+                
+                # [NEW] Step the Scheduler
+                # This will check if val_error improved. If not, it waits 'patience' times, then lowers LR.
+                self.scheduler.step(val_error)
                 
                 # Save Best Model
                 if val_error < self.best_val_loss:
@@ -301,7 +316,6 @@ class LSTMTrainer:
                         self.logger.info("Early stopping triggered.")
                         break
                 
-                # Always save latest
                 self._save_checkpoint("latest_model.pth")
 
         self._save_checkpoint("final_model.pth")
