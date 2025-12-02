@@ -64,9 +64,9 @@ class TeleoperationEnvWithDelay(gym.Env):
         
         should_render_remote = (self.render_mode == "human")
         self.remote_robot = RemoteRobotSimulator(
-            delay_config=delay_config, 
+            delay_config=delay_config,
             seed=seed,
-            render=should_render_remote 
+            render=should_render_remote
         )
         
         # Buffers
@@ -94,17 +94,19 @@ class TeleoperationEnvWithDelay(gym.Env):
         self._last_predicted_target: Optional[np.ndarray] = None
         self.max_ar_steps = cfg.MAX_AR_STEPS 
 
-        # --- SIGNAL PROCESSING (EMA) ---
+        # SIGNAL PROCESSING
         self.prediction_ema = None
         self.ema_alpha = cfg.PREDICTION_EMA_ALPHA
         
-        # Spaces
+        ######################################################################
+        # Construct RL space
         self.action_space = spaces.Box(
             low=-cfg.MAX_TORQUE_COMPENSATION, high=cfg.MAX_TORQUE_COMPENSATION, 
             shape=(self.n_joints,), dtype=np.float32
         )
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(cfg.OBS_DIM,), dtype=np.float32)
         
+        ######################################################################
         self.last_target_q = None
         # Stats for info
         self._cached_prediction_error = 0.0
