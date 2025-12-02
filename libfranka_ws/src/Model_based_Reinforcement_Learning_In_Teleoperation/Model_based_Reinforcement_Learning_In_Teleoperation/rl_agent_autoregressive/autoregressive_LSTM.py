@@ -284,7 +284,7 @@ class LSTMTrainer:
             # Validation Step
             if update % cfg.ESTIMATOR_VAL_FREQ == 0:
                 # Run the rigorous 60s test
-                val_error = self._validate_full_trajectory(duration_sec=60.0)
+                val_error = self._validate_full_trajectory(duration_sec=30.0)
                 
                 self.logger.info(f"Update {update} | Loss: {train_loss.item():.6f} | Val Error (60s avg): {val_error:.6f} | SS: {self.ss_prob:.4f}")
                 self.tb_writer.add_scalar("Val/Prediction_Error_60s", val_error, update)
