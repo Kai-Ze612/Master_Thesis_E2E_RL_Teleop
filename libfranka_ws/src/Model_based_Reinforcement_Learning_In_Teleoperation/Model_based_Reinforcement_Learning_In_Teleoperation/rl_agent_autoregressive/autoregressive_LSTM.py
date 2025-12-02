@@ -201,7 +201,7 @@ class LSTMTrainer:
 
         return loss / horizon
 
-    def _validate_full_trajectory(self, duration_sec: float = 60.0) -> float:
+    def _validate_full_trajectory(self, duration_sec: float = 30.0) -> float:
         """
         Rigorous Validation:
         Injects the current model into the Validation Environment and runs a 

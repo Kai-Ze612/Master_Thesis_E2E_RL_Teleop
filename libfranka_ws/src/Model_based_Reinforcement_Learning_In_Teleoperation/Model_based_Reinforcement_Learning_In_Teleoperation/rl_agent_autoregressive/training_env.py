@@ -42,17 +42,11 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Rendering setup
         self.render_mode = render_mode
         self.viewer = None
-        self.ax = None
-        self.plot_history_len = 1000
-        self.hist_tracking_reward = deque(maxlen=self.plot_history_len)
-        self.hist_total_reward = deque(maxlen=self.plot_history_len)
-        self._step_counter = 0
         
         # RL/Env parameters
         self.max_episode_steps = cfg.MAX_EPISODE_STEPS
         self.control_freq = cfg.DEFAULT_CONTROL_FREQ
         self.current_step = 0
-        self.episode_count = 0
         
         # Robot parameters
         self.n_joints = cfg.N_JOINTS
@@ -81,243 +75,318 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.remote_q_history = deque(maxlen=cfg.REMOTE_HISTORY_LEN)
         self.remote_qd_history = deque(maxlen=cfg.REMOTE_HISTORY_LEN)
         
-        # Pre-computed Trajectory Buffers
+        # Pre-computed Trajectory (for validation/ground truth)
         self._precomputed_trajectory_q: Optional[np.ndarray] = None
         self._precomputed_trajectory_qd: Optional[np.ndarray] = None
         
-        # Warmup / Phase Logic
-        self.warmup_time = cfg.WARM_UP_DURATION 
-        self.warmup_steps = int(self.warmup_time * self.control_freq)
+        # Warmup Logic
+        self.warmup_steps = int(cfg.WARM_UP_DURATION * self.control_freq)
         self.steps_remaining_in_warmup = 0
         self.grace_period_steps = self.warmup_steps + int(cfg.NO_DELAY_DURATION * self.control_freq)
         
-        # LSTM Model Loading
+        # LSTM Setup
         self.lstm = None
-        if lstm_model_path is not None:
+        if lstm_model_path is not None and os.path.exists(lstm_model_path):
             self._load_lstm_model(lstm_model_path)
         else:
             pass # Training phase
 
         self._last_predicted_target: Optional[np.ndarray] = None
         self.max_ar_steps = cfg.MAX_AR_STEPS 
+
+        # --- SIGNAL PROCESSING (EMA) ---
+        self.prediction_ema = None
+        self.ema_alpha = cfg.PREDICTION_EMA_ALPHA
         
-        ########################################################
-        # Action and Observation spaces construction
+        # Spaces
         self.action_space = spaces.Box(
-            low=-cfg.MAX_TORQUE_COMPENSATION,
-            high=cfg.MAX_TORQUE_COMPENSATION, 
-            shape=(self.n_joints,), 
-            dtype=np.float32
+            low=-cfg.MAX_TORQUE_COMPENSATION, high=cfg.MAX_TORQUE_COMPENSATION, 
+            shape=(self.n_joints,), dtype=np.float32
         )
-        
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(cfg.OBS_DIM,), dtype=np.float32)
-        ########################################################
         
-        self.last_target_q: Optional[np.ndarray] = None
-        self._cached_real_time_error = 0.0
+        self.last_target_q = None
+        # Stats for info
         self._cached_prediction_error = 0.0
         self._cached_delay_steps = 0
         
     def _load_lstm_model(self, path):
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"LSTM model not found at {path}")
         try:
             self.lstm = StateEstimator().to(self.device)
-            checkpoint = torch.load(path, map_location=self.device, weights_only=False)
+            # weights_only=False allows loading full checkpoints if needed
+            checkpoint = torch.load(path, map_location=self.device)
             if 'state_estimator_state_dict' in checkpoint:
                 self.lstm.load_state_dict(checkpoint['state_estimator_state_dict'])
             else:
                 self.lstm.load_state_dict(checkpoint)
             self.lstm.eval()
-            for param in self.lstm.parameters(): param.requires_grad = False
-            print(f"[ENV] LSTM loaded successfully from {path}")
+            for p in self.lstm.parameters(): p.requires_grad = False
+            print(f"[ENV] LSTM loaded: {path}")
         except Exception as e:
-            raise RuntimeError(f"Failed to load LSTM in Environment: {e}")
+            print(f"[ENV] Warning: LSTM load failed: {e}")
 
-    def reset(self, seed: Optional[int] = None, options: Optional[Dict[str, Any]] = None) -> Tuple[np.ndarray, Dict[str, Any]]:
+    # --- NORMALIZATION HELPERS (Source of Truth) ---
+    def _normalize_state(self, q, qd):
+        """Normalize State (14D) to ~ N(0, 1)"""
+        q_norm = (q - cfg.Q_MEAN) / cfg.Q_STD
+        qd_norm = (qd - cfg.QD_MEAN) / cfg.QD_STD
+        return np.concatenate([q_norm, qd_norm])
+
+    def _normalize_input(self, q, qd, delay_scalar):
+        """Normalize Input (15D = 14D State + 1D Delay)"""
+        state_norm = self._normalize_state(q, qd)
+        return np.concatenate([state_norm, [delay_scalar]])
+
+    def _denormalize_state(self, pred_norm):
+        """Denormalize State (14D) back to physical units"""
+        q_norm = pred_norm[:7]
+        qd_norm = pred_norm[7:]
+        q = (q_norm * cfg.Q_STD) + cfg.Q_MEAN
+        qd = (qd_norm * cfg.QD_STD) + cfg.QD_MEAN
+        return np.concatenate([q, qd])
+    # -----------------------------------------------
+
+    def reset(self, seed: Optional[int] = None, options: Optional[Dict[str, Any]] = None):
         super().reset(seed=seed)
         self.current_step = 0
-        self.episode_count += 1
-        self._step_counter = 0
+        
+        # Reset Signal Processing
+        self.prediction_ema = None 
         self._last_predicted_target = None
-        self._cached_real_time_error = 0.0
         self._cached_prediction_error = 0.0
         self._cached_delay_steps = 0
         
-        # 1. Reset Leader & Pre-compute Trajectory
+        # Reset Leader & Precompute
         leader_start_q, _ = self.leader.reset(seed=seed)
+        self._precompute_trajectory(leader_start_q)
         
-        rollout_steps = self.max_episode_steps + cfg.ESTIMATOR_PREDICTION_HORIZON + 50
-        temp_q_list = []
-        temp_qd_list = []
-        temp_q_list.append(leader_start_q.copy())
-        temp_qd_list.append(np.zeros(self.n_joints))
-        
-        for _ in range(rollout_steps):
-            q, qd, _, _, _, _ = self.leader.step()
-            temp_q_list.append(q.copy())
-            temp_qd_list.append(qd.copy())
-            
-        self._precomputed_trajectory_q = np.array(temp_q_list)
-        self._precomputed_trajectory_qd = np.array(temp_qd_list)
-        
-        # 2. Reset Leader back to start
-        self.leader.reset(seed=seed)
+        # Reset Remote
         self.remote_robot.reset(initial_qpos=self.initial_qpos)
         
+        # Clear Buffers
         self.leader_q_history.clear()
         self.leader_qd_history.clear()
         self.remote_q_history.clear()
         self.remote_qd_history.clear()
         
-        # Prefill buffers
-        prefill_count = cfg.RNN_SEQUENCE_LENGTH + 20
-        for _ in range(prefill_count):
+        # Prefill Buffers (Warmup State)
+        # We prefill with the starting position so the history isn't empty
+        for _ in range(cfg.RNN_SEQUENCE_LENGTH + 20):
             self.leader_q_history.append(leader_start_q.copy())
             self.leader_qd_history.append(np.zeros(self.n_joints))
-            
-        start_target_q = leader_start_q.copy()
+        
+        start_q = leader_start_q.copy()
         for _ in range(cfg.REMOTE_HISTORY_LEN):
-            self.remote_q_history.append(start_target_q.copy())
+            self.remote_q_history.append(start_q.copy())
             self.remote_qd_history.append(np.zeros(self.n_joints))
             
         self.steps_remaining_in_warmup = self.warmup_steps
-        self.last_target_q = start_target_q.copy()
+        self.last_target_q = start_q.copy()
         
-        return self._get_observation(), self._get_info()
+        return self._get_observation(), {}
 
-    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
-        self._step_counter += 1
+    def _precompute_trajectory(self, start_q):
+        """Simulate the leader forward to get ground truth for the whole episode."""
+        rollout_steps = self.max_episode_steps + cfg.ESTIMATOR_PREDICTION_HORIZON + 100
+        
+        # Save current leader state
+        backup_state = (self.leader._q_current.copy(), self.leader._q_previous.copy(), 
+                       self.leader._trajectory_time, self.leader._tick)
+        
+        temp_q = [start_q.copy()]
+        temp_qd = [np.zeros(self.n_joints)]
+        
+        for _ in range(rollout_steps):
+            q, qd, _, _, _, _ = self.leader.step()
+            temp_q.append(q.copy())
+            temp_qd.append(qd.copy())
+            
+        self._precomputed_trajectory_q = np.array(temp_q)
+        self._precomputed_trajectory_qd = np.array(temp_qd)
+        
+        # Restore leader state
+        self.leader._q_current = backup_state[0]
+        self.leader._q_previous = backup_state[1]
+        self.leader._trajectory_time = backup_state[2]
+        self.leader._tick = backup_state[3]
+
+    def step(self, action: np.ndarray):
         self.current_step += 1
         
+        # 1. Step Leader
         new_leader_q, new_leader_qd, _, _, _, _ = self.leader.step()
         self.leader_q_history.append(new_leader_q.copy())
         self.leader_qd_history.append(new_leader_qd.copy())
 
-        # *** AR PREDICTION (Deployment Loop) ***
-        current_predicted_target = self._perform_ar_prediction_step()
-        self._last_predicted_target = current_predicted_target
+        # 2. AR Prediction (Normalized + Smoothed)
+        raw_prediction = self._perform_ar_prediction_step()
+        
+        # Apply EMA Filter to Denormalized Output
+        if self.prediction_ema is None:
+            self.prediction_ema = raw_prediction
+        else:
+            self.prediction_ema = self.ema_alpha * raw_prediction + (1.0 - self.ema_alpha) * self.prediction_ema
+            
+        self._last_predicted_target = self.prediction_ema
 
+        # 3. Determine Safe Target for Remote
         if self.steps_remaining_in_warmup > 0:
             self.steps_remaining_in_warmup -= 1
             safe_target_q = self.initial_qpos.copy()
             torque_compensation = np.zeros(self.n_joints)
         else:
-            raw_target_q = current_predicted_target[:self.n_joints]
-            if self.last_target_q is None:
-                self.last_target_q = self.remote_robot.get_joint_state()[0]
-
+            raw_target_q = self._last_predicted_target[:self.n_joints]
+            
+            # Safety Clamp (prevent jumps > MAX_JOINT_CHANGE)
+            if self.last_target_q is None: self.last_target_q = self.remote_robot.get_joint_state()[0]
             delta_q = raw_target_q - self.last_target_q
             clamped_delta_q = np.clip(delta_q, -cfg.MAX_JOINT_CHANGE_PER_STEP, cfg.MAX_JOINT_CHANGE_PER_STEP)
+            
             safe_target_q = self.last_target_q + clamped_delta_q
             self.last_target_q = safe_target_q.copy()
             torque_compensation = action
 
-        true_target_full = self.get_true_current_target()
-        true_pos = true_target_full[:self.n_joints]
+        # 4. Step Remote Robot
+        target_qd = self._last_predicted_target[self.n_joints:]
+        self.remote_robot.step(
+            safe_target_q, target_qd, torque_compensation, 
+            true_local_q=self.get_true_current_target()[:self.n_joints]
+        )
         
-        target_qd = current_predicted_target[self.n_joints:]
-        self.remote_robot.step(safe_target_q, target_qd, torque_compensation, true_local_q=true_pos)
-        
+        # 5. Reward & Info
         reward, r_tracking = self._calculate_reward(action)
-        self.hist_total_reward.append(reward)
-        self.hist_tracking_reward.append(r_tracking)
-        
         remote_q, _ = self.remote_robot.get_joint_state()
-        true_target = self.get_true_current_target()
         
-        joint_error_norm = np.linalg.norm(true_target[:self.n_joints] - remote_q)
-        prediction_error_norm = np.linalg.norm(true_target[:self.n_joints] - current_predicted_target[:self.n_joints])
+        true_target_full = self.get_true_current_target()
         
-        self._cached_real_time_error = joint_error_norm
-        self._cached_prediction_error = prediction_error_norm
+        # Stats
+        joint_error = np.linalg.norm(true_target_full[:self.n_joints] - remote_q)
+        pred_error = np.linalg.norm(true_target_full[:self.n_joints] - self._last_predicted_target[:self.n_joints])
+        self._cached_prediction_error = pred_error
+        
         hist_len = len(self.leader_q_history)
         self._cached_delay_steps = 0 if self.current_step < self.grace_period_steps else \
                                    self.delay_simulator.get_observation_delay_steps(hist_len)
-        
-        terminated, term_penalty = self._check_termination(joint_error_norm, prediction_error_norm, remote_q)
-        if terminated: reward += term_penalty
+
+        terminated, term_penalty = self._check_termination(joint_error, pred_error, remote_q)
+        reward += term_penalty
         
         truncated = self.current_step >= self.max_episode_steps
         if self.render_mode == "human": self.render()
 
         return self._get_observation(), reward, terminated, truncated, self._get_info()
 
-    # -----------------------------------------------------------------------------------
-    # [FIXED] Autoregressive Prediction Loop
-    # Logic: 
-    # 1. Start with ground truth history at t-k
-    # 2. Iterate forward, predicting t-k+1, t-k+2...
-    # 3. CRITICAL: Decrement delay at each step to tell LSTM we are catching up.
-    # 4. CRITICAL: Concatenate decremented delay to state to match 15D input.
-    # -----------------------------------------------------------------------------------
     def _perform_ar_prediction_step(self) -> np.ndarray:
+        """
+        Performs Auto-Regressive Prediction.
+        CRITICAL: Handles Normalization internally.
+        """
         history_len = len(self.leader_q_history)
         
-        # 1. Grace Period Handling
+        # Grace Period: Perfect prediction
         if self.current_step < self.grace_period_steps:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
         
         delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
         
-        # If no delay, return ground truth
-        if delay_steps == 0:
-            return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
-        
-        if self.lstm is None:
+        # Fallback
+        if delay_steps == 0 or self.lstm is None:
             idx = max(-1 - delay_steps, -len(self.leader_q_history))
             return np.concatenate([self.leader_q_history[idx], self.leader_qd_history[idx]])
             
         normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         most_recent_idx = -1 - delay_steps
         
-        # 2. Build Context Sequence (Ground Truth from History)
+        # 1. Build Sequence of NORMALIZED inputs
         seq_buffer = []
         start_idx = most_recent_idx - cfg.RNN_SEQUENCE_LENGTH + 1
         for i in range(start_idx, most_recent_idx + 1):
             idx = max(-len(self.leader_q_history), i)
-            step_vec = np.concatenate([
-                self.leader_q_history[idx],
-                self.leader_qd_history[idx],
-                [normalized_delay]
-            ])
+            # Normalize Q, Qd, Delay
+            step_vec = self._normalize_input(
+                self.leader_q_history[idx], 
+                self.leader_qd_history[idx], 
+                normalized_delay
+            )
             seq_buffer.append(step_vec)
             
         input_tensor = torch.tensor(np.array(seq_buffer), dtype=torch.float32).unsqueeze(0).to(self.device)
-  
-        # We predict up to the delay gap, limited by max steps
         steps_to_predict = min(delay_steps, self.max_ar_steps)
         dt_norm_step = (1.0 / self.control_freq) / cfg.DELAY_INPUT_NORM_FACTOR
         
         with torch.no_grad():
-            # A. Process context (history) to get hidden state
+            # Init Hidden State
             _, hidden = self.lstm.lstm(input_tensor)
             
-            # B. Prepare first input (Last known ground truth state)
-            last_obs = input_tensor[:, -1:, :]
-            curr_state = last_obs[:, :, :self.n_joints*2] # 14D
-            curr_delay_scalar = normalized_delay
+            # Start AR loop from last frame of context
+            curr_input = input_tensor[:, -1:, :]
             
-            # C. Autoregressive Loop
             for _ in range(steps_to_predict):
-                # 1. Update the Delay Feature (Decrement)
-                # We are predicting the NEXT step, so the data is effectively "newer"
-                curr_delay_scalar = max(0.0, curr_delay_scalar - dt_norm_step)
+                # Predict next state (Normalized)
+                pred_state_norm, hidden = self.lstm.forward_step(curr_input, hidden)
                 
-                # 2. Construct 15D Input: [State (14D) + Delay (1D)]
-                delay_t = torch.tensor([curr_delay_scalar], device=self.device).view(1, 1, 1)
-                step_input = torch.cat([curr_state, delay_t], dim=2) 
+                # Update Delay (Decrement)
+                curr_delay_val = curr_input[0, 0, -1].item()
+                next_delay_val = max(0.0, curr_delay_val - dt_norm_step)
                 
-                # 3. Predict Next State (14D)
-                pred_state, hidden = self.lstm.forward_step(step_input, hidden)
-                
-                # 4. Use prediction as state for next iteration
-                curr_state = pred_state
+                # Construct next input: [Pred State (Norm) + Next Delay]
+                delay_t = torch.tensor([[[next_delay_val]]], device=self.device)
+                curr_input = torch.cat([pred_state_norm, delay_t], dim=2)
         
-        # Return the final predicted state (14D)
-        return curr_state.cpu().numpy()[0, 0]
+        # 2. Denormalize Final Result
+        final_pred_norm = curr_input.cpu().numpy()[0, 0, :14]
+        return self._denormalize_state(final_pred_norm)
+
+    def get_delayed_target_buffer(self, buffer_length: int) -> np.ndarray:
+        """
+        Returns NORMALIZED data buffer for LSTM training.
+        This ensures the LSTM trainer receives data centered at 0 with std 1.
+        """
+        history_len = len(self.leader_q_history)
+        delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
+        normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
+        most_recent_idx = -1 - delay_steps
+        
+        buffer_seq = []
+        for i in range(-buffer_length + 1, 1): 
+            idx = np.clip(most_recent_idx + i, -history_len, -1)
+            # NORMALIZE HERE
+            step_vector = self._normalize_input(
+                self.leader_q_history[idx],
+                self.leader_qd_history[idx],
+                normalized_delay
+            )
+            buffer_seq.append(step_vector)
+            
+        return np.array(buffer_seq).flatten().astype(np.float32)
+
+    def get_future_target_sequence(self, horizon: int) -> np.ndarray:
+        """
+        Returns NORMALIZED future ground truth for LSTM loss calculation.
+        """
+        if self._precomputed_trajectory_q is None:
+            # Fallback for initialization
+            dummy = self._normalize_state(self.initial_qpos, np.zeros(self.n_joints))
+            return np.tile(dummy, (horizon, 1)).flatten().astype(np.float32)
+
+        history_len = len(self.leader_q_history)
+        delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
+        start_idx = max(0, self.current_step - delay_steps + 1)
+        
+        targets = []
+        for i in range(horizon):
+            idx = min(start_idx + i, len(self._precomputed_trajectory_q) - 1)
+            # NORMALIZE TARGET
+            state_norm = self._normalize_state(
+                self._precomputed_trajectory_q[idx],
+                self._precomputed_trajectory_qd[idx]
+            )
+            targets.append(state_norm)
+            
+        return np.array(targets).flatten().astype(np.float32)
 
     def _get_observation(self) -> np.ndarray:
+        """Constructs RL Observation vector."""
         remote_q, remote_qd = self.remote_robot.get_joint_state()
         self.remote_q_history.append(remote_q.copy())
         self.remote_qd_history.append(remote_qd.copy())
@@ -335,7 +404,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         rem_qd_hist = np.concatenate(list(self.remote_qd_history))
         
         hist_len = len(self.leader_q_history)
-        d_steps = 0 if self.current_step < self.grace_period_steps else self.delay_simulator.get_observation_delay_steps(hist_len)
+        d_steps = 0 if self.current_step < self.grace_period_steps else \
+                    self.delay_simulator.get_observation_delay_steps(hist_len)
         norm_delay = float(d_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         
         obs = np.concatenate([
@@ -352,77 +422,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         if not self.leader_q_history:
             return np.concatenate([self.initial_qpos, np.zeros(self.n_joints)])
         return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
-
-    def get_delayed_target_buffer(self, buffer_length: int) -> np.ndarray:
-        history_len = len(self.leader_q_history)
-        if history_len == 0:
-             init_vec = np.concatenate([self.initial_qpos, np.zeros(self.n_joints), [0.0]])
-             return np.tile(init_vec, (buffer_length, 1)).flatten().astype(np.float32)
-
-        delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
-        normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
-        most_recent_idx = -1 - delay_steps
-        
-        buffer_seq = []
-        for i in range(-buffer_length + 1, 1): 
-            target_history_idx = most_recent_idx + i 
-            safe_idx = np.clip(target_history_idx, -history_len, -1)
-            
-            step_vector = np.concatenate([
-                self.leader_q_history[safe_idx],
-                self.leader_qd_history[safe_idx],
-                [normalized_delay]
-            ])
-            buffer_seq.append(step_vector)
-            
-        return np.array(buffer_seq).flatten().astype(np.float32)
-
-    def get_future_target_single(self) -> np.ndarray:
-        # Kept for compatibility
-        if self._precomputed_trajectory_q is None:
-            return np.concatenate([self.initial_qpos, np.zeros(self.n_joints)]).astype(np.float32)
-            
-        history_len = len(self.leader_q_history)
-        delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
-        
-        target_idx = max(0, self.current_step - delay_steps + 1)
-        target_idx = min(target_idx, len(self._precomputed_trajectory_q) - 1)
-        
-        state = np.concatenate([
-            self._precomputed_trajectory_q[target_idx],
-            self._precomputed_trajectory_qd[target_idx]
-        ])
-            
-        return state.astype(np.float32)
-
-    # -----------------------------------------------------------------------------------
-    # [NEW] Helper for AR Training (Multi-step targets)
-    # -----------------------------------------------------------------------------------
-    def get_future_target_sequence(self, horizon: int) -> np.ndarray:
-        """
-        Returns a sequence of future ground truth states [t+1, t+2, ..., t+horizon]
-        relative to the delayed observation point.
-        """
-        if self._precomputed_trajectory_q is None:
-            state = np.concatenate([self.initial_qpos, np.zeros(self.n_joints)]).astype(np.float32)
-            return np.tile(state, (horizon, 1)).flatten()
-
-        history_len = len(self.leader_q_history)
-        delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
-        
-        # Start index: 1 step after the last delayed observation
-        start_idx = max(0, self.current_step - delay_steps + 1)
-        
-        targets = []
-        for i in range(horizon):
-            idx = min(start_idx + i, len(self._precomputed_trajectory_q) - 1)
-            state = np.concatenate([
-                self._precomputed_trajectory_q[idx],
-                self._precomputed_trajectory_qd[idx]
-            ])
-            targets.append(state)
-            
-        return np.array(targets).flatten().astype(np.float32)
 
     def _calculate_reward(self, action: np.ndarray) -> Tuple[float, float]:
         remote_q, remote_qd = self.remote_robot.get_joint_state()
@@ -444,31 +443,18 @@ class TeleoperationEnvWithDelay(gym.Env):
                     np.any(remote_q >= self.joint_limits_upper - cfg.JOINT_LIMIT_MARGIN))
 
         high_error = joint_error > self.max_joint_error
-        pred_divergence = prediction_error > 1.5 
+        
+        # Relaxed prediction error check
+        pred_divergence = prediction_error > 2.0 
 
         terminated = at_limits or high_error or pred_divergence
         penalty = -10.0 if terminated else 0.0
         return terminated, penalty
 
     def _get_info(self, phase="unknown"):
-        true_target = np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
-        remote_q, _ = self.remote_robot.get_joint_state()
-        
-        rt_error = np.linalg.norm(true_target[:7] - remote_q)
-        pred_error = 0.0
-        if self._last_predicted_target is not None:
-            pred_error = np.linalg.norm(true_target[:7] - self._last_predicted_target[:7])
-
-        delay_steps = 0
-        if phase == "deployment":
-             delay_steps = self.delay_simulator.get_observation_delay_steps(len(self.leader_q_history))
-
         return {
-            "real_time_joint_error": rt_error,
-            "prediction_error": pred_error,
-            "current_delay_steps": delay_steps,
-            "is_in_warmup": (phase == "warmup"),
-            "phase": phase
+            "prediction_error": self._cached_prediction_error,
+            "current_delay_steps": self._cached_delay_steps,
         }
 
     def render(self):
