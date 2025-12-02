@@ -17,31 +17,24 @@ import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config a
 
 class StateEstimator(nn.Module):
     """
-    Step-Based Autoregressive LSTM.
+    Residual Autoregressive LSTM.
+    Logic: PREDICTION = INPUT_STATE + DELTA(INPUT_STATE, DELAY)
     
-    CRITICAL DIMENSION NOTE:
-    - Input: 15D (7 Joint Pos + 7 Joint Vel + 1 Delay Scalar)
-    - Output: 14D (7 Joint Pos + 7 Joint Vel)
-    
-    The 'Delay Scalar' must be manually managed and decremented during 
-    autoregressive inference loops.
+    This forces the network to learn the dynamics (velocity/change) 
+    instead of memorizing the absolute position.
     """
     def __init__(
         self,
-        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM,  # Default: 15
+        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM, # 15 (7q + 7qd + 1delay)
         hidden_dim: int = cfg.RNN_HIDDEN_DIM,
         num_layers: int = cfg.RNN_NUM_LAYERS,
-        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,  # Default: 14
+        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,     # 14 (7q + 7qd)
     ):
-        
         super().__init__()
         
         self.input_dim_total = input_dim_total
-        self.hidden_dim = hidden_dim
-        self.num_layers = num_layers
         self.output_dim = output_dim
         
-        # LSTM Layer
         self.lstm = nn.LSTM(
             input_size=input_dim_total,
             hidden_size=hidden_dim,
@@ -49,7 +42,7 @@ class StateEstimator(nn.Module):
             batch_first=True
         )
         
-        # Prediction head (Predicts next step state)
+        # The FC layer now predicts the DELTA (Change), not the state itself
         self.fc = nn.Sequential(
             nn.Linear(hidden_dim, 128),
             nn.ReLU(),
@@ -58,17 +51,23 @@ class StateEstimator(nn.Module):
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Forward pass for processing a full sequence (Training Mode).
-        Returns prediction for the LAST step in the sequence.
+        Training Forward Pass (Sequence processing).
         """
         # x shape: (Batch, Seq_Len, 15)
         lstm_out, _ = self.lstm(x)
         
-        # Take the last hidden state from the sequence
+        # Take the hidden state from the LAST step of the sequence
         last_hidden = lstm_out[:, -1, :]
         
-        # Predict the next state (14D)
-        pred_state = self.fc(last_hidden)
+        # 1. Calculate Delta (The change predicted by the network)
+        delta = self.fc(last_hidden)
+        
+        # 2. Get the specific input state corresponding to that last step
+        #    We slice x to get the last timestep, and the first 14 dims (ignoring delay)
+        last_known_state = x[:, -1, :self.output_dim]
+        
+        # 3. RESIDUAL ADDITION: New State = Old State + Delta
+        pred_state = last_known_state + delta
         
         return pred_state, last_hidden
 
@@ -78,30 +77,21 @@ class StateEstimator(nn.Module):
         hidden_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """
-        Single-step inference for Autoregressive Loop (Deployment Mode).
-        
-        Args:
-            x_step: Tensor of shape (Batch, 1, 15). 
-                    MUST INCLUDE THE DELAY SCALAR AS THE 15th FEATURE.
-            hidden_state: Tuple (h_n, c_n) from previous step.
-            
-        Returns:
-            pred_state: (Batch, 1, 14) -> Next Robot State
-            new_hidden: Updated hidden state for next step
+        Inference Forward Pass (Single Step for Autoregression).
         """
-        # Safety Check for Dimensions
-        if x_step.shape[-1] != self.input_dim_total:
-            raise ValueError(
-                f"StateEstimator Dimension Error: Expected input dim {self.input_dim_total} (14 State + 1 Delay), "
-                f"but got {x_step.shape[-1]}. Did you forget to concatenate the delay scalar?"
-            )
-
-        # LSTM forward with hidden state
-        # lstm_out: (Batch, 1, Hidden_Dim)
+        # x_step shape: (Batch, 1, 15)
+        
+        # 1. LSTM Step
         lstm_out, new_hidden = self.lstm(x_step, hidden_state)
         
-        # Predict next state
-        pred_state = self.fc(lstm_out) # (Batch, 1, 14)
+        # 2. Calculate Delta
+        delta = self.fc(lstm_out) # Shape: (Batch, 1, 14)
+        
+        # 3. Get the input state (Slicing off the delay feature)
+        current_state = x_step[:, :, :self.output_dim]
+        
+        # 4. RESIDUAL ADDITION
+        pred_state = current_state + delta
         
         return pred_state, new_hidden
 
