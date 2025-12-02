@@ -124,8 +124,6 @@ class TeleoperationEnvWithDelay(gym.Env):
     def _load_lstm_model(self, path):
         """Loads the frozen Autoregressive LSTM."""
         if not os.path.exists(path):
-            # If path provided but file missing, warn but don't crash immediately? 
-            # Ideally raising error is safer, but for now we keep strictness.
             raise FileNotFoundError(f"LSTM model not found at {path}")
             
         try:
@@ -281,7 +279,7 @@ class TeleoperationEnvWithDelay(gym.Env):
 
     def _perform_ar_prediction_step(self) -> np.ndarray:
         """
-        Perform the autoregressive prediction step.
+        Perform the autoregressive prediction step (Step-by-Step).
         If LSTM is missing (Training Mode), returns the naive delayed observation.
         """
         history_len = len(self.leader_q_history)
@@ -296,7 +294,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         if delay_steps == 0:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
         
-        # 3. LSTM Missing Check (The Fix!)
+        # 3. LSTM Missing Check (Training Mode)
         if self.lstm is None:
             # Fallback to naive delayed observation
             idx = -1 - delay_steps
@@ -310,6 +308,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         most_recent_idx = -1 - delay_steps
         
+        # Prepare Initial Input Sequence (The "Past")
         seq_buffer = []
         start_idx = most_recent_idx - cfg.RNN_SEQUENCE_LENGTH + 1
         for i in range(start_idx, most_recent_idx + 1):
@@ -323,41 +322,45 @@ class TeleoperationEnvWithDelay(gym.Env):
             
         input_tensor = torch.tensor(np.array(seq_buffer), dtype=torch.float32).unsqueeze(0).to(self.device)
   
+        # Determine how many steps to predict
         steps_to_predict = min(delay_steps, self.max_ar_steps)
-        shot_size = cfg.ESTIMATOR_PREDICTION_HORIZON
-        dt_norm_chunk = (1.0 / self.control_freq * shot_size) / cfg.DELAY_INPUT_NORM_FACTOR
+        dt_norm_step = (1.0 / self.control_freq) / cfg.DELAY_INPUT_NORM_FACTOR
         
         with torch.no_grad():
+            # Initial forward pass to get hidden state from history
             _, hidden = self.lstm.lstm(input_tensor)
             
-            curr_input = input_tensor[:, -1:, :]
-            current_q = curr_input[:, :, :self.n_joints].clone()
-            current_qd = curr_input[:, :, self.n_joints:2*self.n_joints].clone()
+            # Prepare for AR loop
+            last_obs = input_tensor[:, -1:, :]
+            curr_state = last_obs[:, :, :self.n_joints*2] # (1, 1, 14)
             curr_delay_scalar = normalized_delay
             
-            steps_covered = 0
-            while steps_covered < steps_to_predict:
-                pred_shot, hidden = self.lstm.forward_shot(curr_input, hidden)
-                
-                deltas = pred_shot * cfg.TARGET_DELTA_SCALE
-                deltas = torch.clamp(deltas, -0.2, 0.2)
-                
-                delta_q = deltas[:, :, :self.n_joints]
-                delta_qd = deltas[:, :, self.n_joints:]
-                
-                traj_q = torch.cumsum(delta_q, dim=1) + current_q
-                traj_qd = torch.cumsum(delta_qd, dim=1) + current_qd
-                
-                current_q = traj_q[:, -1:, :]
-                current_qd = traj_qd[:, -1:, :]
-                
-                curr_delay_scalar += dt_norm_chunk
+            # Autoregressive Loop (Step-by-Step)
+            for _ in range(steps_to_predict):
+                # 1. Prepare input for next step
                 delay_t = torch.tensor([curr_delay_scalar], device=self.device).view(1, 1, 1)
-                curr_input = torch.cat([current_q, current_qd, delay_t], dim=2)
+                step_input = torch.cat([curr_state, delay_t], dim=2) # (1, 1, 15)
                 
-                steps_covered += shot_size
+                # 2. Predict next state
+                pred_state, hidden = self.lstm.forward_step(step_input, hidden)
+                
+                # 3. Update current state for next iteration
+                curr_state = pred_state # (1, 1, 14)
+                
+                # 4. Increment delay input (representing time progression)
+                # Note: Some papers decrement delay to 0, some keep it constant.
+                # Your logic seems to be "Distance from Reality".
+                # If we are bridging the gap, we are moving closer to real-time?
+                # Actually, if the input is "Delay", and we are predicting t+1, 
+                # the delay relative to t+1 is effectively (Delay - 1)?
+                # Let's stick to your previous logic: incrementing time means delay grows? 
+                # No, usually we want to predict "What happens at t_now + delay".
+                # Let's keep it simple: Just pass the static delay or the incremented time?
+                # Using constant delay scalar is safest for now unless trained otherwise.
+                curr_delay_scalar += dt_norm_step 
         
-        return np.concatenate([current_q.cpu().numpy()[0,0], current_qd.cpu().numpy()[0,0]])
+        # Return the final predicted state (The "Now")
+        return curr_state.cpu().numpy()[0, 0]
 
     def _get_observation(self) -> np.ndarray:
         """
@@ -439,40 +442,38 @@ class TeleoperationEnvWithDelay(gym.Env):
             
         return np.array(buffer_seq).flatten().astype(np.float32)
 
-    def get_future_target_chunk(self, chunk_size: int) -> np.ndarray:
+    def get_future_target_single(self) -> np.ndarray:
         """
-        Get FUTURE ground-truth states for LSTM training targets.
-        Uses pre-computed trajectory to access actual future states efficiently.
+        Get ONE STEP future ground-truth state for LSTM training targets.
+        Used for Step-Based Training.
         
-        Args:
-            chunk_size (int): Number of steps to predict ahead.
-            
         Returns:
-            np.ndarray: Shape (chunk_size, 14) containing future [q, qd] targets.
+            np.ndarray: Shape (14,) containing [q, qd] for the *next* step relative to delayed input.
         """
-        # Safety check: if precomputed trajectory is missing, fallback to static
         if self._precomputed_trajectory_q is None:
-            init_state = np.concatenate([self.initial_qpos, np.zeros(self.n_joints)])
-            return np.tile(init_state, (chunk_size, 1)).astype(np.float32)
+            return np.concatenate([self.initial_qpos, np.zeros(self.n_joints)]).astype(np.float32)
             
-        # The 'current_step' counts from 0. 
-        # leader_q_history[-1] corresponds to _precomputed_trajectory_q[current_step]
-        # We want to look AHEAD from the current step.
+        # We need the target for the step *immediately following* the delayed input.
+        # Delay Input ends at: current_step - delay_steps
+        # Target is: current_step - delay_steps + 1
         
-        current_idx = self.current_step
-        max_idx = len(self._precomputed_trajectory_q) - 1
+        history_len = len(self.leader_q_history)
+        delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
         
-        future_chunk = []
-        for i in range(chunk_size):
-            future_idx = min(current_idx + i + 1, max_idx)
+        # Calculate index in precomputed trajectory
+        # self.current_step aligns with _precomputed_trajectory_q index
+        # delayed_idx = self.current_step - delay_steps
+        # target_idx = delayed_idx + 1
+        
+        target_idx = max(0, self.current_step - delay_steps + 1)
+        target_idx = min(target_idx, len(self._precomputed_trajectory_q) - 1)
+        
+        state = np.concatenate([
+            self._precomputed_trajectory_q[target_idx],
+            self._precomputed_trajectory_qd[target_idx]
+        ])
             
-            state = np.concatenate([
-                self._precomputed_trajectory_q[future_idx],
-                self._precomputed_trajectory_qd[future_idx]
-            ])
-            future_chunk.append(state)
-            
-        return np.array(future_chunk).astype(np.float32)
+        return state.astype(np.float32)
 
     def _calculate_reward(self, action: np.ndarray) -> Tuple[float, float]:
         """

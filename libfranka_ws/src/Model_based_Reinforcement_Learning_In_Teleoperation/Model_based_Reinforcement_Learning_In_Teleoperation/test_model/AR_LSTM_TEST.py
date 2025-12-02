@@ -1,6 +1,7 @@
 """
-Comprehensive Validation Script for 7-Joint LSTM Prediction.
-Aligns strictly with the real-time deployment logic in `agent.py`.
+Validation Script for 10-Step Chunk Autoregressive LSTM.
+Simulates real-time deployment where the LSTM must bridge a variable delay
+by predicting consecutive 10-step 'shots'.
 """
 
 import torch
@@ -12,6 +13,7 @@ from tqdm import tqdm
 from collections import deque
 
 # --- IMPORTS ---
+# Ensure we can import from the package
 current_dir = os.path.dirname(os.path.abspath(__file__))
 workspace_root = os.path.dirname(current_dir)
 if workspace_root not in sys.path:
@@ -26,182 +28,221 @@ import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config a
 
 # --- CONFIG ---
 TEST_CONFIG = ExperimentConfig.FULL_RANGE_COVER 
-TEST_DURATION_SEC = 60.0  # Shorter duration for detailed view, or 60.0 for full test
+TEST_DURATION_SEC = 20.0  # Seconds to simulate
+SHOT_SIZE = 10            # Matches your training configuration
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"--- 7-JOINT LSTM VALIDATION (Deployment Logic) ---")
-    print(f"Config: {TEST_CONFIG.name}")
-    print(f"Scale: {cfg.TARGET_DELTA_SCALE}, Norm: {cfg.DELAY_INPUT_NORM_FACTOR}")
+    print(f"--- 10-STEP LSTM VALIDATION ---")
+    print(f"Device: {device}")
+    print(f"Delay Config: {TEST_CONFIG.name}")
 
     # 1. Load Model
-    model_path = cfg.LSTM_MODEL_PATH
+    # We use the final_model.pth or best_model.pth from the output dir
+    # Update this path to where your model actually is
+    model_path = os.path.join(cfg.CHECKPOINT_DIR_LSTM, "final_model.pth")
+    # Use fallback if specific file not found, for safety in this script
     if not os.path.exists(model_path):
         model_path = cfg.LSTM_MODEL_PATH
     
     if not os.path.exists(model_path):
         print(f"ERROR: Model not found at {model_path}")
+        print("Please check the path or run training first.")
         return
 
-    model = StateEstimator().to(device)
+    print(f"Loading model from: {model_path}")
+    
+    # Initialize model with correct dimensions (15D input -> 14D*10 output)
+    model = StateEstimator(
+        input_dim_total=cfg.ESTIMATOR_STATE_DIM,
+        output_dim=cfg.N_JOINTS * 2,
+        shot_size=SHOT_SIZE
+    ).to(device)
+    
     checkpoint = torch.load(model_path, map_location=device, weights_only=False)
     if 'state_estimator_state_dict' in checkpoint:
         model.load_state_dict(checkpoint['state_estimator_state_dict'])
-    else:
+    elif 'actor_state_dict' not in checkpoint: # Avoid loading SAC checkpoint by mistake
         model.load_state_dict(checkpoint)
+    else:
+        print("Error: Checkpoint seems to be an SAC policy, not an LSTM model.")
+        return
+        
     model.eval()
-    print("Model loaded.")
 
-    # 2. Setup Components
+    # 2. Setup Simulation Components
     dt = 1.0 / cfg.DEFAULT_CONTROL_FREQ
     total_steps = int(TEST_DURATION_SEC / dt)
     
-    # Simulator (Leader)
+    # We use Lissajous to test generalization (since you likely trained on Figure-8)
     local_sim = LocalRobotSimulator(
-        trajectory_type=TrajectoryType.FIGURE_8,
+        trajectory_type=TrajectoryType.LISSAJOUS_COMPLEX, 
         randomize_params=False
     )
     local_sim.reset()
     
-    # Delay Simulator
-    delay_sim = DelaySimulator(cfg.DEFAULT_CONTROL_FREQ, TEST_CONFIG, seed=42)
+    delay_sim = DelaySimulator(cfg.DEFAULT_CONTROL_FREQ, TEST_CONFIG, seed=101)
     
-    # 3. Deployment-Like Loop
-    # We will simulate the AgentNode's behavior step-by-step
+    # 3. Buffers (Simulating the Agent's memory)
+    # Stores [q, qd] pairs
+    history_buffer = deque(maxlen=cfg.DEPLOYMENT_HISTORY_BUFFER_SIZE)
     
-    # Buffers (same as AgentNode)
-    leader_q_hist = deque(maxlen=cfg.DEPLOYMENT_HISTORY_BUFFER_SIZE)
-    leader_qd_hist = deque(maxlen=cfg.DEPLOYMENT_HISTORY_BUFFER_SIZE)
-    
-    # Fill buffers initially (Warmup logic)
+    # Pre-fill buffer to avoid cold-start issues
     q_start, qd_start, _, _, _, _ = local_sim.step()
+    init_state = np.concatenate([q_start, qd_start])
     for _ in range(cfg.RNN_SEQUENCE_LENGTH + 50):
-        leader_q_hist.append(q_start)
-        leader_qd_hist.append(np.zeros_like(qd_start)) # Zero velocity start
-        
-    # Metrics
-    history_truth_q = []
-    history_pred_q = []
-    history_error = []
-    history_delay = []
+        history_buffer.append(init_state)
+
+    # Metrics Storage
+    log_truth = []
+    log_pred = []
+    log_delay_steps = []
     
-    print("Running deployment simulation...")
-    dt_norm = dt / cfg.DELAY_INPUT_NORM_FACTOR
+    print(f"Simulating {total_steps} steps...")
     
     for t in tqdm(range(total_steps)):
-        # --- A. Environment Step (The "Real World") ---
-        # Leader moves
+        # --- A. Physics Step ---
         q_real, qd_real, _, _, _, _ = local_sim.step()
+        real_state = np.concatenate([q_real, qd_real])
         
-        # Determine delay for this moment
-        delay_steps = delay_sim.get_observation_delay_steps(len(leader_q_hist))
+        # --- B. Delay Simulation ---
+        # 1. Calculate how old the data available to the agent is
+        current_history_len = len(history_buffer)
+        delay_steps = delay_sim.get_observation_delay_steps(current_history_len)
         
-        # Update Agent's buffer with the "delayed" packet arrival
-        # In this simplified sim, we just push the current state to the buffer
-        # The delay logic happens during Retrieval
-        leader_q_hist.append(q_real)
-        leader_qd_hist.append(qd_real)
+        # 2. Update "Ground Truth History" with the new real state
+        # In a real network, this append happens 'delay_steps' later. 
+        # Here, we append immediately but 'look back' to simulate reading old data.
+        history_buffer.append(real_state)
         
-        # --- B. Agent Logic (Prediction) ---
+        # --- C. Agent Inference (Bridging the Gap) ---
         
-        # 1. Prepare Input Sequence
-        # Get data from (Current - Delay)
-        # Note: In real deque, [-1] is most recent arrival.
-        # But here we simulate delay by looking back into the deque relative to "now"
+        # 1. Construct Input Sequence (The "Past")
+        # We need the sequence ending at (now - delay_steps)
+        # deque index -1 is 'now'. index -(1 + delay) is the delayed head.
+        delayed_head_idx = -(1 + delay_steps)
         
-        # Calculate retrieval index
-        retrieval_delay = delay_steps
+        # Slice the buffer
+        # We need RNN_SEQUENCE_LENGTH elements ending at delayed_head_idx
+        # Converting deque to list is slow in loop, but acceptable for validation script
+        full_hist = np.array(history_buffer)
         
-        # Slice history
-        # We need a sequence of length RNN_SEQUENCE_LENGTH ending at -(delay + 1)
-        most_recent_idx = -(retrieval_delay + 1)
-        oldest_idx = most_recent_idx - cfg.RNN_SEQUENCE_LENGTH + 1
+        # Indices for slicing
+        end_idx = len(full_hist) + delayed_head_idx + 1 # +1 for exclusive upper bound
+        start_idx = end_idx - cfg.RNN_SEQUENCE_LENGTH
         
-        # Extract sequence manually from deque to match agent logic
-        buffer_list = list(leader_q_hist) # Snapshot
-        buffer_qd_list = list(leader_qd_hist)
+        if start_idx < 0: continue # Buffer safety
         
-        # Safety check
-        if len(buffer_list) < cfg.RNN_SEQUENCE_LENGTH + retrieval_delay:
-            continue
-            
-        hist_q = np.array(buffer_list[oldest_idx : most_recent_idx+1 if most_recent_idx != -1 else None])
-        hist_qd = np.array(buffer_qd_list[oldest_idx : most_recent_idx+1 if most_recent_idx != -1 else None])
+        seq_data = full_hist[start_idx:end_idx] # Shape (150, 14)
         
-        # Normalize scalar
+        # Add Normalized Delay Feature (15th dimension)
         norm_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
+        delay_col = np.full((len(seq_data), 1), norm_delay, dtype=np.float32)
+        input_np = np.hstack([seq_data, delay_col]) # Shape (150, 15)
         
-        # Tensor
-        delay_col = np.full((len(hist_q), 1), norm_delay, dtype=np.float32)
-        input_np = np.hstack([hist_q, hist_qd, delay_col])
-        input_tensor = torch.from_numpy(input_np).unsqueeze(0).to(device).float()
+        input_tensor = torch.from_numpy(input_np).unsqueeze(0).float().to(device)
         
-        # 2. Autoregressive Inference
-        steps_to_predict = int(norm_delay * cfg.DELAY_INPUT_NORM_FACTOR)
+        # 2. Autoregressive Prediction Loop (The "Future")
+        # We need to bridge 'delay_steps'.
+        # The model predicts chunks of 'SHOT_SIZE' (10).
         
-        if steps_to_predict <= 0:
-            pred_q = hist_q[-1]
-        else:
-            with torch.no_grad():
-                _, hidden = model.lstm(input_tensor)
-                
-                last_obs = input_tensor[0, -1, :]
-                curr_q = last_obs[:cfg.N_JOINTS].clone()
-                curr_qd = last_obs[cfg.N_JOINTS:2*cfg.N_JOINTS].clone()
-                curr_delay_scalar = norm_delay
-                
-                for _ in range(steps_to_predict):
-                    delay_t = torch.tensor([curr_delay_scalar], device=device)
-                    inp = torch.cat([curr_q, curr_qd, delay_t], dim=0).view(1, 1, -1)
-                    
-                    residual, hidden = model.forward_step(inp, hidden)
-                    
-                    delta = residual[0] * cfg.TARGET_DELTA_SCALE
-                    delta = torch.clamp(delta, -0.2, 0.2)
-                    
-                    curr_q = curr_q + delta[:cfg.N_JOINTS]
-                    curr_qd = curr_qd + delta[cfg.N_JOINTS:]
-                    curr_delay_scalar += dt_norm
+        pred_q_now = None
+        
+        with torch.no_grad():
+            # Initial LSTM pass over history
+            _, hidden = model.lstm(input_tensor)
             
-            pred_q = curr_q.cpu().numpy()
+            # Prepare for AR loop
+            curr_input = input_tensor[:, -1:, :] # The last delayed observation (1, 1, 15)
+            steps_covered = 0
             
-        # --- C. Recording ---
-        history_truth_q.append(q_real)
-        history_pred_q.append(pred_q)
-        history_error.append(np.linalg.norm(q_real - pred_q))
-        history_delay.append(delay_steps)
+            # Prediction trajectory container
+            predicted_trajectory = []
+            
+            # We assume the model predicts Absolute States [q, qd] directly 
+            # (based on your get_future_target_chunk logic)
+            
+            while steps_covered < delay_steps:
+                # Predict 10 steps ahead
+                shot_pred, hidden = model.forward_shot(curr_input, hidden)
+                # shot_pred shape: (1, 10, 14)
+                
+                # Store prediction
+                shot_np = shot_pred.cpu().numpy()[0] # (10, 14)
+                predicted_trajectory.append(shot_np)
+                
+                # Prepare input for next shot
+                # We take the LAST step of the predicted shot
+                last_pred_state = shot_pred[:, -1:, :] # (1, 1, 14)
+                
+                # Update delay feature for the next input
+                # Time has advanced by SHOT_SIZE steps
+                # Note: Depending on training, delay input might need to decrease (converging to 0) 
+                # or strictly represent the "distance from reality".
+                # Usually in AR, we keep the delay feature or increment it? 
+                # In your `training_env.py`: `curr_delay_scalar += dt_norm_chunk`
+                norm_delay += (SHOT_SIZE * dt) / cfg.DELAY_INPUT_NORM_FACTOR
+                delay_t = torch.tensor([[[norm_delay]]], device=device)
+                
+                curr_input = torch.cat([last_pred_state, delay_t], dim=2)
+                
+                steps_covered += SHOT_SIZE
+            
+            # 3. Extract the specific point corresponding to "Now"
+            # We generated chunks of 10. Total length = N * 10.
+            # We need the state at index `delay_steps`.
+            
+            flat_traj = np.concatenate(predicted_trajectory, axis=0) # (N*10, 14)
+            
+            # Clamp index to bounds
+            target_idx = min(delay_steps, len(flat_traj) - 1)
+            pred_state_now = flat_traj[target_idx]
+            pred_q_now = pred_state_now[:cfg.N_JOINTS]
 
-    # 4. Visualization
-    history_truth_q = np.array(history_truth_q)
-    history_pred_q = np.array(history_pred_q)
-    history_error = np.array(history_error)
-    time_axis = np.arange(len(history_error)) * dt
+        # --- D. Logging ---
+        log_truth.append(q_real)
+        log_pred.append(pred_q_now)
+        log_delay_steps.append(delay_steps)
+
+    # 4. Analysis & Plotting
+    log_truth = np.array(log_truth)
+    log_pred = np.array(log_pred)
+    errors = np.linalg.norm(log_truth - log_pred, axis=1)
     
-    print(f"\nResults:")
-    print(f"Avg Error: {np.mean(history_error):.4f} rad")
-    print(f"Max Error: {np.max(history_error):.4f} rad")
+    print("\n--- Validation Results ---")
+    print(f"Mean Prediction Error: {np.mean(errors):.5f} rad")
+    print(f"Max Prediction Error:  {np.max(errors):.5f} rad")
+    print(f"Avg Delay Bridged:     {np.mean(log_delay_steps):.1f} steps")
+
+    # Plotting
+    time_axis = np.arange(len(log_truth)) * dt
+    fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
     
-    # Plot 7 Joints
-    fig, axes = plt.subplots(8, 1, figsize=(12, 20), sharex=True)
+    # Plot Joint 1
+    axs[0].plot(time_axis, log_truth[:, 0], 'k-', label='Ground Truth')
+    axs[0].plot(time_axis, log_pred[:, 0], 'r--', label='LSTM Prediction')
+    axs[0].set_ylabel('Joint 1 Position (rad)')
+    axs[0].legend()
+    axs[0].set_title(f"Trajectory Tracking ({TEST_CONFIG.name})")
     
-    for i in range(7):
-        ax = axes[i]
-        ax.plot(time_axis, history_truth_q[:, i], 'k-', label='Truth', linewidth=1.5)
-        ax.plot(time_axis, history_pred_q[:, i], 'r--', label='Pred', linewidth=1.0)
-        ax.set_ylabel(f"J{i+1}")
-        ax.grid(True)
-        if i == 0: ax.legend(loc='upper right')
-        
-    # Error Plot
-    axes[7].plot(time_axis, history_error, 'b-', label='L2 Error')
-    axes[7].set_ylabel("Error (rad)")
-    axes[7].set_xlabel("Time (s)")
-    axes[7].grid(True)
-    axes[7].legend()
+    # Plot Joint 4 (Usually highly active)
+    axs[1].plot(time_axis, log_truth[:, 3], 'k-')
+    axs[1].plot(time_axis, log_pred[:, 3], 'r--')
+    axs[1].set_ylabel('Joint 4 Position (rad)')
+    
+    # Plot Error
+    axs[2].plot(time_axis, errors, 'b-')
+    axs[2].set_ylabel('L2 Error (rad)')
+    axs[2].set_ylim(0, max(0.2, np.max(errors)*1.1))
+    
+    # Plot Delay
+    axs[3].plot(time_axis, log_delay_steps, 'g-', alpha=0.6)
+    axs[3].set_ylabel('Delay (steps)')
+    axs[3].set_xlabel('Time (s)')
     
     plt.tight_layout()
-    plt.savefig("lstm_7joint_validation.png")
-    print("Plot saved to lstm_7joint_validation.png")
+    plt.savefig("lstm_10step_validation_results.png")
+    print("\nPlot saved to: lstm_10step_validation_results.png")
     plt.show()
 
 if __name__ == "__main__":

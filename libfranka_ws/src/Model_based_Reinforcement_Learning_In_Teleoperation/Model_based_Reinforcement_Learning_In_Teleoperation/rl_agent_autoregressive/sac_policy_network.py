@@ -16,19 +16,24 @@ import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config a
 
 
 class StateEstimator(nn.Module):
+    """
+    Step-Based Autoregressive LSTM.
+    - Input: 15D (7 q + 7 qd + 1 delay)
+    - Output: 14D (7 q + 7 qd)
+    """
     def __init__(
         self,
-        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM,
+        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM,  # 15D 
         hidden_dim: int = cfg.RNN_HIDDEN_DIM,
         num_layers: int = cfg.RNN_NUM_LAYERS,
-        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,
+        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,  # 14D
     ):
         
         super().__init__()
         
-        # LSTM network parameters
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
+        self.output_dim = output_dim
         
         # LSTM Layer
         self.lstm = nn.LSTM(
@@ -38,7 +43,7 @@ class StateEstimator(nn.Module):
             batch_first=True
         )
         
-        # Prediction head
+        # Prediction head (Predicts next step state)
         self.fc = nn.Sequential(
             nn.Linear(hidden_dim, 128),
             nn.ReLU(),
@@ -47,24 +52,15 @@ class StateEstimator(nn.Module):
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Forward pass for sequence input.
-        
-        input: (Batch, Seq_Len, input_dim_total(15D))
-        output: 
-            residual: (Batch, output_dim)
-            last_hidden: (Batch, hidden_dim)
+        Forward pass for sequence input during Training.
+        Returns sequence of predictions or just the last step prediction depending on need.
+        Here we return the prediction for the last time step in the sequence.
         """
-        
-        # LSTM forward
         lstm_out, _ = self.lstm(x)
-        
-        # Take the last time step output
         last_hidden = lstm_out[:, -1, :]
+        pred_state = self.fc(last_hidden)
         
-        # Predict residual
-        residual = self.fc(last_hidden)
-        
-        return residual, last_hidden
+        return pred_state, last_hidden
 
     def forward_step(
         self, 
@@ -72,22 +68,17 @@ class StateEstimator(nn.Module):
         hidden_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """
-        Single-step forward for autoregressive inference.
-        
-        Pipeline:
-        1. Input: (Batch, 1, input_dim_total(15D))
-        2. LSTM with hidden state
-        3. Output residual: (Batch, output_dim)
-        4. Return new hidden state for next step
+        Single-step inference for Autoregressive Loop.
+        Input: (Batch, 1, 15)
+        Output: (Batch, 1, 14), New Hidden State
         """
-        
         # LSTM forward with hidden state
         lstm_out, new_hidden = self.lstm(x_step, hidden_state)
         
-        # Predict residual from the output (only one timestep)
-        residual = self.fc(lstm_out[:, -1, :])
+        # Predict next state
+        pred_state = self.fc(lstm_out) # (Batch, 1, 14)
         
-        return residual, new_hidden
+        return pred_state, new_hidden
 
 
 class Actor(nn.Module):
