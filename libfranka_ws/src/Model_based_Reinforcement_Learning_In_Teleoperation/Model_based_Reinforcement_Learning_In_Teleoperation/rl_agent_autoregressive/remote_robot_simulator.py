@@ -190,7 +190,7 @@ class RemoteRobotSimulator:
 
         tau_total = tau_id + self.last_executed_rl_torque
         tau_clipped = np.clip(tau_total, -self.torque_limits, self.torque_limits)
-        
+       
         self.data.ctrl[:self.n_joints] = tau_clipped
         for _ in range(self.n_substeps):
             mujoco.mj_step(self.model, self.data)

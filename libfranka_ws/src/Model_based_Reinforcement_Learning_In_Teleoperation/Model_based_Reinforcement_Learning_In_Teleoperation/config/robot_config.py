@@ -12,7 +12,7 @@ import numpy as np
 # LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/LSTM_AR_FULL_RANGE_COVER_20251202_144518/best_model.pth"
 ######################################
 DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/Autoregressive_LSTM_FULL_RANGE_COVER_20251201_170507/autoregressive_estimator.pth"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/LSTM_AR_FULL_RANGE_COVER_20251202_215350/best_model.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -84,7 +84,7 @@ ESTIMATOR_BUFFER_SIZE = 200000
 ESTIMATOR_TOTAL_UPDATES = 500000
 ESTIMATOR_VAL_STEPS = 5000
 ESTIMATOR_VAL_FREQ = 5000
-ESTIMATOR_PATIENCE = 20
+ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
 
 ESTIMATOR_PREDICTION_HORIZON = 10
