@@ -8,3 +8,5 @@ INFO:__main__:Update 20000 | Loss: 0.000094 | Val Error (60s avg): 0.010739 | SS
 INFO:__main__:Update 25000 | Loss: 0.000103 | Val Error (60s avg): 0.009985 | SS: 0.0000
 INFO:__main__:Update 30000 | Loss: 0.000097 | Val Error (60s avg): 0.009247 | SS: 0.0000
 INFO:__main__:Update 35000 | Loss: 0.000102 | Val Error (60s avg): 0.012595 | SS: 0.0000
+INFO:__main__:Update 40000 | Loss: 0.000103 | Val Error (60s avg): 0.008988 | SS: 0.0000
+INFO:__main__:Update 45000 | Loss: 0.000116 | Val Error (60s avg): 0.010132 | SS: 0.0000
