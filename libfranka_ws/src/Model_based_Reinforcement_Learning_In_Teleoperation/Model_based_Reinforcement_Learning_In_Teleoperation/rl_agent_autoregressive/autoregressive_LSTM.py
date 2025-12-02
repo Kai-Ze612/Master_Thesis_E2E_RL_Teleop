@@ -27,7 +27,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from torch.utils.tensorboard import SummaryWriter
 from stable_baselines3.common.vec_env import DummyVecEnv 
 
@@ -39,7 +38,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
 
 
-# Environment Creation
+# --- Helper Function for Environment Creation ---
 def make_env_factory(rank: int, config: ExperimentConfig, traj_type: TrajectoryType, seed: int, randomize: bool, render_mode: Optional[str] = None):
     def _init():
         return TeleoperationEnvWithDelay(
@@ -53,22 +52,26 @@ def make_env_factory(rank: int, config: ExperimentConfig, traj_type: TrajectoryT
     return _init
 
 
-class ReplayBuffer:
+class SequenceReplayBuffer:
+    """
+    Modified to store multi-step targets for AR training.
+    Target Shape: (Batch, Horizon, Output_Dim)
+    """
     def __init__(self, buffer_size: int, device: torch.device):
-        
-        self.max_size = buffer_size  # Max steps in the buffer
+        # [FIX] Explicitly cast buffer_size to int to prevent numpy TypeError
+        self.max_size = int(buffer_size)
         self.device = device
         self.ptr = 0
         self.current_size = 0
         
-        # Define learning parameters
-        self.seq_length = cfg.RNN_SEQUENCE_LENGTH
-        self.input_dim = cfg.ESTIMATOR_STATE_DIM 
-        self.output_dim = cfg.ESTIMATOR_OUTPUT_DIM
-        self.ar_horizon = cfg.MAX_AR_STEPS
+        self.seq_length = int(cfg.RNN_SEQUENCE_LENGTH)
+        self.input_dim = int(cfg.ESTIMATOR_STATE_DIM)
+        self.output_dim = int(cfg.N_JOINTS * 2)
+        # [FIX] Explicitly cast to int
+        self.ar_horizon = int(cfg.MAX_AR_STEPS) 
 
-        self.input_sequences = np.zeros((buffer_size, self.seq_length, self.input_dim), dtype=np.float32)
-        self.target_sequences = np.zeros((buffer_size, self.ar_horizon, self.output_dim), dtype=np.float32)
+        self.input_sequences = np.zeros((self.max_size, self.seq_length, self.input_dim), dtype=np.float32)
+        self.target_sequences = np.zeros((self.max_size, self.ar_horizon, self.output_dim), dtype=np.float32)
 
     def add_batch(self, sequences: np.ndarray, targets: np.ndarray) -> None:
         batch_size = len(sequences)
@@ -108,15 +111,16 @@ class LSTMTrainer:
         self.model = StateEstimator(output_dim=cfg.N_JOINTS * 2).to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.ESTIMATOR_LEARNING_RATE)
         
-        self.buffer = ReplayBuffer(cfg.ESTIMATOR_BUFFER_SIZE, self.device)
+        # [FIX] Cast buffer size here as well to be safe
+        self.buffer = SequenceReplayBuffer(int(cfg.ESTIMATOR_BUFFER_SIZE), self.device)
         self.train_env, self.val_env = self._setup_environments()
         
         self.global_step = 0
         self.best_val_loss = float('inf')
         self.patience_counter = 0
 
-        # Scheduled Sampling
-        self.ss_prob = 1.0
+        # Scheduled Sampling parameters
+        self.ss_prob = 1.0 # Probability of using Ground Truth (Teacher Forcing). Decays to 0.
         self.ss_decay_rate = 0.9995
 
     def _setup_logging(self) -> logging.Logger:
@@ -137,11 +141,13 @@ class LSTMTrainer:
         return train_env, val_env
 
     def _collect_rollouts(self, env: DummyVecEnv) -> Tuple[np.ndarray, np.ndarray]:
+        # Collect Input Sequence
         delayed_flat_list = env.env_method("get_delayed_target_buffer", cfg.RNN_SEQUENCE_LENGTH)
+        # Collect Target Sequence (Horizon = MAX_AR_STEPS)
         ar_targets_flat = env.env_method("get_future_target_sequence", cfg.MAX_AR_STEPS)
         
         input_dim = cfg.ESTIMATOR_STATE_DIM
-        output_dim = cfg.ESTIMATOR_OUTPUT_DIM
+        output_dim = cfg.N_JOINTS * 2
         
         raw_inputs = np.array([buf.reshape(cfg.RNN_SEQUENCE_LENGTH, input_dim) for buf in delayed_flat_list])
         raw_targets = np.array([buf.reshape(cfg.MAX_AR_STEPS, output_dim) for buf in ar_targets_flat])
@@ -155,7 +161,10 @@ class LSTMTrainer:
         return raw_inputs[valid_indices], raw_targets[valid_indices]
 
     def _autoregressive_loss(self, batch_inputs, batch_targets):
-        
+        """
+        Calculates loss over the AR horizon with Scheduled Sampling.
+        Implements the same 15D feature construction logic as training_env.py
+        """
         batch_size = batch_inputs.shape[0]
         loss = 0
         
@@ -265,6 +274,8 @@ def parse_arguments():
     parser.add_argument("--trajectory-type", type=str, default="figure_8", help="Trajectory Type")
     parser.add_argument("--seed", type=int, default=50, help="Random Seed")
     parser.add_argument("--randomize-trajectory", action="store_true", help="Randomize trajectory parameters")
+    
+    # NEW ARGUMENT: --render
     parser.add_argument("--render", action="store_true", help="Enable MuJoCo rendering (Debug only, slows training)")
     
     args = parser.parse_args()
@@ -278,6 +289,6 @@ def parse_arguments():
     return args
 
 if __name__ == "__main__":
-    args = parse_arguments() # Function from original file
+    args = parse_arguments() 
     trainer = LSTMTrainer(args)
     trainer.run()
