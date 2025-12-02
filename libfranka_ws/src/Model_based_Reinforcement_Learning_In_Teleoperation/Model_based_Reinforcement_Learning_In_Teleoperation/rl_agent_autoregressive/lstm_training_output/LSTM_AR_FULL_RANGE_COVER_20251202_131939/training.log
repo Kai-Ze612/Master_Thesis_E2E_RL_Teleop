@@ -12,3 +12,6 @@ INFO:__main__:Update 30000 | Loss: 0.000215 | Val Error (60s avg): 0.019320 | SS
 INFO:__main__:Update 35000 | Loss: 0.000232 | Val Error (60s avg): 0.020332 | SS: 0.0000
 INFO:__main__:Update 40000 | Loss: 0.000221 | Val Error (60s avg): 0.018955 | SS: 0.0000
 INFO:__main__:Update 45000 | Loss: 0.000196 | Val Error (60s avg): 0.019591 | SS: 0.0000
+INFO:__main__:Update 50000 | Loss: 0.000218 | Val Error (60s avg): 0.018922 | SS: 0.0000
+INFO:__main__:Update 55000 | Loss: 0.000179 | Val Error (60s avg): 0.018258 | SS: 0.0000
+INFO:__main__:Update 60000 | Loss: 0.000217 | Val Error (60s avg): 0.019103 | SS: 0.0000
