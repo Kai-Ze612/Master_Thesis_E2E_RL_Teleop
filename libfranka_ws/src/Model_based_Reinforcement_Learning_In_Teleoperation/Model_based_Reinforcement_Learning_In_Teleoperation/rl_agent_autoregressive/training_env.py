@@ -7,8 +7,6 @@ SAC: Learn to compensate torque based on predicted states
 Goal: Min tracking error under delay with minimal torque compensation.
 """
 
-
-
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -17,12 +15,11 @@ from collections import deque
 from typing import Tuple, Dict, Any, Optional
 import matplotlib.pyplot as plt
 import os
-import copy
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.local_robot_simulator import LocalRobotSimulator, TrajectoryType
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.remote_robot_simulator import RemoteRobotSimulator
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_policy_network import StateEstimator 
+from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_policy_network import StateEstimator
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
 
 class TeleoperationEnvWithDelay(gym.Env):
@@ -71,7 +68,6 @@ class TeleoperationEnvWithDelay(gym.Env):
         # Simulators
         self.leader = LocalRobotSimulator(trajectory_type=trajectory_type, randomize_params=randomize_trajectory)
         
-        # FIX: Explicitly disable rendering for remote robot unless mode is 'human'
         should_render_remote = (self.render_mode == "human")
         self.remote_robot = RemoteRobotSimulator(
             delay_config=delay_config, 
@@ -105,17 +101,19 @@ class TeleoperationEnvWithDelay(gym.Env):
         self._last_predicted_target: Optional[np.ndarray] = None
         self.max_ar_steps = cfg.MAX_AR_STEPS 
         
-        # Gym Spaces 
+        ########################################################
+        # Action and Observation spaces construction
         self.action_space = spaces.Box(
             low=-cfg.MAX_TORQUE_COMPENSATION,
             high=cfg.MAX_TORQUE_COMPENSATION, 
             shape=(self.n_joints,), 
             dtype=np.float32
         )
+        
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(cfg.OBS_DIM,), dtype=np.float32)
-
-        # Internal State
-        self.last_target_q: Optional[np.ndarray] = None 
+        ########################################################
+        
+        self.last_target_q: Optional[np.ndarray] = None
         self._cached_real_time_error = 0.0
         self._cached_prediction_error = 0.0
         self._cached_delay_steps = 0
@@ -172,6 +170,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.remote_q_history.clear()
         self.remote_qd_history.clear()
         
+        # Prefill buffers
         prefill_count = cfg.RNN_SEQUENCE_LENGTH + 20
         for _ in range(prefill_count):
             self.leader_q_history.append(leader_start_q.copy())
@@ -244,22 +243,24 @@ class TeleoperationEnvWithDelay(gym.Env):
 
         return self._get_observation(), reward, terminated, truncated, self._get_info()
 
-    def _get_delayed_q(self) -> np.ndarray:
-        delay = self.delay_simulator.get_observation_delay_steps(len(self.leader_q_history))
-        idx = -1 - delay
-        return self.leader_q_history[idx]
-
+    # -----------------------------------------------------------------------------------
+    # [FIXED] Autoregressive Prediction Loop
+    # Logic: 
+    # 1. Start with ground truth history at t-k
+    # 2. Iterate forward, predicting t-k+1, t-k+2...
+    # 3. CRITICAL: Decrement delay at each step to tell LSTM we are catching up.
+    # 4. CRITICAL: Concatenate decremented delay to state to match 15D input.
+    # -----------------------------------------------------------------------------------
     def _perform_ar_prediction_step(self) -> np.ndarray:
-        """
-        Step-Based Autoregressive Loop.
-        """
         history_len = len(self.leader_q_history)
         
+        # 1. Grace Period Handling
         if self.current_step < self.grace_period_steps:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
         
         delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
         
+        # If no delay, return ground truth
         if delay_steps == 0:
             return np.concatenate([self.leader_q_history[-1], self.leader_qd_history[-1]])
         
@@ -270,6 +271,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         normalized_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         most_recent_idx = -1 - delay_steps
         
+        # 2. Build Context Sequence (Ground Truth from History)
         seq_buffer = []
         start_idx = most_recent_idx - cfg.RNN_SEQUENCE_LENGTH + 1
         for i in range(start_idx, most_recent_idx + 1):
@@ -283,24 +285,36 @@ class TeleoperationEnvWithDelay(gym.Env):
             
         input_tensor = torch.tensor(np.array(seq_buffer), dtype=torch.float32).unsqueeze(0).to(self.device)
   
+        # We predict up to the delay gap, limited by max steps
         steps_to_predict = min(delay_steps, self.max_ar_steps)
         dt_norm_step = (1.0 / self.control_freq) / cfg.DELAY_INPUT_NORM_FACTOR
         
         with torch.no_grad():
+            # A. Process context (history) to get hidden state
             _, hidden = self.lstm.lstm(input_tensor)
             
+            # B. Prepare first input (Last known ground truth state)
             last_obs = input_tensor[:, -1:, :]
-            curr_state = last_obs[:, :, :self.n_joints*2] 
+            curr_state = last_obs[:, :, :self.n_joints*2] # 14D
             curr_delay_scalar = normalized_delay
             
+            # C. Autoregressive Loop
             for _ in range(steps_to_predict):
+                # 1. Update the Delay Feature (Decrement)
+                # We are predicting the NEXT step, so the data is effectively "newer"
+                curr_delay_scalar = max(0.0, curr_delay_scalar - dt_norm_step)
+                
+                # 2. Construct 15D Input: [State (14D) + Delay (1D)]
                 delay_t = torch.tensor([curr_delay_scalar], device=self.device).view(1, 1, 1)
                 step_input = torch.cat([curr_state, delay_t], dim=2) 
                 
+                # 3. Predict Next State (14D)
                 pred_state, hidden = self.lstm.forward_step(step_input, hidden)
                 
+                # 4. Use prediction as state for next iteration
                 curr_state = pred_state
         
+        # Return the final predicted state (14D)
         return curr_state.cpu().numpy()[0, 0]
 
     def _get_observation(self) -> np.ndarray:
@@ -364,6 +378,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         return np.array(buffer_seq).flatten().astype(np.float32)
 
     def get_future_target_single(self) -> np.ndarray:
+        # Kept for compatibility
         if self._precomputed_trajectory_q is None:
             return np.concatenate([self.initial_qpos, np.zeros(self.n_joints)]).astype(np.float32)
             
@@ -379,6 +394,35 @@ class TeleoperationEnvWithDelay(gym.Env):
         ])
             
         return state.astype(np.float32)
+
+    # -----------------------------------------------------------------------------------
+    # [NEW] Helper for AR Training (Multi-step targets)
+    # -----------------------------------------------------------------------------------
+    def get_future_target_sequence(self, horizon: int) -> np.ndarray:
+        """
+        Returns a sequence of future ground truth states [t+1, t+2, ..., t+horizon]
+        relative to the delayed observation point.
+        """
+        if self._precomputed_trajectory_q is None:
+            state = np.concatenate([self.initial_qpos, np.zeros(self.n_joints)]).astype(np.float32)
+            return np.tile(state, (horizon, 1)).flatten()
+
+        history_len = len(self.leader_q_history)
+        delay_steps = self.delay_simulator.get_observation_delay_steps(history_len)
+        
+        # Start index: 1 step after the last delayed observation
+        start_idx = max(0, self.current_step - delay_steps + 1)
+        
+        targets = []
+        for i in range(horizon):
+            idx = min(start_idx + i, len(self._precomputed_trajectory_q) - 1)
+            state = np.concatenate([
+                self._precomputed_trajectory_q[idx],
+                self._precomputed_trajectory_qd[idx]
+            ])
+            targets.append(state)
+            
+        return np.array(targets).flatten().astype(np.float32)
 
     def _calculate_reward(self, action: np.ndarray) -> Tuple[float, float]:
         remote_q, remote_qd = self.remote_robot.get_joint_state()
@@ -400,7 +444,7 @@ class TeleoperationEnvWithDelay(gym.Env):
                     np.any(remote_q >= self.joint_limits_upper - cfg.JOINT_LIMIT_MARGIN))
 
         high_error = joint_error > self.max_joint_error
-        pred_divergence = prediction_error > 0.3
+        pred_divergence = prediction_error > 1.5 
 
         terminated = at_limits or high_error or pred_divergence
         penalty = -10.0 if terminated else 0.0

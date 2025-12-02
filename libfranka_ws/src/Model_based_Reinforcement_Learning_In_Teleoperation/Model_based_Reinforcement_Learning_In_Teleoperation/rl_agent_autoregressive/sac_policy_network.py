@@ -18,19 +18,25 @@ import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config a
 class StateEstimator(nn.Module):
     """
     Step-Based Autoregressive LSTM.
-    - Input: 15D (7 q + 7 qd + 1 delay)
-    - Output: 14D (7 q + 7 qd)
+    
+    CRITICAL DIMENSION NOTE:
+    - Input: 15D (7 Joint Pos + 7 Joint Vel + 1 Delay Scalar)
+    - Output: 14D (7 Joint Pos + 7 Joint Vel)
+    
+    The 'Delay Scalar' must be manually managed and decremented during 
+    autoregressive inference loops.
     """
     def __init__(
         self,
-        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM,  # 15D 
+        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM,  # Default: 15
         hidden_dim: int = cfg.RNN_HIDDEN_DIM,
         num_layers: int = cfg.RNN_NUM_LAYERS,
-        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,  # 14D
+        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,  # Default: 14
     ):
         
         super().__init__()
         
+        self.input_dim_total = input_dim_total
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
         self.output_dim = output_dim
@@ -52,12 +58,16 @@ class StateEstimator(nn.Module):
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Forward pass for sequence input during Training.
-        Returns sequence of predictions or just the last step prediction depending on need.
-        Here we return the prediction for the last time step in the sequence.
+        Forward pass for processing a full sequence (Training Mode).
+        Returns prediction for the LAST step in the sequence.
         """
+        # x shape: (Batch, Seq_Len, 15)
         lstm_out, _ = self.lstm(x)
+        
+        # Take the last hidden state from the sequence
         last_hidden = lstm_out[:, -1, :]
+        
+        # Predict the next state (14D)
         pred_state = self.fc(last_hidden)
         
         return pred_state, last_hidden
@@ -68,11 +78,26 @@ class StateEstimator(nn.Module):
         hidden_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """
-        Single-step inference for Autoregressive Loop.
-        Input: (Batch, 1, 15)
-        Output: (Batch, 1, 14), New Hidden State
+        Single-step inference for Autoregressive Loop (Deployment Mode).
+        
+        Args:
+            x_step: Tensor of shape (Batch, 1, 15). 
+                    MUST INCLUDE THE DELAY SCALAR AS THE 15th FEATURE.
+            hidden_state: Tuple (h_n, c_n) from previous step.
+            
+        Returns:
+            pred_state: (Batch, 1, 14) -> Next Robot State
+            new_hidden: Updated hidden state for next step
         """
+        # Safety Check for Dimensions
+        if x_step.shape[-1] != self.input_dim_total:
+            raise ValueError(
+                f"StateEstimator Dimension Error: Expected input dim {self.input_dim_total} (14 State + 1 Delay), "
+                f"but got {x_step.shape[-1]}. Did you forget to concatenate the delay scalar?"
+            )
+
         # LSTM forward with hidden state
+        # lstm_out: (Batch, 1, Hidden_Dim)
         lstm_out, new_hidden = self.lstm(x_step, hidden_state)
         
         # Predict next state
