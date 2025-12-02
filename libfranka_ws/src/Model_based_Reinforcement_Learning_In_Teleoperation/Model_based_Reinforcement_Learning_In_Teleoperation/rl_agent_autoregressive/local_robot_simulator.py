@@ -173,8 +173,7 @@ class LocalRobotSimulator(gym.Env):
             # In unconstrained mode, we trust the IK solver to handle jumps if it wants to.
             q_target_raw = self._q_current.copy()
         
-        # 2. Calculate Raw Velocity (Unconstrained)
-        # No more clipping. We want to see if the physics are broken.
+        # Calculate velocity
         qd_raw = (q_target_raw - self._q_previous) / self._dt
         
         # 3. Update State

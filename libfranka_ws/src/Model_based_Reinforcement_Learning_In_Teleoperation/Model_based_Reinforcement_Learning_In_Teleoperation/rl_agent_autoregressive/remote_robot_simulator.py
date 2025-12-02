@@ -209,7 +209,7 @@ class RemoteRobotSimulator:
         q_current = self.data.qpos[:self.n_joints].copy()
         
         if true_local_q is not None:
-            raw_tracking_diff = true_local_q - q_current # <--- FIX HERE
+            raw_tracking_diff = true_local_q - q_current
         else:
             # Fallback if true_local_q is missing
             raw_tracking_diff = target_q - q_current 
@@ -228,7 +228,7 @@ class RemoteRobotSimulator:
         print(f"  Applied Tau ID:     {tau_id}")
         print(f"  Applied Tau RL:     {self.last_executed_rl_torque}")
         print(f"  Applied Tau Total:  {tau_total}")
-        
+       
         return {
             "joint_error": np.linalg.norm(target_q - self.data.qpos[:self.n_joints]),
             "tracking_error": tracking_error_norm,
@@ -237,6 +237,7 @@ class RemoteRobotSimulator:
             "tau_rl": self.last_executed_rl_torque, 
             "tau_total": tau_total
         }
+        
     def render(self) -> bool:
         """
         Render the current state in the MuJoCo viewer.

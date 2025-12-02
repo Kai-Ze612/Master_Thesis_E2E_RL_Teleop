@@ -110,7 +110,7 @@ class LSTMTrainer:
         self.logger = self._setup_logging()
         self.tb_writer = SummaryWriter(log_dir=os.path.join(self.output_dir, "tensorboard"))
         
-        self.model = StateEstimator(output_dim=int(cfg.N_JOINTS * 2)).to(self.device)
+        self.model = StateEstimator(output_dim=int(cfg.ESTIMATOR_OUTPUT_DIM)).to(self.device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.ESTIMATOR_LEARNING_RATE)
         
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -158,7 +158,7 @@ class LSTMTrainer:
         ar_targets_flat = env.env_method("get_future_target_sequence", int(cfg.MAX_AR_STEPS))
         
         input_dim = int(cfg.ESTIMATOR_STATE_DIM)
-        output_dim = int(cfg.N_JOINTS * 2)
+        output_dim = int(cfg.ESTIMATOR_OUTPUT_DIM)
         
         raw_inputs = np.array([buf.reshape(int(cfg.RNN_SEQUENCE_LENGTH), input_dim) for buf in delayed_flat_list])
         raw_targets = np.array([buf.reshape(int(cfg.MAX_AR_STEPS), output_dim) for buf in ar_targets_flat])
@@ -210,10 +210,7 @@ class LSTMTrainer:
 
     def _validate_full_trajectory(self, duration_sec: float = 30.0) -> float:
         """
-        Rigorous Validation:
-        Injects the current model into the Validation Environment and runs a 
-        full 60-second episode. This forces the Env to use the internal 
-        AR Prediction Loop (Pure Autoregression), testing true deployment stability.
+        Create validation step
         """
         self.model.eval()
         
@@ -289,7 +286,7 @@ class LSTMTrainer:
             self.tb_writer.add_scalar("Train/Loss", train_loss.item(), update)
             self.tb_writer.add_scalar("Train/SS_Prob", self.ss_prob, update)
             
-            # [NEW] Log Learning Rate
+            # Log Learning Rate
             current_lr = self.optimizer.param_groups[0]['lr']
             self.tb_writer.add_scalar("Train/Learning_Rate", current_lr, update)
             
@@ -298,9 +295,9 @@ class LSTMTrainer:
                 val_error = self._validate_full_trajectory(duration_sec=30.0)
                 
                 self.logger.info(f"Update {update} | Loss: {train_loss.item():.6f} | Val Error: {val_error:.6f} | SS: {self.ss_prob:.4f} | LR: {current_lr:.2e}")
-                self.tb_writer.add_scalar("Val/Prediction_Error_60s", val_error, update)
+                self.tb_writer.add_scalar("Val/Prediction_Error", val_error, update)
                 
-                # [NEW] Step the Scheduler
+                # Step the Scheduler
                 # This will check if val_error improved. If not, it waits 'patience' times, then lowers LR.
                 self.scheduler.step(val_error)
                 

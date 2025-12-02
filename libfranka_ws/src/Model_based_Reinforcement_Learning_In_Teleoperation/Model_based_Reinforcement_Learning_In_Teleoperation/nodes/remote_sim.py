@@ -107,103 +107,81 @@ class SimRemoteRobotNode(Node):
     def tau_rl_cb(self, msg):
         self.tau_rl = np.array(msg.data)
 
-    def _get_inverse_dynamics(self, q, v, a_des):
-        """ Calculate Inertial+Coriolis torque (No Gravity). """
-        # We use a COPY of data for calculation to not mess up physics integration
-        # Note: In pure sim, we can use the main data structure CAREFULLY, 
-        # or better, use `mujoco.mj_rne` for specific terms.
-        # Here we use the standard inverse approach:
-        
-        # Save current state
+    def _get_required_torque(self, q, v, a_des):
+        """
+        Calculate total torque needed to achieve acceleration 'a_des'.
+        Output = M(q)*a_des + C(q,v)*v + G(q)
+        """
+        # Save state
         q_old = self.data.qpos.copy()
         v_old = self.data.qvel.copy()
         acc_old = self.data.qacc.copy()
         
+        # Set desired state
         self.data.qpos[:self.n_joints] = q
         self.data.qvel[:self.n_joints] = v
         self.data.qacc[:self.n_joints] = a_des
         
+        # Inverse Dynamics
         mujoco.mj_inverse(self.model, self.data)
-        tau_full = self.data.qfrc_inverse[:self.n_joints].copy()
+        tau_required = self.data.qfrc_inverse[:self.n_joints].copy()
         
-        # Calculate Gravity Only
-        self.data.qacc[:self.n_joints] = 0.0
-        self.data.qvel[:self.n_joints] = 0.0
-        mujoco.mj_inverse(self.model, self.data)
-        tau_g = self.data.qfrc_inverse[:self.n_joints].copy()
-        
-        # Restore State
+        # Restore state
         self.data.qpos[:] = q_old
         self.data.qvel[:] = v_old
         self.data.qacc[:] = acc_old
         
-        # In Simulation, MuJoCo *DOES* apply gravity naturally.
-        # So our controller needs to CANCEL it (Gravity Compensation).
-        # Controller Output = (M*a + C*v) + G
-        #
-        # WAIT! In the REAL ROBOT script, we removed G because Franka adds it.
-        # In MUJOCO SIMULATION, we MUST Provide G if we want to hold the arm.
-        # UNLESS we set gravity=0 in xml, or we implement gravity comp manually.
-        
-        # Let's emulate the Franka Hardware Controller:
-        # The "Simulated Motor" receives `tau_command`.
-        # Real Franka adds `tau_g` internally. 
-        # So we should ADD `tau_g` to the final output to simulate Franka firmware behavior.
-        
-        return (tau_full - tau_g), tau_g 
+        return tau_required
 
     def physics_loop(self):
         # 1. Current State
         q = self.data.qpos[:self.n_joints].copy()
         qd = self.data.qvel[:self.n_joints].copy()
         
-        # 2. PD Control
-        q_err = (self.target_q - q) # Simple diff, normalize if needed
+        # 2. PD Control (Calculate Desired Acceleration)
+        # We want to accelerate towards the target
+        q_err = (self.target_q - q) 
         qd_err = (self.target_qd - qd)
         acc_des = DEFAULT_KP_REMOTE * q_err + DEFAULT_KD_REMOTE * qd_err
         
-        # 3. Compute Torque
-        # tau_inertial = M*a + C*v
-        tau_inertial, tau_gravity = self._get_inverse_dynamics(q, qd, acc_des)
+        # 3. Inverse Dynamics
+        # Calculate the torque needed to achieve 'acc_des' perfectly
+        # This includes Gravity, Coriolis, and Inertia.
+        tau_id = self._get_required_torque(q, qd, acc_des)
         
-        # 4. Combine (Emulate Franka Logic)
-        # Agent sends: tau_inertial + tau_rl
-        tau_command_user = tau_inertial + self.tau_rl
-        tau_command_user = np.clip(tau_command_user, -TORQUE_LIMITS, TORQUE_LIMITS)
+        # 4. Add RL Compensation
+        # The RL agent learns to output a 'residual' torque on top of the ideal controller
+        tau_total = tau_id + self.tau_rl
         
-        # Emulate Action Delay
-        self.torque_queue.append(tau_command_user)
-        delay = self.delay_sim.get_action_delay_steps()
-        if delay >= len(self.torque_queue):
-            applied_user_torque = np.zeros(self.n_joints)
+        # 5. Clip
+        tau_total = np.clip(tau_total, -TORQUE_LIMITS, TORQUE_LIMITS)
+        
+        # 6. Action Delay Simulation
+        self.torque_queue.append(tau_total)
+        delay_steps = self.delay_sim.get_action_delay_steps()
+        
+        if delay_steps >= len(self.torque_queue):
+            # If buffer not full, apply gravity comp only (hold position)
+            # (Simplification: just zero is unsafe, better to use gravity comp)
+            # Re-calculate gravity for current pose
+            tau_applied = self._get_required_torque(q, np.zeros_like(q), np.zeros_like(q))
         else:
-            applied_user_torque = self.torque_queue[-1 - delay]
+            tau_applied = self.torque_queue[-1 - delay_steps]
             
-        # 5. Physics Integration
-        # Total Torque applied to physics = User_Command + Gravity_Comp(Firmware)
-        tau_total = applied_user_torque + tau_gravity
+        # 7. Apply to Physics
+        tau_applied[-1] = 0.0 # Safety for gripper
+        self.data.ctrl[:self.n_joints] = tau_applied
         
-        # Safety
-        tau_total[-1] = 0.0 # Gripper
-        
-        self.data.ctrl[:self.n_joints] = tau_total
+        # Substeps for stability (optional, but good practice)
         mujoco.mj_step(self.model, self.data)
         
-        # 6. Publish State (Feedback to Agent)
+        # 8. Publish
         msg = JointState()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.name = self.joint_names
         msg.position = q.tolist()
         msg.velocity = qd.tolist()
         self.state_pub.publish(msg)
-        
-        # 7. Debug
-        ee_pos = self.data.body(EE_BODY_NAME).xpos
-        pt = PointStamped()
-        pt.header = msg.header
-        pt.header.frame_id = "world"
-        pt.point.x, pt.point.y, pt.point.z = ee_pos
-        self.ee_pub.publish(pt)
 
 def main(args=None):
     rclpy.init(args=args)

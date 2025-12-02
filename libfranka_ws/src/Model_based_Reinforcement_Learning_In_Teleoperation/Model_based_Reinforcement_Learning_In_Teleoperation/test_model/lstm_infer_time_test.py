@@ -15,96 +15,69 @@ if workspace_root not in sys.path:
 from Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_policy_network import StateEstimator
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
 
-# --- WRAPPER FOR BENCHMARKING ---
-class AutoregressiveLoop(nn.Module):
-    def __init__(self, state_estimator, n_joints, target_delta_scale, delay_input_norm_factor, dt):
-        super().__init__()
-        self.state_estimator = state_estimator
-        self.n_joints = n_joints
-        self.target_delta_scale = target_delta_scale
-        self.dt_norm = dt / delay_input_norm_factor
-        
-    def forward(self, current_q, current_qd, hidden_h, hidden_c, start_delay, steps: int):
-        current_delay = start_delay
-        for _ in range(steps):
-            delay_t = current_delay.view(1, 1, 1)
-            step_input = torch.cat([current_q, current_qd, delay_t], dim=2)
-            
-            # Forward step
-            lstm_out, (hidden_h, hidden_c) = self.state_estimator.lstm(step_input, (hidden_h, hidden_c))
-            residual = self.state_estimator.fc(lstm_out[:, -1, :])
-            
-            pred_residual = residual * self.target_delta_scale
-            pred_residual = torch.clamp(pred_residual, -0.2, 0.2)
-            
-            current_q = current_q + pred_residual[:, :self.n_joints].unsqueeze(1)
-            current_qd = current_qd + pred_residual[:, self.n_joints:].unsqueeze(1)
-            current_delay = current_delay + self.dt_norm
-            
-        return current_q, current_qd
-
-def run_quantization_test():
-    device = torch.device('cpu')
+def run_single_step_benchmark():
+    device = torch.device('cpu') 
     torch.set_num_threads(1)
     
     print(f"==================================================")
-    print(f"--- QUANTIZATION (INT8) SPEED TEST ---")
+    print(f"--- SINGLE STEP LSTM INFERENCE TEST (CPU) ---")
     print(f"==================================================")
-    print(f"Original Model: Hidden={cfg.RNN_HIDDEN_DIM}, Layers={cfg.RNN_NUM_LAYERS}")
-    print(f"Steps: 100 (Worst Case)")
+    print(f"Model: Hidden={cfg.RNN_HIDDEN_DIM}, Layers={cfg.RNN_NUM_LAYERS}")
     
-    # 1. Load Float32 Model
-    float_model = StateEstimator().to(device)
-    float_model.eval()
-    
-    # 2. Quantize to INT8
-    print("\n[1] Quantizing Model (Float32 -> Int8)...")
-    # PyTorch Dynamic Quantization targets Linear and LSTM layers
-    quantized_model = torch.quantization.quantize_dynamic(
-        float_model, 
+    # 1. SETUP MODEL (INT8)
+    # We use INT8 because your previous test showed it was 4x faster
+    model = StateEstimator().to(device)
+    model.eval()
+    model = torch.quantization.quantize_dynamic(
+        model, 
         {nn.LSTM, nn.Linear}, 
         dtype=torch.qint8
     )
-    print("    Model size reduced significantly.")
 
-    # 3. Create Wrapper
-    jit_module = AutoregressiveLoop(
-        quantized_model, # Use the quantized estimator
-        cfg.N_JOINTS, 
-        cfg.TARGET_DELTA_SCALE, 
-        cfg.DELAY_INPUT_NORM_FACTOR, 
-        1.0/cfg.DEFAULT_CONTROL_FREQ
-    ).to(device)
-
-    # 4. Prepare Inputs
-    dummy_q = torch.zeros(1, 1, 7).to(device)
-    dummy_qd = torch.zeros(1, 1, 7).to(device)
+    # 2. DUMMY DATA (Batch=1, Seq=1)
+    # Input: [Position(7) + Velocity(7) + Delay(1)]
+    dummy_input = torch.zeros(1, 1, 15).to(device) 
     dummy_h = torch.zeros(cfg.RNN_NUM_LAYERS, 1, cfg.RNN_HIDDEN_DIM).to(device)
     dummy_c = torch.zeros(cfg.RNN_NUM_LAYERS, 1, cfg.RNN_HIDDEN_DIM).to(device)
-    dummy_delay = torch.tensor([0.1]).to(device)
 
-    # 5. Benchmark
-    print("\n[2] Running Benchmark (100 iters)...")
-    
+    # 3. BENCHMARK
+    print(f"\n[Running Benchmark: 1000 Iterations]...")
+
     # Warmup
-    for _ in range(10): jit_module(dummy_q, dummy_qd, dummy_h, dummy_c, dummy_delay, 100)
+    for _ in range(100): 
+        model.forward_step(dummy_input, (dummy_h, dummy_c))
     
     times = []
-    for _ in range(100):
+    for _ in range(1000):
         t0 = time.perf_counter()
-        jit_module(dummy_q, dummy_qd, dummy_h, dummy_c, dummy_delay, 100)
-        times.append((time.perf_counter() - t0) * 1000)
         
-    avg_time = np.mean(times)
+        # --- SINGLE STEP INFERENCE ---
+        with torch.no_grad():
+            pred, (new_h, new_c) = model.forward_step(dummy_input, (dummy_h, dummy_c))
+        # -----------------------------
+        
+        t1 = time.perf_counter()
+        times.append((t1 - t0) * 1000) # ms
     
+    avg_ms = np.mean(times)
+    std_ms = np.std(times)
+    
+    # 4. ANALYSIS
+    control_limit_ms = (1.0 / cfg.DEFAULT_CONTROL_FREQ) * 1000 # 5ms
+    max_bridgeable_steps = int(control_limit_ms / avg_ms)
+    max_delay_ms = max_bridgeable_steps * (1000 / cfg.DEFAULT_CONTROL_FREQ)
+
     print(f"\n--- RESULTS ---")
-    print(f"INT8 Time: {avg_time:.3f} ms")
+    print(f"Single Step Latency: {avg_ms:.4f} ms ± {std_ms:.4f}")
+    print(f"Control Cycle Limit: {control_limit_ms:.2f} ms")
+    print(f"\n--- FEASIBILITY ---")
+    print(f"Max steps you can bridge in one cycle: {max_bridgeable_steps} steps")
+    print(f"Max delay you can handle synchronously:  {max_delay_ms:.1f} ms")
     
-    if avg_time > 5.0:
-        print(f"[FAIL] INT8 is still too slow ({avg_time:.2f}ms).")
-        print("VERDICT: You MUST reduce the model size (Hidden=64). Quantization is not enough.")
+    if avg_ms < control_limit_ms:
+        print(f"[PASS] Single step is fast enough.")
     else:
-        print(f"[PASS] INT8 saved the day! ({avg_time:.2f}ms)")
+        print(f"[FAIL] Single step is too slow ({avg_ms} > {control_limit_ms}). Reduce Model Size.")
 
 if __name__ == "__main__":
-    run_quantization_test()
+    run_single_step_benchmark()

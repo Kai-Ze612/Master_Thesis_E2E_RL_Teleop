@@ -112,11 +112,6 @@ class DelaySimulator:
         self._action_delay_steps = int(params.action_delay / step_time_ms)
         self._obs_delay_min_steps = int(params.obs_delay_min / step_time_ms)
         self._obs_delay_max_steps = int(params.obs_delay_max / step_time_ms)
-        
-        # # Ensure at least 1 step of delay (unless no-delay baseline)
-        # if self._config != ExperimentConfig.NO_DELAY_BASELINE:
-        #     self._obs_delay_min_steps = max(1, self._obs_delay_min_steps)
-        #     self._obs_delay_max_steps = max(1, self._obs_delay_max_steps)
     
     @property
     def control_freq(self) -> int:
@@ -131,9 +126,6 @@ class DelaySimulator:
         return self._config_name
     
     def get_observation_delay(self) -> int:
-
-        # if self._config == ExperimentConfig.NO_DELAY_BASELINE:
-        #     return 0
         
         # Sample uniformly from [min, max] inclusive
         return self._rng.randint(
@@ -148,10 +140,6 @@ class DelaySimulator:
         
         if buffer_length < 0:
             raise ValueError(f"buffer_length must be non-negative, got {buffer_length}")
-        
-        # # No delay baseline or empty buffer
-        # if self._config == ExperimentConfig.NO_DELAY_BASELINE or buffer_length == 0:
-        #     return 0
         
         # If buffer too small, return maximum possible delay
         if buffer_length <= self._obs_delay_min_steps:

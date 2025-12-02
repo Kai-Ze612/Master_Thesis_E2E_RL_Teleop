@@ -84,7 +84,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         self.steps_remaining_in_warmup = 0
         self.grace_period_steps = self.warmup_steps + int(cfg.NO_DELAY_DURATION * self.control_freq)
         
-        # LSTM Setup
+        ######################################################################
+        # Load LSTM for state prediction
         self.lstm = None
         if lstm_model_path is not None and os.path.exists(lstm_model_path):
             self._load_lstm_model(lstm_model_path)
@@ -94,7 +95,7 @@ class TeleoperationEnvWithDelay(gym.Env):
         self._last_predicted_target: Optional[np.ndarray] = None
         self.max_ar_steps = cfg.MAX_AR_STEPS 
 
-        # SIGNAL PROCESSING
+        # Normalized term for LSTM input
         self.prediction_ema = None
         self.ema_alpha = cfg.PREDICTION_EMA_ALPHA
         
@@ -127,7 +128,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         except Exception as e:
             print(f"[ENV] Warning: LSTM load failed: {e}")
 
-    # --- NORMALIZATION HELPERS (Source of Truth) ---
+    #######################################################################
+    # Normalized and denormalized function 
     def _normalize_state(self, q, qd):
         """Normalize State (14D) to ~ N(0, 1)"""
         q_norm = (q - cfg.Q_MEAN) / cfg.Q_STD
@@ -146,8 +148,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         q = (q_norm * cfg.Q_STD) + cfg.Q_MEAN
         qd = (qd_norm * cfg.QD_STD) + cfg.QD_MEAN
         return np.concatenate([q, qd])
-    # -----------------------------------------------
-
+    #######################################################################
+    
     def reset(self, seed: Optional[int] = None, options: Optional[Dict[str, Any]] = None):
         super().reset(seed=seed)
         self.current_step = 0
@@ -378,7 +380,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         targets = []
         for i in range(horizon):
             idx = min(start_idx + i, len(self._precomputed_trajectory_q) - 1)
-            # NORMALIZE TARGET
+            
+            # Normalized target value
             state_norm = self._normalize_state(
                 self._precomputed_trajectory_q[idx],
                 self._precomputed_trajectory_qd[idx]
@@ -431,23 +434,33 @@ class TeleoperationEnvWithDelay(gym.Env):
         
         pos_err = true_target[:self.n_joints] - remote_q
         vel_err = true_target[self.n_joints:] - remote_qd
-       
-        r_pos = -cfg.TRACKING_ERROR_SCALE * np.sum(pos_err**2) 
-        r_vel = -cfg.VELOCITY_ERROR_SCALE * np.sum(vel_err**2)  
+        
+        # Position Tracking
+        r_pos = -cfg.TRACKING_ERROR_SCALE * np.sum(pos_err**2)  # Tracking rewards
+        # Velocity Tracking
+        r_vel = -cfg.VELOCITY_ERROR_SCALE * np.sum(vel_err**2)  # Velocity rewards
+        
         r_tracking = r_pos + r_vel
+        
+        # Penalty for large action
         r_action = -cfg.ACTION_PENALTY_WEIGHT * np.mean(action**2)
+        
         return float(r_tracking + r_action), float(r_tracking)
 
     def _check_termination(self, joint_error: float, prediction_error: float, remote_q: np.ndarray) -> Tuple[bool, float]:
-        if not np.all(np.isfinite(remote_q)): return True, -100.0
         
+        # Check remote NaN value
+        if not np.all(np.isfinite(remote_q)): return True, -100.0
+
+        # Check joints at boundary
         at_limits = (np.any(remote_q <= self.joint_limits_lower + cfg.JOINT_LIMIT_MARGIN) or 
                     np.any(remote_q >= self.joint_limits_upper - cfg.JOINT_LIMIT_MARGIN))
 
+        # Check if the tracking error too high 
         high_error = joint_error > self.max_joint_error
         
-        # Relaxed prediction error check
-        pred_divergence = prediction_error > 2.0 
+        # Check if LSTM prediction
+        pred_divergence = prediction_error > 0.3
 
         terminated = at_limits or high_error or pred_divergence
         penalty = -10.0 if terminated else 0.0

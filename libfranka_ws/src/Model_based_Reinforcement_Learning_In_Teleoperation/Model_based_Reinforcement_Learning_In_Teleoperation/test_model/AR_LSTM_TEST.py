@@ -7,6 +7,7 @@ CORRECTIONS:
 2. Implements EMA Filtering to match Training Env.
 """
 
+
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,11 +30,11 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator i
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
 
 # --- CONFIG ---
-TEST_CONFIG = ExperimentConfig.FULL_RANGE_COVER 
-TEST_DURATION_SEC = 20.0  
+TEST_CONFIG = ExperimentConfig.HIGH_DELAY 
+TEST_DURATION_SEC = 30.0  
 MODEL_PATH = cfg.LSTM_MODEL_PATH
 
-# --- HELPER FUNCTIONS (Match training_env.py logic) ---
+# --- HELPER FUNCTIONS ---
 def normalize_state(q, qd):
     q_norm = (q - cfg.Q_MEAN) / cfg.Q_STD
     qd_norm = (qd - cfg.QD_MEAN) / cfg.QD_STD
@@ -49,12 +50,11 @@ def denormalize_state(pred_norm):
     q = (q_norm * cfg.Q_STD) + cfg.Q_MEAN
     qd = (qd_norm * cfg.QD_STD) + cfg.QD_MEAN
     return np.concatenate([q, qd])
-# ------------------------------------------------------
+# ----------------------
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"--- STEP-BASED LSTM VALIDATION ---")
-    print(f"Device: {device}")
+    print(f"--- 7-JOINT LSTM VALIDATION ---")
     
     if not os.path.exists(MODEL_PATH):
         print(f"ERROR: Model not found at {MODEL_PATH}")
@@ -99,147 +99,107 @@ def main():
     log_pred = []
     log_delay_steps = []
     
-    # EMA State
     prediction_ema = None
     ema_alpha = cfg.PREDICTION_EMA_ALPHA
 
     print(f"Simulating {total_steps} steps...")
     
     for t in tqdm(range(total_steps)):
-        # --- A. Physics Step ---
+        # Physics
         q_real, qd_real, _, _, _, _ = local_sim.step()
         
-        # --- B. Delay Simulation ---
+        # Delay
         current_history_len = len(history_buffer_q)
         delay_steps = delay_sim.get_observation_delay_steps(current_history_len)
         
         history_buffer_q.append(q_real)
         history_buffer_qd.append(qd_real)
         
-        # --- C. Agent Inference ---
-        
-        # 1. Prepare NORMALIZED Input Sequence
+        # Inference
         delayed_idx = -(1 + delay_steps)
         full_q = np.array(history_buffer_q)
         full_qd = np.array(history_buffer_qd)
-        
         end_idx = len(full_q) + delayed_idx + 1
         start_idx = end_idx - int(cfg.RNN_SEQUENCE_LENGTH)
         
         if start_idx < 0: continue
         
-        # Get raw slice
         seq_q = full_q[start_idx:end_idx]
         seq_qd = full_qd[start_idx:end_idx]
         
-        # Normalize Sequence
         norm_delay = float(delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
-        seq_norm_buffer = []
-        for i in range(len(seq_q)):
-            step_norm = normalize_input(seq_q[i], seq_qd[i], norm_delay)
-            seq_norm_buffer.append(step_norm)
-            
+        seq_norm_buffer = [normalize_input(seq_q[i], seq_qd[i], norm_delay) for i in range(len(seq_q))]
         input_tensor = torch.tensor(np.array(seq_norm_buffer), dtype=torch.float32).unsqueeze(0).to(device)
         
-        # 2. Autoregressive Loop
         pred_q_now = None
         
         with torch.no_grad():
-            # A. Process History
             _, hidden = model.lstm(input_tensor)
-            
-            # B. Prepare First Input (Last frame of context)
             curr_input = input_tensor[:, -1:, :] 
-            
-            # Calculate steps to bridge
             steps_to_predict = min(delay_steps, int(cfg.MAX_AR_STEPS))
             
             if delay_steps == 0:
-                # No prediction needed, use ground truth
                 pred_q_now = seq_q[-1]
             else:
-                curr_state_norm = None
                 dt_norm_step = (1.0 / cfg.DEFAULT_CONTROL_FREQ) / cfg.DELAY_INPUT_NORM_FACTOR
-                
-                # Loop
                 for _ in range(steps_to_predict):
-                    # Predict next state (Normalized)
                     pred_state_norm, hidden = model.forward_step(curr_input, hidden)
-                    curr_state_norm = pred_state_norm
-                    
-                    # Update Delay (Decrement)
                     curr_delay_val = curr_input[0, 0, -1].item()
                     next_delay_val = max(0.0, curr_delay_val - dt_norm_step)
-                    
-                    # Prepare next input
                     delay_t = torch.tensor([[[next_delay_val]]], device=device)
                     curr_input = torch.cat([pred_state_norm, delay_t], dim=2)
                 
-                # Denormalize final result
-                final_pred_norm = curr_state_norm.cpu().numpy()[0, 0]
-                final_pred_denorm = denormalize_state(final_pred_norm)
-                
-                # Extract Q (first 7 dims)
+                final_pred_denorm = denormalize_state(curr_input.cpu().numpy()[0, 0, :14])
                 pred_q_now = final_pred_denorm[:cfg.N_JOINTS]
 
-        # --- D. Apply EMA Filter ---
-        if prediction_ema is None:
-            prediction_ema = pred_q_now
-        else:
-            prediction_ema = ema_alpha * pred_q_now + (1.0 - ema_alpha) * prediction_ema
+        # EMA Filter
+        if prediction_ema is None: prediction_ema = pred_q_now
+        else: prediction_ema = ema_alpha * pred_q_now + (1.0 - ema_alpha) * prediction_ema
             
-        final_output_q = prediction_ema
-
-        # --- E. Logging ---
         log_truth.append(q_real)
-        log_pred.append(final_output_q)
+        log_pred.append(prediction_ema)
         log_delay_steps.append(delay_steps)
 
-    # 4. Analysis & Plotting
+    # 4. Plotting All 7 Joints
     log_truth = np.array(log_truth)
     log_pred = np.array(log_pred)
     log_delay_steps = np.array(log_delay_steps)
-    
     min_len = min(len(log_truth), len(log_pred))
     log_truth = log_truth[:min_len]
     log_pred = log_pred[:min_len]
-    log_delay_steps = log_delay_steps[:min_len]
     
-    errors = np.linalg.norm(log_truth - log_pred, axis=1)
-    
-    print("\n--- Validation Results ---")
-    print(f"Mean Prediction Error: {np.mean(errors):.5f} rad")
-    print(f"Max Prediction Error:  {np.max(errors):.5f} rad")
-    
-    # Plotting
     time_axis = np.arange(len(log_truth)) * dt
-    fig, axs = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
     
-    # Joint 1
-    axs[0].plot(time_axis, log_truth[:, 0], 'k-', label='Ground Truth')
-    axs[0].plot(time_axis, log_pred[:, 0], 'r--', label='LSTM Prediction')
-    axs[0].set_ylabel('Joint 1 (rad)')
-    axs[0].legend()
-    axs[0].set_title(f"Trajectory Tracking ({TEST_CONFIG.name})")
+    # Create 4x2 Grid (8 Subplots)
+    fig, axs = plt.subplots(4, 2, figsize=(15, 12), sharex=True)
+    axs = axs.flatten()
     
-    # Joint 4
-    axs[1].plot(time_axis, log_truth[:, 3], 'k-')
-    axs[1].plot(time_axis, log_pred[:, 3], 'r--')
-    axs[1].set_ylabel('Joint 4 (rad)')
+    for i in range(7):
+        ax = axs[i]
+        ax.plot(time_axis, log_truth[:, i], 'k-', label='Ground Truth' if i==0 else "")
+        ax.plot(time_axis, log_pred[:, i], 'r--', label='LSTM Prediction' if i==0 else "")
+        ax.set_ylabel(f'Joint {i+1} (rad)')
+        ax.grid(True, alpha=0.3)
+        if i == 0: ax.legend(loc='upper right')
+
+    # 8th Plot: Delay and Overall Error
+    ax_final = axs[7]
+    errors = np.linalg.norm(log_truth - log_pred, axis=1)
+    ax_final.plot(time_axis, errors, 'b-', label='L2 Error')
+    ax_final.set_ylabel('Error (rad)')
     
-    # Error
-    axs[2].plot(time_axis, errors, 'b-')
-    axs[2].set_ylabel('L2 Error (rad)')
-    axs[2].grid(True)
+    # Twin axis for Delay
+    ax_delay = ax_final.twinx()
+    ax_delay.plot(time_axis, log_delay_steps, 'g-', alpha=0.3, label='Delay Steps')
+    ax_delay.set_ylabel('Delay', color='g')
     
-    # Delay
-    axs[3].plot(time_axis, log_delay_steps, 'g-', alpha=0.6)
-    axs[3].set_ylabel('Delay (steps)')
-    axs[3].set_xlabel('Time (s)')
+    ax_final.set_xlabel('Time (s)')
+    ax_final.set_title("Prediction Error & Delay")
     
+    plt.suptitle(f"7-Joint Trajectory Tracking ({TEST_CONFIG.name})", fontsize=14)
     plt.tight_layout()
-    plt.savefig("lstm_validation_normalized.png")
-    print(f"\nPlot saved to: lstm_validation_normalized.png")
+    plt.savefig("lstm_validation_7joints.png")
+    print(f"\nPlot saved to: lstm_validation_7joints.png")
     plt.show()
 
 if __name__ == "__main__":

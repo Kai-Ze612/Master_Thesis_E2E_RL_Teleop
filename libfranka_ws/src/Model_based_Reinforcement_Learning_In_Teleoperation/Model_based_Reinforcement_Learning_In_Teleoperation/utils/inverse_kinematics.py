@@ -12,7 +12,6 @@ Features:
    - The 'pull' towards the rest pose is also weighted by the joint weights.
 """
 
-
 from __future__ import annotations
 from typing import Optional, Tuple
 from numpy.typing import NDArray
