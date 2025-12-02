@@ -109,3 +109,19 @@
 2025-12-01 19:25:48 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -182.1645
 2025-12-01 19:27:33 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -168.4752
 2025-12-01 19:29:19 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -175.0688
+2025-12-01 19:31:08 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -184.5500
+2025-12-01 19:32:54 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -195.7991
+2025-12-01 19:34:39 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -301.7970
+2025-12-01 19:36:34 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -580.5789
+2025-12-01 19:38:22 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -202.7123
+2025-12-01 19:40:07 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -255.2933
+2025-12-01 19:41:50 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -172.0481
+2025-12-01 19:43:34 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -193.8414
+2025-12-01 19:45:18 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -214.6162
+2025-12-01 19:47:02 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -227.5034
+2025-12-01 19:48:47 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -165.9196
+2025-12-01 19:50:32 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -186.5796
+2025-12-01 19:52:17 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -220.1561
+2025-12-01 19:54:01 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -178.3700
+2025-12-01 19:54:01 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Early stopping.
+2025-12-01 19:54:01 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_FULL_RANGE_COVER_figure_8_20251201_153807/final_policy.pth
