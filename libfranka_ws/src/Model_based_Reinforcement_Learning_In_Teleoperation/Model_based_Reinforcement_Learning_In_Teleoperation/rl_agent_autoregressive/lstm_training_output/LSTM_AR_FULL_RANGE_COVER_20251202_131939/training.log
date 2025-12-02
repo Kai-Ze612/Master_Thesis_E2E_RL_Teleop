@@ -1,0 +1,13 @@
+INFO:__main__:>>> Filling Replay Buffer...
+INFO:__main__:>>> Buffer Filled. Starting AR Training...
+INFO:__main__:Update 5000 | Loss: 0.000774 | Val Error (60s avg): 0.027533 | SS: 0.0820
+INFO:__main__:  [>] New Best Model Saved! (0.027533)
+INFO:__main__:Update 10000 | Loss: 0.000273 | Val Error (60s avg): 0.023333 | SS: 0.0067
+INFO:__main__:  [>] New Best Model Saved! (0.023333)
+INFO:__main__:Update 15000 | Loss: 0.000222 | Val Error (60s avg): 0.018059 | SS: 0.0006
+INFO:__main__:  [>] New Best Model Saved! (0.018059)
+INFO:__main__:Update 20000 | Loss: 0.000243 | Val Error (60s avg): 0.021667 | SS: 0.0000
+INFO:__main__:Update 25000 | Loss: 0.000201 | Val Error (60s avg): 0.019716 | SS: 0.0000
+INFO:__main__:Update 30000 | Loss: 0.000215 | Val Error (60s avg): 0.019320 | SS: 0.0000
+INFO:__main__:Update 35000 | Loss: 0.000232 | Val Error (60s avg): 0.020332 | SS: 0.0000
+INFO:__main__:Update 40000 | Loss: 0.000221 | Val Error (60s avg): 0.018955 | SS: 0.0000
