@@ -17,22 +17,23 @@ import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config a
 
 class StateEstimator(nn.Module):
     """
-    Residual Autoregressive LSTM.
-    Logic: PREDICTION = INPUT_STATE + DELTA(INPUT_STATE, DELAY)
+    Physics-Informed Residual LSTM (Euler Integration).
     
-    This forces the network to learn the dynamics (velocity/change) 
-    instead of memorizing the absolute position.
+    Instead of predicting 'Delta Position' (which is tiny and causes staircasing),
+    we predict 'Normalized Velocity' (which is large).
+    
+    Equation:
+        v_pred = Network(state)
+        next_state = state + v_pred * dt_integration_constant
     """
     def __init__(
         self,
-        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM, # 15 (7q + 7qd + 1delay)
+        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM, # 15
         hidden_dim: int = cfg.RNN_HIDDEN_DIM,
         num_layers: int = cfg.RNN_NUM_LAYERS,
-        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,     # 14 (7q + 7qd)
+        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,     # 14
     ):
         super().__init__()
-        
-        self.input_dim_total = input_dim_total
         self.output_dim = output_dim
         
         self.lstm = nn.LSTM(
@@ -42,32 +43,37 @@ class StateEstimator(nn.Module):
             batch_first=True
         )
         
-        # The FC layer now predicts the DELTA (Change), not the state itself
+        # We use Mish or LeakyReLU to prevent "dead neurons" (strict zeros)
+        self.activation = nn.Mish() 
+        
+        # Network outputs [Normalized Velocity, Normalized Acceleration]
+        # Magnitude is ~1.0, so gradients flow easily.
         self.fc = nn.Sequential(
-            nn.Linear(hidden_dim, 128),
-            nn.ReLU(),
-            nn.Linear(128, output_dim)
+            nn.Linear(hidden_dim, 256),
+            self.activation,
+            nn.Linear(256, output_dim)
         )
+        
+        # Integration Constant: Effectively dt scaled by normalization stats.
+        # At 200Hz, this is roughly 0.01. 
+        # Making this a parameter allows the network to fine-tune the time constant.
+        self.dt_scale = nn.Parameter(torch.tensor(0.01), requires_grad=True)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Training Forward Pass (Sequence processing).
-        """
-        # x shape: (Batch, Seq_Len, 15)
+        """Training Forward Pass"""
         lstm_out, _ = self.lstm(x)
-        
-        # Take the hidden state from the LAST step of the sequence
         last_hidden = lstm_out[:, -1, :]
         
-        # 1. Calculate Delta (The change predicted by the network)
-        delta = self.fc(last_hidden)
+        # 1. Predict Normalized Derivatives (Velocity/Accel)
+        derivatives = self.fc(last_hidden)
         
-        # 2. Get the specific input state corresponding to that last step
-        #    We slice x to get the last timestep, and the first 14 dims (ignoring delay)
-        last_known_state = x[:, -1, :self.output_dim]
+        # 2. Get Previous State
+        # x is [Position (7), Velocity (7), Delay (1)]
+        prev_state = x[:, -1, :self.output_dim]
         
-        # 3. RESIDUAL ADDITION: New State = Old State + Delta
-        pred_state = last_known_state + delta
+        # 3. Euler Integration: State_New = State_Old + Deriv * dt
+        # This forces the network to output non-zero derivatives to minimize loss.
+        pred_state = prev_state + derivatives * self.dt_scale
         
         return pred_state, last_hidden
 
@@ -76,22 +82,17 @@ class StateEstimator(nn.Module):
         x_step: torch.Tensor, 
         hidden_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        """
-        Inference Forward Pass (Single Step for Autoregression).
-        """
-        # x_step shape: (Batch, 1, 15)
-        
-        # 1. LSTM Step
+        """Inference Forward Pass"""
         lstm_out, new_hidden = self.lstm(x_step, hidden_state)
         
-        # 2. Calculate Delta
-        delta = self.fc(lstm_out) # Shape: (Batch, 1, 14)
+        # 1. Predict Derivatives
+        derivatives = self.fc(lstm_out)
         
-        # 3. Get the input state (Slicing off the delay feature)
-        current_state = x_step[:, :, :self.output_dim]
+        # 2. Get Previous State
+        prev_state = x_step[:, :, :self.output_dim]
         
-        # 4. RESIDUAL ADDITION
-        pred_state = current_state + delta
+        # 3. Euler Integration
+        pred_state = prev_state + derivatives * self.dt_scale
         
         return pred_state, new_hidden
 
