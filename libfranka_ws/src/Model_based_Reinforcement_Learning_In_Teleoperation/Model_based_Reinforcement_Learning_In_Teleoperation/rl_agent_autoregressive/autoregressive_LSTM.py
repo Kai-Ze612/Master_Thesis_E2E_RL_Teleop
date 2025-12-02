@@ -122,7 +122,7 @@ class LSTMTrainer:
 
         # Scheduled Sampling parameters
         self.ss_prob = 1.0 # Probability of using Ground Truth (Teacher Forcing). Decays to 0.
-        self.ss_decay_rate = 0.9995
+        self.ss_decay_rate = 0.99995
 
     def _setup_logging(self) -> logging.Logger:
         log_file = os.path.join(self.output_dir, "training.log")
