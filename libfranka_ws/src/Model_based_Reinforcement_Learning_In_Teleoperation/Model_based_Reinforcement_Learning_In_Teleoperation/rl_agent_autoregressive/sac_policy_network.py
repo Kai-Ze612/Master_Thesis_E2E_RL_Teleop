@@ -18,20 +18,13 @@ import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config a
 class StateEstimator(nn.Module):
     """
     Physics-Informed Residual LSTM (Euler Integration).
-    
-    Instead of predicting 'Delta Position' (which is tiny and causes staircasing),
-    we predict 'Normalized Velocity' (which is large).
-    
-    Equation:
-        v_pred = Network(state)
-        next_state = state + v_pred * dt_integration_constant
     """
     def __init__(
         self,
-        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM, # 15
-        hidden_dim: int = cfg.RNN_HIDDEN_DIM,
+        input_dim_total: int = cfg.ESTIMATOR_STATE_DIM,
+        hidden_dim: int = 256, # [FIX 1] Increased Capacity (was 128)
         num_layers: int = cfg.RNN_NUM_LAYERS,
-        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,     # 14
+        output_dim: int = cfg.ESTIMATOR_OUTPUT_DIM,
     ):
         super().__init__()
         self.output_dim = output_dim
@@ -43,37 +36,32 @@ class StateEstimator(nn.Module):
             batch_first=True
         )
         
-        # We use Mish or LeakyReLU to prevent "dead neurons" (strict zeros)
         self.activation = nn.Mish() 
         
-        # Network outputs [Normalized Velocity, Normalized Acceleration]
-        # Magnitude is ~1.0, so gradients flow easily.
+        # [FIX 2] Predict Velocity (Large numbers), not Delta (Tiny numbers)
         self.fc = nn.Sequential(
             nn.Linear(hidden_dim, 256),
             self.activation,
             nn.Linear(256, output_dim)
         )
         
-        # Integration Constant: Effectively dt scaled by normalization stats.
-        # At 200Hz, this is roughly 0.01. 
-        # Making this a parameter allows the network to fine-tune the time constant.
-        self.dt_scale = nn.Parameter(torch.tensor(0.01), requires_grad=True)
+        # [FIX 3] Integration Constant (The Physics Multiplier)
+        # Initialize to 0.1 to force the network to use velocity immediately.
+        self.dt_scale = nn.Parameter(torch.tensor(0.1), requires_grad=True)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Training Forward Pass"""
         lstm_out, _ = self.lstm(x)
         last_hidden = lstm_out[:, -1, :]
         
-        # 1. Predict Normalized Derivatives (Velocity/Accel)
-        derivatives = self.fc(last_hidden)
+        # 1. Network predicts Normalized Velocity
+        velocity_pred = self.fc(last_hidden)
         
         # 2. Get Previous State
-        # x is [Position (7), Velocity (7), Delay (1)]
         prev_state = x[:, -1, :self.output_dim]
         
-        # 3. Euler Integration: State_New = State_Old + Deriv * dt
-        # This forces the network to output non-zero derivatives to minimize loss.
-        pred_state = prev_state + derivatives * self.dt_scale
+        # 3. Euler Integration: New = Old + Velocity * Time
+        # This Multiplies the gradient by ~100x, fixing the "Lazy" problem.
+        pred_state = prev_state + velocity_pred * self.dt_scale
         
         return pred_state, last_hidden
 
@@ -82,17 +70,13 @@ class StateEstimator(nn.Module):
         x_step: torch.Tensor, 
         hidden_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
     ) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        """Inference Forward Pass"""
         lstm_out, new_hidden = self.lstm(x_step, hidden_state)
         
-        # 1. Predict Derivatives
-        derivatives = self.fc(lstm_out)
-        
-        # 2. Get Previous State
+        velocity_pred = self.fc(lstm_out)
         prev_state = x_step[:, :, :self.output_dim]
         
-        # 3. Euler Integration
-        pred_state = prev_state + derivatives * self.dt_scale
+        # Euler Integration for Inference
+        pred_state = prev_state + velocity_pred * self.dt_scale
         
         return pred_state, new_hidden
 

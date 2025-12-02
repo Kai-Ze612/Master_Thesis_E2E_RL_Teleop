@@ -4,3 +4,7 @@ INFO:__main__:Update 5000 | Loss: 0.000097 | Val Error (60s avg): 0.008793 | SS:
 INFO:__main__:  [>] New Best Model Saved! (0.008793)
 INFO:__main__:Update 10000 | Loss: 0.000094 | Val Error (60s avg): 0.007249 | SS: 0.0067
 INFO:__main__:  [>] New Best Model Saved! (0.007249)
+INFO:__main__:Update 15000 | Loss: 0.000137 | Val Error (60s avg): 0.007700 | SS: 0.0006
+INFO:__main__:Update 20000 | Loss: 0.000097 | Val Error (60s avg): 0.008861 | SS: 0.0000
+INFO:__main__:Update 25000 | Loss: 0.000110 | Val Error (60s avg): 0.008553 | SS: 0.0000
+INFO:__main__:Update 30000 | Loss: 0.000097 | Val Error (60s avg): 0.009351 | SS: 0.0000
