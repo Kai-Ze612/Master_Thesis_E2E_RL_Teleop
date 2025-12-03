@@ -1,0 +1,12 @@
+2025-12-03 10:30:53 [INFO] __main__ - Training Configuration:
+2025-12-03 10:30:53 [INFO] __main__ -   Delay: FULL_RANGE_COVER
+2025-12-03 10:30:53 [INFO] __main__ -   Trajectory: figure_8
+2025-12-03 10:30:53 [INFO] __main__ - Creating vectorized environment...
+2025-12-03 10:30:54 [INFO] __main__ - Initializing SACTrainer...
+2025-12-03 10:30:55 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Tensorboard logs at: ./rl_training_output/ModelBasedSAC_FULL_RANGE_COVER_figure_8_20251203_103053/tensorboard_sac
+2025-12-03 10:30:55 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - ======================================================================
+2025-12-03 10:30:55 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Starting SAC Training (Environment-Centric Prediction)
+2025-12-03 10:30:55 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm -   Input Dim: 113 | Output Dim: 7
+2025-12-03 10:30:55 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - ======================================================================
+2025-12-03 10:32:25 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Validation Reward: -2912.9569
+2025-12-03 10:32:25 [INFO] Model_based_Reinforcement_Learning_In_Teleoperation.rl_agent_autoregressive.sac_training_algorithm - Checkpoint saved: ./rl_training_output/ModelBasedSAC_FULL_RANGE_COVER_figure_8_20251203_103053/best_policy.pth

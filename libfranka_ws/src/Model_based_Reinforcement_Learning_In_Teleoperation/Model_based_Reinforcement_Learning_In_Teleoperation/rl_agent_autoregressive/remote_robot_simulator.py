@@ -48,8 +48,8 @@ class RemoteRobotSimulator:
         self.joint_limits_lower = cfg.JOINT_LIMITS_LOWER.copy()
         self.joint_limits_upper = cfg.JOINT_LIMITS_UPPER.copy()
         self.tcp_offset = cfg.TCP_OFFSET.copy()
-        self.kp = cfg.DEFAULT_KP_REMOTE
-        self.kd = cfg.DEFAULT_KD_REMOTE
+        self.kp = cfg.DEFAULT_KP_REMOTE * 0.5
+        self.kd = cfg.DEFAULT_KD_REMOTE * 0.5
         self.n_joints = cfg.N_JOINTS
         self.ee_body_name = cfg.EE_BODY_NAME
         
