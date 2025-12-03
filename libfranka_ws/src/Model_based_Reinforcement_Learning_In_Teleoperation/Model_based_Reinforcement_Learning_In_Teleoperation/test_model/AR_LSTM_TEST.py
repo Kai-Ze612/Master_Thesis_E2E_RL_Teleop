@@ -30,7 +30,7 @@ from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator i
 import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
 
 # --- CONFIG ---
-TEST_CONFIG = ExperimentConfig.HIGH_DELAY 
+TEST_CONFIG = ExperimentConfig.FULL_RANGE_COVER 
 TEST_DURATION_SEC = 30.0  
 MODEL_PATH = cfg.LSTM_MODEL_PATH
 

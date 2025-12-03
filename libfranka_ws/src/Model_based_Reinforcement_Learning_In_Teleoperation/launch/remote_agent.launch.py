@@ -1,7 +1,9 @@
 """
-Launch file for remote robot node and agent node.
-
-The agent is located at remote robot side, which means agent and remote robot should be launched together.
+Launch file for REAL ROBOT deployment.
+Launches:
+1. Franka Hardware Driver (franka_control2)
+2. Agent Node (Brain)
+3. Remote Robot Node (Control Loop)
 """
 
 import os
@@ -35,7 +37,7 @@ def generate_launch_description():
 
     # RL agent arguments
     config_param_name = 'config'
-    default_config = str(ExperimentConfig.FULL_RANGE_COVER.value) # Default to 1
+    default_config = str(ExperimentConfig.FULL_RANGE_COVER.value) 
     config = LaunchConfiguration(config_param_name)
 
     seed_param_name = 'seed'
@@ -61,10 +63,8 @@ def generate_launch_description():
         ]
     )
 
-    # Start Launch Description
     ld = LaunchDescription()
 
-    # Add All Launch Arguments
     ld.add_action(DeclareLaunchArgument(
         robot_ip_parameter_name,
         default_value='192.168.3.108', 
@@ -125,7 +125,6 @@ def generate_launch_description():
         on_exit=Shutdown(),
     ))
 
-    # --- Spawn ALL necessary controllers ---
     ld.add_action(Node(
         package='controller_manager',
         executable='spawner',
@@ -155,6 +154,7 @@ def generate_launch_description():
                           use_fake_hardware_parameter_name: use_fake_hardware}.items(),
         condition=IfCondition(load_gripper)
     ))
+    
     ld.add_action(Node(
         package='rviz2',
         executable='rviz2',
@@ -163,7 +163,7 @@ def generate_launch_description():
         condition=IfCondition(use_rviz)
     ))
 
-    # Agent node
+    # --- AGENT NODE ---
     ld.add_action(Node(
         package=my_package_name,
         executable='agent_node',
@@ -171,31 +171,30 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'experiment_config': config, 
-            'seed': seed                 
+            'seed': seed                  
         }],
         remappings=[
             ('local_robot/joint_states', '/local_robot/joint_states'),
-            ('remote_robot/joint_states', '/joint_states'),
+            # Agent listens to REAL hardware topic
+            ('remote_robot/joint_states', '/franka/joint_states'), 
         ]
     ))
     
-    #  Remote node
+    # --- REMOTE ROBOT NODE (CONTROLLER) ---
     ld.add_action(Node(
         package=my_package_name,
-        executable='remote_node',
+        executable='remote_node',  # Make sure this matches setup.py entry point
         name='remote_robot_node',
         output='screen',
-        
-        # --- FIX: Pass parameters to remote_node ---
         parameters=[{
             'experiment_config': config,
             'seed': seed
         }],
-        # -------------------------------------------
-        
         remappings=[
+            # Listen to REAL hardware state
             ('remote_robot/joint_states', '/franka/joint_states'),
-            ('joint_tau/torques_desired', '/joint_tau/torques_desired')
+            # Send Torque to the CONTROLLER, not just a topic
+            # ('joint_tau/torques_desired', '/joint_tau_controller/commands')
         ]
     ))
 

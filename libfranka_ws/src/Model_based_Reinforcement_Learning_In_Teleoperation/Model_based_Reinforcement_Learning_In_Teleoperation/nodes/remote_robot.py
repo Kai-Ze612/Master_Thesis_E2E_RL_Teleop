@@ -1,39 +1,23 @@
-"""
-The script is the remote robot, using ROS2 node
-
-Pipelines:
-1. subscribe to 'agent/predicted_target' (JointState) for desired joint positions and velocities
-2. subscribe to 'agent/compensation_tau' (Float64MultiArray) for torque compensation
-3. PD control loop with gravity compensation to determine torque baseline
-4. adding torque baseline with compensation tau from agent
-5. adding action delay
-6. publish to '/joint_tau/torques_desired' (Float64MultiArray) for robot control
-"""
-
-
-# ROS2 imports
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor  # Required for safety
+from rclpy.callback_groups import ReentrantCallbackGroup # Required for safety
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PointStamped
 
-# Mujoco imports
 import mujoco
-
-# Python imports
 import numpy as np
 from collections import deque
 
-# Custom imports
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-
 from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
     N_JOINTS,
     DEFAULT_MUJOCO_MODEL_PATH,
     DEFAULT_CONTROL_FREQ,
     INITIAL_JOINT_CONFIG,
     TORQUE_LIMITS,
+    MAX_TORQUE_COMPENSATION,
     DEFAULT_KD_REMOTE,
     DEFAULT_KP_REMOTE,
     TCP_OFFSET,
@@ -45,268 +29,200 @@ class RemoteRobotNode(Node):
     def __init__(self):
         super().__init__('remote_robot_node')
         
-        # Initialize parameters from config.py
         self.n_joints_ = N_JOINTS
         self.control_freq_ = DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
         self.tcp_offset_ = TCP_OFFSET
-        self.kp_ = DEFAULT_KP_REMOTE
+        
+        # PD Gains
+        self.kp_ = DEFAULT_KP_REMOTE 
         self.kd_ = DEFAULT_KD_REMOTE
+        
         self.torque_limits_ = TORQUE_LIMITS
+        self.max_rl_torque_ = MAX_TORQUE_COMPENSATION
         self.joint_names_ = [f'panda_joint{i+1}' for i in range(self.n_joints_)]
         self.initial_joint_config_ = INITIAL_JOINT_CONFIG
         self.ee_body_name_ = EE_BODY_NAME
         
-        # Initialize remote robot current joint states and velocities
         self.current_q_ = self.initial_joint_config_.copy()
         self.current_qd_ = np.zeros(self.n_joints_, dtype=np.float32)
-
-        # Initialize Mujoco model and data
-        model_path = DEFAULT_MUJOCO_MODEL_PATH
-        self.mj_model_ = mujoco.MjModel.from_xml_path(model_path)
-        self.mj_data_ = mujoco.MjData(self.mj_model_)
-        self.ee_body_id_ = self.mj_model_.body(name=self.ee_body_name_).id
-        
-        # Initialize target joint states and velocities
         self.target_q_ = INITIAL_JOINT_CONFIG.copy()
         self.target_qd_ = np.zeros(self.n_joints_)
         self.current_tau_rl_ = np.zeros(self.n_joints_)
-
-        # Variables for storing true local state (for debugging)
         self.current_local_q_ = INITIAL_JOINT_CONFIG.copy()
-        self.current_local_qd_ = np.zeros(self.n_joints_)
         
-        # ============================================================
-        # FIX 1: Unified Delay Configuration (matching agent default)
-        # ============================================================
-        self.default_experiment_config_ = ExperimentConfig.HIGH_DELAY.value
-        self.declare_parameter('experiment_config', self.default_experiment_config_)
-        self.experiment_config_int_ = self.get_parameter('experiment_config').value
+        # Watchdog & Buffer
+        self.last_tau_rl_time_ = 0.0
+        self.last_valid_torque_command_ = np.zeros(self.n_joints_)
         
-        # Read Seed (matching agent default)
+        # MuJoCo
+        self.mj_model_ = mujoco.MjModel.from_xml_path(DEFAULT_MUJOCO_MODEL_PATH)
+        self.mj_data_ = mujoco.MjData(self.mj_model_)
+        
+        # Config
+        self.declare_parameter('experiment_config', ExperimentConfig.LOW_DELAY.value)
         self.declare_parameter('seed', 50)
+        self.config_int_ = self.get_parameter('experiment_config').value
         self.seed_ = self.get_parameter('seed').value
-
-        try:
-            self.delay_config_ = ExperimentConfig(self.experiment_config_int_)
-        except ValueError:
-            self.get_logger().fatal(f"Invalid 'experiment_config' int: {self.experiment_config_int_}")
-            raise
-
-        self.action_delay_simulator_ = DelaySimulator(
-            control_freq=self.control_freq_,
-            config=self.delay_config_,
-            seed=self.seed_ 
-        )
         
+        self.delay_config_ = ExperimentConfig(self.config_int_)
+        self.action_delay_simulator_ = DelaySimulator(self.control_freq_, self.delay_config_, self.seed_)
         self.torque_command_history_ = deque(maxlen=DEPLOYMENT_HISTORY_BUFFER_SIZE)
         
-        # State flags
+        # Flags
         self.robot_state_ready_ = False
         self.target_command_ready_ = False
         self.tau_rl_ready_ = False
         self.local_state_ready_ = False
+
+        # --- MULTI-THREADING SETUP ---
+        self.cb_group = ReentrantCallbackGroup()
         
-        # ROS2 Interfaces
-        self.target_command_sub_ = self.create_subscription(
-            JointState, 'agent/predict_target', self.target_command_callback, 10
-        )
+        # Subscribers
+        self.create_subscription(JointState, 'agent/predict_target', self.target_command_callback, 10, callback_group=self.cb_group)
+        self.create_subscription(Float64MultiArray, 'agent/tau_rl', self.tau_rl_callback, 10, callback_group=self.cb_group)
+        self.create_subscription(JointState, 'remote_robot/joint_states', self.robot_state_callback, 10, callback_group=self.cb_group)
+        self.create_subscription(JointState, 'local_robot/joint_states', self.local_robot_state_callback, 10, callback_group=self.cb_group)
         
-        self.tau_rl_sub_ = self.create_subscription(
-            Float64MultiArray, 'agent/tau_rl', self.tau_rl_callback, 10
-        )
-        
-        self.robot_state_sub_ = self.create_subscription(
-            JointState,  'remote_robot/joint_states', self.robot_state_callback, 10
-        )
-        
-        self.local_robot_state_sub_ = self.create_subscription(
-            JointState, 'local_robot/joint_states', self.local_robot_state_callback, 10
-        )
-        
-        controller_command_topic = 'joint_tau/torques_desired' 
-        self.get_logger().info(f"Publishing torque commands to RELATIVE topic: {controller_command_topic}")
-        
+        # --- [FIX] CORRECT TOPIC NAME ---
+        # We publish exactly where the controller is listening
         self.torque_command_pub_ = self.create_publisher(
-            Float64MultiArray,  controller_command_topic, 10)
-            
-        self.ee_pose_pub_ = self.create_publisher(PointStamped, 'remote_robot/ee_pose', 10)
+            Float64MultiArray, 
+            '/joint_tau/torques_desired', 
+            10,
+            callback_group=self.cb_group
+        )
+        self.ee_pose_pub_ = self.create_publisher(PointStamped, 'remote_robot/ee_pose', 10, callback_group=self.cb_group)
         
-        self.control_timer_ = self.create_timer(
-            self.dt_, self.control_loop_callback)
+        # --- TIMERS ---
+        self.control_timer_ = self.create_timer(self.dt_, self.control_loop_callback, callback_group=self.cb_group)
+        self.publish_timer_ = self.create_timer(0.002, self.high_freq_publish_callback, callback_group=self.cb_group)
         
-        self.get_logger().info(f"Remote Robot Node initialized with Config={self.delay_config_.name}, Seed={self.seed_}.")
+        self.heartbeat_counter_ = 0
+        self.get_logger().info(f"REAL ROBOT NODE STARTED. Target: /joint_tau/torques_desired")
+
+    def high_freq_publish_callback(self):
+        msg = Float64MultiArray()
+        msg.data = self.last_valid_torque_command_.tolist()
+        self.torque_command_pub_.publish(msg)
 
     def target_command_callback(self, msg: JointState) -> None:
-        """Callback for the AGENT's predicted target state."""
         try:
-            name_to_index_map = {name: i for i, name in enumerate(msg.name)}
-            self.target_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
-            self.target_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
-            
+            name_map = {name: i for i, name in enumerate(msg.name)}
+            self.target_q_ = np.array([msg.position[name_map[n]] for n in self.joint_names_])
+            self.target_qd_ = np.array([msg.velocity[name_map[n]] for n in self.joint_names_])
             if not self.target_command_ready_:
                 self.target_command_ready_ = True
-                self.get_logger().info("First command from Agent (predict_target) received.")
-
-        except (KeyError, IndexError) as e:
-            self.get_logger().warn(f"Error processing target command: {e}")
+        except Exception: pass
 
     def tau_rl_callback(self, msg: Float64MultiArray) -> None:
-        """Callback for the AGENT's compensation torque."""
         self.current_tau_rl_ = np.array(msg.data, dtype=np.float32)
+        self.last_tau_rl_time_ = self.get_clock().now().nanoseconds / 1e9
         if not self.tau_rl_ready_:
             self.tau_rl_ready_ = True
-            self.get_logger().info("First command from Agent (tau_rl) received.")
 
     def robot_state_callback(self, msg: JointState) -> None:
-        """Callback for the REAL ROBOT's current state."""
         try:
-            name_to_index_map = {name: i for i, name in enumerate(msg.name)}
-            self.current_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
-            self.current_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
-            
+            name_map = {name: i for i, name in enumerate(msg.name)}
+            self.current_q_ = np.array([msg.position[name_map[n]] for n in self.joint_names_])
+            self.current_qd_ = np.array([msg.velocity[name_map[n]] for n in self.joint_names_])
             if not self.robot_state_ready_:
                 self.robot_state_ready_ = True
-                self.get_logger().info("First hardware state from Remote Robot received.")
-        except (KeyError, IndexError) as e:
-            self.get_logger().warn(f"Error processing robot state: {e}")
+                self.get_logger().info("Connected to Real Robot Hardware.")
+        except Exception: pass
             
     def local_robot_state_callback(self, msg: JointState) -> None:
-        """Callback for the LOCAL ROBOT's current state."""
         try:
-            name_to_index_map = {name: i for i, name in enumerate(msg.name)}
-            self.current_local_q_ = np.array([msg.position[name_to_index_map[name]] for name in self.joint_names_])
-            self.current_local_qd_ = np.array([msg.velocity[name_to_index_map[name]] for name in self.joint_names_])
-            
+            name_map = {name: i for i, name in enumerate(msg.name)}
+            self.current_local_q_ = np.array([msg.position[name_map[n]] for n in self.joint_names_])
             if not self.local_state_ready_:
                 self.local_state_ready_ = True
-                self.get_logger().info("First state from Local Robot received.")
-        except (KeyError, IndexError) as e:
-            self.get_logger().warn(f"Error processing LOCAL robot state: {e}")
+        except Exception: pass
         
-    def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
-        """Normalize an angle or array of angles to the range [-pi, pi]."""
+    def _normalize_angle(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
     
-    def _get_inverse_dynamics(self, q: np.ndarray, v: np.ndarray, a_desired: np.ndarray) -> np.ndarray:
-        """
-        Compute Torque using MuJoCo Inverse Dynamics.
-        Equation: tau = M(q)*a_desired + C(q,v)*v + G(q)
-        """
-        # 1. Update MuJoCo with the CURRENT Robot State
+    def _get_inverse_dynamics(self, q, v, a_des):
         self.mj_data_.qpos[:self.n_joints_] = q
         self.mj_data_.qvel[:self.n_joints_] = v
-        
-        # 2. Set the DESIRED Acceleration (from PD)
-        self.mj_data_.qacc[:self.n_joints_] = a_desired
-
-        # 3. Compute Inverse Dynamics
+        self.mj_data_.qacc[:self.n_joints_] = a_des
         mujoco.mj_inverse(self.mj_model_, self.mj_data_)
-
         return self.mj_data_.qfrc_inverse[:self.n_joints_].copy()
 
-    def _get_ee_position(self, q: np.ndarray) -> np.ndarray:
-        """Compute Forward Kinematics using MuJoCo."""
+    def _get_ee_position(self, q):
         self.mj_data_.qpos[:self.n_joints_] = q
         mujoco.mj_kinematics(self.mj_model_, self.mj_data_)
-        ee_pos = self.mj_data_.body(self.ee_body_name_).xpos.copy()
-        return ee_pos
+        return self.mj_data_.body(self.ee_body_name_).xpos.copy()
 
     def control_loop_callback(self) -> None:
-        
-        # Wait for all required data
-        if not self.robot_state_ready_ or not self.target_command_ready_ or not self.tau_rl_ready_ or not self.local_state_ready_:
-            self.get_logger().warn(f"Waiting for data...", throttle_duration_sec=2.0)
+        if not self.robot_state_ready_:
+            if self.heartbeat_counter_ % 200 == 0:
+                self.get_logger().info("Waiting for hardware connection...")
+            self.heartbeat_counter_ += 1
             return
+
+        # Watchdog
+        now = self.get_clock().now().nanoseconds / 1e9
+        if (now - self.last_tau_rl_time_) > 0.2:
+            if self.tau_rl_ready_: 
+                 self.get_logger().warn("Watchdog: Agent silent. Zeroing RL torque.", throttle_duration_sec=1)
+            self.current_tau_rl_ = np.zeros(self.n_joints_)
 
         q_target = self.target_q_ 
         qd_target = self.target_qd_ 
+        q_current = self.current_q_
+        qd_current = self.current_qd_
         
-        try:
-            q_current = self.current_q_
-            qd_current = self.current_qd_
-            
-            # PD Control
-            q_error = self._normalize_angle(q_target - q_current)
-            qd_error = qd_target - qd_current
-            
-            # acc_desired is in rad/s^2
-            acc_desired = self.kp_ * q_error + self.kd_ * qd_error
-            
-            # Use Computed Torque (Inverse Dynamics)
-            tau_id = self._get_inverse_dynamics(q_current, qd_current, acc_desired)
-            
-            # RL compensation
-            tau_rl = self.current_tau_rl_
-            
-            # Safety: No torque on last joint
-            tau_id[-1] = 0.0
-            tau_rl[-1] = 0.0
-            
-            tau_command = tau_id + tau_rl * 0
-            tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
+        # 1. PD Control
+        q_error = self._normalize_angle(q_target - q_current)
+        qd_error = qd_target - qd_current
+        acc_desired = self.kp_ * q_error + self.kd_ * qd_error
+        
+        # 2. Inverse Dynamics
+        tau_id = self._get_inverse_dynamics(q_current, qd_current, acc_desired)
+        
+        # 3. RL Compensation (Clipped)
+        tau_rl = np.clip(self.current_tau_rl_, -self.max_rl_torque_, self.max_rl_torque_)
+        
+        # Combine
+        tau_command = tau_id + tau_rl * 0
+        
+        # 4. Safety Clip & Zero Gripper
+        tau_command[-1] = 0.0 
+        tau_clipped = np.clip(tau_command, -self.torque_limits_, self.torque_limits_)
 
-            # Apply action delay
-            self.torque_command_history_.append(tau_clipped)
+        # 5. Delay Simulation
+        self.torque_command_history_.append(tau_clipped)
+        delay_steps = self.action_delay_simulator_.get_action_delay_steps()
+        
+        if delay_steps >= len(self.torque_command_history_):
+            torque_next = np.zeros(self.n_joints_)
+        else:
+            torque_next = self.torque_command_history_[-1 - delay_steps]
             
-            action_delay_steps = self.action_delay_simulator_.get_action_delay_steps()
-            
-            if action_delay_steps >= len(self.torque_command_history_):
-                torque_to_publish = np.zeros(self.n_joints_)
-            else:
-                torque_to_publish = self.torque_command_history_[-1 - action_delay_steps]
-            
-            # Publish Torque
-            msg = Float64MultiArray()
-            msg.data = torque_to_publish.tolist()
-            self.torque_command_pub_.publish(msg)
-            
-            ee_pos = self._get_ee_position(q_current)
-            
-            ee_msg = PointStamped()
-            ee_msg.header.stamp = self.get_clock().now().to_msg()
-            ee_msg.header.frame_id = "world" 
-            ee_msg.point.x = float(ee_pos[0])
-            ee_msg.point.y = float(ee_pos[1])
-            ee_msg.point.z = float(ee_pos[2])
-            
-            self.ee_pose_pub_.publish(ee_msg)
-
-            # prediction error
-            prediction_error = np.linalg.norm(self.current_local_q_ - q_target)
-            
-            # tracking error
-            tracking_error = np.linalg.norm(self.current_local_q_ - q_current)
-            
-            self.get_logger().info(
-                f"\n--- DEBUG (throttled 0.1s) ---\n"
-                f"True q:        {np.round(self.current_local_q_, 3)}\n"
-                f"Predicted q:   {np.round(q_target, 3)}\n"
-                f"Remote q:      {np.round(q_current, 3)}\n"
-                f"EE Pos:        {np.round(ee_pos, 3)}\n"
-                f"Tau ID:        {np.round(tau_id, 3)}\n"
-                f"Tau RL:        {np.round(tau_rl, 3)}\n"
-                f"Prediction Error: {prediction_error:.4f}\n"
-                f"Tracking Error: {tracking_error:.4f}\n",
-                throttle_duration_sec=0.005
-            )
-
-        except Exception as e:
-            self.get_logger().error(f"Error in control loop: {e}")
-            import traceback
-            traceback.print_exc()
+        # Update Buffer
+        self.last_valid_torque_command_ = torque_next
+        
+        ee_pos = self._get_ee_position(q_current)
+        ee_msg = PointStamped()
+        ee_msg.header.stamp = self.get_clock().now().to_msg()
+        ee_msg.header.frame_id = "world" 
+        ee_msg.point.x, ee_msg.point.y, ee_msg.point.z = float(ee_pos[0]), float(ee_pos[1]), float(ee_pos[2])
+        self.ee_pose_pub_.publish(ee_msg)
 
 def main(args=None):
     rclpy.init(args=args)
-    remote_robot_node = None
+    node = RemoteRobotNode()
+    
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+    
     try:
-        remote_robot_node = RemoteRobotNode()
-        rclpy.spin(remote_robot_node)
-    except KeyboardInterrupt:
-        pass
+        executor.spin()
+    except KeyboardInterrupt: pass
     finally:
-        if remote_robot_node:
-            remote_robot_node.destroy_node()
+        node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

@@ -40,13 +40,17 @@ class AgentNode(Node):
         super().__init__('agent_node')
         
         self.device_ = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.use_fp16_ = (self.device_.type == 'cuda')
         
         # Frequency Management
         self.control_freq_ = cfg.DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
-        self.last_leader_msg_arrival_time_ = self.get_clock().now().nanoseconds / 1e9
+        self.last_leader_msg_arrival_time_ = 0.0
         
-        # Experiment config
+        # Message Counting for Incremental Logic
+        self.leader_msgs_received_ = 0
+        self.leader_msgs_processed_ = 0
+        
         self.declare_parameter('experiment_config', ExperimentConfig.LOW_DELAY.value)
         self.experiment_config_int_ = self.get_parameter('experiment_config').value
         self.delay_config_ = ExperimentConfig(self.experiment_config_int_)
@@ -55,15 +59,21 @@ class AgentNode(Node):
         self.state_estimator_ = StateEstimator().to(self.device_)
         self.actor_ = Actor(state_dim=cfg.OBS_DIM).to(self.device_)
         self._load_models()
-
-        # Delay Simulator
-        self.delay_simulator_ = DelaySimulator(
-            control_freq=self.control_freq_,
-            config=self.delay_config_,
-            seed=50
-        )
         
-        # Buffers
+        if self.use_fp16_:
+            self.state_estimator_.half()
+            self.actor_.half()
+            
+        self._warmup_models()
+
+        self.delay_simulator_ = DelaySimulator(self.control_freq_, self.delay_config_, seed=50)
+        
+        # [FIX] Observation Delay Buffer
+        # Incoming packets go here first. 
+        # They move to 'leader_q_history_' only after delay time passes.
+        self.pending_leader_packets_ = deque() 
+        
+        # Buffers (Input to LSTM)
         self.leader_q_history_ = deque(maxlen=cfg.DEPLOYMENT_HISTORY_BUFFER_SIZE)
         self.leader_qd_history_ = deque(maxlen=cfg.DEPLOYMENT_HISTORY_BUFFER_SIZE)
         self.remote_q_history_ = deque(maxlen=cfg.REMOTE_HISTORY_LEN)
@@ -72,7 +82,6 @@ class AgentNode(Node):
         self.current_remote_q_ = np.zeros(cfg.N_JOINTS, dtype=np.float32)
         self.current_remote_qd_ = np.zeros(cfg.N_JOINTS, dtype=np.float32)
         
-        # Phase Control
         self.warmup_steps_ = int(cfg.WARM_UP_DURATION * self.control_freq_)
         self.warmup_steps_count_ = 0
         self.no_delay_steps_ = int(cfg.NO_DELAY_DURATION * self.control_freq_)
@@ -81,21 +90,21 @@ class AgentNode(Node):
         
         self.target_joint_names_ = [f'panda_joint{i+1}' for i in range(cfg.N_JOINTS)]
         self.rnn_seq_len_ = cfg.RNN_SEQUENCE_LENGTH
-        self.max_ar_steps_ = cfg.MAX_AR_STEPS 
         
-        # Init buffers
         for _ in range(cfg.REMOTE_HISTORY_LEN):
             self.remote_q_history_.append(np.zeros(cfg.N_JOINTS))
             self.remote_qd_history_.append(np.zeros(cfg.N_JOINTS))
         
         self.is_leader_ready_ = False
         self.is_remote_ready_ = False
-        
-        # [NEW] EMA Filter State
         self.prediction_ema_ = None
         self.ema_alpha_ = cfg.PREDICTION_EMA_ALPHA
         
-        # Communication
+        # Persistent State
+        self.internal_hidden_state_ = None
+        self.last_autoregressive_output_norm_ = None
+        self.current_delay_scalar_ = 0.0
+        
         self.tau_pub_ = self.create_publisher(Float64MultiArray, 'agent/tau_rl', 100)
         self.desired_q_pub_ = self.create_publisher(JointState, 'agent/predict_target', 100)
 
@@ -107,26 +116,39 @@ class AgentNode(Node):
         )
         
         self.control_timer_ = self.create_timer(self.dt_, self.control_loop_callback)
-        self.get_logger().info("Agent Node initialized.")
+        self.step_counter_ = 0
+        
+        np.set_printoptions(precision=3, suppress=True, linewidth=200, floatmode='fixed')
+        self.get_logger().info("Agent Node Init. OBSERVATION DELAY BUFFER APPLIED.")
 
     def _load_models(self):
         try:
-            lstm_ckpt = torch.load(cfg.LSTM_MODEL_PATH, map_location=self.device_)
+            lstm_ckpt = torch.load(cfg.LSTM_MODEL_PATH, map_location=self.device_, weights_only=False)
             if 'state_estimator_state_dict' in lstm_ckpt:
                 self.state_estimator_.load_state_dict(lstm_ckpt['state_estimator_state_dict'])
             else:
                 self.state_estimator_.load_state_dict(lstm_ckpt)
             self.state_estimator_.eval()
             
-            sac_ckpt = torch.load(cfg.RL_MODEL_PATH, map_location=self.device_)
+            sac_ckpt = torch.load(cfg.RL_MODEL_PATH, map_location=self.device_, weights_only=False)
             self.actor_.load_state_dict(sac_ckpt['actor_state_dict'])
             self.actor_.eval()
-            self.get_logger().info("Models loaded successfully.")
         except Exception as e:
             self.get_logger().fatal(f"Model load failed: {e}")
             raise
 
-    # --- NORMALIZATION HELPERS ---
+    def _warmup_models(self):
+        self.get_logger().info("Warming up models...")
+        dtype = torch.float16 if self.use_fp16_ else torch.float32
+        with torch.no_grad():
+            dummy_seq = torch.zeros((1, cfg.RNN_SEQUENCE_LENGTH, 15), device=self.device_, dtype=dtype)
+            self.state_estimator_.lstm(dummy_seq)
+            dummy_step = torch.zeros((1, 1, 15), device=self.device_, dtype=dtype)
+            self.state_estimator_.forward_step(dummy_step, None)
+            dummy_obs = torch.zeros((1, cfg.OBS_DIM), device=self.device_, dtype=dtype)
+            self.actor_.sample(dummy_obs)
+        self.get_logger().info("Warmup complete.")
+
     def _normalize_input(self, q, qd, delay_scalar):
         q_norm = (q - cfg.Q_MEAN) / cfg.Q_STD
         qd_norm = (qd - cfg.QD_MEAN) / cfg.QD_STD
@@ -138,15 +160,14 @@ class AgentNode(Node):
         q = (q_norm * cfg.Q_STD) + cfg.Q_MEAN
         qd = (qd_norm * cfg.QD_STD) + cfg.QD_MEAN
         return q, qd
-    # -----------------------------
 
     def local_robot_state_callback(self, msg: JointState) -> None:
-        self.last_leader_msg_arrival_time_ = self.get_clock().now().nanoseconds / 1e9
+        arrival_time = self.get_clock().now().nanoseconds / 1e9
+        self.last_leader_msg_arrival_time_ = arrival_time
         try:
             name_to_index = {name: i for i, name in enumerate(msg.name)}
             pos = [msg.position[name_to_index[name]] for name in self.target_joint_names_]
             vel = [msg.velocity[name_to_index[name]] for name in self.target_joint_names_]
-
             q_new = np.array(pos, dtype=np.float32)
             qd_new = np.array(vel, dtype=np.float32)
             
@@ -154,14 +175,21 @@ class AgentNode(Node):
                 qd_zero = np.zeros_like(qd_new)
                 prefill_count = self.rnn_seq_len_ + 20
                 for _ in range(prefill_count):
+                    # Prefill goes directly to history (no delay logic for warmup)
                     self.leader_q_history_.append(q_new.copy())
                     self.leader_qd_history_.append(qd_zero.copy())
                 self.is_leader_ready_ = True
+                self.leader_msgs_received_ = prefill_count 
+                self.leader_msgs_processed_ = prefill_count
+                self.get_logger().info("Leader stream READY.")
             else:
-                self.leader_q_history_.append(q_new)
-                self.leader_qd_history_.append(qd_new)
-        except (KeyError, IndexError):
-            pass
+                # [FIX] Store in Pending Queue with Timestamp
+                self.pending_leader_packets_.append({
+                    'q': q_new,
+                    'qd': qd_new,
+                    't': arrival_time
+                })
+        except Exception: pass
 
     def remote_robot_state_callback(self, msg: JointState) -> None:
         try:
@@ -170,167 +198,217 @@ class AgentNode(Node):
             vel = [msg.velocity[name_to_index[name]] for name in self.target_joint_names_]
             self.current_remote_q_ = np.array(pos, dtype=np.float32)
             self.current_remote_qd_ = np.array(vel, dtype=np.float32)
-            self.is_remote_ready_ = True
-        except:
-            pass
+            if not self.is_remote_ready_:
+                self.is_remote_ready_ = True
+                self.get_logger().info("Remote stream READY.")
+        except Exception: pass
     
-    def _get_delayed_leader_sequence(self, extra_delay_steps: float = 0.0):
-        """Constructs NORMALIZED input sequence for LSTM."""
+    # [FIX] Move packets from Pending to History if delay has passed
+    def _update_history_from_pending(self):
+        if not self.pending_leader_packets_:
+            return 0, 0.0 # No new packets, delay scalar
+            
+        # Calculate current delay
+        # Note: We base delay on 'history length' to match training logic, 
+        # but apply it to 'wall time' to be physically correct.
         history_len = len(self.leader_q_history_)
         obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
+        obs_delay_sec = obs_delay_steps * self.dt_
         
-        base_delay_norm = float(obs_delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
-        extra_delay_norm = extra_delay_steps / cfg.DELAY_INPUT_NORM_FACTOR
-        current_delay_scalar = base_delay_norm + extra_delay_norm
+        # Normalize for Network Input
+        norm_delay_scalar = float(obs_delay_steps) / cfg.DELAY_INPUT_NORM_FACTOR
         
-        most_recent_idx = -(obs_delay_steps + 1)
-        start_idx = most_recent_idx - self.rnn_seq_len_ + 1
+        now = self.get_clock().now().nanoseconds / 1e9
+        new_packets_count = 0
         
+        while self.pending_leader_packets_:
+            packet = self.pending_leader_packets_[0]
+            # If packet is older than delay, it is "observed"
+            if (now - packet['t']) >= obs_delay_sec:
+                p = self.pending_leader_packets_.popleft()
+                self.leader_q_history_.append(p['q'])
+                self.leader_qd_history_.append(p['qd'])
+                self.leader_msgs_received_ += 1 # Now officially 'received' by Agent logic
+                new_packets_count += 1
+            else:
+                break # Oldest packet not ready, so newer ones aren't either
+                
+        return new_packets_count, norm_delay_scalar
+
+    def _process_new_leader_packets(self, new_count, norm_delay_scalar):
+        history_len = len(self.leader_q_history_)
+        start_idx = history_len - new_count
         seq_buffer = []
-        for i in range(start_idx, most_recent_idx + 1):
-            idx = np.clip(i, -history_len, -1)
-            # Normalize every step in sequence
+        for i in range(start_idx, history_len):
             step_vec = self._normalize_input(
-                self.leader_q_history_[idx],
-                self.leader_qd_history_[idx],
-                current_delay_scalar
+                self.leader_q_history_[i],
+                self.leader_qd_history_[i],
+                norm_delay_scalar
             )
             seq_buffer.append(step_vec)
-        
-        return np.array(seq_buffer), current_delay_scalar, obs_delay_steps
-
-    def _autoregressive_inference(self, initial_seq_t, steps_to_predict, current_delay_scalar):
-        """
-        Runs LSTM autoregressively to bridge the delay.
-        Inputs/Outputs are NORMALIZED tensors.
-        """
-        with torch.no_grad():
-            # 1. Process History
-            _, hidden_state = self.state_estimator_.lstm(initial_seq_t)
-
-            # 2. Setup Loop
-            curr_input = initial_seq_t[:, -1:, :] # Last frame
-            dt_norm = (self.dt_) / cfg.DELAY_INPUT_NORM_FACTOR
-            steps_to_run = min(steps_to_predict, self.max_ar_steps_)
-
-            # 3. Autoregressive Loop
-            for _ in range(steps_to_run):
-                # Predict next state (Normalized)
-                # Model handles Euler Integration internally
-                pred_state_norm, hidden_state = self.state_estimator_.forward_step(curr_input, hidden_state)
-                
-                # Update Delay
-                current_delay_scalar = max(0.0, current_delay_scalar - dt_norm)
-                delay_t = torch.tensor([[[current_delay_scalar]]], device=self.device_)
-                
-                # Next Input
-                curr_input = torch.cat([pred_state_norm, delay_t], dim=2)
-
-            # 4. Final Output (Normalized)
-            final_pred_norm = curr_input[0, 0, :14].cpu().numpy()
-            return final_pred_norm
+        return np.array(seq_buffer)
 
     def control_loop_callback(self) -> None:
         if not self.is_leader_ready_ or not self.is_remote_ready_: return
         
+        self.step_counter_ += 1
+        start_time = time.perf_counter()
         self.warmup_steps_count_ += 1
-
-        # --- PHASE 1: WARMUP ---
-        if self.warmup_steps_count_ < self.warmup_steps_:      
-            if not hasattr(self, 'initial_remote_q_'):
-                self.initial_remote_q_ = self.current_remote_q_.copy()
-            
-            target_leader_q = self.leader_q_history_[-1]
-            alpha = np.clip(self.warmup_steps_count_ / self.warmup_steps_, 0.0, 1.0)
-            homing_q = (1.0 - alpha) * self.initial_remote_q_ + alpha * target_leader_q
-            
-            self.publish_predicted_target(homing_q, np.zeros(cfg.N_JOINTS))
-            self.publish_tau_compensation(np.zeros(cfg.N_JOINTS))
-            return
         
-        if not self.buffer_flushed_:
-            self.buffer_flushed_ = True
-            num_to_pop = min(len(self.leader_q_history_), self.rnn_seq_len_ + 10) 
-            for _ in range(num_to_pop):
-                self.leader_q_history_.popleft()
-                self.leader_qd_history_.popleft()
+        dtype = torch.float16 if self.use_fp16_ else torch.float32
         
-        try:            
-            pred_q = None
-            pred_qd = None
+        final_q = np.zeros(cfg.N_JOINTS)
+        final_qd = np.zeros(cfg.N_JOINTS)
+        final_tau = np.zeros(cfg.N_JOINTS)
+        phase_name = "UNKNOWN"
 
-            # --- PHASE 2: SEQUENCE FILLING ---
-            if self.no_delay_steps_count_ < self.no_delay_steps_:
+        try:
+            if self.warmup_steps_count_ < self.warmup_steps_:
+                phase_name = "WARMUP"
+                if not hasattr(self, 'initial_remote_q_'):
+                    self.initial_remote_q_ = self.current_remote_q_.copy()
+                target_leader_q = self.leader_q_history_[-1]
+                alpha = np.clip(self.warmup_steps_count_ / self.warmup_steps_, 0.0, 1.0)
+                final_q = (1.0 - alpha) * self.initial_remote_q_ + alpha * target_leader_q
+                
+            elif self.no_delay_steps_count_ < self.no_delay_steps_:
+                phase_name = "FILLING"
                 self.no_delay_steps_count_ += 1
-                pred_q = self.leader_q_history_[-1]
-                pred_qd = self.leader_qd_history_[-1]
-                normalized_delay_scalar = 0.0
+                # [FIX] During filling, we accept everything instantly
+                while self.pending_leader_packets_:
+                    p = self.pending_leader_packets_.popleft()
+                    self.leader_q_history_.append(p['q'])
+                    self.leader_qd_history_.append(p['qd'])
+                    self.leader_msgs_received_ += 1
+                
+                if not self.buffer_flushed_:
+                    self.buffer_flushed_ = True
+                    self.leader_msgs_processed_ = self.leader_msgs_received_
+                    
+                final_q = self.leader_q_history_[-1]
+                final_qd = self.leader_qd_history_[-1]
+                
+                # --- FIX: PROPERLY INITIALIZE HIDDEN STATE & LAST OUTPUT ---
+                # We need to prime the LSTM with the actual history so it's ready for Coasting
+                if self.internal_hidden_state_ is None:
+                    # Initialize hidden state
+                    dummy = torch.zeros((1, 1, 15), device=self.device_, dtype=dtype)
+                    _, self.internal_hidden_state_ = self.state_estimator_.lstm(dummy)
+                
+                # CRITICAL FIX: Initialize last_autoregressive_output_norm_ using current data
+                # otherwise the first "Coasting" step will crash trying to unsqueeze None
+                current_vec = self._normalize_input(final_q, final_qd, 0.0) # Delay 0 during filling
+                self.last_autoregressive_output_norm_ = torch.tensor(
+                    current_vec[:14], dtype=dtype, device=self.device_
+                ).unsqueeze(0) # Shape [1, 14]
 
-            # --- PHASE 3: DEPLOYMENT ---
             else:
-                # Calculate Delay
-                curr_time = self.get_clock().now().nanoseconds / 1e9
-                time_since_msg = curr_time - self.last_leader_msg_arrival_time_
-                staleness_steps = max(0.0, time_since_msg - self.dt_) / self.dt_
+                dt_norm = (self.dt_) / cfg.DELAY_INPUT_NORM_FACTOR
+                pred_q_norm = None
                 
-                # Get Sequence (Normalized)
-                seq_norm, norm_delay_scalar, obs_steps = self._get_delayed_leader_sequence(staleness_steps)
-                total_steps = int(obs_steps + staleness_steps)
+                new_packets, current_delay_scalar = self._update_history_from_pending()
                 
-                # To Tensor
-                seq_t = torch.tensor(seq_norm, dtype=torch.float32).to(self.device_).unsqueeze(0) # (1, Seq, 15)
-                
-                # Run Inference
-                if total_steps > 0:
-                    final_pred_norm = self._autoregressive_inference(seq_t, total_steps, norm_delay_scalar)
-                    # Denormalize
-                    pred_q, pred_qd = self._denormalize_output(final_pred_norm)
+                if new_packets > 0:
+                    phase_name = f"FRESH({new_packets})"
+                    seq_norm = self._process_new_leader_packets(new_packets, current_delay_scalar)
+                    self.leader_msgs_processed_ += new_packets
+                    
+                    seq_t = torch.tensor(seq_norm, dtype=dtype, device=self.device_).unsqueeze(0)
+                    
+                    with torch.no_grad():
+                        lstm_out, self.internal_hidden_state_ = self.state_estimator_.lstm(
+                            seq_t, self.internal_hidden_state_
+                        )
+                        last_hidden = lstm_out[:, -1, :]
+                        velocity_pred = self.state_estimator_.fc(last_hidden)
+                        prev_state = seq_t[:, -1, :14]
+                        pred_state_norm = prev_state + velocity_pred * self.state_estimator_.dt_scale
+                        
+                        self.last_autoregressive_output_norm_ = pred_state_norm
+                        self.current_delay_scalar_ = current_delay_scalar
+                        pred_q_norm = self.last_autoregressive_output_norm_.float().cpu().numpy()[0]
                 else:
-                    # Zero delay case (fallback to last obs)
-                    raw_q = self.leader_q_history_[-1]
-                    raw_qd = self.leader_qd_history_[-1]
-                    pred_q, pred_qd = raw_q, raw_qd
+                    phase_name = "COASTING"
+                    self.current_delay_scalar_ = max(0.0, self.current_delay_scalar_ - dt_norm)
+                    
+                    delay_t = torch.tensor([[[self.current_delay_scalar_]]], dtype=dtype, device=self.device_)
+                    
+                    # THIS LINE WAS CRASHING BECAUSE last_autoregressive_output_norm_ WAS NONE
+                    state_in = self.last_autoregressive_output_norm_.unsqueeze(1)
+                    
+                    curr_input = torch.cat([state_in, delay_t], dim=2)
+                    
+                    with torch.no_grad():
+                        pred_state_norm, self.internal_hidden_state_ = self.state_estimator_.forward_step(
+                            curr_input, self.internal_hidden_state_
+                        )
+                        self.last_autoregressive_output_norm_ = pred_state_norm.squeeze(1)
+                        pred_q_norm = self.last_autoregressive_output_norm_.float().cpu().numpy()[0]
 
-                # Apply EMA Filter
+                final_q, final_qd = self._denormalize_output(pred_q_norm)
+
                 if self.prediction_ema_ is None:
-                    self.prediction_ema_ = pred_q
+                    self.prediction_ema_ = final_q
                 else:
-                    self.prediction_ema_ = self.ema_alpha_ * pred_q + (1.0 - self.ema_alpha_) * self.prediction_ema_
+                    self.prediction_ema_ = self.ema_alpha_ * final_q + (1.0 - self.ema_alpha_) * self.prediction_ema_
+                final_q = self.prediction_ema_
+
+                self.remote_q_history_.append(self.current_remote_q_.copy())
+                self.remote_qd_history_.append(self.current_remote_qd_.copy())
+                rem_q_hist = np.concatenate(list(self.remote_q_history_))
+                rem_qd_hist = np.concatenate(list(self.remote_qd_history_))
+                error_q = final_q - self.current_remote_q_
+                error_qd = final_qd - self.current_remote_qd_
                 
-                pred_q = self.prediction_ema_
+                obs_vec = np.concatenate([
+                    self.current_remote_q_, self.current_remote_qd_,
+                    rem_q_hist, rem_qd_hist,
+                    final_q, final_qd,
+                    error_q, error_qd,
+                    [self.current_delay_scalar_]
+                ]).astype(np.float32)
+                
+                actor_input_t = torch.tensor(obs_vec, dtype=dtype, device=self.device_).unsqueeze(0)
+                action_t, _, _ = self.actor_.sample(actor_input_t, deterministic=True)
+                final_tau = action_t.float().detach().cpu().numpy().flatten()
+                final_tau[-1] = 0.0 
 
-            # --- SAC POLICY ---
-            self.remote_q_history_.append(self.current_remote_q_.copy())
-            self.remote_qd_history_.append(self.current_remote_qd_.copy())
+            self.publish_predicted_target(final_q, final_qd)
+            self.publish_tau_compensation(final_tau)
             
-            rem_q_hist = np.concatenate(list(self.remote_q_history_))
-            rem_qd_hist = np.concatenate(list(self.remote_qd_history_))
+            end_time = time.perf_counter()
+            inference_time_ms = (end_time - start_time) * 1000.0
             
-            error_q = pred_q - self.current_remote_q_
-            error_qd = pred_qd - self.current_remote_qd_
-            
-            # Construct Obs (Ensure delay scalar is passed)
-            d_scalar = normalized_delay_scalar if 'normalized_delay_scalar' in locals() else 0.0
-            
-            obs_vec = np.concatenate([
-                self.current_remote_q_, self.current_remote_qd_,
-                rem_q_hist, rem_qd_hist,
-                pred_q, pred_qd,
-                error_q, error_qd,
-                [d_scalar]
-            ]).astype(np.float32)
-            
-            actor_input_t = torch.tensor(obs_vec, dtype=torch.float32).to(self.device_).unsqueeze(0)
-            action_t, _, _ = self.actor_.sample(actor_input_t, deterministic=True)
-
-            tau_rl = action_t.detach().cpu().numpy().flatten()
-            tau_rl[-1] = 0.0 
-            
-            self.publish_predicted_target(pred_q, pred_qd)
-            self.publish_tau_compensation(tau_rl)
+            if self.step_counter_ % 20 == 0:
+                # True Q should be the LATEST from Pending (if avail) or History
+                # to see if we are predicting "Now" correctly.
+                if self.pending_leader_packets_:
+                    true_q = self.pending_leader_packets_[-1]['q']
+                else:
+                    true_q = self.leader_q_history_[-1]
+                    
+                remote_q = self.current_remote_q_
+                pred_error = np.linalg.norm(final_q - true_q)
+                track_error = np.linalg.norm(final_q - remote_q)
+                
+                tq_str = np.array2string(true_q, precision=3, separator=',', suppress_small=True)
+                pq_str = np.array2string(final_q, precision=3, separator=',', suppress_small=True)
+                rq_str = np.array2string(remote_q, precision=3, separator=',', suppress_small=True)
+                
+                self.get_logger().info(
+                    f"\n[Step {self.step_counter_}] {phase_name} | "
+                    f"PredErr: {pred_error:.4f} | "
+                    f"TrackErr: {track_error:.4f} | "
+                    f"Infer: {inference_time_ms:.2f}ms\n"
+                    f"  True Q:   {tq_str}\n"
+                    f"  Pred Q:   {pq_str}\n"
+                    f"  Remote Q: {rq_str}"
+                )
             
         except Exception as e:
             self.get_logger().error(f"Control Loop Error: {e}")
+            import traceback
+            traceback.print_exc()
 
     def publish_predicted_target(self, q, qd):
         msg = JointState()
