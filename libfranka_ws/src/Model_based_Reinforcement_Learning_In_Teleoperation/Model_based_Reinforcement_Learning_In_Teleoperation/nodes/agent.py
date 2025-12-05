@@ -1,31 +1,20 @@
 """
-Deployment trained RL agent.
-
-In this deployment, the agent node is considered to be on the remote side.
-
-This implies that the communication between the agent and the remote robot is in real-time,
-while the communication it receives from the local robot is delayed."
-
-Pipeline:
-1. Receive local robot joint states (delayed) -> Add to leader history buffer.
-2. Receive remote robot joint states (real-time) -> Store current remote state.
-3. In the control loop:
-    a. Get the last delayed observation from the leader history.
-    b. Run the LSTM StateEstimator (statefully) to get the predicted_target.
-    c. Get the current remote_state.
-    d. Concatenate (predicted_target, remote_state) as input for the Actor.
-    e. Run the Actor network to get the torque_compensation (action).
-4. Publish predicted_target to 'agent/predict_target'.
-5. Publish torque_compensation to 'agent/tau_rl'.
+Agent Node:
+1. Subscribes to delayed local (leader) and real-time remote (follower) robot joint states.
+    - Delayed leader: for LSTM input
+    - Remote: for calculating the real time error
+2. Predicts the leader's future state using an LSTM-based StateEstimator to compensate for network delay.
+3. Uses an Actor network to calculate a torque compensation action based on the predicted leader state and the current remote state.
+4. Publishes the predicted leader state to `agent/predict_target`.
+5. Publishes the calculated torque compensation to `agent/tau_rl`.
 """
+
 
 import numpy as np
 import torch
 from collections import deque
-import os
 import time
 
-# ROS2 imports
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
@@ -40,12 +29,12 @@ class AgentNode(Node):
         super().__init__('agent_node')
         
         self.device_ = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.use_fp16_ = (self.device_.type == 'cuda')
+        self.use_fp16_ = (self.device_.type == 'cuda')  ## For lower inference time
         
         # Frequency Management
         self.control_freq_ = cfg.DEFAULT_CONTROL_FREQ
         self.dt_ = 1.0 / self.control_freq_
-        self.last_leader_msg_arrival_time_ = 0.0
+        self.last_leader_msg_arrival_time_ = 0.0  # Counting the leader steps
         
         # Message Counting for Incremental Logic
         self.leader_msgs_received_ = 0
@@ -67,10 +56,6 @@ class AgentNode(Node):
         self._warmup_models()
 
         self.delay_simulator_ = DelaySimulator(self.control_freq_, self.delay_config_, seed=50)
-        
-        # [FIX] Observation Delay Buffer
-        # Incoming packets go here first. 
-        # They move to 'leader_q_history_' only after delay time passes.
         self.pending_leader_packets_ = deque() 
         
         # Buffers (Input to LSTM)
@@ -122,6 +107,9 @@ class AgentNode(Node):
         self.get_logger().info("Agent Node Init. OBSERVATION DELAY BUFFER APPLIED.")
 
     def _load_models(self):
+        """
+        Load LSTM model
+        """
         try:
             lstm_ckpt = torch.load(cfg.LSTM_MODEL_PATH, map_location=self.device_, weights_only=False)
             if 'state_estimator_state_dict' in lstm_ckpt:
@@ -162,6 +150,9 @@ class AgentNode(Node):
         return q, qd
 
     def local_robot_state_callback(self, msg: JointState) -> None:
+        """
+        Real time leader state
+        """
         arrival_time = self.get_clock().now().nanoseconds / 1e9
         self.last_leader_msg_arrival_time_ = arrival_time
         try:
@@ -183,15 +174,18 @@ class AgentNode(Node):
                 self.leader_msgs_processed_ = prefill_count
                 self.get_logger().info("Leader stream READY.")
             else:
-                # [FIX] Store in Pending Queue with Timestamp
                 self.pending_leader_packets_.append({
                     'q': q_new,
                     'qd': qd_new,
                     't': arrival_time
                 })
+                
         except Exception: pass
 
     def remote_robot_state_callback(self, msg: JointState) -> None:
+        """
+        Read remote robot real time state.
+        """
         try:
             name_to_index = {name: i for i, name in enumerate(msg.name)}
             pos = [msg.position[name_to_index[name]] for name in self.target_joint_names_]
@@ -203,14 +197,14 @@ class AgentNode(Node):
                 self.get_logger().info("Remote stream READY.")
         except Exception: pass
     
-    # [FIX] Move packets from Pending to History if delay has passed
     def _update_history_from_pending(self):
+        """
+        Manages the flow of leader joint state packets from a pending queue to the history buffer.
+        Packets are moved if their arrival time plus the current observation delay has elapsed.
+        """
         if not self.pending_leader_packets_:
-            return 0, 0.0 # No new packets, delay scalar
-            
-        # Calculate current delay
-        # Note: We base delay on 'history length' to match training logic, 
-        # but apply it to 'wall time' to be physically correct.
+            return 0, 0.0
+        
         history_len = len(self.leader_q_history_)
         obs_delay_steps = self.delay_simulator_.get_observation_delay_steps(history_len)
         obs_delay_sec = obs_delay_steps * self.dt_
@@ -231,11 +225,14 @@ class AgentNode(Node):
                 self.leader_msgs_received_ += 1 # Now officially 'received' by Agent logic
                 new_packets_count += 1
             else:
-                break # Oldest packet not ready, so newer ones aren't either
+                break
                 
         return new_packets_count, norm_delay_scalar
 
     def _process_new_leader_packets(self, new_count, norm_delay_scalar):
+        """
+        Process newly received leader packets, normalize them, and prepare for LSTM input.
+        """
         history_len = len(self.leader_q_history_)
         start_idx = history_len - new_count
         seq_buffer = []
@@ -249,6 +246,24 @@ class AgentNode(Node):
         return np.array(seq_buffer)
 
     def control_loop_callback(self) -> None:
+        """
+        State Estimator Logic:
+        1. Input 15D data, output 14D (estimate one step)
+        2. If because of delay, there is no new incoming leader data, then use autoregressive prediction (Coasting).
+        3. If there is new input, we delete the predicted data from sequence, adding new ground truth data.
+        
+        RL Logic:
+        1. Observation space:
+            - Current remote robot joint position (7D)
+            - Current remote robot joint velocity (7D)
+            - History of remote robot joint positions (7D * N)
+            - History of remote robot joint velocities (7D * N)
+            - Predicted leader joint position (7D)
+            - Predicted leader joint velocity (7D)
+        2. Output 7D tau compensation action based on the observation.
+        3. Goal: min the tracking error between remote robot and true leader.
+        """
+        
         if not self.is_leader_ready_ or not self.is_remote_ready_: return
         
         self.step_counter_ += 1
@@ -274,7 +289,6 @@ class AgentNode(Node):
             elif self.no_delay_steps_count_ < self.no_delay_steps_:
                 phase_name = "FILLING"
                 self.no_delay_steps_count_ += 1
-                # [FIX] During filling, we accept everything instantly
                 while self.pending_leader_packets_:
                     p = self.pending_leader_packets_.popleft()
                     self.leader_q_history_.append(p['q'])
@@ -288,15 +302,11 @@ class AgentNode(Node):
                 final_q = self.leader_q_history_[-1]
                 final_qd = self.leader_qd_history_[-1]
                 
-                # --- FIX: PROPERLY INITIALIZE HIDDEN STATE & LAST OUTPUT ---
-                # We need to prime the LSTM with the actual history so it's ready for Coasting
                 if self.internal_hidden_state_ is None:
                     # Initialize hidden state
                     dummy = torch.zeros((1, 1, 15), device=self.device_, dtype=dtype)
                     _, self.internal_hidden_state_ = self.state_estimator_.lstm(dummy)
                 
-                # CRITICAL FIX: Initialize last_autoregressive_output_norm_ using current data
-                # otherwise the first "Coasting" step will crash trying to unsqueeze None
                 current_vec = self._normalize_input(final_q, final_qd, 0.0) # Delay 0 during filling
                 self.last_autoregressive_output_norm_ = torch.tensor(
                     current_vec[:14], dtype=dtype, device=self.device_
@@ -333,7 +343,6 @@ class AgentNode(Node):
                     
                     delay_t = torch.tensor([[[self.current_delay_scalar_]]], dtype=dtype, device=self.device_)
                     
-                    # THIS LINE WAS CRASHING BECAUSE last_autoregressive_output_norm_ WAS NONE
                     state_in = self.last_autoregressive_output_norm_.unsqueeze(1)
                     
                     curr_input = torch.cat([state_in, delay_t], dim=2)
@@ -380,8 +389,6 @@ class AgentNode(Node):
             inference_time_ms = (end_time - start_time) * 1000.0
             
             if self.step_counter_ % 20 == 0:
-                # True Q should be the LATEST from Pending (if avail) or History
-                # to see if we are predicting "Now" correctly.
                 if self.pending_leader_packets_:
                     true_q = self.pending_leader_packets_[-1]['q']
                 else:

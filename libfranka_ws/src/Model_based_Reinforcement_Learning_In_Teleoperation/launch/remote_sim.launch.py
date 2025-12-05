@@ -18,15 +18,7 @@ def generate_launch_description():
     seed = LaunchConfiguration('seed', default='50')
     
     return LaunchDescription([
-        # 2. Agent (The Brain)
-        Node(
-            package=pkg_name,
-            executable='agent_node',
-            name='agent_node',
-            output='screen',
-            parameters=[{'experiment_config': config, 'seed': seed}],
-            # REMOVED REMAPPINGS: Let it use 'remote_robot/joint_states' defined in python
-        ),
+
 
         # 3. Simulated Remote Robot (The Physics)
         Node(

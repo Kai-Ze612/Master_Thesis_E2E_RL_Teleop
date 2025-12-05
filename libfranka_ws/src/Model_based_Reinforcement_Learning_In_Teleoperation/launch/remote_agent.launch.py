@@ -155,6 +155,7 @@ def generate_launch_description():
         condition=IfCondition(load_gripper)
     ))
     
+    # Rviz node
     ld.add_action(Node(
         package='rviz2',
         executable='rviz2',
@@ -163,7 +164,7 @@ def generate_launch_description():
         condition=IfCondition(use_rviz)
     ))
 
-    # --- AGENT NODE ---
+    # Agent node
     ld.add_action(Node(
         package=my_package_name,
         executable='agent_node',
@@ -180,10 +181,10 @@ def generate_launch_description():
         ]
     ))
     
-    # --- REMOTE ROBOT NODE (CONTROLLER) ---
+    # Remote node
     ld.add_action(Node(
         package=my_package_name,
-        executable='remote_node',  # Make sure this matches setup.py entry point
+        executable='remote_node',
         name='remote_robot_node',
         output='screen',
         parameters=[{
@@ -193,8 +194,6 @@ def generate_launch_description():
         remappings=[
             # Listen to REAL hardware state
             ('remote_robot/joint_states', '/franka/joint_states'),
-            # Send Torque to the CONTROLLER, not just a topic
-            # ('joint_tau/torques_desired', '/joint_tau_controller/commands')
         ]
     ))
 

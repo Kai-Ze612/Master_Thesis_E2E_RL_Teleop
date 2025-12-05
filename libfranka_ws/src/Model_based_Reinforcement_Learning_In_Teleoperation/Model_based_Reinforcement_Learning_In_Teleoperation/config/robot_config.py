@@ -48,11 +48,11 @@ PREDICTION_EMA_ALPHA = 0.4
 ######################################
 # Control Parameters
 ######################################
-DEFAULT_CONTROL_FREQ = 100
-DEFAULT_PUBLISH_FREQ = 100
+DEFAULT_CONTROL_FREQ = 200
+DEFAULT_PUBLISH_FREQ = 200
 
-DEFAULT_KP_REMOTE = np.array([64.0, 49.0, 49.0, 36.0, 36.0, 25.0, 9.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([16.0, 14.0, 14.0, 12.0, 12.0,  10.0, 6.0], dtype=np.float32)
+DEFAULT_KP_REMOTE = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0])
+DEFAULT_KD_REMOTE = np.array([50.0, 50.0, 50.0, 20.0, 20.0, 20.0, 10.0])
 
 ######################################
 # IK Solver Parameterss
