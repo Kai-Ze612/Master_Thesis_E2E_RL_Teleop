@@ -467,9 +467,12 @@ class TeleoperationEnvWithDelay(gym.Env):
         return terminated, penalty
 
     def _get_info(self, phase="unknown"):
+        is_warmup = self.current_step < self.grace_period_steps
+        
         return {
             "prediction_error": self._cached_prediction_error,
             "current_delay_steps": self._cached_delay_steps,
+            "is_in_warmup": is_warmup  # <--- CRITICAL FIX
         }
 
     def render(self):

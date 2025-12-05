@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_multi_mode_controller/multi_mode_controller/include/multi_mode_controller/controllers/twin_joint_impedance_controller.h

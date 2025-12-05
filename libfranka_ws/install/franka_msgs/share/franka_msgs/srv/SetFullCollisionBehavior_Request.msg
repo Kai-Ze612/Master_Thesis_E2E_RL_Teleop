@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/franka_msgs/rosidl_cmake/srv/SetFullCollisionBehavior_Request.msg

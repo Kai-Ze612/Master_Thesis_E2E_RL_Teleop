@@ -1,9 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_pkgs/CMakeFiles/uninstall.dir
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_pkgs/CMakeFiles/mujoco_ros_pkgs_uninstall.dir
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_pkgs/CMakeFiles/test.dir
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_pkgs/CMakeFiles/edit_cache.dir
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_pkgs/CMakeFiles/rebuild_cache.dir
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_pkgs/CMakeFiles/list_install_components.dir
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_pkgs/CMakeFiles/install.dir
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_pkgs/CMakeFiles/install/local.dir
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros_pkgs/CMakeFiles/install/strip.dir

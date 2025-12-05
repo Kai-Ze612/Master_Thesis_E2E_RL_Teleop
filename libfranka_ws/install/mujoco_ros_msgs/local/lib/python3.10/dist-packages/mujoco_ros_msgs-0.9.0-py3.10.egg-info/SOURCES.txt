@@ -1,6 +1,0 @@
-setup.py
-mujoco_ros_msgs/__init__.py
-mujoco_ros_msgs.egg-info/PKG-INFO
-mujoco_ros_msgs.egg-info/SOURCES.txt
-mujoco_ros_msgs.egg-info/dependency_links.txt
-mujoco_ros_msgs.egg-info/top_level.txt

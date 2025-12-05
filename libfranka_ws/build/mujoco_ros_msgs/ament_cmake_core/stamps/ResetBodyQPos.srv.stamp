@@ -1,5 +1,0 @@
-string name
-string admin_hash
----
-bool success
-string status_message

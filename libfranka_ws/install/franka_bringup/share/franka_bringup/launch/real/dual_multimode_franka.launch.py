@@ -1,1 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_bringup/launch/real/dual_multimode_franka.launch.py

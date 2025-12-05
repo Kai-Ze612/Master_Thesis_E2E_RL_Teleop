@@ -1,3 +1,0 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/lib/libmujoco_ros2_control_system.so
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/cmake/export_mujoco_ros2_control_systemExport.cmake
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/mujoco_ros2_control_system/share/mujoco_ros2_control_system/cmake/export_mujoco_ros2_control_systemExport-noconfig.cmake

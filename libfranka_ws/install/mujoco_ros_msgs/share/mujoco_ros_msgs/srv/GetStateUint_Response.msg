@@ -1,2 +1,0 @@
-
-mujoco_ros_msgs/StateUint state

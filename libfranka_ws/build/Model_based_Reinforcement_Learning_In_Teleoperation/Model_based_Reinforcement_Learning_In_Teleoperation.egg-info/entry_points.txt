@@ -3,4 +3,3 @@ agent_node = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.agent:mai
 local_node = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.local_robot_sim:main
 remote_node = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.remote_robot:main
 remote_sim = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.remote_sim:main
-

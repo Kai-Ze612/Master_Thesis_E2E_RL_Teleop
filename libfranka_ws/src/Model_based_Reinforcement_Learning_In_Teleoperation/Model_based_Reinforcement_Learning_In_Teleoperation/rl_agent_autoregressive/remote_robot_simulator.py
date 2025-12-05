@@ -218,16 +218,16 @@ class RemoteRobotSimulator:
         tracking_error_norm = np.linalg.norm(tracking_error_vec)
 
         np.set_printoptions(precision=3, suppress=True, linewidth=200)
-        print(f"\n[Sim Step {self.internal_tick}]")
-        print(f"  True Local Q:       {true_local_q}")
-        print(f"  Predicted Target Q: {target_q}")
-        print(f"  Prediction Error Norm: {prediction_error_norm:.6f}\n")
-        print(f"  Actual Remote Q:    {self.data.qpos[:self.n_joints]}")
-        print(f"  Tracking Error Norm:  {tracking_error_norm:.6f}")
+        # print(f"\n[Sim Step {self.internal_tick}]")
+        # print(f"  True Local Q:       {true_local_q}")
+        # print(f"  Predicted Target Q: {target_q}")
+        # print(f"  Prediction Error Norm: {prediction_error_norm:.6f}\n")
+        # print(f"  Actual Remote Q:    {self.data.qpos[:self.n_joints]}")
+        # print(f"  Tracking Error Norm:  {tracking_error_norm:.6f}")
 
-        print(f"  Applied Tau ID:     {tau_id}")
-        print(f"  Applied Tau RL:     {self.last_executed_rl_torque}")
-        print(f"  Applied Tau Total:  {tau_total}")
+        # print(f"  Applied Tau ID:     {tau_id}")
+        # print(f"  Applied Tau RL:     {self.last_executed_rl_torque}")
+        # print(f"  Applied Tau Total:  {tau_total}")
        
         return {
             "joint_error": np.linalg.norm(target_q - self.data.qpos[:self.n_joints]),

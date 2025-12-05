@@ -7,12 +7,12 @@ import numpy as np
 ######################################
 # File Paths
 ######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/rl_training_output/ModelBasedSAC_FULL_RANGE_COVER_figure_8_20251203_085347/best_policy.pth"
-LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/LSTM_AR_FULL_RANGE_COVER_20251202_215350/best_model.pth"
+# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+RL_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/rl_training_output/ModelBasedSAC_FULL_RANGE_COVER_figure_8_20251203_220547/best_policy.pth"
+# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/LSTM_AR_FULL_RANGE_COVER_20251202_215350/best_model.pth"
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/LSTM_AR_FULL_RANGE_COVER_20251202_215350/best_model.pth"
+DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+LSTM_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/LSTM_AR_FULL_RANGE_COVER_20251202_215350/best_model.pth"
 ######################################
 CHECKPOINT_DIR_RL = "./rl_training_output"
 CHECKPOINT_DIR_LSTM = "./lstm_training_output"
@@ -27,7 +27,8 @@ TCP_OFFSET = np.array([0.0, 0.0, 0.1034], dtype=np.float32)
 JOINT_LIMITS_LOWER = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, 0.5445, -3.0159], dtype=np.float32)
 JOINT_LIMITS_UPPER = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 4.5169, 3.0159], dtype=np.float32)
 TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
-MAX_TORQUE_COMPENSATION = np.array([20.0, 15.0, 15.0, 10.0, 10.0, 5.0, 5.0], dtype=np.float32)
+
+MAX_TORQUE_COMPENSATION = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0], dtype=np.float32)
 
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], dtype=np.float32)
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
@@ -48,8 +49,8 @@ PREDICTION_EMA_ALPHA = 0.4
 ######################################
 # Control Parameters
 ######################################
-DEFAULT_CONTROL_FREQ = 200
-DEFAULT_PUBLISH_FREQ = 200
+DEFAULT_CONTROL_FREQ = 250
+DEFAULT_PUBLISH_FREQ = 250
 
 DEFAULT_KP_REMOTE = np.array([600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0])
 DEFAULT_KD_REMOTE = np.array([50.0, 50.0, 50.0, 20.0, 20.0, 20.0, 10.0])
@@ -147,16 +148,20 @@ LOG_STD_MAX = 2
 
 # Training Schedule
 SAC_BUFFER_SIZE = 1_000_000     # Max size of replay buffer
-SAC_BATCH_SIZE = 256            # batch size of gradient updates
+# SAC_BATCH_SIZE = 256            # batch size of gradient updates
 
 # Training Schedule
-SAC_START_STEPS = 5000          # Number of random exploration steps (before learning)
+# SAC_START_STEPS = 5000          # Number of random exploration steps (before learning)
 SAC_UPDATES_PER_STEP = 1.0       # Number of SAC updates per env step
 SAC_TOTAL_TIMESTEPS = 3_000_000  # Total training timesteps
 
+SAC_START_STEPS = 500        # Was 5000
+SAC_VAL_FREQ = 500           # Was 5000
+SAC_BATCH_SIZE = 128
+
 # Validation and Early Stopping
-SAC_VAL_FREQ = 5000
-SAC_VAL_EPISODES = 10
+# SAC_VAL_FREQ = 5000
+SAC_VAL_EPISODES = 3
 SAC_EARLY_STOPPING_PATIENCE = 30
 
 ######################################
@@ -171,7 +176,7 @@ ACTION_PENALTY_WEIGHT = 0.01 # penalty for large actions
 # Environment Settings
 ######################################
 NUM_ENVIRONMENTS = 1
-MAX_EPISODE_STEPS = 4200 * 3
+MAX_EPISODE_STEPS = 4200
 
 
 ######################################

@@ -1,1 +1,1 @@
-/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Model_based_Reinforcement_Learning_In_Teleoperation/launch/remote_sim.launch.py
+/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/Model_based_Reinforcement_Learning_In_Teleoperation/launch/remote_sim.launch.py
