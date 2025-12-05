@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import numpy as np
 import gymnasium as gym
+from gymnasium import spaces # Import spaces
 import mujoco
 
 from Model_based_Reinforcement_Learning_In_Teleoperation.utils.inverse_kinematics import IKSolver
@@ -111,6 +112,16 @@ class LocalRobotSimulator(gym.Env):
         self._randomize_params = randomize_params
         self._tick = 0
         
+        # --- FIX: DEFINE OBSERVATION AND ACTION SPACES ---
+        # Observation: Joint Positions (N_JOINTS)
+        # We use infinite bounds here as a placeholder, but you can use specific limits
+        high = np.inf * np.ones(self.n_joints, dtype=np.float32)
+        self.observation_space = spaces.Box(-high, high, dtype=np.float32)
+        
+        # Action: None/Dummy (This is a generator, it takes no actions)
+        self.action_space = spaces.Box(-high, high, dtype=np.float32)
+        # -------------------------------------------------
+
         self.model = mujoco.MjModel.from_xml_path(model_path)
         self.data = mujoco.MjData(self.model)
         

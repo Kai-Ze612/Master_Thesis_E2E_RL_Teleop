@@ -32,23 +32,7 @@ def setup_logging(output_dir: str):
     )
     return logging.getLogger(__name__)
 
-def make_sbsp_env(args):
-    """
-    Factory function to create the Env wrapped in SBSP.
-    """
-    # 1. Create Base Env
-    # Note: We pass None to lstm_model_path because we are replacing it with SBSP
-    env = TeleoperationEnvWithDelay(
-        delay_config=args.config,
-        trajectory_type=args.trajectory_type,
-        randomize_trajectory=args.randomize_trajectory,
-        render_mode=args.render,
-        lstm_model_path=None 
-    )
-    
-    # 2. Wrap with SBSP (PMDC)
-    env = SBSP_Trajectory_Wrapper(env, n_models=5)
-    return env
+
 
 def train_sbsp_agent(args):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

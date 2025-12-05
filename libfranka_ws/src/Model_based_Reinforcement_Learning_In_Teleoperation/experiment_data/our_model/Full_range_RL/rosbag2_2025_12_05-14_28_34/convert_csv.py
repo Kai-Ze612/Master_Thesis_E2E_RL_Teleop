@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Convert rosbag2 teleoperation data to a single combined CSV file.
-Extracts leader and follower ee_pose with timestamp and XYZ coordinates only.
+Extracts leader and follower ee_pose (XYZ only) plus observation and action delay steps.
+Excludes timestamps and headers from the final output.
 Keeps only the first 50 seconds of data.
 """
 
@@ -54,6 +55,15 @@ def extract_pose_data(msg):
         }
     except Exception as e:
         print(f"Error extracting pose data: {e}")
+        return None
+
+
+def extract_float32_data(msg):
+    """Extract data from Float32 message."""
+    try:
+        return {'value': msg.data}
+    except Exception as e:
+        print(f"Error extracting Float32 data: {e}")
         return None
 
 
@@ -132,10 +142,17 @@ def read_rosbag2(bag_path, target_topics, max_duration_sec=50):
                     msg_type = get_message(type_map[topic])
                     msg = deserialize_message(data, msg_type)
                     
-                    pose_data = extract_pose_data(msg)
-                    if pose_data:
-                        pose_data['timestamp_ns'] = ts
-                        data_store[name].append(pose_data)
+                    # Handle different message types
+                    if 'pose' in name:
+                        extracted_data = extract_pose_data(msg)
+                    elif 'delay' in name:
+                        extracted_data = extract_float32_data(msg)
+                    else:
+                        extracted_data = None
+                    
+                    if extracted_data:
+                        extracted_data['timestamp_ns'] = ts
+                        data_store[name].append(extracted_data)
                     
                     message_count += 1
                     
@@ -168,7 +185,7 @@ def read_rosbag2(bag_path, target_topics, max_duration_sec=50):
 
 def merge_dataframes(dataframes):
     """
-    Merge leader and follower dataframes by timestamp.
+    Merge leader, follower, and delay dataframes by timestamp.
     
     Args:
         dataframes: Dict of {name: DataFrame}
@@ -180,59 +197,90 @@ def merge_dataframes(dataframes):
         return None
     
     # Get non-empty dataframes
-    dfs_to_merge = [(name, df) for name, df in dataframes.items() if not df.empty]
+    dfs_available = {name: df for name, df in dataframes.items() if not df.empty}
     
-    if not dfs_to_merge:
+    if not dfs_available:
         print("Error: All dataframes are empty")
         return None
     
-    # Rename columns for leader and follower
-    column_mapping = {
-        'leader_pose': {
-            'timestamp_sec': 'leader_ee_pose_header.stamp.sec',
-            'point_x': 'leader_ee_pose_point.x',
-            'point_y': 'leader_ee_pose_point.y',
-            'point_z': 'leader_ee_pose_point.z'
-        },
-        'remote_pose': {
-            'timestamp_sec': 'follower_ee_pose_header.stamp.sec',
-            'point_x': 'follower_ee_pose_point.x',
-            'point_y': 'follower_ee_pose_point.y',
-            'point_z': 'follower_ee_pose_point.z'
-        }
-    }
+    # Sort all dataframes by timestamp
+    for name in dfs_available:
+        dfs_available[name] = dfs_available[name].sort_values('timestamp_ns').reset_index(drop=True)
     
-    # Start with leader
-    leader_df = None
-    follower_df = None
-    
-    for name, df in dfs_to_merge:
-        if name == 'leader_pose':
-            leader_df = df.sort_values('timestamp_ns').reset_index(drop=True)
-            leader_df = leader_df.rename(columns=column_mapping[name])
-        elif name == 'remote_pose':
-            follower_df = df.sort_values('timestamp_ns').reset_index(drop=True)
-            follower_df = follower_df.rename(columns=column_mapping[name])
-    
-    if leader_df is None:
+    # Start with leader pose as base
+    if 'leader_pose' not in dfs_available:
         print("Error: Leader pose data not found")
         return None
     
-    if follower_df is None:
-        print("Warning: Follower pose data not found, returning leader data only")
-        leader_df = leader_df.drop(columns=['timestamp_ns'])
-        return leader_df
+    df_combined = dfs_available['leader_pose'].copy()
+    df_combined = df_combined.rename(columns={
+        'point_x': 'leader_ee_pose_point.x',
+        'point_y': 'leader_ee_pose_point.y',
+        'point_z': 'leader_ee_pose_point.z'
+    })
     
-    # Merge on timestamp with tolerance (100ms)
-    df_combined = pd.merge_asof(
-        leader_df, follower_df,
-        on='timestamp_ns',
-        direction='nearest',
-        tolerance=int(100e6)
-    )
+    # Merge follower pose
+    if 'remote_pose' in dfs_available:
+        follower_df = dfs_available['remote_pose'].rename(columns={
+            'point_x': 'follower_ee_pose_point.x',
+            'point_y': 'follower_ee_pose_point.y',
+            'point_z': 'follower_ee_pose_point.z'
+        })
+        # Drop columns we don't want to merge (like the sec timestamp)
+        follower_cols = ['timestamp_ns', 'follower_ee_pose_point.x', 'follower_ee_pose_point.y', 'follower_ee_pose_point.z']
+        follower_df = follower_df[[c for c in follower_cols if c in follower_df.columns]]
+        
+        df_combined = pd.merge_asof(
+            df_combined, follower_df,
+            on='timestamp_ns',
+            direction='nearest',
+            tolerance=int(100e6)  # 100ms tolerance
+        )
+    else:
+        print("Warning: Follower pose data not found")
     
-    # Drop timestamp_ns column
-    df_combined = df_combined.drop(columns=['timestamp_ns'])
+    # Merge obs_delay_steps
+    if 'obs_delay' in dfs_available:
+        obs_delay_df = dfs_available['obs_delay'].rename(columns={
+            'value': 'obs_delay_steps'
+        })
+        obs_delay_df = obs_delay_df[['timestamp_ns', 'obs_delay_steps']]
+        
+        df_combined = pd.merge_asof(
+            df_combined, obs_delay_df,
+            on='timestamp_ns',
+            direction='nearest',
+            tolerance=int(100e6)
+        )
+    else:
+        print("Warning: Observation delay data not found")
+    
+    # Merge act_delay_steps
+    if 'act_delay' in dfs_available:
+        act_delay_df = dfs_available['act_delay'].rename(columns={
+            'value': 'act_delay_steps'
+        })
+        act_delay_df = act_delay_df[['timestamp_ns', 'act_delay_steps']]
+        
+        df_combined = pd.merge_asof(
+            df_combined, act_delay_df,
+            on='timestamp_ns',
+            direction='nearest',
+            tolerance=int(100e6)
+        )
+    else:
+        print("Warning: Action delay data not found")
+    
+    # Convert delay steps to integer (they are float from Float32 msg)
+    if 'obs_delay_steps' in df_combined.columns:
+        df_combined['obs_delay_steps'] = df_combined['obs_delay_steps'].round().astype('Int64')
+    if 'act_delay_steps' in df_combined.columns:
+        df_combined['act_delay_steps'] = df_combined['act_delay_steps'].round().astype('Int64')
+    
+    # CLEANUP: Remove timestamps and headers
+    # We only want x, y, z and delays
+    cols_to_drop = ['timestamp_ns', 'timestamp_sec']
+    df_combined = df_combined.drop(columns=[c for c in cols_to_drop if c in df_combined.columns])
     
     return df_combined
 
@@ -247,7 +295,7 @@ def write_combined_csv(df_combined, output_file):
         print(f"\nCombined CSV created: {output_file}")
         print(f"Total rows: {len(df_combined)}")
         print(f"Total columns: {len(df_combined.columns)}")
-        print(f"\nColumn names:")
+        print(f"\nFinal Column List:")
         for col in df_combined.columns:
             print(f"  - {col}")
         return True
@@ -259,29 +307,33 @@ def write_combined_csv(df_combined, output_file):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python3 rosbag2_to_csv_combined.py <rosbag2_path> [output_file]")
+        print("Usage: python3 rosbag2_to_csv_values.py <rosbag2_path> [output_file]")
         print("\nExample:")
-        print("  python3 rosbag2_to_csv_combined.py ./rosbag2_2025_12_05-13_42_41")
-        print("  python3 rosbag2_to_csv_combined.py ./rosbag2_2025_12_05-13_42_41 ./teleoperation_data.csv")
+        print("  python3 rosbag2_to_csv_values.py ./rosbag2_2025_12_05-13_42_41")
+        print("  python3 rosbag2_to_csv_values.py ./rosbag2_2025_12_05-13_42_41 ./data_values_only.csv")
         sys.exit(1)
     
     bag_path = sys.argv[1]
-    output_file = sys.argv[2] if len(sys.argv) > 2 else Path(bag_path).parent / "teleoperation_combined.csv"
+    output_file = sys.argv[2] if len(sys.argv) > 2 else Path(bag_path).parent / "teleoperation_values_only.csv"
     
-    # Define topics to extract
+    # Define topics to extract (including delay metrics)
     target_topics = {
         'leader_pose': '/leader/ee_pose',
-        'remote_pose': '/remote/ee_pose'
+        'remote_pose': '/remote/ee_pose',
+        'obs_delay': '/agent/obs_delay_steps',
+        'act_delay': '/agent/act_delay_steps'
     }
     
     print(f"Reading rosbag2 from: {bag_path}")
-    print(f"Target topics: {target_topics}")
+    print(f"Target topics:")
+    for name, topic in target_topics.items():
+        print(f"  {name}: {topic}")
     print(f"Duration limit: 50 seconds")
     
     dataframes = read_rosbag2(bag_path, target_topics, max_duration_sec=50)
     
     if dataframes:
-        print("\nMerging dataframes by timestamp...")
+        print("\nMerging dataframes and filtering columns...")
         df_combined = merge_dataframes(dataframes)
         
         if df_combined is not None:
