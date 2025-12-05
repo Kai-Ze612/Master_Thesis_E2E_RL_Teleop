@@ -1,0 +1,14 @@
+// generated from rosidl_adapter/resource/msg.idl.em
+// with input from panda_motion_generator_msgs/msg/SetTimeScaling.msg
+// generated code does not contain a copyright notice
+
+
+module panda_motion_generator_msgs {
+  module msg {
+    struct SetTimeScaling {
+      int32 steps;
+
+      double scaling;
+    };
+  };
+};

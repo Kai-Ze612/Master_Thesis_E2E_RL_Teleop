@@ -75,17 +75,10 @@ def train_sbsp_agent(args):
         
         # A. Get the TRAINED wrapper from the training env
         # DummyVecEnv stores environments in the .envs list
+        logger.info("Injecting SBSP Wrapper into Validation Environment...")
         train_wrapper = env.envs[0] 
-        
-        # B. Wrap the trainer's validation environment
-        # We wrap the existing validator to give it prediction capabilities
         val_wrapped = SBSP_Trajectory_Wrapper(trainer.val_env, n_models=5)
-        
-        # C. Share the Neural Networks
-        # This ensures the validator uses the models trained by the agent
-        val_wrapped.dc_models = train_wrapper.dc_models
-        
-        # D. Replace the trainer's env
+        val_wrapped.dc_models = train_wrapper.dc_models # <--- Sharing Weights
         trainer.val_env = val_wrapped
         logger.info("Validation Environment successfully patched with shared SBSP models.")
         # ----------------------------------------

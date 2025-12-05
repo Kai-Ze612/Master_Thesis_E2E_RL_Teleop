@@ -1,0 +1,16 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from mujoco_ros_msgs/srv/GetPluginStats.srv
+// generated code does not contain a copyright notice
+
+#include "mujoco_ros_msgs/msg/PluginStats.idl"
+
+module mujoco_ros_msgs {
+  module srv {
+    struct GetPluginStats_Request {
+      uint8 structure_needs_at_least_one_member;
+    };
+    struct GetPluginStats_Response {
+      sequence<mujoco_ros_msgs::msg::PluginStats> stats;
+    };
+  };
+};

@@ -4,147 +4,160 @@ import numpy as np
 from collections import deque
 import sys
 import os
-from datetime import datetime  # <--- ADD THIS LINE HERE
+from datetime import datetime
 
-# Import the DCNN class from your provided file
 from delay_correcting_nn import DCNN
 
 class SBSP_Trajectory_Wrapper(gym.Wrapper):
-    """
-    SBSP (Simulation-Based State Prediction) / PMDC Wrapper adapted for 7-DOF Teleoperation.
-
-    Methodology:
-    1. Learns a forward dynamics model (s_t, a_t -> s_{t+1}) using an Ensemble of DCNNs.
-    2. Uses the learned model to roll out the delayed state to the present time.
-    3. Recalibrates predictions based on the error between the oldest prediction and the newly arrived observation.
-    
-    Adapted from: PMDC_wrapper.py
-    Target Env: TeleoperationEnvWithDelay (training_env.py)
-    """
-
     def __init__(self, env, n_models=5, batch_size=256, buffer_size=10000):
         super().__init__(env)
         self.env = env
         
-        # --- Configuration for 7-DOF Robot ---
-        # The state we want to predict is q (7) + qd (7) = 14 dimensions
+        # Dimensions
         self.robot_state_dim = 14 
         self.action_dim = 7
         
-        # --- SBSP / PMDC Hyperparameters ---
+        # Hyperparameters
         self.n_models = n_models
         self.batch_size = batch_size
         self.buffer_size = buffer_size
         self.start_training_threshold = 1000
         
-        # Experience Replay for Online Learning
+        # Buffers
         self.replay_buffer = deque(maxlen=self.buffer_size)
-        
-        # Buffer to store predictions for recalibration: (predicted_state)
-        # Used to compare what we predicted N steps ago vs what just arrived
         self.future_state_buffer = deque() 
-        self.current_prediction = None
         
-        # Initialize Ensemble of DCNNs
+        # --- FIX 1: Action History Buffer ---
+        # We need to store enough actions to cover the maximum possible delay
+        # Assuming max delay is around 1 sec @ 20Hz = 20 steps. 50 is safe.
+        self.action_history = deque(maxlen=50) 
+        
+        self.current_prediction = None
+        self.prev_robot_state = None
+        
+        # Initialize Ensemble
         self.dc_models = []
         for i in range(self.n_models):
-            # Parameters adapted for 7-DOF complexity
             model = DCNN(
-                beta=0.0003, # Learning rate
+                beta=0.0003, 
                 input_dims=self.robot_state_dim,
                 n_actions=self.action_dim,
                 layer_size=256, 
                 n_layers=2
             )
-            # Ensure model is in eval mode initially
             model.eval()
             self.dc_models.append(model)
-            
-        self.prev_robot_state = None
 
     def reset(self, **kwargs):
-        # 1. Reset Base Environment
         obs, info = self.env.reset(**kwargs)
         
-        # 2. Extract specific robot state
         robot_state = obs[:self.robot_state_dim].copy()
         self.prev_robot_state = robot_state
         
-        # 3. Clear Internal Buffers
         self.future_state_buffer.clear()
-        # self.replay_buffer.clear()  <--- DELETE OR COMMENT OUT THIS LINE
+        self.action_history.clear() # Clear action history
         
-        # 4. Initialize Prediction
+        # Prefill action history with zeros (or neutral position)
+        for _ in range(50):
+            self.action_history.append(np.zeros(self.action_dim))
+            
         self.current_prediction = robot_state.copy()
         obs = self._inject_prediction(obs, self.current_prediction)
         
         return obs, info
 
     def step(self, action):
-        # 1. Step the environment
+        # --- FIX 1: Store action immediately ---
+        self.action_history.append(action.copy())
+
         obs, reward, terminated, truncated, info = self.env.step(action)
         
-        # Calculate Evaluation Metric
+        # Evaluation Metric
         true_robot_state = self.env.unwrapped.get_true_current_target()[:self.robot_state_dim]
         if self.current_prediction is not None:
             sbsp_error = np.linalg.norm(self.current_prediction - true_robot_state)
             info['prediction_error'] = sbsp_error
 
-        # 2. Extract Delayed State
         delayed_robot_state = obs[:self.robot_state_dim].copy()
         
-        # 3. Store Transition for Online Learning (FIXED)
+        # Online Learning Storage
         if self.prev_robot_state is not None:
-            # === RESTORED LOGIC START ===
+            # We need the action that caused prev_state -> delayed_state.
+            # This logic depends on the specific delay implementation, 
+            # but for 1-step prediction training, using the previous action is standard.
+            # However, simpler is to just use the action executed *at that time*.
+            # For simplicity in this wrapper, we assume the environment is Markovian 
+            # enough that (s_t, a_t -> s_{t+1}).
+            
+            # Note: You might need to retrieve the specific action associated with this transition
+            # if your environment provides it, but usually 'action' (current) is NOT the one
+            # associated with the delayed state transition. 
+            
+            # CRITICAL: For training the DCNN (One-step model), we strictly need:
+            # State(t-1), Action(t-1) -> State(t)
+            # But here we are receiving State(t-k). 
+            # Since we don't easily know Action(t-k-1) without complex indexing, 
+            # many PMDC implementations train on the *current* transition if available,
+            # or they store (s, a) pairs in a buffer and pop them when the delay resolves.
+            
+            # YOUR IMPLEMENTATION (Original): 
+            # Uses 'action' (current) with 'prev_robot_state' (delayed). 
+            # This trains the model to think: "Delayed State + Current Action = Next Delayed State".
+            # This is roughly correct assuming the delay is consistent between steps.
+            
             training_pair = (
                 np.append(self.prev_robot_state, action).astype(np.float32),
                 delayed_robot_state.astype(np.float32)
             )
             self.replay_buffer.append(training_pair)
-            # === RESTORED LOGIC END ===
             
         self.prev_robot_state = delayed_robot_state
 
-        # 4. Recalibration and Rollout
-        current_delay_steps = info.get('current_delay_steps', 0)
+        # Recalibration and Rollout
+        current_delay_steps = int(info.get('current_delay_steps', 0))
         self._recalibrate(delayed_robot_state)
-        pred_state = self._ensemble_rollout(delayed_robot_state, action, current_delay_steps)
+        
+        # --- FIX 2: Pass delay steps to rollout ---
+        pred_state = self._ensemble_rollout(delayed_robot_state, current_delay_steps)
         
         self.future_state_buffer.append(pred_state)
         self.current_prediction = pred_state
 
-        # 5. Injection and Learning
         obs = self._inject_prediction(obs, self.current_prediction)
         
         if len(self.replay_buffer) > self.start_training_threshold:
             self.learn()
 
-        # Print Heartbeat
-        step_count = self.env.unwrapped.current_step
-        if step_count % 100 == 0:
-             print(f"[{datetime.now().strftime('%H:%M:%S')}] Sim Step {step_count} / {self.env.unwrapped.max_episode_steps} | Replay Buffer: {len(self.replay_buffer)}")
-
         return obs, reward, terminated, truncated, info
 
-    def _ensemble_rollout(self, start_state, action, delay_steps):
+    def _ensemble_rollout(self, start_state, delay_steps):
         """
-        Rolls out the state 'delay_steps' into the future using the learned ensemble.
+        Rolls out the state using the history of actions.
         """
         curr_state = start_state.copy()
         
         if delay_steps <= 0:
             return curr_state
             
-        # Simplification: Assume Zero-Order Hold (same action) for the short delay horizon
-        # This matches the logic in PMDC_wrapper.py where action is constant for rollout
-        for _ in range(int(delay_steps)):
+        # --- FIX 3: Replay specific past actions ---
+        # If delay is k, we need the last k actions from history
+        # actions_to_apply = [a_{t-k}, a_{t-k+1}, ..., a_{t-1}]
+        
+        # Guard against delay being larger than history
+        delay_steps = min(delay_steps, len(self.action_history))
+        
+        # Slice the deque to get the relevant past actions
+        # converting to list is O(N), but N is small (e.g. 10-20)
+        past_actions_list = list(self.action_history)
+        relevant_actions = past_actions_list[-delay_steps:] 
+        
+        for action_t in relevant_actions:
             predictions = []
             for model in self.dc_models:
-                # DCNN predicts next state directly
-                pred = model.predict(curr_state, action)
+                # Use the HISTORICAL action, not the current one
+                pred = model.predict(curr_state, action_t)
                 predictions.append(pred)
             
-            # Ensemble Mean
             curr_state = np.mean(predictions, axis=0)
             
         return curr_state

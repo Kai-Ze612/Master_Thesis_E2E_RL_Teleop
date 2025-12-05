@@ -1,0 +1,22 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from mujoco_ros_msgs/srv/GetEqualityConstraintParameters.srv
+// generated code does not contain a copyright notice
+
+#include "mujoco_ros_msgs/msg/EqualityConstraintParameters.idl"
+
+module mujoco_ros_msgs {
+  module srv {
+    struct GetEqualityConstraintParameters_Request {
+      sequence<string> names;
+
+      string admin_hash;
+    };
+    struct GetEqualityConstraintParameters_Response {
+      sequence<mujoco_ros_msgs::msg::EqualityConstraintParameters> parameters;
+
+      boolean success;
+
+      string status_message;
+    };
+  };
+};

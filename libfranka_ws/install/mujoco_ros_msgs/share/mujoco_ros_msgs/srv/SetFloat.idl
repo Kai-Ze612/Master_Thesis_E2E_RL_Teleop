@@ -1,0 +1,17 @@
+// generated from rosidl_adapter/resource/srv.idl.em
+// with input from mujoco_ros_msgs/srv/SetFloat.srv
+// generated code does not contain a copyright notice
+
+
+module mujoco_ros_msgs {
+  module srv {
+    struct SetFloat_Request {
+      double value;
+
+      string admin_hash;
+    };
+    struct SetFloat_Response {
+      boolean success;
+    };
+  };
+};

@@ -49,7 +49,7 @@ METRICS_PUBLISH_FREQ = 50
 def load_dcnn_ensemble(wrapper: SBSP_Trajectory_Wrapper, model_dir: str, n_models: int = 5):
     """
     Loads trained DCNN weights into the SBSP wrapper's ensemble.
-   
+  
     Args:
         wrapper: The initialized SBSP_Trajectory_Wrapper instance.
         model_dir: Directory containing DCNN model files (e.g., params.pickle and sd.pt).
@@ -164,12 +164,12 @@ def main(args=None):
     EXPERIMENT_CONFIG = ExperimentConfig.FULL_RANGE_COVER # Use the same config as the baseline
     DCNN_MODEL_PATH = os.path.join(CHECKPOINT_DIR_RL, "SBSP_DCNN_CHECKPOINT_DIR") # Set this to your saved DCNN dir
     RL_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/rl_training_output/SBSP_SAC_FULL_RANGE_COVER_figure_8_20251205_124725/best_policy.pth"
-   
+  
     # --- Setup Environment ---
     # 1. Create Base Environment (This contains the Leader and Remote Simulators)
     base_env = TeleoperationEnvWithDelay(
         delay_config=EXPERIMENT_CONFIG,
-        trajectory_type='figure_8',
+        # trajectory_type='figure_8',
         randomize_trajectory=False,
         render_mode='human', # We will use the viewer, but keep this for internal logic
         lstm_model_path=None

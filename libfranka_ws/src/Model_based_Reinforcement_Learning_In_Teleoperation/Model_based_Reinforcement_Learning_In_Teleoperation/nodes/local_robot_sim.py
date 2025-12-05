@@ -56,9 +56,9 @@ class TrajectoryParams:
         center_y = np.random.uniform(-0.1, 0.1)
         center_z = actual_start_pos[2]
         center = np.array([center_x, center_y, center_z], dtype=np.float64)
-        scale_x = np.random.uniform(0.1, 0.1)
+        scale_x = np.random.uniform(0.1, 0.3)  # Adjusted for variation, matching scale_y range
         scale_y = np.random.uniform(0.1, 0.3)
-        scale_z = 0.02
+        scale_z = np.random.uniform(0.01, 0.03)  # Slight randomization for Z-scale
         scale = np.array([scale_x, scale_y, scale_z], dtype=np.float64)
         frequency = np.random.uniform(0.05, 0.15)
         return cls(center=center, scale=scale, frequency=frequency, initial_phase=0.0)
@@ -74,9 +74,9 @@ class TrajectoryGenerator(ABC):
 class Figure8TrajectoryGenerator(TrajectoryGenerator):
     def compute_position(self, t: float) -> NDArray[np.float64]:
         phase = self._compute_phase(t)
-        dx = self._params.scale[0] * np.sin(phase)
-        dy = self._params.scale[1] * np.sin(phase / 2)
-        dz = self._params.scale[2] * np.sin(phase)
+        dx = self._params.scale[0] * np.sin(3 * phase)
+        dy = self._params.scale[1] * np.sin(4 * phase + np.pi / 2)
+        dz = self._params.scale[2] * np.sin(phase)  # Use parameterized scale for consistency
         return self._params.center + np.array([dx, dy, dz], dtype=np.float64)
 
 class SquareTrajectoryGenerator(TrajectoryGenerator):

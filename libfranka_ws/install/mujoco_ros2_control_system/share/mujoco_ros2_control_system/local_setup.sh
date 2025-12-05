@@ -1,0 +1,1 @@
+/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros2_control_system/ament_cmake_environment_hooks/local_setup.sh

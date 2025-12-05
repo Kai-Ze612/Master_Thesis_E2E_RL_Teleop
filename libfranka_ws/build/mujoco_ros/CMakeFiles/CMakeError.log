@@ -1,0 +1,19 @@
+Performing C SOURCE FILE Test SUPPORTS_LLD failed with the following output:
+Change Dir: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/gmake -f Makefile cmTC_ff7bd/fast && /usr/bin/gmake  -f CMakeFiles/cmTC_ff7bd.dir/build.make CMakeFiles/cmTC_ff7bd.dir/build
+gmake[1]: Entering directory '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_ff7bd.dir/src.c.o
+/usr/bin/cc -DSUPPORTS_LLD  -fuse-ld=lld -fPIE -std=c11 -o CMakeFiles/cmTC_ff7bd.dir/src.c.o -c /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_ff7bd
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ff7bd.dir/link.txt --verbose=1
+/usr/bin/cc  -fuse-ld=lld CMakeFiles/cmTC_ff7bd.dir/src.c.o -o cmTC_ff7bd 
+collect2: fatal error: cannot find ‘ld’
+compilation terminated.
+gmake[1]: *** [CMakeFiles/cmTC_ff7bd.dir/build.make:99: cmTC_ff7bd] Error 1
+gmake[1]: Leaving directory '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/mujoco_ros/CMakeFiles/CMakeTmp'
+gmake: *** [Makefile:127: cmTC_ff7bd/fast] Error 2
+
+
+Source file was:
+int main() {}

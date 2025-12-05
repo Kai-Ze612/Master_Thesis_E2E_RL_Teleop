@@ -1,0 +1,9 @@
+source;share/End-to-End_Teleoperation/hook/pythonpath.ps1
+source;share/End-to-End_Teleoperation/hook/pythonpath.dsv
+source;share/End-to-End_Teleoperation/hook/pythonpath.sh
+source;share/End-to-End_Teleoperation/hook/ament_prefix_path.ps1
+source;share/End-to-End_Teleoperation/hook/ament_prefix_path.dsv
+source;share/End-to-End_Teleoperation/hook/ament_prefix_path.sh
+source;../../build/End-to-End_Teleoperation/share/End-to-End_Teleoperation/hook/pythonpath_develop.ps1
+source;../../build/End-to-End_Teleoperation/share/End-to-End_Teleoperation/hook/pythonpath_develop.dsv
+source;../../build/End-to-End_Teleoperation/share/End-to-End_Teleoperation/hook/pythonpath_develop.sh
