@@ -16,8 +16,8 @@ import mujoco.viewer
 import numpy as np
 from numpy.typing import NDArray
 
-from E2E_Teleoperation.E2E_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-import E2E_Teleoperation.E2E_Teleoperation.config.robot_config as cfg
+from E2E_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
+import E2E_Teleoperation.config.robot_config as cfg
 
 
 class RemoteRobotSimulator:

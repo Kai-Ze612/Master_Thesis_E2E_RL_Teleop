@@ -109,7 +109,7 @@ class DelaySimulator:
             raise ValueError(f"buffer_length must be non-negative, got {buffer_length}")
         
         # If buffer too small, return maximum possible delay
-        if buffer_length <= self._obs_delay_min_steps:
+        if buffer_length <= self._state_delay_min_steps:
 
             warnings.warn(
                 f"Buffer length {buffer_length} insufficient for minimum "

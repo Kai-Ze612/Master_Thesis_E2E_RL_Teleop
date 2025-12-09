@@ -15,11 +15,11 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 
 # Custom imports
-from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.training_env import TeleoperationEnvWithDelay
-from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.local_robot_simulator import TrajectoryType
-from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.sac_training_algorithm import SACTrainer
-from E2E_Teleoperation.E2E_Teleoperation.utils.delay_simulator import ExperimentConfig
-import E2E_Teleoperation.E2E_Teleoperation.config.robot_config as cfg
+from E2E_Teleoperation.E2E_RL.training_env import TeleoperationEnvWithDelay
+from E2E_Teleoperation.E2E_RL.local_robot_simulator import TrajectoryType
+from E2E_Teleoperation.E2E_RL.sac_training_algorithm import SACTrainer
+from E2E_Teleoperation.utils.delay_simulator import ExperimentConfig
+import E2E_Teleoperation.config.robot_config as cfg
 
 
 def setup_logging(output_dir: str) -> logging.Logger:
@@ -65,9 +65,7 @@ def train_agent(args: argparse.Namespace) -> None:
                 delay_config=args.config,
                 trajectory_type=args.trajectory_type,
                 randomize_trajectory=args.randomize_trajectory,
-                render_mode=args.render,
-                # [MODIFICATION] No lstm_model_path needed
-                lstm_model_path=None 
+                render_mode=args.render
             )
 
         env = make_vec_env(make_env, n_envs=cfg.NUM_ENVIRONMENTS, seed=args.seed, vec_env_cls=SubprocVecEnv)

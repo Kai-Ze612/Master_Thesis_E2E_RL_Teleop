@@ -20,8 +20,8 @@ import numpy as np
 import gymnasium as gym
 import mujoco
 
-from E2E_Teleoperation.E2E_Teleoperation.utils.inverse_kinematics import IKSolver
-import E2E_Teleoperation.E2E_Teleoperation.config.robot_config as cfg
+from E2E_Teleoperation.utils.inverse_kinematics import IKSolver
+import E2E_Teleoperation.config.robot_config as cfg
 
 
 class TrajectoryType(Enum):

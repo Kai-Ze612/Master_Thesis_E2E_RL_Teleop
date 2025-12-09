@@ -21,12 +21,11 @@ from collections import deque
 from stable_baselines3.common.vec_env import VecEnv
 from torch.utils.tensorboard import SummaryWriter
 
-from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.sac_policy_network import JointActor, JointCritic
-from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.training_env import TeleoperationEnvWithDelay
-from E2E_Teleoperation.E2E_Teleoperation.utils.delay_simulator import ExperimentConfig
-from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.local_robot_simulator import TrajectoryType
-
-import E2E_Teleoperation.E2E_Teleoperation.config.robot_config as cfg
+from E2E_Teleoperation.E2E_RL.sac_policy_network import JointActor, JointCritic
+from E2E_Teleoperation.E2E_RL.training_env import TeleoperationEnvWithDelay
+from E2E_Teleoperation.utils.delay_simulator import ExperimentConfig
+from E2E_Teleoperation.E2E_RL.local_robot_simulator import TrajectoryType
+import E2E_Teleoperation.config.robot_config as cfg
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +40,7 @@ class ReplayBuffer:
         self.device = device
         self.ptr = 0
         self.size = 0
-        
-        # [MODIFICATION] Use cfg.* for dimensions
+
         self.state_dim = cfg.OBS_DIM
         self.action_dim = cfg.N_JOINTS # 7D (Torque only)
         # Ground truth state dim is 14 (7q + 7qd)
@@ -104,8 +102,7 @@ class SACTrainer:
             delay_config=val_delay_config,
             trajectory_type=TrajectoryType.FIGURE_8,
             randomize_trajectory=False,
-            render_mode=None,
-            lstm_model_path=None 
+            render_mode=None
         )
         
         # Initialize Joint Networks

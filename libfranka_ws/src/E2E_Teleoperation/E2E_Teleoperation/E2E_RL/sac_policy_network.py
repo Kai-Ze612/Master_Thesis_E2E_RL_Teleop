@@ -8,7 +8,7 @@ import numpy as np
 from typing import Tuple, Optional
 from torch.distributions import Normal
 
-import E2E_Teleoperation.E2E_Teleoperation.config.robot_config as cfg
+import E2E_Teleoperation.config.robot_config as cfg
 
 
 class JointActor(nn.Module):

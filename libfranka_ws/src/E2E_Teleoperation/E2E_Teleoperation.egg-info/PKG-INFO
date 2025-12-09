@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: E2E_Teleoperation
+Version: 0.0.0
+Summary: End-to-End Teleoperation Framework
+Maintainer: kai
+Maintainer-email: ge62meq@mytum.de
+License: Apache-2.0
+Requires-Dist: setuptools
+Dynamic: license
+Dynamic: maintainer
+Dynamic: maintainer-email
+Dynamic: requires-dist
+Dynamic: summary
