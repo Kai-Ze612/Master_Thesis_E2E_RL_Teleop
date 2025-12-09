@@ -1,0 +1,6 @@
+[console_scripts]
+agent_node = E2E_Teleoperation.nodes.agent:main
+local_node = E2E_Teleoperation.nodes.local_robot_sim:main
+remote_node = E2E_Teleoperation.nodes.remote_robot:main
+remote_sim = E2E_Teleoperation.nodes.remote_sim:main
+
