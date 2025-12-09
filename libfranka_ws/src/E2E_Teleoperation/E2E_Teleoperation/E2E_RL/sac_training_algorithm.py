@@ -326,7 +326,7 @@ class SACTrainer:
                 # Scale random actions to torque limits
                 # Note: 87.0 is hardcoded as approximate limit, ideally fetch from cfg if available as simple array
                 # For safety, using explicit numbers matching config
-                actions_batch = actions_batch * np.array([87.0]*4 + [12.0]*3) 
+                actions_batch = actions_batch * cfg.MAX_TORQUE_COMPENSATION
             else:
                 actions_batch = self.select_action(obs)
 

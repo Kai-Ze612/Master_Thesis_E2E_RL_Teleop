@@ -169,11 +169,11 @@ class RemoteRobotSimulator:
         
         np.set_printoptions(precision=3, suppress=True, linewidth=200)
         print(f"\n[Step {self.internal_tick}]")
-        print(f"  Target/Pred Q: {target_q}")
+        print(f"  True q {target_q}")
         print(f"  Remote Q:      {q_current}")
         print(f"  RL Torque:     {tau_total}")
         print(f"  Track Error:   {tracking_error_norm:.4f}")
-        
+       
         return {
             "joint_error": np.linalg.norm(target_q - self.data.qpos[:self.n_joints]),
             "tracking_error": tracking_error_norm,

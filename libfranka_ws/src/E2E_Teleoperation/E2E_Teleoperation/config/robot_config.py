@@ -47,9 +47,6 @@ QD_STD  = np.ones(7, dtype=np.float32) * 2.0
 DEFAULT_CONTROL_FREQ = 250
 DEFAULT_PUBLISH_FREQ = 250
 
-DEFAULT_KP_REMOTE = np.array([225.0, 225.0, 196.0, 196.0, 169.0, 144.0, 9.0], dtype=np.float32)
-DEFAULT_KD_REMOTE = np.array([30.0, 30.0, 28.0, 28.0, 26.0,  24.0, 6.0], dtype=np.float32)
-
 ######################################
 # IK Solver Parameterss
 ######################################
