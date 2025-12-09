@@ -8,16 +8,6 @@ Pipeline:
 4. Train Actor and Critic networks using SAC.
 """
 
-"""
-Custom Model-Based SAC (Soft Actor-Critic) Training Algorithm.
-
-Pipeline:
-1. Load pre-trained LSTM State Estimator.
-2. Freeze the State Estimator parameters.
-3. Data collection using the current policy.
-4. Train Actor and Critic networks using SAC.
-"""
-
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -31,13 +21,12 @@ from collections import deque
 from stable_baselines3.common.vec_env import VecEnv
 from torch.utils.tensorboard import SummaryWriter
 
-from sac_policy_network import JointActor, JointCritic
-from training_env import TeleoperationEnvWithDelay
-from E2E_Teleoperation.utils.delay_simulator import ExperimentConfig
-from local_robot_simulator import TrajectoryType
+from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.sac_policy_network import JointActor, JointCritic
+from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.training_env import TeleoperationEnvWithDelay
+from E2E_Teleoperation.E2E_Teleoperation.utils.delay_simulator import ExperimentConfig
+from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.local_robot_simulator import TrajectoryType
 
-# [MODIFICATION] Import config as alias 'cfg'
-import E2E_Teleoperation.config.robot_config as cfg
+import E2E_Teleoperation.E2E_Teleoperation.config.robot_config as cfg
 
 logger = logging.getLogger(__name__)
 

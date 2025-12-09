@@ -20,8 +20,8 @@ import numpy as np
 import gymnasium as gym
 import mujoco
 
-from E2E_Teleoperation.utils.inverse_kinematics import IKSolver
-import E2E_Teleoperation.config.robot_config as cfg
+from E2E_Teleoperation.E2E_Teleoperation.utils.inverse_kinematics import IKSolver
+import E2E_Teleoperation.E2E_Teleoperation.config.robot_config as cfg
 
 
 class TrajectoryType(Enum):
@@ -42,7 +42,7 @@ class TrajectoryParams:
         center_x = np.random.uniform(0.3, 0.4)
         center_y = np.random.uniform(-0.1, 0.1)
         center_z = actual_start_pos[2]
-        center = np.array([center_x, center_y, center_z], dtype=np.float64).
+        center = np.array([center_x, center_y, center_z], dtype=np.float64)
         
         scale_x = np.random.uniform(0.1, 0.1)
         scale_y = np.random.uniform(0.1, 0.3)

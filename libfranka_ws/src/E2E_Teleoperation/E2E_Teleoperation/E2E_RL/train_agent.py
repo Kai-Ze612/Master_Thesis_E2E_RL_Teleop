@@ -15,11 +15,11 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.env_util import make_vec_env
 
 # Custom imports
-from E2E_Teleoperation.utils.delay_simulator import ExperimentConfig
-from training_env import TeleoperationEnvWithDelay
-from local_robot_simulator import TrajectoryType
-from sac_training_algorithm import SACTrainer
-import E2E_Teleoperation.config.robot_config as cfg
+from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.training_env import TeleoperationEnvWithDelay
+from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.local_robot_simulator import TrajectoryType
+from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.sac_training_algorithm import SACTrainer
+from E2E_Teleoperation.E2E_Teleoperation.utils.delay_simulator import ExperimentConfig
+import E2E_Teleoperation.E2E_Teleoperation.config.robot_config as cfg
 
 
 def setup_logging(output_dir: str) -> logging.Logger:
@@ -43,7 +43,7 @@ def train_agent(args: argparse.Namespace) -> None:
     
     # [MODIFICATION] Updated Name to E2E
     run_name = f"E2E_SAC_{args.config.name}_{args.trajectory_type.value}_{timestamp}"
-    output_dir = os.path.join(CHECKPOINT_DIR_RL, run_name)
+    output_dir = os.path.join(cfg.CHECKPOINT_DIR_RL, run_name)
     os.makedirs(output_dir, exist_ok=True)
     
     logger = setup_logging(output_dir)

@@ -7,10 +7,10 @@ from typing import Tuple, Dict, Any, Optional
 import matplotlib.pyplot as plt
 import os
 
-from local_robot_simulator import LocalRobotSimulator, TrajectoryType
-from remote_robot_simulator import RemoteRobotSimulator
-from E2E_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-import E2E_Teleoperation.config.robot_config as cfg
+from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.local_robot_simulator import LocalRobotSimulator, TrajectoryType
+from E2E_Teleoperation.E2E_Teleoperation.E2E_RL.remote_robot_simulator import RemoteRobotSimulator
+from E2E_Teleoperation.E2E_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
+import E2E_Teleoperation.E2E_Teleoperation.config.robot_config as cfg
 
 class TeleoperationEnvWithDelay(gym.Env):
 
