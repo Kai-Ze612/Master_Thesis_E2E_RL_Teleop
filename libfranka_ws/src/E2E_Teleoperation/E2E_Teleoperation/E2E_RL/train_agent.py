@@ -41,13 +41,13 @@ def setup_logging(output_dir: str) -> logging.Logger:
 def train_agent(args: argparse.Namespace) -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # [MODIFICATION] Updated Name to E2E
     run_name = f"E2E_SAC_{args.config.name}_{args.trajectory_type.value}_{timestamp}"
+    
     output_dir = os.path.join(cfg.CHECKPOINT_DIR_RL, run_name)
     os.makedirs(output_dir, exist_ok=True)
     
     logger = setup_logging(output_dir)
-    logger.info("Training Configuration (End-to-End):")
+    logger.info("Training Configuration (Joint End-to-End):")
     logger.info(f"  Delay: {args.config.name}")
     logger.info(f"  Trajectory: {args.trajectory_type.value}")
     logger.info(f"  Total Timesteps: {args.timesteps}")
@@ -56,11 +56,6 @@ def train_agent(args: argparse.Namespace) -> None:
         np.random.seed(args.seed)
         torch.manual_seed(args.seed)
         if torch.cuda.is_available(): torch.cuda.manual_seed_all(args.seed)
-
-    # Check LSTM path
-    if not os.path.isfile(LSTM_MODEL_PATH):
-        logger.error(f"LSTM model file not found at: {LSTM_MODEL_PATH}")
-        sys.exit(1)
 
     logger.info("Creating vectorized environment...")
     env = None
@@ -71,10 +66,11 @@ def train_agent(args: argparse.Namespace) -> None:
                 trajectory_type=args.trajectory_type,
                 randomize_trajectory=args.randomize_trajectory,
                 render_mode=args.render,
-                lstm_model_path=LSTM_MODEL_PATH 
+                # [MODIFICATION] No lstm_model_path needed
+                lstm_model_path=None 
             )
 
-        env = make_vec_env(make_env, n_envs=NUM_ENVIRONMENTS, seed=args.seed, vec_env_cls=SubprocVecEnv)
+        env = make_vec_env(make_env, n_envs=cfg.NUM_ENVIRONMENTS, seed=args.seed, vec_env_cls=SubprocVecEnv)
 
     except Exception as e:
         logger.error(f"Failed to create env: {e}", exc_info=True)
@@ -111,7 +107,9 @@ def parse_arguments() -> argparse.Namespace:
     exp_group.add_argument("--config", type=str, default="3", choices=['1', '2', '3'])
     exp_group.add_argument("--trajectory-type", type=str.lower, default="figure_8", choices=[t.value for t in TrajectoryType])
     exp_group.add_argument("--randomize-trajectory", action="store_true")
-    exp_group.add_argument("--timesteps", type=int, default=SAC_TOTAL_TIMESTEPS)
+    
+    # [MODIFICATION] Use cfg.SAC_TOTAL_TIMESTEPS
+    exp_group.add_argument("--timesteps", type=int, default=cfg.SAC_TOTAL_TIMESTEPS)
     exp_group.add_argument("--seed", type=int, default=None)
     exp_group.add_argument("--render", type=str.lower, default=None, choices=['human', 'rgb_array', 'none'])
     
