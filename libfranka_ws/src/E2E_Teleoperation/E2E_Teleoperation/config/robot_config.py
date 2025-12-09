@@ -36,6 +36,11 @@ JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 WARM_UP_DURATION = 1  # sec (before starting moving)
 NO_DELAY_DURATION = 1  # sec (before starting delay simulation)
 
+Q_MEAN = np.array([0.0, -0.78, 0.0, -2.35, 0.0, 1.57, 0.78], dtype=np.float32)
+Q_STD  = np.array([1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0], dtype=np.float32) 
+QD_MEAN = np.zeros(7, dtype=np.float32)
+QD_STD  = np.ones(7, dtype=np.float32) * 2.0 
+
 ######################################
 # Control Parameters
 ######################################
@@ -77,6 +82,7 @@ ESTIMATOR_VAL_STEPS = 5000
 ESTIMATOR_VAL_FREQ = 5000
 ESTIMATOR_PATIENCE = 10
 ESTIMATOR_LR_PATIENCE = 5
+ESTIMATOR_PREDICTION_HORIZON = 50  # steps into the future
 
 RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 3
