@@ -28,13 +28,13 @@ JOINT_LIMITS_LOWER = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, 0.54
 JOINT_LIMITS_UPPER = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 4.5169, 3.0159], dtype=np.float32)
 
 TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
-MAX_TORQUE_COMPENSATION = np.array([3.0, 3.0, 3.0, 2.0, 2.0, 2.0, 1.0], dtype=np.float32)
+MAX_TORQUE_COMPENSATION = np.array([2.0, 5.0, 2.0, 5.0, 2.0, 2.0, 1.0], dtype=np.float32)
 
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], dtype=np.float32)
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
-WARM_UP_DURATION = 1  # sec (before starting moving)
-NO_DELAY_DURATION = 1  # sec (before starting delay simulation)
+WARM_UP_DURATION = 0.1  # sec (before starting moving)
+NO_DELAY_DURATION = 0.1  # sec (before starting delay simulation)
 
 Q_MEAN = np.array([0.0, -0.78, 0.0, -2.35, 0.0, 1.57, 0.78], dtype=np.float32)
 Q_STD  = np.array([1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0], dtype=np.float32) 
@@ -71,19 +71,12 @@ TRAJECTORY_FREQUENCY = 0.1  # Hz
 ######################################
 # pre-trained LSTM hyperparameters
 ######################################
-ESTIMATOR_LEARNING_RATE = 5e-4
-ESTIMATOR_BATCH_SIZE = 256
-ESTIMATOR_BUFFER_SIZE = 200000
-ESTIMATOR_TOTAL_UPDATES = 500000
-ESTIMATOR_VAL_STEPS = 5000
-ESTIMATOR_VAL_FREQ = 5000
-ESTIMATOR_PATIENCE = 10
-ESTIMATOR_LR_PATIENCE = 5
 ESTIMATOR_PREDICTION_HORIZON = 50  # steps into the future
 
 RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 3
-RNN_SEQUENCE_LENGTH = 150 # Input sequence for LSTM
+RNN_SEQUENCE_LENGTH = 80 # Input sequence for LSTM
+REMOTE_HISTORY_LEN = RNN_SEQUENCE_LENGTH
 
 DELAY_INPUT_NORM_FACTOR = 100.0
 TARGET_DELTA_SCALE = 10.0
@@ -99,16 +92,17 @@ MAX_AR_STEPS = 240 / (1/DEFAULT_CONTROL_FREQ * 1000) + 5
 ######################################
 # RL Environment Parameters
 ######################################
-MAX_JOINT_ERROR_TERMINATION = 0.5  # radians
+MAX_JOINT_ERROR_TERMINATION = 1  # radians
 
-FLATTENED_HISTORY_DIM = RNN_SEQUENCE_LENGTH * ESTIMATOR_STATE_DIM
+ROBOT_STATE_DIM = 14  # 7 q + 7 qd
+ROBOT_HISTORY_DIM = RNN_SEQUENCE_LENGTH * ROBOT_STATE_DIM  # 80 * 14 = 1120
+TARGET_HISTORY_DIM = RNN_SEQUENCE_LENGTH * ESTIMATOR_STATE_DIM  # 80 * 15 = 1200
 
-REMOTE_HISTORY_LEN = 5
-
+# OBS_DIM now includes both histories
 OBS_DIM = (
-    N_JOINTS +               # remote_q (7)
-    N_JOINTS +               # remote_qd (7)
-    FLATTENED_HISTORY_DIM    # The raw history sequence (150 * 15)
+    ROBOT_STATE_DIM +       # Current state (14)
+    ROBOT_HISTORY_DIM +     # Robot history (1120) <- NEW
+    TARGET_HISTORY_DIM      # Target history (1200)
 )
 
 ######################################
@@ -119,11 +113,11 @@ SAC_MLP_HIDDEN_DIMS = [512, 256]
 SAC_ACTIVATION = 'relu'
 
 # Learning Rates
-SAC_LEARNING_RATE = 3e-4        # LR for Actor and Critic
-ALPHA_LEARNING_RATE = 3e-4      # LR for temperature auto-tuning
+SAC_LEARNING_RATE = 5e-5        # LR for Actor and Critic
+ALPHA_LEARNING_RATE = 5e-5      # LR for temperature auto-tuning
 
 # SAC Parameters
-SAC_GAMMA = 0.99
+SAC_GAMMA = 0.9
 SAC_TAU = 0.005
 SAC_TARGET_ENTROPY = 'auto'
 
@@ -133,29 +127,29 @@ LOG_STD_MAX = 2
 
 # Training Schedule
 SAC_BUFFER_SIZE = 1_000_000     # Max size of replay buffer
-SAC_BATCH_SIZE = 256            # batch size of gradient updates
+SAC_BATCH_SIZE = 1024            # batch size of gradient updates
 
 # Training Schedule
-SAC_START_STEPS = 20000          # Number of random exploration steps (before learning)
+SAC_START_STEPS = 10000          # Number of random exploration steps (before learning)
 SAC_UPDATES_PER_STEP = 1.0       # Number of SAC updates per env step
-SAC_TOTAL_TIMESTEPS = 3_000_000  # Total training timesteps
+SAC_TOTAL_TIMESTEPS = 30_000_000  # Total training timesteps
 
 # Validation and Early Stopping
-SAC_VAL_FREQ = 25000
-SAC_VAL_EPISODES = 10
+SAC_VAL_FREQ = 5000
+SAC_VAL_EPISODES = 5
 SAC_EARLY_STOPPING_PATIENCE = 30
 
 ######################################
 # Reward Function Configuration
 ######################################
-TRACKING_ERROR_SCALE = 40       # Gaussian bandwidth for exp(-scale * error²)
-VELOCITY_ERROR_SCALE = 5       # Gaussian bandwidth for velocity tracking
+TRACKING_ERROR_SCALE = 5       # Gaussian bandwidth for exp(-scale * error²)
+VELOCITY_ERROR_SCALE = 1       # Gaussian bandwidth for velocity tracking
 
 ######################################
 # Environment Settings
 ######################################
 NUM_ENVIRONMENTS = 1
-MAX_EPISODE_STEPS = 4200 * 3
+MAX_EPISODE_STEPS = 5500
 
 
 ######################################

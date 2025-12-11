@@ -224,7 +224,7 @@ class RemoteRobot:
         tau = tau_id + tau_rl
         tau = np.clip(tau, -cfg.TORQUE_LIMITS, cfg.TORQUE_LIMITS)
         tau[-1] = 0.0
-        
+        print(f" tau: {tau}")
         self.data.ctrl[:cfg.N_JOINTS] = tau
         mujoco.mj_step(self.model, self.data)
         return q, qd

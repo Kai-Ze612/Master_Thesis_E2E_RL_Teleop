@@ -124,7 +124,8 @@ class RemoteRobotSimulator:
         target_q: np.ndarray,
         target_qd: np.ndarray,
         torque_input: np.ndarray, 
-        true_local_q: Optional[np.ndarray] = None
+        true_local_q: Optional[np.ndarray] = None,
+        predicted_q: Optional[np.ndarray] = None
     ) -> dict:
         
         self.internal_tick += 1
@@ -164,23 +165,41 @@ class RemoteRobotSimulator:
             prediction_error_norm = 0.0
 
         q_current = self.data.qpos[:self.n_joints].copy()
-        raw_tracking_diff = (true_local_q if true_local_q is not None else target_q) - q_current
-        tracking_error_norm = np.linalg.norm(self._normalize_angle(raw_tracking_diff))
+
+        # 2. Tracking Error: || True State - Remote State ||
+        # We use true_local_q as the ground truth source
+        ground_truth_q = true_local_q if true_local_q is not None else target_q
         
+        raw_track_diff = ground_truth_q - q_current
+        tracking_error_norm = np.linalg.norm(self._normalize_angle(raw_track_diff))
+
+        # # 3. Prediction Error: || True State - Predicted State ||
+        # prediction_error_norm = 0.0
+        # if predicted_q is not None:
+        #     raw_pred_diff = ground_truth_q - predicted_q
+        #     prediction_error_norm = np.linalg.norm(self._normalize_angle(raw_pred_diff))
+
+        # --- PRINTING ---
         np.set_printoptions(precision=3, suppress=True, linewidth=200)
         print(f"\n[Step {self.internal_tick}]")
-        print(f"  True q {target_q}")
-        print(f"  Remote Q:      {q_current}")
-        print(f"  RL Torque:     {tau_total}")
-        print(f"  Track Error:   {tracking_error_norm:.4f}")
-       
+        print(f"  True q:      {ground_truth_q}")      # LOCAL ROBOT TRUE STATE
+        # if predicted_q is not None:
+        #     print(f"  Pred q:      {predicted_q}")     # LSTM OUTPUT
+        # else:
+        #     print(f"  Pred q:      N/A (Warmup)")
+            
+        print(f"  Remote Q:    {q_current}")           # REMOTE ROBOT STATE
+        print(f"  RL Torque:   {self.last_executed_rl_torque}")
+        
+        print(f"  Track Error: {tracking_error_norm:.4f}") # (True - Remote)
+        # print(f"  Pred Error:  {prediction_error_norm:.4f}") # (True - Pred)
+        
         return {
-            "joint_error": np.linalg.norm(target_q - self.data.qpos[:self.n_joints]),
+            "joint_error": np.linalg.norm(ground_truth_q - q_current),
             "tracking_error": tracking_error_norm,
-            "prediction_error": prediction_error_norm,
-            "tau_pd": np.zeros(self.n_joints), 
+            # "prediction_error": prediction_error_norm,
             "tau_rl": self.last_executed_rl_torque, 
-            "tau_total": tau_total
+            "tau_total": self.last_executed_rl_torque
         }
         
     def render(self) -> bool:

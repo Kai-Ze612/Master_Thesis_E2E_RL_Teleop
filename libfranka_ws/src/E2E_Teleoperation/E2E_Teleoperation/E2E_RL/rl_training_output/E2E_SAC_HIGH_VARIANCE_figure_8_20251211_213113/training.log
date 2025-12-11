@@ -1,0 +1,57 @@
+2025-12-11 21:31:13 [INFO] __main__ - Training Configuration (Joint End-to-End):
+2025-12-11 21:31:13 [INFO] __main__ -   Delay: HIGH_VARIANCE
+2025-12-11 21:31:13 [INFO] __main__ -   Trajectory: figure_8
+2025-12-11 21:31:13 [INFO] __main__ -   Total Timesteps: 30000000
+2025-12-11 21:31:13 [INFO] __main__ - Creating vectorized environment...
+2025-12-11 21:31:14 [INFO] __main__ - Initializing SACTrainer...
+2025-12-11 21:31:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Initial alpha: 1.0000
+2025-12-11 21:31:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Tensorboard logs at: ./rl_training_output/E2E_SAC_HIGH_VARIANCE_figure_8_20251211_213113/tensorboard_sac
+2025-12-11 21:31:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - ======================================================================
+2025-12-11 21:31:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Starting SAC Training with SHARED ENCODER (Fixed Version)
+2025-12-11 21:31:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Obs Dim: 2334 | Output Dim: 7
+2025-12-11 21:31:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Stage 1 (Encoder + Critic Warmup): 10000 steps
+2025-12-11 21:31:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Stage 2 (RL with Frozen Encoder, Delayed Policy): remaining steps
+2025-12-11 21:31:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Policy Delay: 2
+2025-12-11 21:31:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Initial Alpha: 1.0000
+2025-12-11 21:31:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - ======================================================================
+2025-12-11 21:31:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage 1 - Warmup 2000/10000] Aux Loss: 0.000608 | Critic Loss: 1.7201
+2025-12-11 21:32:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage 1 - Warmup 3000/10000] Aux Loss: 0.000339 | Critic Loss: 0.5632
+2025-12-11 21:33:38 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage 1 - Warmup 4000/10000] Aux Loss: 0.000367 | Critic Loss: 0.8745
+2025-12-11 21:34:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage 1 - Warmup 5000/10000] Aux Loss: 0.000162 | Critic Loss: 0.9868
+2025-12-11 21:35:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage 1 - Warmup 6000/10000] Aux Loss: 0.000259 | Critic Loss: 0.6223
+2025-12-11 21:37:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage 1 - Warmup 7000/10000] Aux Loss: 0.000177 | Critic Loss: 0.6744
+2025-12-11 21:38:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage 1 - Warmup 8000/10000] Aux Loss: 0.000132 | Critic Loss: 0.6743
+2025-12-11 21:39:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage 1 - Warmup 9000/10000] Aux Loss: 0.000115 | Critic Loss: 0.7848
+2025-12-11 21:40:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - ======================================================================
+2025-12-11 21:40:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - FREEZING SHARED ENCODER - State Estimator training complete
+2025-12-11 21:40:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - ======================================================================
+2025-12-11 21:40:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Trainable actor params: 847,118
+2025-12-11 21:40:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Trainable critic params: 1,694,722
+2025-12-11 21:40:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Frozen encoder params: 1,366,926
+2025-12-11 21:40:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Current alpha: 1.0000
+2025-12-11 21:40:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Starting Validation...
+2025-12-11 21:40:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 0: Avg Action Norm: 0.5533 | Avg Movement: 0.000987
+2025-12-11 21:40:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 1: Avg Action Norm: 0.5534 | Avg Movement: 0.000988
+2025-12-11 21:40:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 2: Avg Action Norm: 0.5532 | Avg Movement: 0.000988
+2025-12-11 21:41:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 3: Avg Action Norm: 0.5534 | Avg Movement: 0.000990
+2025-12-11 21:41:14 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 4: Avg Action Norm: 0.5534 | Avg Movement: 0.000987
+2025-12-11 21:41:14 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Validation Reward: 550.4244 | Alpha: 1.0000
+2025-12-11 21:41:14 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Checkpoint saved: ./rl_training_output/E2E_SAC_HIGH_VARIANCE_figure_8_20251211_213113/best_policy.pth
+2025-12-11 21:44:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Starting Validation...
+2025-12-11 21:44:31 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 0: Avg Action Norm: 0.0919 | Avg Movement: 0.000002
+2025-12-11 21:45:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 1: Avg Action Norm: 0.0919 | Avg Movement: 0.000002
+2025-12-11 21:45:31 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 2: Avg Action Norm: 0.0919 | Avg Movement: 0.000002
+2025-12-11 21:46:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 3: Avg Action Norm: 0.0919 | Avg Movement: 0.000002
+2025-12-11 21:46:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 4: Avg Action Norm: 0.0919 | Avg Movement: 0.000002
+2025-12-11 21:46:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Validation Reward: 2878.6854 | Alpha: 0.8824
+2025-12-11 21:46:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Checkpoint saved: ./rl_training_output/E2E_SAC_HIGH_VARIANCE_figure_8_20251211_213113/best_policy.pth
+2025-12-11 21:49:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Starting Validation...
+2025-12-11 21:49:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 0: Avg Action Norm: 0.1098 | Avg Movement: 0.000002
+2025-12-11 21:49:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 1: Avg Action Norm: 0.1098 | Avg Movement: 0.000002
+2025-12-11 21:50:28 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 2: Avg Action Norm: 0.1098 | Avg Movement: 0.000002
+2025-12-11 21:50:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 3: Avg Action Norm: 0.1098 | Avg Movement: 0.000002
+2025-12-11 21:51:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm -   Ep 4: Avg Action Norm: 0.1098 | Avg Movement: 0.000002
+2025-12-11 21:51:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Validation Reward: 2880.0682 | Alpha: 0.7788
+2025-12-11 21:51:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Checkpoint saved: ./rl_training_output/E2E_SAC_HIGH_VARIANCE_figure_8_20251211_213113/best_policy.pth
+2025-12-11 21:53:55 [WARNING] __main__ - Interrupted.
+2025-12-11 21:53:55 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Checkpoint saved: ./rl_training_output/E2E_SAC_HIGH_VARIANCE_figure_8_20251211_213113/interrupted_policy.pth
