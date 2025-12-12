@@ -1,0 +1,647 @@
+2025-12-12 20:12:44 [INFO] __main__ - ======================================================================
+2025-12-12 20:12:44 [INFO] __main__ - E2E SAC Training with TEACHER WARMUP
+2025-12-12 20:12:44 [INFO] __main__ - ======================================================================
+2025-12-12 20:12:44 [INFO] __main__ - Creating vectorized environment...
+2025-12-12 20:12:46 [INFO] __main__ - Creating policy network...
+2025-12-12 20:12:47 [INFO] __main__ - Initializing SACTrainer with Teacher Warmup...
+2025-12-12 20:12:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Initial alpha: 0.0500
+2025-12-12 20:12:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Starting SAC Training v20
+2025-12-12 20:12:52 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 300 | aux_loss: 0.0037
+2025-12-12 20:12:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 400 | aux_loss: 0.0015
+2025-12-12 20:12:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 500 | aux_loss: 0.0006
+2025-12-12 20:12:55 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 600 | aux_loss: 0.0005
+2025-12-12 20:12:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 700 | aux_loss: 0.0008
+2025-12-12 20:12:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 800 | aux_loss: 0.0005
+2025-12-12 20:12:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 900 | aux_loss: 0.0002
+2025-12-12 20:12:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 1000 | aux_loss: 0.0002
+2025-12-12 20:12:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 1100 | aux_loss: 0.0002
+2025-12-12 20:13:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 1200 | aux_loss: 0.0003
+2025-12-12 20:13:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 1300 | aux_loss: 0.0001
+2025-12-12 20:13:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 1400 | aux_loss: 0.0003
+2025-12-12 20:13:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 1500 | aux_loss: 0.0001
+2025-12-12 20:13:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 1600 | aux_loss: 0.0001
+2025-12-12 20:13:04 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 1700 | aux_loss: 0.0002
+2025-12-12 20:13:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 1800 | aux_loss: 0.0002
+2025-12-12 20:13:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 1900 | aux_loss: 0.0001
+2025-12-12 20:13:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 2000 | aux_loss: 0.0002
+2025-12-12 20:13:08 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 2100 | aux_loss: 0.0003
+2025-12-12 20:13:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 2200 | aux_loss: 0.0001
+2025-12-12 20:13:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 2300 | aux_loss: 0.0001
+2025-12-12 20:13:10 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 2400 | aux_loss: 0.0001
+2025-12-12 20:13:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 2500 | aux_loss: 0.0002
+2025-12-12 20:13:12 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 2600 | aux_loss: 0.0002
+2025-12-12 20:13:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 2700 | aux_loss: 0.0002
+2025-12-12 20:13:14 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 2800 | aux_loss: 0.0001
+2025-12-12 20:13:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 2900 | aux_loss: 0.0001
+2025-12-12 20:13:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 3000 | aux_loss: 0.0001
+2025-12-12 20:13:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 3100 | aux_loss: 0.0001
+2025-12-12 20:13:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 3200 | aux_loss: 0.0001
+2025-12-12 20:13:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 3300 | aux_loss: 0.0002
+2025-12-12 20:13:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 3400 | aux_loss: 0.0002
+2025-12-12 20:13:20 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 3500 | aux_loss: 0.0003
+2025-12-12 20:13:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 3600 | aux_loss: 0.0001
+2025-12-12 20:13:22 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 3700 | aux_loss: 0.0001
+2025-12-12 20:13:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 3800 | aux_loss: 0.0002
+2025-12-12 20:13:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 3900 | aux_loss: 0.0001
+2025-12-12 20:13:24 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 4000 | aux_loss: 0.0000
+2025-12-12 20:13:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 4100 | aux_loss: 0.0002
+2025-12-12 20:13:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 4200 | aux_loss: 0.0002
+2025-12-12 20:13:27 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 4300 | aux_loss: 0.0001
+2025-12-12 20:13:28 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 4400 | aux_loss: 0.0001
+2025-12-12 20:13:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 4500 | aux_loss: 0.0002
+2025-12-12 20:13:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 4600 | aux_loss: 0.0000
+2025-12-12 20:13:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 4700 | aux_loss: 0.0001
+2025-12-12 20:13:31 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 4800 | aux_loss: 0.0152
+2025-12-12 20:13:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 4900 | aux_loss: 0.0096
+2025-12-12 20:13:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 5000 | aux_loss: 0.0110
+2025-12-12 20:13:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 5100 | aux_loss: 0.0009
+2025-12-12 20:13:35 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 5200 | aux_loss: 0.0001
+2025-12-12 20:13:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 5300 | aux_loss: 0.0003
+2025-12-12 20:13:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 5400 | aux_loss: 0.0001
+2025-12-12 20:13:38 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 5500 | aux_loss: 0.0001
+2025-12-12 20:13:39 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 5600 | aux_loss: 0.0003
+2025-12-12 20:13:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 5700 | aux_loss: 0.0001
+2025-12-12 20:13:41 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 5800 | aux_loss: 0.0004
+2025-12-12 20:13:42 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 5900 | aux_loss: 0.0002
+2025-12-12 20:13:43 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 6000 | aux_loss: 0.0001
+2025-12-12 20:13:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 6100 | aux_loss: 0.0001
+2025-12-12 20:13:45 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 6200 | aux_loss: 0.0001
+2025-12-12 20:13:45 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 6300 | aux_loss: 0.0001
+2025-12-12 20:13:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 6400 | aux_loss: 0.0000
+2025-12-12 20:13:47 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 6500 | aux_loss: 0.0003
+2025-12-12 20:13:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 6600 | aux_loss: 0.0002
+2025-12-12 20:13:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 6700 | aux_loss: 0.0001
+2025-12-12 20:13:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 6800 | aux_loss: 0.0002
+2025-12-12 20:13:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 6900 | aux_loss: 0.0002
+2025-12-12 20:13:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 7000 | aux_loss: 0.0001
+2025-12-12 20:13:52 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 7100 | aux_loss: 0.0002
+2025-12-12 20:13:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 7200 | aux_loss: 0.0001
+2025-12-12 20:13:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 7300 | aux_loss: 0.0001
+2025-12-12 20:13:55 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 7400 | aux_loss: 0.0001
+2025-12-12 20:13:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 7500 | aux_loss: 0.0001
+2025-12-12 20:13:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 7600 | aux_loss: 0.0001
+2025-12-12 20:13:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 7700 | aux_loss: 0.0001
+2025-12-12 20:13:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 7800 | aux_loss: 0.0000
+2025-12-12 20:13:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 7900 | aux_loss: 0.0002
+2025-12-12 20:14:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 8000 | aux_loss: 0.0001
+2025-12-12 20:14:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 8100 | aux_loss: 0.0001
+2025-12-12 20:14:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 8200 | aux_loss: 0.0001
+2025-12-12 20:14:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 8300 | aux_loss: 0.0001
+2025-12-12 20:14:04 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 8400 | aux_loss: 0.0001
+2025-12-12 20:14:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 8500 | aux_loss: 0.0002
+2025-12-12 20:14:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 8600 | aux_loss: 0.0001
+2025-12-12 20:14:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 8700 | aux_loss: 0.0000
+2025-12-12 20:14:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 8800 | aux_loss: 0.0000
+2025-12-12 20:14:08 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 8900 | aux_loss: 0.0001
+2025-12-12 20:14:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 9000 | aux_loss: 0.0001
+2025-12-12 20:14:10 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 9100 | aux_loss: 0.0000
+2025-12-12 20:14:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 9200 | aux_loss: 0.0001
+2025-12-12 20:14:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 9300 | aux_loss: 0.0002
+2025-12-12 20:14:12 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 9400 | aux_loss: 0.0000
+2025-12-12 20:14:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 9500 | aux_loss: 0.0001
+2025-12-12 20:14:14 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 9600 | aux_loss: 0.0000
+2025-12-12 20:14:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 9700 | aux_loss: 0.0001
+2025-12-12 20:14:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 9800 | aux_loss: 0.0001
+2025-12-12 20:14:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 9900 | aux_loss: 0.0001
+2025-12-12 20:14:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage1] Step 10000 | critic_loss: 14.1324 | q1_mean: -0.0071
+2025-12-12 20:14:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - FREEZING SHARED ENCODER
+2025-12-12 20:14:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 10100 | critic_loss: 0.1835 | q1_mean: 6.4091 | actor_loss: 17.4745 | bc_loss: 17.4745 | alpha: 0.0500
+2025-12-12 20:14:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 10200 | critic_loss: 0.0292 | q1_mean: 6.7619 | actor_loss: 13.5115 | bc_loss: 13.5115 | alpha: 0.0500
+2025-12-12 20:14:22 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 10300 | critic_loss: 0.0155 | q1_mean: 7.4362 | actor_loss: 6.9886 | bc_loss: 6.9886 | alpha: 0.0500
+2025-12-12 20:14:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 10400 | critic_loss: 0.0233 | q1_mean: 8.4485 | actor_loss: 12.3779 | bc_loss: 12.3779 | alpha: 0.0500
+2025-12-12 20:14:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 10500 | critic_loss: 0.0311 | q1_mean: 9.5065 | actor_loss: 8.5727 | bc_loss: 8.5726 | alpha: 0.0500
+2025-12-12 20:14:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 10600 | critic_loss: 0.0296 | q1_mean: 10.4279 | actor_loss: 4.8368 | bc_loss: 4.8367 | alpha: 0.0500
+2025-12-12 20:14:27 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 10700 | critic_loss: 0.0248 | q1_mean: 11.2809 | actor_loss: 3.9239 | bc_loss: 3.9238 | alpha: 0.0500
+2025-12-12 20:14:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 10800 | critic_loss: 0.0276 | q1_mean: 12.7108 | actor_loss: 6.6609 | bc_loss: 6.6608 | alpha: 0.0500
+2025-12-12 20:14:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 10900 | critic_loss: 0.0235 | q1_mean: 13.7055 | actor_loss: 6.5857 | bc_loss: 6.5856 | alpha: 0.0500
+2025-12-12 20:14:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 11000 | critic_loss: 0.0742 | q1_mean: 14.6871 | actor_loss: 14.6949 | bc_loss: 14.6947 | alpha: 0.0500
+2025-12-12 20:14:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 11100 | critic_loss: 0.0222 | q1_mean: 15.7099 | actor_loss: 16.9745 | bc_loss: 16.9743 | alpha: 0.0500
+2025-12-12 20:14:35 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 11200 | critic_loss: 0.1047 | q1_mean: 17.1393 | actor_loss: 2.3606 | bc_loss: 2.3604 | alpha: 0.0500
+2025-12-12 20:14:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 11300 | critic_loss: 0.0283 | q1_mean: 18.1211 | actor_loss: 3.5554 | bc_loss: 3.5552 | alpha: 0.0500
+2025-12-12 20:14:38 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 11400 | critic_loss: 0.0209 | q1_mean: 19.0255 | actor_loss: 4.0338 | bc_loss: 4.0336 | alpha: 0.0500
+2025-12-12 20:14:39 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 11500 | critic_loss: 0.0658 | q1_mean: 20.1223 | actor_loss: 13.5564 | bc_loss: 13.5562 | alpha: 0.0500
+2025-12-12 20:14:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 11600 | critic_loss: 0.2117 | q1_mean: 21.6693 | actor_loss: 6.3589 | bc_loss: 6.3586 | alpha: 0.0500
+2025-12-12 20:14:42 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 11700 | critic_loss: 0.1422 | q1_mean: 22.7949 | actor_loss: 4.7660 | bc_loss: 4.7658 | alpha: 0.0500
+2025-12-12 20:14:43 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 11800 | critic_loss: 0.0598 | q1_mean: 23.8787 | actor_loss: 11.1695 | bc_loss: 11.1693 | alpha: 0.0500
+2025-12-12 20:14:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 11900 | critic_loss: 0.0258 | q1_mean: 25.3554 | actor_loss: 4.8160 | bc_loss: 4.8158 | alpha: 0.0500
+2025-12-12 20:14:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 12000 | critic_loss: 0.1208 | q1_mean: 26.0151 | actor_loss: 14.1498 | bc_loss: 14.1496 | alpha: 0.0500
+2025-12-12 20:14:47 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 12100 | critic_loss: 0.0371 | q1_mean: 27.2132 | actor_loss: 4.4267 | bc_loss: 4.4265 | alpha: 0.0500
+2025-12-12 20:14:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 12200 | critic_loss: 0.0566 | q1_mean: 28.7367 | actor_loss: 8.8984 | bc_loss: 8.8982 | alpha: 0.0500
+2025-12-12 20:14:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 12300 | critic_loss: 0.0689 | q1_mean: 29.6895 | actor_loss: 8.3566 | bc_loss: 8.3564 | alpha: 0.0500
+2025-12-12 20:14:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 12400 | critic_loss: 0.1356 | q1_mean: 29.9386 | actor_loss: 1.9000 | bc_loss: 1.8998 | alpha: 0.0500
+2025-12-12 20:14:52 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 12500 | critic_loss: 0.2592 | q1_mean: 31.9032 | actor_loss: 4.0028 | bc_loss: 4.0026 | alpha: 0.0500
+2025-12-12 20:14:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 12600 | critic_loss: 0.0815 | q1_mean: 33.1794 | actor_loss: 2.1605 | bc_loss: 2.1603 | alpha: 0.0500
+2025-12-12 20:14:55 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 12700 | critic_loss: 0.0348 | q1_mean: 34.2887 | actor_loss: 15.9607 | bc_loss: 15.9604 | alpha: 0.0500
+2025-12-12 20:14:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 12800 | critic_loss: 0.0889 | q1_mean: 35.7615 | actor_loss: 9.3660 | bc_loss: 9.3658 | alpha: 0.0500
+2025-12-12 20:14:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 12900 | critic_loss: 0.1377 | q1_mean: 37.3915 | actor_loss: 10.9842 | bc_loss: 10.9839 | alpha: 0.0500
+2025-12-12 20:14:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 13000 | critic_loss: 0.1643 | q1_mean: 37.9593 | actor_loss: 9.6255 | bc_loss: 9.6253 | alpha: 0.0500
+2025-12-12 20:15:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 13100 | critic_loss: 0.0545 | q1_mean: 39.2178 | actor_loss: 2.1490 | bc_loss: 2.1488 | alpha: 0.0500
+2025-12-12 20:15:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 13200 | critic_loss: 0.1291 | q1_mean: 39.9447 | actor_loss: 1.9079 | bc_loss: 1.9077 | alpha: 0.0500
+2025-12-12 20:15:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 13300 | critic_loss: 0.0511 | q1_mean: 41.0231 | actor_loss: 1.7305 | bc_loss: 1.7303 | alpha: 0.0500
+2025-12-12 20:15:04 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 13400 | critic_loss: 0.0432 | q1_mean: 42.1678 | actor_loss: 4.0580 | bc_loss: 4.0577 | alpha: 0.0500
+2025-12-12 20:15:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 13500 | critic_loss: 0.0780 | q1_mean: 42.8944 | actor_loss: 3.8506 | bc_loss: 3.8503 | alpha: 0.0500
+2025-12-12 20:15:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 13600 | critic_loss: 0.0389 | q1_mean: 44.6278 | actor_loss: 3.2654 | bc_loss: 3.2652 | alpha: 0.0500
+2025-12-12 20:15:08 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 13700 | critic_loss: 0.0706 | q1_mean: 46.0840 | actor_loss: 10.1248 | bc_loss: 10.1246 | alpha: 0.0500
+2025-12-12 20:15:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 13800 | critic_loss: 0.1985 | q1_mean: 47.8798 | actor_loss: 9.3404 | bc_loss: 9.3401 | alpha: 0.0500
+2025-12-12 20:15:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 13900 | critic_loss: 0.5038 | q1_mean: 49.2394 | actor_loss: 5.1112 | bc_loss: 5.1110 | alpha: 0.0500
+2025-12-12 20:15:12 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 14000 | critic_loss: 0.1584 | q1_mean: 49.6716 | actor_loss: 4.5092 | bc_loss: 4.5090 | alpha: 0.0500
+2025-12-12 20:15:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 14100 | critic_loss: 0.0823 | q1_mean: 50.4505 | actor_loss: 7.9803 | bc_loss: 7.9801 | alpha: 0.0500
+2025-12-12 20:15:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 14200 | critic_loss: 0.0903 | q1_mean: 52.2981 | actor_loss: 9.3663 | bc_loss: 9.3661 | alpha: 0.0500
+2025-12-12 20:15:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 14300 | critic_loss: 0.2090 | q1_mean: 54.5888 | actor_loss: 10.6341 | bc_loss: 10.6339 | alpha: 0.0500
+2025-12-12 20:15:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 14400 | critic_loss: 0.0937 | q1_mean: 55.2589 | actor_loss: 10.3762 | bc_loss: 10.3760 | alpha: 0.0500
+2025-12-12 20:15:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 14500 | critic_loss: 0.2033 | q1_mean: 55.2942 | actor_loss: 7.5231 | bc_loss: 7.5228 | alpha: 0.0500
+2025-12-12 20:15:20 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 14600 | critic_loss: 0.5777 | q1_mean: 56.6562 | actor_loss: 6.4883 | bc_loss: 6.4881 | alpha: 0.0500
+2025-12-12 20:15:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 14700 | critic_loss: 0.1958 | q1_mean: 58.0513 | actor_loss: 9.0100 | bc_loss: 9.0098 | alpha: 0.0500
+2025-12-12 20:15:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 14800 | critic_loss: 0.2659 | q1_mean: 59.6797 | actor_loss: 10.8364 | bc_loss: 10.8362 | alpha: 0.0500
+2025-12-12 20:15:24 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 14900 | critic_loss: 0.1253 | q1_mean: 59.3004 | actor_loss: 2.2882 | bc_loss: 2.2879 | alpha: 0.0500
+2025-12-12 20:15:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 15000 | critic_loss: 0.1584 | q1_mean: 61.3692 | actor_loss: 2.6294 | bc_loss: 2.6291 | alpha: 0.0500
+2025-12-12 20:15:27 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 15100 | critic_loss: 0.1204 | q1_mean: 61.9664 | actor_loss: 1.4033 | bc_loss: 1.4030 | alpha: 0.0500
+2025-12-12 20:15:28 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 15200 | critic_loss: 0.6302 | q1_mean: 63.5438 | actor_loss: 34.0223 | bc_loss: 34.0221 | alpha: 0.0500
+2025-12-12 20:15:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 15300 | critic_loss: 0.0888 | q1_mean: 64.4995 | actor_loss: 2.4921 | bc_loss: 2.4918 | alpha: 0.0500
+2025-12-12 20:15:31 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 15400 | critic_loss: 0.1552 | q1_mean: 65.4121 | actor_loss: 8.4213 | bc_loss: 8.4210 | alpha: 0.0500
+2025-12-12 20:15:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 15500 | critic_loss: 0.0973 | q1_mean: 66.4081 | actor_loss: 8.5687 | bc_loss: 8.5685 | alpha: 0.0500
+2025-12-12 20:15:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 15600 | critic_loss: 0.2363 | q1_mean: 68.2722 | actor_loss: 3.1651 | bc_loss: 3.1648 | alpha: 0.0500
+2025-12-12 20:15:35 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 15700 | critic_loss: 0.2193 | q1_mean: 71.3635 | actor_loss: 9.3048 | bc_loss: 9.3046 | alpha: 0.0500
+2025-12-12 20:15:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 15800 | critic_loss: 0.1130 | q1_mean: 71.0714 | actor_loss: 11.9233 | bc_loss: 11.9231 | alpha: 0.0500
+2025-12-12 20:15:37 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 15900 | critic_loss: 0.2301 | q1_mean: 71.9406 | actor_loss: 2.3186 | bc_loss: 2.3183 | alpha: 0.0500
+2025-12-12 20:15:39 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 16000 | critic_loss: 0.1032 | q1_mean: 73.0175 | actor_loss: 3.8731 | bc_loss: 3.8728 | alpha: 0.0500
+2025-12-12 20:15:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 16100 | critic_loss: 0.1149 | q1_mean: 74.6655 | actor_loss: 4.6078 | bc_loss: 4.6076 | alpha: 0.0500
+2025-12-12 20:15:41 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 16200 | critic_loss: 0.6471 | q1_mean: 75.9732 | actor_loss: 7.9419 | bc_loss: 7.9416 | alpha: 0.0500
+2025-12-12 20:15:43 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 16300 | critic_loss: 0.1954 | q1_mean: 77.2700 | actor_loss: 7.4466 | bc_loss: 7.4463 | alpha: 0.0500
+2025-12-12 20:15:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 16400 | critic_loss: 0.1668 | q1_mean: 78.2700 | actor_loss: 8.5812 | bc_loss: 8.5810 | alpha: 0.0500
+2025-12-12 20:15:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 16500 | critic_loss: 0.1334 | q1_mean: 78.2724 | actor_loss: 2.1161 | bc_loss: 2.1158 | alpha: 0.0500
+2025-12-12 20:15:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 16600 | critic_loss: 0.1100 | q1_mean: 79.7259 | actor_loss: 1.9552 | bc_loss: 1.9549 | alpha: 0.0500
+2025-12-12 20:15:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 16700 | critic_loss: 0.0835 | q1_mean: 80.6850 | actor_loss: 2.0086 | bc_loss: 2.0083 | alpha: 0.0500
+2025-12-12 20:15:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 16800 | critic_loss: 0.4181 | q1_mean: 83.8807 | actor_loss: 1.9331 | bc_loss: 1.9328 | alpha: 0.0500
+2025-12-12 20:15:52 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 16900 | critic_loss: 0.6308 | q1_mean: 84.2760 | actor_loss: 2.0765 | bc_loss: 2.0762 | alpha: 0.0500
+2025-12-12 20:15:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 17000 | critic_loss: 0.2894 | q1_mean: 84.6262 | actor_loss: 4.5913 | bc_loss: 4.5909 | alpha: 0.0500
+2025-12-12 20:15:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 17100 | critic_loss: 0.3535 | q1_mean: 84.6484 | actor_loss: 2.4622 | bc_loss: 2.4619 | alpha: 0.0500
+2025-12-12 20:15:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 17200 | critic_loss: 0.2496 | q1_mean: 86.1309 | actor_loss: 1.4536 | bc_loss: 1.4533 | alpha: 0.0500
+2025-12-12 20:15:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 17300 | critic_loss: 0.2330 | q1_mean: 88.2690 | actor_loss: 1.4974 | bc_loss: 1.4971 | alpha: 0.0500
+2025-12-12 20:15:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 17400 | critic_loss: 0.5989 | q1_mean: 88.5708 | actor_loss: 4.4650 | bc_loss: 4.4646 | alpha: 0.0500
+2025-12-12 20:15:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 17500 | critic_loss: 0.4867 | q1_mean: 91.8544 | actor_loss: 3.4978 | bc_loss: 3.4975 | alpha: 0.0500
+2025-12-12 20:16:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 17600 | critic_loss: 0.4539 | q1_mean: 92.8111 | actor_loss: 2.6102 | bc_loss: 2.6099 | alpha: 0.0500
+2025-12-12 20:16:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 17700 | critic_loss: 0.5428 | q1_mean: 95.0961 | actor_loss: 9.0052 | bc_loss: 9.0050 | alpha: 0.0500
+2025-12-12 20:16:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 17800 | critic_loss: 0.2777 | q1_mean: 93.0688 | actor_loss: 3.5761 | bc_loss: 3.5758 | alpha: 0.0500
+2025-12-12 20:16:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 17900 | critic_loss: 0.3631 | q1_mean: 95.6994 | actor_loss: 7.0574 | bc_loss: 7.0572 | alpha: 0.0500
+2025-12-12 20:16:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 18000 | critic_loss: 0.1939 | q1_mean: 95.3352 | actor_loss: 4.3618 | bc_loss: 4.3614 | alpha: 0.0500
+2025-12-12 20:16:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 18100 | critic_loss: 0.3435 | q1_mean: 96.6199 | actor_loss: 1.8952 | bc_loss: 1.8949 | alpha: 0.0500
+2025-12-12 20:16:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 18200 | critic_loss: 0.4592 | q1_mean: 97.8761 | actor_loss: 1.6223 | bc_loss: 1.6220 | alpha: 0.0500
+2025-12-12 20:16:10 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 18300 | critic_loss: 0.2387 | q1_mean: 98.4109 | actor_loss: 3.4325 | bc_loss: 3.4322 | alpha: 0.0500
+2025-12-12 20:16:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 18400 | critic_loss: 0.9321 | q1_mean: 100.1882 | actor_loss: 6.2997 | bc_loss: 6.2994 | alpha: 0.0500
+2025-12-12 20:16:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 18500 | critic_loss: 1.2286 | q1_mean: 101.9407 | actor_loss: 2.2212 | bc_loss: 2.2209 | alpha: 0.0500
+2025-12-12 20:16:14 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 18600 | critic_loss: 0.2428 | q1_mean: 102.7358 | actor_loss: 1.5010 | bc_loss: 1.5007 | alpha: 0.0500
+2025-12-12 20:16:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 18700 | critic_loss: 0.1786 | q1_mean: 103.7313 | actor_loss: 3.7386 | bc_loss: 3.7383 | alpha: 0.0500
+2025-12-12 20:16:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 18800 | critic_loss: 0.1343 | q1_mean: 104.8587 | actor_loss: 3.0240 | bc_loss: 3.0236 | alpha: 0.0500
+2025-12-12 20:16:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 18900 | critic_loss: 0.2685 | q1_mean: 104.2333 | actor_loss: 7.6302 | bc_loss: 7.6298 | alpha: 0.0500
+2025-12-12 20:16:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 19000 | critic_loss: 0.1489 | q1_mean: 104.4302 | actor_loss: 7.9950 | bc_loss: 7.9947 | alpha: 0.0500
+2025-12-12 20:16:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 19100 | critic_loss: 0.1781 | q1_mean: 108.2355 | actor_loss: 2.0873 | bc_loss: 2.0871 | alpha: 0.0500
+2025-12-12 20:16:22 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 19200 | critic_loss: 0.1352 | q1_mean: 107.8552 | actor_loss: 3.4693 | bc_loss: 3.4691 | alpha: 0.0500
+2025-12-12 20:16:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 19300 | critic_loss: 0.3138 | q1_mean: 107.4066 | actor_loss: 1.8554 | bc_loss: 1.8551 | alpha: 0.0500
+2025-12-12 20:16:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 19400 | critic_loss: 0.4255 | q1_mean: 111.7738 | actor_loss: 3.5612 | bc_loss: 3.5610 | alpha: 0.0500
+2025-12-12 20:16:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 19500 | critic_loss: 0.3666 | q1_mean: 114.5623 | actor_loss: 1.8871 | bc_loss: 1.8868 | alpha: 0.0500
+2025-12-12 20:16:27 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 19600 | critic_loss: 0.2397 | q1_mean: 114.0053 | actor_loss: 2.2401 | bc_loss: 2.2398 | alpha: 0.0500
+2025-12-12 20:16:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 19700 | critic_loss: 0.2758 | q1_mean: 113.0531 | actor_loss: 1.6705 | bc_loss: 1.6702 | alpha: 0.0500
+2025-12-12 20:16:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 19800 | critic_loss: 0.8280 | q1_mean: 116.0804 | actor_loss: 1.8429 | bc_loss: 1.8426 | alpha: 0.0500
+2025-12-12 20:16:31 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 19900 | critic_loss: 0.4758 | q1_mean: 116.1381 | actor_loss: 1.3969 | bc_loss: 1.3966 | alpha: 0.0500
+2025-12-12 20:16:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 20000 | critic_loss: 0.1438 | q1_mean: 118.2702 | actor_loss: 1.3065 | bc_loss: 1.3063 | alpha: 0.0500
+2025-12-12 20:16:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Validation Step 20000 | Reward: 4202.25
+2025-12-12 20:17:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 20100 | critic_loss: 0.4098 | q1_mean: 118.7200 | actor_loss: 5.5469 | bc_loss: 5.5467 | alpha: 0.0500
+2025-12-12 20:17:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 20200 | critic_loss: 0.2032 | q1_mean: 119.1501 | actor_loss: 2.3386 | bc_loss: 2.3383 | alpha: 0.0500
+2025-12-12 20:17:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 20300 | critic_loss: 0.3521 | q1_mean: 118.4068 | actor_loss: 2.3621 | bc_loss: 2.3618 | alpha: 0.0500
+2025-12-12 20:17:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 20400 | critic_loss: 1.2735 | q1_mean: 121.6662 | actor_loss: 1.2461 | bc_loss: 1.2458 | alpha: 0.0500
+2025-12-12 20:17:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 20500 | critic_loss: 0.4660 | q1_mean: 121.8266 | actor_loss: 1.3495 | bc_loss: 1.3492 | alpha: 0.0500
+2025-12-12 20:17:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 20600 | critic_loss: 1.2702 | q1_mean: 125.1049 | actor_loss: 2.6076 | bc_loss: 2.6073 | alpha: 0.0500
+2025-12-12 20:17:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 20700 | critic_loss: 0.2375 | q1_mean: 124.9737 | actor_loss: 2.8216 | bc_loss: 2.8213 | alpha: 0.0500
+2025-12-12 20:17:10 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 20800 | critic_loss: 0.2825 | q1_mean: 125.1014 | actor_loss: 1.4758 | bc_loss: 1.4755 | alpha: 0.0500
+2025-12-12 20:17:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 20900 | critic_loss: 0.8738 | q1_mean: 128.3172 | actor_loss: 2.8579 | bc_loss: 2.8577 | alpha: 0.0500
+2025-12-12 20:17:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 21000 | critic_loss: 0.2053 | q1_mean: 131.6891 | actor_loss: 4.7784 | bc_loss: 4.7782 | alpha: 0.0500
+2025-12-12 20:17:14 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 21100 | critic_loss: 0.1713 | q1_mean: 130.0089 | actor_loss: 3.8555 | bc_loss: 3.8552 | alpha: 0.0500
+2025-12-12 20:17:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 21200 | critic_loss: 0.0988 | q1_mean: 127.6080 | actor_loss: 3.6933 | bc_loss: 3.6930 | alpha: 0.0500
+2025-12-12 20:17:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 21300 | critic_loss: 0.7298 | q1_mean: 129.2102 | actor_loss: 4.7120 | bc_loss: 4.7117 | alpha: 0.0500
+2025-12-12 20:17:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 21400 | critic_loss: 0.6126 | q1_mean: 131.0372 | actor_loss: 4.8616 | bc_loss: 4.8613 | alpha: 0.0500
+2025-12-12 20:17:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 21500 | critic_loss: 1.0051 | q1_mean: 131.3578 | actor_loss: 2.1629 | bc_loss: 2.1627 | alpha: 0.0500
+2025-12-12 20:17:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 21600 | critic_loss: 2.0197 | q1_mean: 134.0264 | actor_loss: 1.6421 | bc_loss: 1.6418 | alpha: 0.0500
+2025-12-12 20:17:22 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 21700 | critic_loss: 1.6091 | q1_mean: 134.6617 | actor_loss: 2.6775 | bc_loss: 2.6772 | alpha: 0.0500
+2025-12-12 20:17:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 21800 | critic_loss: 0.7189 | q1_mean: 132.7976 | actor_loss: 1.9591 | bc_loss: 1.9588 | alpha: 0.0500
+2025-12-12 20:17:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 21900 | critic_loss: 0.1707 | q1_mean: 138.0753 | actor_loss: 3.4252 | bc_loss: 3.4249 | alpha: 0.0500
+2025-12-12 20:17:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 22000 | critic_loss: 0.2071 | q1_mean: 134.7082 | actor_loss: 1.2585 | bc_loss: 1.2582 | alpha: 0.0500
+2025-12-12 20:17:27 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 22100 | critic_loss: 0.2215 | q1_mean: 138.0571 | actor_loss: 1.8140 | bc_loss: 1.8137 | alpha: 0.0500
+2025-12-12 20:17:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 22200 | critic_loss: 0.2554 | q1_mean: 138.1874 | actor_loss: 5.6041 | bc_loss: 5.6038 | alpha: 0.0500
+2025-12-12 20:17:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 22300 | critic_loss: 0.6007 | q1_mean: 137.9552 | actor_loss: 1.4014 | bc_loss: 1.4011 | alpha: 0.0500
+2025-12-12 20:17:31 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 22400 | critic_loss: 0.3393 | q1_mean: 139.9526 | actor_loss: 1.5536 | bc_loss: 1.5533 | alpha: 0.0500
+2025-12-12 20:17:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 22500 | critic_loss: 0.3841 | q1_mean: 143.1151 | actor_loss: 9.3101 | bc_loss: 9.3098 | alpha: 0.0500
+2025-12-12 20:17:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 22600 | critic_loss: 0.2556 | q1_mean: 143.6025 | actor_loss: 1.7735 | bc_loss: 1.7733 | alpha: 0.0500
+2025-12-12 20:17:35 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 22700 | critic_loss: 0.3721 | q1_mean: 143.6172 | actor_loss: 2.1045 | bc_loss: 2.1042 | alpha: 0.0500
+2025-12-12 20:17:37 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 22800 | critic_loss: 0.4872 | q1_mean: 140.8913 | actor_loss: 1.2486 | bc_loss: 1.2483 | alpha: 0.0500
+2025-12-12 20:17:38 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 22900 | critic_loss: 0.4804 | q1_mean: 143.9051 | actor_loss: 1.3866 | bc_loss: 1.3863 | alpha: 0.0500
+2025-12-12 20:17:39 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 23000 | critic_loss: 0.8333 | q1_mean: 145.7887 | actor_loss: 19.6832 | bc_loss: 19.6829 | alpha: 0.0500
+2025-12-12 20:17:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 23100 | critic_loss: 0.5282 | q1_mean: 147.7860 | actor_loss: 3.3162 | bc_loss: 3.3159 | alpha: 0.0500
+2025-12-12 20:17:42 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 23200 | critic_loss: 0.1876 | q1_mean: 147.7455 | actor_loss: 1.3416 | bc_loss: 1.3414 | alpha: 0.0500
+2025-12-12 20:17:43 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 23300 | critic_loss: 0.2625 | q1_mean: 146.8682 | actor_loss: 2.5258 | bc_loss: 2.5255 | alpha: 0.0500
+2025-12-12 20:17:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 23400 | critic_loss: 0.3235 | q1_mean: 151.9656 | actor_loss: 1.3407 | bc_loss: 1.3404 | alpha: 0.0500
+2025-12-12 20:17:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 23500 | critic_loss: 0.2247 | q1_mean: 152.3897 | actor_loss: 1.7037 | bc_loss: 1.7034 | alpha: 0.0500
+2025-12-12 20:17:47 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 23600 | critic_loss: 1.0895 | q1_mean: 149.9306 | actor_loss: 1.2994 | bc_loss: 1.2991 | alpha: 0.0500
+2025-12-12 20:17:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 23700 | critic_loss: 1.0216 | q1_mean: 157.2471 | actor_loss: 1.6370 | bc_loss: 1.6368 | alpha: 0.0500
+2025-12-12 20:17:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 23800 | critic_loss: 1.2126 | q1_mean: 154.4490 | actor_loss: 1.5310 | bc_loss: 1.5307 | alpha: 0.0500
+2025-12-12 20:17:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 23900 | critic_loss: 0.2993 | q1_mean: 157.0064 | actor_loss: 1.9109 | bc_loss: 1.9106 | alpha: 0.0500
+2025-12-12 20:17:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 24000 | critic_loss: 0.4413 | q1_mean: 155.8055 | actor_loss: 1.0637 | bc_loss: 1.0634 | alpha: 0.0500
+2025-12-12 20:17:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 24100 | critic_loss: 1.5660 | q1_mean: 157.2813 | actor_loss: 2.0203 | bc_loss: 2.0201 | alpha: 0.0500
+2025-12-12 20:17:55 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 24200 | critic_loss: 0.3430 | q1_mean: 156.6422 | actor_loss: 8.5888 | bc_loss: 8.5886 | alpha: 0.0500
+2025-12-12 20:17:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 24300 | critic_loss: 0.2888 | q1_mean: 157.1012 | actor_loss: 2.4819 | bc_loss: 2.4816 | alpha: 0.0500
+2025-12-12 20:17:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 24400 | critic_loss: 0.5580 | q1_mean: 158.0125 | actor_loss: 1.2486 | bc_loss: 1.2483 | alpha: 0.0500
+2025-12-12 20:17:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 24500 | critic_loss: 0.4415 | q1_mean: 162.6612 | actor_loss: 1.6121 | bc_loss: 1.6118 | alpha: 0.0500
+2025-12-12 20:18:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 24600 | critic_loss: 0.4770 | q1_mean: 162.0884 | actor_loss: 10.0090 | bc_loss: 10.0087 | alpha: 0.0500
+2025-12-12 20:18:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 24700 | critic_loss: 0.4406 | q1_mean: 164.1988 | actor_loss: 1.3467 | bc_loss: 1.3465 | alpha: 0.0500
+2025-12-12 20:18:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 24800 | critic_loss: 0.3525 | q1_mean: 161.0075 | actor_loss: 1.6623 | bc_loss: 1.6620 | alpha: 0.0500
+2025-12-12 20:18:04 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 24900 | critic_loss: 0.1656 | q1_mean: 159.4172 | actor_loss: 1.2390 | bc_loss: 1.2387 | alpha: 0.0500
+2025-12-12 20:18:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 25000 | critic_loss: 0.5190 | q1_mean: 165.9839 | actor_loss: 1.3521 | bc_loss: 1.3518 | alpha: 0.0500
+2025-12-12 20:18:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 25100 | critic_loss: 1.0831 | q1_mean: 164.0141 | actor_loss: 1.0647 | bc_loss: 1.0644 | alpha: 0.0500
+2025-12-12 20:18:08 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 25200 | critic_loss: 1.1905 | q1_mean: 163.6873 | actor_loss: 1.2088 | bc_loss: 1.2085 | alpha: 0.0500
+2025-12-12 20:18:10 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 25300 | critic_loss: 0.2819 | q1_mean: 166.1924 | actor_loss: 1.6797 | bc_loss: 1.6794 | alpha: 0.0500
+2025-12-12 20:18:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 25400 | critic_loss: 0.9950 | q1_mean: 165.7848 | actor_loss: 1.1620 | bc_loss: 1.1617 | alpha: 0.0500
+2025-12-12 20:18:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 25500 | critic_loss: 1.1537 | q1_mean: 162.9971 | actor_loss: 8.2408 | bc_loss: 8.2404 | alpha: 0.0500
+2025-12-12 20:18:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 25600 | critic_loss: 0.4128 | q1_mean: 171.6378 | actor_loss: 1.8073 | bc_loss: 1.8070 | alpha: 0.0500
+2025-12-12 20:18:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 25700 | critic_loss: 0.3234 | q1_mean: 166.4171 | actor_loss: 1.1261 | bc_loss: 1.1258 | alpha: 0.0500
+2025-12-12 20:18:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 25800 | critic_loss: 0.4904 | q1_mean: 172.3313 | actor_loss: 1.8284 | bc_loss: 1.8281 | alpha: 0.0500
+2025-12-12 20:18:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 25900 | critic_loss: 0.4748 | q1_mean: 170.9408 | actor_loss: 1.3575 | bc_loss: 1.3572 | alpha: 0.0500
+2025-12-12 20:18:20 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 26000 | critic_loss: 1.0140 | q1_mean: 169.6313 | actor_loss: 1.3450 | bc_loss: 1.3446 | alpha: 0.0500
+2025-12-12 20:18:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 26100 | critic_loss: 0.5524 | q1_mean: 170.8537 | actor_loss: 1.3071 | bc_loss: 1.3068 | alpha: 0.0500
+2025-12-12 20:18:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 26200 | critic_loss: 1.0074 | q1_mean: 171.8084 | actor_loss: 1.8121 | bc_loss: 1.8118 | alpha: 0.0500
+2025-12-12 20:18:24 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 26300 | critic_loss: 0.5656 | q1_mean: 171.5567 | actor_loss: 4.3586 | bc_loss: 4.3583 | alpha: 0.0500
+2025-12-12 20:18:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 26400 | critic_loss: 0.6189 | q1_mean: 177.4502 | actor_loss: 1.6251 | bc_loss: 1.6248 | alpha: 0.0500
+2025-12-12 20:18:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 26500 | critic_loss: 0.9380 | q1_mean: 180.4672 | actor_loss: 5.3020 | bc_loss: 5.3016 | alpha: 0.0500
+2025-12-12 20:18:28 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 26600 | critic_loss: 0.4881 | q1_mean: 175.4484 | actor_loss: 1.2131 | bc_loss: 1.2127 | alpha: 0.0500
+2025-12-12 20:18:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 26700 | critic_loss: 0.8666 | q1_mean: 178.8696 | actor_loss: 1.2736 | bc_loss: 1.2733 | alpha: 0.0500
+2025-12-12 20:18:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 26800 | critic_loss: 1.2162 | q1_mean: 180.1090 | actor_loss: 1.3355 | bc_loss: 1.3352 | alpha: 0.0500
+2025-12-12 20:18:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 26900 | critic_loss: 0.5061 | q1_mean: 181.4251 | actor_loss: 2.6093 | bc_loss: 2.6090 | alpha: 0.0500
+2025-12-12 20:18:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 27000 | critic_loss: 0.2580 | q1_mean: 181.7308 | actor_loss: 1.2179 | bc_loss: 1.2177 | alpha: 0.0500
+2025-12-12 20:18:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 27100 | critic_loss: 1.7317 | q1_mean: 182.4526 | actor_loss: 8.5537 | bc_loss: 8.5534 | alpha: 0.0500
+2025-12-12 20:18:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 27200 | critic_loss: 0.5761 | q1_mean: 178.5528 | actor_loss: 1.1424 | bc_loss: 1.1421 | alpha: 0.0500
+2025-12-12 20:18:37 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 27300 | critic_loss: 1.7476 | q1_mean: 180.8416 | actor_loss: 1.1891 | bc_loss: 1.1888 | alpha: 0.0500
+2025-12-12 20:18:38 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 27400 | critic_loss: 0.2912 | q1_mean: 182.1409 | actor_loss: 2.1459 | bc_loss: 2.1456 | alpha: 0.0500
+2025-12-12 20:18:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 27500 | critic_loss: 0.5865 | q1_mean: 187.3745 | actor_loss: 2.1916 | bc_loss: 2.1913 | alpha: 0.0500
+2025-12-12 20:18:41 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 27600 | critic_loss: 0.4176 | q1_mean: 184.2736 | actor_loss: 1.3775 | bc_loss: 1.3773 | alpha: 0.0500
+2025-12-12 20:18:42 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 27700 | critic_loss: 0.2365 | q1_mean: 183.2023 | actor_loss: 1.2062 | bc_loss: 1.2059 | alpha: 0.0500
+2025-12-12 20:18:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 27800 | critic_loss: 0.2615 | q1_mean: 187.1902 | actor_loss: 1.1651 | bc_loss: 1.1648 | alpha: 0.0500
+2025-12-12 20:18:45 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 27900 | critic_loss: 0.7723 | q1_mean: 191.6306 | actor_loss: 1.0524 | bc_loss: 1.0521 | alpha: 0.0500
+2025-12-12 20:18:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 28000 | critic_loss: 0.4498 | q1_mean: 189.8207 | actor_loss: 1.5144 | bc_loss: 1.5142 | alpha: 0.0500
+2025-12-12 20:18:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 28100 | critic_loss: 0.9019 | q1_mean: 191.3652 | actor_loss: 1.2637 | bc_loss: 1.2635 | alpha: 0.0500
+2025-12-12 20:18:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 28200 | critic_loss: 0.5604 | q1_mean: 186.4329 | actor_loss: 4.0824 | bc_loss: 4.0821 | alpha: 0.0500
+2025-12-12 20:18:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 28300 | critic_loss: 1.0364 | q1_mean: 192.9775 | actor_loss: 2.8814 | bc_loss: 2.8811 | alpha: 0.0500
+2025-12-12 20:18:52 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 28400 | critic_loss: 1.8945 | q1_mean: 187.2443 | actor_loss: 1.0109 | bc_loss: 1.0106 | alpha: 0.0500
+2025-12-12 20:18:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 28500 | critic_loss: 0.3442 | q1_mean: 195.7798 | actor_loss: 0.9745 | bc_loss: 0.9742 | alpha: 0.0500
+2025-12-12 20:18:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 28600 | critic_loss: 0.3792 | q1_mean: 191.3732 | actor_loss: 1.2038 | bc_loss: 1.2035 | alpha: 0.0500
+2025-12-12 20:18:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 28700 | critic_loss: 0.3661 | q1_mean: 193.5879 | actor_loss: 0.9648 | bc_loss: 0.9646 | alpha: 0.0500
+2025-12-12 20:18:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 28800 | critic_loss: 0.2395 | q1_mean: 193.4551 | actor_loss: 1.1641 | bc_loss: 1.1638 | alpha: 0.0500
+2025-12-12 20:18:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 28900 | critic_loss: 0.3475 | q1_mean: 198.3858 | actor_loss: 1.4172 | bc_loss: 1.4169 | alpha: 0.0500
+2025-12-12 20:19:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 29000 | critic_loss: 1.8417 | q1_mean: 193.6281 | actor_loss: 1.7870 | bc_loss: 1.7867 | alpha: 0.0500
+2025-12-12 20:19:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 29100 | critic_loss: 0.5811 | q1_mean: 193.3522 | actor_loss: 1.4676 | bc_loss: 1.4673 | alpha: 0.0500
+2025-12-12 20:19:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 29200 | critic_loss: 0.4729 | q1_mean: 197.5058 | actor_loss: 1.2029 | bc_loss: 1.2026 | alpha: 0.0500
+2025-12-12 20:19:04 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 29300 | critic_loss: 0.8068 | q1_mean: 194.7951 | actor_loss: 1.0728 | bc_loss: 1.0726 | alpha: 0.0500
+2025-12-12 20:19:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 29400 | critic_loss: 1.3347 | q1_mean: 200.5508 | actor_loss: 15.2747 | bc_loss: 15.2744 | alpha: 0.0500
+2025-12-12 20:19:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 29500 | critic_loss: 0.6817 | q1_mean: 194.2553 | actor_loss: 2.1987 | bc_loss: 2.1984 | alpha: 0.0500
+2025-12-12 20:19:08 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 29600 | critic_loss: 0.2343 | q1_mean: 198.0749 | actor_loss: 1.2886 | bc_loss: 1.2883 | alpha: 0.0500
+2025-12-12 20:19:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 29700 | critic_loss: 0.2011 | q1_mean: 202.2871 | actor_loss: 1.5609 | bc_loss: 1.5606 | alpha: 0.0500
+2025-12-12 20:19:10 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 29800 | critic_loss: 0.5156 | q1_mean: 200.2590 | actor_loss: 1.1475 | bc_loss: 1.1472 | alpha: 0.0500
+2025-12-12 20:19:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 29900 | critic_loss: 0.8855 | q1_mean: 200.0942 | actor_loss: 0.9269 | bc_loss: 0.9266 | alpha: 0.0500
+2025-12-12 20:19:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage2_BC] Step 30000 | critic_loss: 0.1758 | q1_mean: 201.2750 | actor_loss: -0.3709 | bc_loss: 0.6204 | alpha_loss: 136.6499 | alpha: 0.0500
+2025-12-12 20:19:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Validation Step 30000 | Reward: 6670.74
+2025-12-12 20:19:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 30100 | critic_loss: 1.9803 | q1_mean: 203.3850 | actor_loss: -0.0485 | bc_loss: 0.9570 | alpha_loss: 127.6486 | alpha: 0.0508
+2025-12-12 20:19:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 30200 | critic_loss: 0.3851 | q1_mean: 197.8482 | actor_loss: -0.2417 | bc_loss: 0.7343 | alpha_loss: 123.8535 | alpha: 0.0515
+2025-12-12 20:19:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 30300 | critic_loss: 0.5353 | q1_mean: 201.5047 | actor_loss: -0.4045 | bc_loss: 0.5893 | alpha_loss: 119.3877 | alpha: 0.0523
+2025-12-12 20:19:55 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 30400 | critic_loss: 0.7812 | q1_mean: 206.0149 | actor_loss: 1.1287 | bc_loss: 2.1487 | alpha_loss: 116.0503 | alpha: 0.0530
+2025-12-12 20:19:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 30500 | critic_loss: 0.5048 | q1_mean: 205.1110 | actor_loss: 0.6109 | bc_loss: 1.6212 | alpha_loss: 115.9318 | alpha: 0.0538
+2025-12-12 20:19:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 30600 | critic_loss: 1.1992 | q1_mean: 205.2273 | actor_loss: -0.4263 | bc_loss: 0.5855 | alpha_loss: 114.9984 | alpha: 0.0546
+2025-12-12 20:19:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 30700 | critic_loss: 0.2848 | q1_mean: 206.5521 | actor_loss: -0.5107 | bc_loss: 0.5068 | alpha_loss: 112.3193 | alpha: 0.0554
+2025-12-12 20:20:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 30800 | critic_loss: 0.3792 | q1_mean: 206.9708 | actor_loss: -0.4978 | bc_loss: 0.5248 | alpha_loss: 113.6414 | alpha: 0.0562
+2025-12-12 20:20:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 30900 | critic_loss: 0.6254 | q1_mean: 211.5972 | actor_loss: 1.8034 | bc_loss: 2.8457 | alpha_loss: 109.0883 | alpha: 0.0570
+2025-12-12 20:20:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 31000 | critic_loss: 0.3345 | q1_mean: 210.5926 | actor_loss: -0.4322 | bc_loss: 0.6060 | alpha_loss: 108.7013 | alpha: 0.0578
+2025-12-12 20:20:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 31100 | critic_loss: 1.1452 | q1_mean: 212.9191 | actor_loss: -0.4492 | bc_loss: 0.6028 | alpha_loss: 108.9028 | alpha: 0.0586
+2025-12-12 20:20:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 31200 | critic_loss: 0.5850 | q1_mean: 211.5756 | actor_loss: -0.0723 | bc_loss: 0.9681 | alpha_loss: 109.5732 | alpha: 0.0595
+2025-12-12 20:20:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 31300 | critic_loss: 0.5111 | q1_mean: 218.1282 | actor_loss: -0.4151 | bc_loss: 0.6597 | alpha_loss: 107.4690 | alpha: 0.0604
+2025-12-12 20:20:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 31400 | critic_loss: 0.5168 | q1_mean: 211.3689 | actor_loss: -0.0799 | bc_loss: 0.9626 | alpha_loss: 110.4196 | alpha: 0.0613
+2025-12-12 20:20:10 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 31500 | critic_loss: 0.4398 | q1_mean: 211.8570 | actor_loss: -0.4988 | bc_loss: 0.5463 | alpha_loss: 108.4734 | alpha: 0.0622
+2025-12-12 20:20:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 31600 | critic_loss: 0.5999 | q1_mean: 216.0181 | actor_loss: -0.5105 | bc_loss: 0.5527 | alpha_loss: 108.5251 | alpha: 0.0631
+2025-12-12 20:20:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 31700 | critic_loss: 0.8760 | q1_mean: 217.1890 | actor_loss: -0.3652 | bc_loss: 0.7053 | alpha_loss: 107.5450 | alpha: 0.0641
+2025-12-12 20:20:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 31800 | critic_loss: 2.4034 | q1_mean: 213.1937 | actor_loss: -0.5532 | bc_loss: 0.4952 | alpha_loss: 106.2595 | alpha: 0.0650
+2025-12-12 20:20:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 31900 | critic_loss: 0.7289 | q1_mean: 216.8625 | actor_loss: -0.3197 | bc_loss: 0.7475 | alpha_loss: 104.2086 | alpha: 0.0660
+2025-12-12 20:20:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 32000 | critic_loss: 0.8000 | q1_mean: 215.5426 | actor_loss: -0.4895 | bc_loss: 0.5731 | alpha_loss: 104.2628 | alpha: 0.0670
+2025-12-12 20:20:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 32100 | critic_loss: 0.7878 | q1_mean: 214.1615 | actor_loss: -0.4926 | bc_loss: 0.5598 | alpha_loss: 105.2152 | alpha: 0.0680
+2025-12-12 20:20:20 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 32200 | critic_loss: 0.7427 | q1_mean: 218.8870 | actor_loss: -0.4954 | bc_loss: 0.5823 | alpha_loss: 103.9365 | alpha: 0.0690
+2025-12-12 20:20:22 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 32300 | critic_loss: 0.8843 | q1_mean: 215.2152 | actor_loss: -0.3951 | bc_loss: 0.6619 | alpha_loss: 104.7997 | alpha: 0.0701
+2025-12-12 20:20:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 32400 | critic_loss: 0.3464 | q1_mean: 213.0207 | actor_loss: -0.3046 | bc_loss: 0.7443 | alpha_loss: 104.9051 | alpha: 0.0711
+2025-12-12 20:20:24 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 32500 | critic_loss: 0.6967 | q1_mean: 214.8897 | actor_loss: -0.5136 | bc_loss: 0.5454 | alpha_loss: 104.9618 | alpha: 0.0722
+2025-12-12 20:20:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 32600 | critic_loss: 0.8975 | q1_mean: 219.7138 | actor_loss: -0.5469 | bc_loss: 0.5372 | alpha_loss: 99.9621 | alpha: 0.0732
+2025-12-12 20:20:27 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 32700 | critic_loss: 1.2755 | q1_mean: 219.2263 | actor_loss: -0.5110 | bc_loss: 0.5593 | alpha_loss: 100.1675 | alpha: 0.0743
+2025-12-12 20:20:28 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 32800 | critic_loss: 0.5920 | q1_mean: 219.2414 | actor_loss: -0.6312 | bc_loss: 0.4471 | alpha_loss: 97.7913 | alpha: 0.0754
+2025-12-12 20:20:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 32900 | critic_loss: 0.4170 | q1_mean: 216.6933 | actor_loss: -0.5483 | bc_loss: 0.5181 | alpha_loss: 97.1082 | alpha: 0.0765
+2025-12-12 20:20:31 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 33000 | critic_loss: 0.4804 | q1_mean: 219.6245 | actor_loss: -0.5558 | bc_loss: 0.5261 | alpha_loss: 97.5506 | alpha: 0.0777
+2025-12-12 20:20:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 33100 | critic_loss: 0.6660 | q1_mean: 218.0320 | actor_loss: -0.3527 | bc_loss: 0.7195 | alpha_loss: 94.2798 | alpha: 0.0788
+2025-12-12 20:20:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 33200 | critic_loss: 2.2376 | q1_mean: 224.0593 | actor_loss: -0.4562 | bc_loss: 0.6358 | alpha_loss: 97.6240 | alpha: 0.0800
+2025-12-12 20:20:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 33300 | critic_loss: 0.7971 | q1_mean: 218.9926 | actor_loss: -0.4670 | bc_loss: 0.6116 | alpha_loss: 94.7059 | alpha: 0.0812
+2025-12-12 20:20:37 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 33400 | critic_loss: 0.8438 | q1_mean: 228.3365 | actor_loss: -0.6615 | bc_loss: 0.4619 | alpha_loss: 97.4256 | alpha: 0.0824
+2025-12-12 20:20:39 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 33500 | critic_loss: 4.7703 | q1_mean: 226.3632 | actor_loss: -0.5171 | bc_loss: 0.5896 | alpha_loss: 93.7331 | alpha: 0.0836
+2025-12-12 20:20:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 33600 | critic_loss: 2.5717 | q1_mean: 228.5064 | actor_loss: -0.5512 | bc_loss: 0.5679 | alpha_loss: 95.8378 | alpha: 0.0849
+2025-12-12 20:20:41 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 33700 | critic_loss: 1.1426 | q1_mean: 225.2182 | actor_loss: -0.5852 | bc_loss: 0.5231 | alpha_loss: 92.6363 | alpha: 0.0862
+2025-12-12 20:20:43 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 33800 | critic_loss: 0.5895 | q1_mean: 228.0163 | actor_loss: -0.6818 | bc_loss: 0.4400 | alpha_loss: 89.7768 | alpha: 0.0874
+2025-12-12 20:20:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 33900 | critic_loss: 0.5779 | q1_mean: 224.7910 | actor_loss: -0.2984 | bc_loss: 0.8095 | alpha_loss: 91.7891 | alpha: 0.0887
+2025-12-12 20:20:45 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 34000 | critic_loss: 1.8126 | q1_mean: 224.9553 | actor_loss: -0.5544 | bc_loss: 0.5445 | alpha_loss: 89.1417 | alpha: 0.0901
+2025-12-12 20:20:47 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 34100 | critic_loss: 1.0039 | q1_mean: 226.7598 | actor_loss: 0.9441 | bc_loss: 2.0607 | alpha_loss: 91.3027 | alpha: 0.0914
+2025-12-12 20:20:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 34200 | critic_loss: 0.7438 | q1_mean: 227.5211 | actor_loss: -0.6117 | bc_loss: 0.5016 | alpha_loss: 91.3469 | alpha: 0.0928
+2025-12-12 20:20:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 34300 | critic_loss: 2.7092 | q1_mean: 228.7291 | actor_loss: -0.4075 | bc_loss: 0.7180 | alpha_loss: 87.5354 | alpha: 0.0941
+2025-12-12 20:20:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 34400 | critic_loss: 1.3442 | q1_mean: 227.3096 | actor_loss: -0.5941 | bc_loss: 0.5139 | alpha_loss: 86.1487 | alpha: 0.0955
+2025-12-12 20:20:52 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 34500 | critic_loss: 3.1180 | q1_mean: 225.7976 | actor_loss: -0.6877 | bc_loss: 0.4178 | alpha_loss: 84.7278 | alpha: 0.0969
+2025-12-12 20:20:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 34600 | critic_loss: 1.7579 | q1_mean: 224.1301 | actor_loss: -0.5841 | bc_loss: 0.5186 | alpha_loss: 84.0727 | alpha: 0.0983
+2025-12-12 20:20:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 34700 | critic_loss: 1.5660 | q1_mean: 225.7546 | actor_loss: -0.5710 | bc_loss: 0.5354 | alpha_loss: 85.2069 | alpha: 0.0998
+2025-12-12 20:20:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 34800 | critic_loss: 1.2934 | q1_mean: 222.1441 | actor_loss: -0.4326 | bc_loss: 0.6554 | alpha_loss: 83.8317 | alpha: 0.1012
+2025-12-12 20:20:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 34900 | critic_loss: 0.7454 | q1_mean: 222.9825 | actor_loss: -0.3871 | bc_loss: 0.7020 | alpha_loss: 82.8012 | alpha: 0.1027
+2025-12-12 20:21:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 35000 | critic_loss: 0.5089 | q1_mean: 223.6689 | actor_loss: -0.5661 | bc_loss: 0.5317 | alpha_loss: 83.3182 | alpha: 0.1042
+2025-12-12 20:21:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 35100 | critic_loss: 2.0788 | q1_mean: 228.3150 | actor_loss: -0.5804 | bc_loss: 0.5391 | alpha_loss: 87.1061 | alpha: 0.1058
+2025-12-12 20:21:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 35200 | critic_loss: 1.4820 | q1_mean: 233.2215 | actor_loss: -0.4201 | bc_loss: 0.7165 | alpha_loss: 83.5323 | alpha: 0.1073
+2025-12-12 20:21:04 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 35300 | critic_loss: 2.0657 | q1_mean: 235.7061 | actor_loss: -0.6315 | bc_loss: 0.5159 | alpha_loss: 80.6355 | alpha: 0.1089
+2025-12-12 20:21:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 35400 | critic_loss: 0.7926 | q1_mean: 224.4013 | actor_loss: -0.6553 | bc_loss: 0.4419 | alpha_loss: 79.0432 | alpha: 0.1105
+2025-12-12 20:21:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 35500 | critic_loss: 2.1382 | q1_mean: 238.8417 | actor_loss: -0.5451 | bc_loss: 0.6293 | alpha_loss: 82.6119 | alpha: 0.1121
+2025-12-12 20:21:08 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 35600 | critic_loss: 0.8164 | q1_mean: 225.7323 | actor_loss: -0.6580 | bc_loss: 0.4481 | alpha_loss: 78.3563 | alpha: 0.1137
+2025-12-12 20:21:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 35700 | critic_loss: 2.6636 | q1_mean: 230.9065 | actor_loss: -0.5248 | bc_loss: 0.6092 | alpha_loss: 77.3652 | alpha: 0.1154
+2025-12-12 20:21:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 35800 | critic_loss: 2.1459 | q1_mean: 225.7172 | actor_loss: -0.3054 | bc_loss: 0.8013 | alpha_loss: 75.3564 | alpha: 0.1170
+2025-12-12 20:21:12 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 35900 | critic_loss: 1.7616 | q1_mean: 235.8464 | actor_loss: -0.6468 | bc_loss: 0.5110 | alpha_loss: 75.1987 | alpha: 0.1187
+2025-12-12 20:21:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 36000 | critic_loss: 3.4051 | q1_mean: 227.3783 | actor_loss: -0.6429 | bc_loss: 0.4645 | alpha_loss: 74.5721 | alpha: 0.1205
+2025-12-12 20:21:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 36100 | critic_loss: 1.5031 | q1_mean: 232.6494 | actor_loss: -0.5999 | bc_loss: 0.5391 | alpha_loss: 74.8561 | alpha: 0.1222
+2025-12-12 20:21:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 36200 | critic_loss: 0.8485 | q1_mean: 231.0218 | actor_loss: -0.7127 | bc_loss: 0.4187 | alpha_loss: 74.0293 | alpha: 0.1240
+2025-12-12 20:21:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 36300 | critic_loss: 1.3085 | q1_mean: 237.5442 | actor_loss: 8.1230 | bc_loss: 9.2860 | alpha_loss: 72.0479 | alpha: 0.1258
+2025-12-12 20:21:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 36400 | critic_loss: 0.7066 | q1_mean: 230.5283 | actor_loss: -0.6395 | bc_loss: 0.4916 | alpha_loss: 72.4430 | alpha: 0.1276
+2025-12-12 20:21:20 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 36500 | critic_loss: 5.1009 | q1_mean: 230.9271 | actor_loss: -0.5571 | bc_loss: 0.5759 | alpha_loss: 71.7260 | alpha: 0.1295
+2025-12-12 20:21:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 36600 | critic_loss: 1.2110 | q1_mean: 234.9672 | actor_loss: -0.0946 | bc_loss: 1.0602 | alpha_loss: 71.0553 | alpha: 0.1314
+2025-12-12 20:21:24 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 36700 | critic_loss: 0.8621 | q1_mean: 228.4040 | actor_loss: 1.5187 | bc_loss: 2.6384 | alpha_loss: 70.4950 | alpha: 0.1333
+2025-12-12 20:21:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 36800 | critic_loss: 1.3037 | q1_mean: 226.8033 | actor_loss: -0.4046 | bc_loss: 0.7027 | alpha_loss: 70.4745 | alpha: 0.1353
+2025-12-12 20:21:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 36900 | critic_loss: 2.1017 | q1_mean: 228.7624 | actor_loss: -0.5063 | bc_loss: 0.6094 | alpha_loss: 70.0159 | alpha: 0.1372
+2025-12-12 20:21:28 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 37000 | critic_loss: 1.3431 | q1_mean: 234.5920 | actor_loss: -0.6452 | bc_loss: 0.5018 | alpha_loss: 69.8658 | alpha: 0.1392
+2025-12-12 20:21:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 37100 | critic_loss: 1.4963 | q1_mean: 232.2672 | actor_loss: 0.5176 | bc_loss: 1.6489 | alpha_loss: 69.2872 | alpha: 0.1413
+2025-12-12 20:21:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 37200 | critic_loss: 1.3439 | q1_mean: 233.2740 | actor_loss: -0.5883 | bc_loss: 0.5536 | alpha_loss: 68.0316 | alpha: 0.1433
+2025-12-12 20:21:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 37300 | critic_loss: 1.5678 | q1_mean: 229.5721 | actor_loss: -0.3513 | bc_loss: 0.7689 | alpha_loss: 66.0651 | alpha: 0.1454
+2025-12-12 20:21:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 37400 | critic_loss: 1.7789 | q1_mean: 231.9187 | actor_loss: -0.4037 | bc_loss: 0.7273 | alpha_loss: 67.1420 | alpha: 0.1475
+2025-12-12 20:21:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 37500 | critic_loss: 1.6536 | q1_mean: 232.0453 | actor_loss: -0.6963 | bc_loss: 0.4361 | alpha_loss: 67.6284 | alpha: 0.1497
+2025-12-12 20:21:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 37600 | critic_loss: 0.8860 | q1_mean: 227.2022 | actor_loss: -0.5711 | bc_loss: 0.5357 | alpha_loss: 67.4685 | alpha: 0.1519
+2025-12-12 20:21:37 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 37700 | critic_loss: 1.3417 | q1_mean: 232.8857 | actor_loss: -0.5518 | bc_loss: 0.5850 | alpha_loss: 67.2398 | alpha: 0.1541
+2025-12-12 20:21:38 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 37800 | critic_loss: 0.9965 | q1_mean: 233.4428 | actor_loss: -0.6796 | bc_loss: 0.4592 | alpha_loss: 63.2762 | alpha: 0.1564
+2025-12-12 20:21:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 37900 | critic_loss: 1.9407 | q1_mean: 234.8367 | actor_loss: -0.6464 | bc_loss: 0.5025 | alpha_loss: 63.8326 | alpha: 0.1586
+2025-12-12 20:21:41 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 38000 | critic_loss: 2.2391 | q1_mean: 229.5430 | actor_loss: -0.6702 | bc_loss: 0.4525 | alpha_loss: 64.1843 | alpha: 0.1610
+2025-12-12 20:21:42 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 38100 | critic_loss: 1.9404 | q1_mean: 230.0431 | actor_loss: -0.5403 | bc_loss: 0.5830 | alpha_loss: 62.2144 | alpha: 0.1633
+2025-12-12 20:21:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 38200 | critic_loss: 1.5051 | q1_mean: 234.2386 | actor_loss: -0.6176 | bc_loss: 0.5220 | alpha_loss: 60.4677 | alpha: 0.1657
+2025-12-12 20:21:45 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 38300 | critic_loss: 1.2269 | q1_mean: 226.1767 | actor_loss: -0.5638 | bc_loss: 0.5350 | alpha_loss: 62.0618 | alpha: 0.1681
+2025-12-12 20:21:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 38400 | critic_loss: 2.3280 | q1_mean: 244.3289 | actor_loss: -0.7474 | bc_loss: 0.4481 | alpha_loss: 61.3322 | alpha: 0.1706
+2025-12-12 20:21:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 38500 | critic_loss: 2.5317 | q1_mean: 223.7168 | actor_loss: 0.1012 | bc_loss: 1.1824 | alpha_loss: 61.9948 | alpha: 0.1731
+2025-12-12 20:21:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 38600 | critic_loss: 1.1942 | q1_mean: 228.2361 | actor_loss: -0.6602 | bc_loss: 0.4486 | alpha_loss: 57.6004 | alpha: 0.1757
+2025-12-12 20:21:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 38700 | critic_loss: 1.3777 | q1_mean: 235.7725 | actor_loss: -0.5576 | bc_loss: 0.5932 | alpha_loss: 59.0106 | alpha: 0.1782
+2025-12-12 20:21:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 38800 | critic_loss: 6.2135 | q1_mean: 228.9030 | actor_loss: -0.5570 | bc_loss: 0.5457 | alpha_loss: 59.0682 | alpha: 0.1809
+2025-12-12 20:21:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 38900 | critic_loss: 1.2811 | q1_mean: 213.9285 | actor_loss: -0.4095 | bc_loss: 0.6265 | alpha_loss: 59.4946 | alpha: 0.1835
+2025-12-12 20:21:55 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 39000 | critic_loss: 2.7865 | q1_mean: 226.7940 | actor_loss: -0.6401 | bc_loss: 0.4648 | alpha_loss: 58.2394 | alpha: 0.1862
+2025-12-12 20:21:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 39100 | critic_loss: 2.1044 | q1_mean: 219.2168 | actor_loss: -0.5950 | bc_loss: 0.4666 | alpha_loss: 56.9223 | alpha: 0.1889
+2025-12-12 20:21:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 39200 | critic_loss: 2.0353 | q1_mean: 226.7256 | actor_loss: 8.2880 | bc_loss: 9.3920 | alpha_loss: 57.3462 | alpha: 0.1916
+2025-12-12 20:21:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 39300 | critic_loss: 1.2433 | q1_mean: 228.6849 | actor_loss: -0.5583 | bc_loss: 0.5511 | alpha_loss: 56.0298 | alpha: 0.1945
+2025-12-12 20:22:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 39400 | critic_loss: 1.5737 | q1_mean: 229.9197 | actor_loss: -0.0162 | bc_loss: 1.1022 | alpha_loss: 55.1414 | alpha: 0.1973
+2025-12-12 20:22:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 39500 | critic_loss: 1.2913 | q1_mean: 225.5381 | actor_loss: -0.2944 | bc_loss: 0.8037 | alpha_loss: 54.2284 | alpha: 0.2000
+2025-12-12 20:22:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 39600 | critic_loss: 2.1818 | q1_mean: 228.4865 | actor_loss: -0.2806 | bc_loss: 0.8291 | alpha_loss: 54.9052 | alpha: 0.2000
+2025-12-12 20:22:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 39700 | critic_loss: 1.4365 | q1_mean: 230.5156 | actor_loss: -0.5395 | bc_loss: 0.5838 | alpha_loss: 56.3261 | alpha: 0.2000
+2025-12-12 20:22:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 39800 | critic_loss: 2.1143 | q1_mean: 210.6958 | actor_loss: -0.4890 | bc_loss: 0.5267 | alpha_loss: 54.0485 | alpha: 0.2000
+2025-12-12 20:22:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 39900 | critic_loss: 1.8108 | q1_mean: 224.8250 | actor_loss: -0.5456 | bc_loss: 0.5453 | alpha_loss: 55.4243 | alpha: 0.2000
+2025-12-12 20:22:10 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 40000 | critic_loss: 1.2591 | q1_mean: 225.1628 | actor_loss: -0.3738 | bc_loss: 0.7245 | alpha_loss: 54.6631 | alpha: 0.2000
+2025-12-12 20:22:35 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Validation Step 40000 | Reward: 5735.16
+2025-12-12 20:22:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 40100 | critic_loss: 3.0866 | q1_mean: 223.3282 | actor_loss: -0.5227 | bc_loss: 0.5634 | alpha_loss: 52.9342 | alpha: 0.2000
+2025-12-12 20:22:38 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 40200 | critic_loss: 2.2381 | q1_mean: 227.7462 | actor_loss: -0.5808 | bc_loss: 0.5261 | alpha_loss: 55.3378 | alpha: 0.2000
+2025-12-12 20:22:39 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 40300 | critic_loss: 2.5526 | q1_mean: 225.7751 | actor_loss: -0.6628 | bc_loss: 0.4377 | alpha_loss: 54.3418 | alpha: 0.2000
+2025-12-12 20:22:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 40400 | critic_loss: 1.5031 | q1_mean: 218.9539 | actor_loss: -0.5833 | bc_loss: 0.4759 | alpha_loss: 52.7764 | alpha: 0.2000
+2025-12-12 20:22:42 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 40500 | critic_loss: 1.8133 | q1_mean: 214.3382 | actor_loss: -0.4832 | bc_loss: 0.5519 | alpha_loss: 54.5664 | alpha: 0.2000
+2025-12-12 20:22:43 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 40600 | critic_loss: 2.3922 | q1_mean: 211.6677 | actor_loss: -0.4345 | bc_loss: 0.5864 | alpha_loss: 54.4041 | alpha: 0.2000
+2025-12-12 20:22:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 40700 | critic_loss: 2.0463 | q1_mean: 228.9160 | actor_loss: -0.2605 | bc_loss: 0.8560 | alpha_loss: 53.9206 | alpha: 0.2000
+2025-12-12 20:22:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 40800 | critic_loss: 1.4489 | q1_mean: 224.9907 | actor_loss: -0.6184 | bc_loss: 0.4744 | alpha_loss: 54.2774 | alpha: 0.2000
+2025-12-12 20:22:47 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 40900 | critic_loss: 1.6799 | q1_mean: 221.5374 | actor_loss: -0.6171 | bc_loss: 0.4617 | alpha_loss: 54.8121 | alpha: 0.2000
+2025-12-12 20:22:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 41000 | critic_loss: 2.0317 | q1_mean: 217.4764 | actor_loss: 0.0838 | bc_loss: 1.1476 | alpha_loss: 54.0200 | alpha: 0.2000
+2025-12-12 20:22:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 41100 | critic_loss: 2.2674 | q1_mean: 224.2586 | actor_loss: -0.5473 | bc_loss: 0.5494 | alpha_loss: 54.0509 | alpha: 0.2000
+2025-12-12 20:22:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 41200 | critic_loss: 2.2750 | q1_mean: 228.0207 | actor_loss: 4.0665 | bc_loss: 5.1855 | alpha_loss: 52.6383 | alpha: 0.2000
+2025-12-12 20:22:52 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 41300 | critic_loss: 1.8816 | q1_mean: 232.4974 | actor_loss: -0.6981 | bc_loss: 0.4468 | alpha_loss: 54.1564 | alpha: 0.2000
+2025-12-12 20:22:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 41400 | critic_loss: 1.7829 | q1_mean: 228.7167 | actor_loss: -0.7246 | bc_loss: 0.3978 | alpha_loss: 53.1163 | alpha: 0.2000
+2025-12-12 20:22:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 41500 | critic_loss: 1.7902 | q1_mean: 221.0612 | actor_loss: -0.6002 | bc_loss: 0.4865 | alpha_loss: 53.0499 | alpha: 0.2000
+2025-12-12 20:22:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 41600 | critic_loss: 2.1815 | q1_mean: 229.3774 | actor_loss: -0.5570 | bc_loss: 0.5680 | alpha_loss: 53.5271 | alpha: 0.2000
+2025-12-12 20:22:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 41700 | critic_loss: 1.3953 | q1_mean: 220.2163 | actor_loss: -0.4759 | bc_loss: 0.5956 | alpha_loss: 55.7338 | alpha: 0.2000
+2025-12-12 20:23:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 41800 | critic_loss: 2.0150 | q1_mean: 220.8177 | actor_loss: -0.5307 | bc_loss: 0.5432 | alpha_loss: 54.5902 | alpha: 0.2000
+2025-12-12 20:23:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 41900 | critic_loss: 1.6561 | q1_mean: 221.0951 | actor_loss: -0.6012 | bc_loss: 0.4739 | alpha_loss: 53.2780 | alpha: 0.2000
+2025-12-12 20:23:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 42000 | critic_loss: 1.7873 | q1_mean: 211.9990 | actor_loss: -0.4692 | bc_loss: 0.5628 | alpha_loss: 52.7066 | alpha: 0.2000
+2025-12-12 20:23:04 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 42100 | critic_loss: 3.2461 | q1_mean: 231.5869 | actor_loss: -0.5948 | bc_loss: 0.5477 | alpha_loss: 52.3291 | alpha: 0.2000
+2025-12-12 20:23:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 42200 | critic_loss: 2.6754 | q1_mean: 204.2699 | actor_loss: -0.4612 | bc_loss: 0.5306 | alpha_loss: 55.4187 | alpha: 0.2000
+2025-12-12 20:23:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 42300 | critic_loss: 1.9791 | q1_mean: 221.2754 | actor_loss: -0.6229 | bc_loss: 0.4620 | alpha_loss: 53.3894 | alpha: 0.2000
+2025-12-12 20:23:08 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 42400 | critic_loss: 4.5127 | q1_mean: 223.0414 | actor_loss: -0.5246 | bc_loss: 0.5683 | alpha_loss: 52.4612 | alpha: 0.2000
+2025-12-12 20:23:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 42500 | critic_loss: 2.3871 | q1_mean: 239.2228 | actor_loss: -0.7270 | bc_loss: 0.4538 | alpha_loss: 54.6909 | alpha: 0.2000
+2025-12-12 20:23:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 42600 | critic_loss: 2.1918 | q1_mean: 216.6760 | actor_loss: -0.0790 | bc_loss: 0.9801 | alpha_loss: 52.4802 | alpha: 0.2000
+2025-12-12 20:23:12 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 42700 | critic_loss: 2.6316 | q1_mean: 235.1632 | actor_loss: -0.6500 | bc_loss: 0.5164 | alpha_loss: 52.7526 | alpha: 0.2000
+2025-12-12 20:23:14 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 42800 | critic_loss: 8.3292 | q1_mean: 241.2770 | actor_loss: 9.4482 | bc_loss: 10.6445 | alpha_loss: 52.8629 | alpha: 0.2000
+2025-12-12 20:23:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 42900 | critic_loss: 3.0119 | q1_mean: 214.0830 | actor_loss: -0.5877 | bc_loss: 0.4642 | alpha_loss: 52.8682 | alpha: 0.2000
+2025-12-12 20:23:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 43000 | critic_loss: 3.8611 | q1_mean: 219.1194 | actor_loss: -0.2533 | bc_loss: 0.8307 | alpha_loss: 54.3773 | alpha: 0.2000
+2025-12-12 20:23:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 43100 | critic_loss: 3.5568 | q1_mean: 227.0062 | actor_loss: -0.6827 | bc_loss: 0.4502 | alpha_loss: 51.6977 | alpha: 0.2000
+2025-12-12 20:23:20 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 43200 | critic_loss: 3.0994 | q1_mean: 222.4344 | actor_loss: -0.5504 | bc_loss: 0.5491 | alpha_loss: 53.0764 | alpha: 0.2000
+2025-12-12 20:23:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 43300 | critic_loss: 2.7007 | q1_mean: 211.6520 | actor_loss: -0.5836 | bc_loss: 0.4577 | alpha_loss: 53.0278 | alpha: 0.2000
+2025-12-12 20:23:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 43400 | critic_loss: 2.7146 | q1_mean: 232.4160 | actor_loss: -0.5520 | bc_loss: 0.5950 | alpha_loss: 52.6599 | alpha: 0.2000
+2025-12-12 20:23:24 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 43500 | critic_loss: 5.2862 | q1_mean: 243.5206 | actor_loss: -0.5264 | bc_loss: 0.6935 | alpha_loss: 52.6754 | alpha: 0.2000
+2025-12-12 20:23:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 43600 | critic_loss: 6.5816 | q1_mean: 208.7631 | actor_loss: -0.5607 | bc_loss: 0.4638 | alpha_loss: 53.6023 | alpha: 0.2000
+2025-12-12 20:23:27 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 43700 | critic_loss: 4.8243 | q1_mean: 241.6597 | actor_loss: -0.7913 | bc_loss: 0.4070 | alpha_loss: 53.3322 | alpha: 0.2000
+2025-12-12 20:23:28 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 43800 | critic_loss: 3.6571 | q1_mean: 224.3549 | actor_loss: -0.6663 | bc_loss: 0.4500 | alpha_loss: 52.2722 | alpha: 0.2000
+2025-12-12 20:23:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 43900 | critic_loss: 4.9167 | q1_mean: 211.7193 | actor_loss: -0.6659 | bc_loss: 0.3858 | alpha_loss: 52.5579 | alpha: 0.2000
+2025-12-12 20:23:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 44000 | critic_loss: 3.6814 | q1_mean: 228.9764 | actor_loss: -0.6421 | bc_loss: 0.4920 | alpha_loss: 52.2098 | alpha: 0.2000
+2025-12-12 20:23:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 44100 | critic_loss: 3.9431 | q1_mean: 219.8709 | actor_loss: -0.5782 | bc_loss: 0.5059 | alpha_loss: 53.0355 | alpha: 0.2000
+2025-12-12 20:23:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 44200 | critic_loss: 2.9896 | q1_mean: 214.8554 | actor_loss: -0.5052 | bc_loss: 0.5537 | alpha_loss: 53.2986 | alpha: 0.2000
+2025-12-12 20:23:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 44300 | critic_loss: 5.8229 | q1_mean: 215.7296 | actor_loss: 0.3748 | bc_loss: 1.4356 | alpha_loss: 52.5983 | alpha: 0.2000
+2025-12-12 20:23:37 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 44400 | critic_loss: 3.1202 | q1_mean: 222.9944 | actor_loss: -0.6512 | bc_loss: 0.4481 | alpha_loss: 52.0492 | alpha: 0.2000
+2025-12-12 20:23:38 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 44500 | critic_loss: 6.3593 | q1_mean: 233.0480 | actor_loss: -0.2139 | bc_loss: 0.9554 | alpha_loss: 51.7211 | alpha: 0.2000
+2025-12-12 20:23:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 44600 | critic_loss: 6.1099 | q1_mean: 255.2868 | actor_loss: -0.4250 | bc_loss: 0.8536 | alpha_loss: 54.0913 | alpha: 0.2000
+2025-12-12 20:23:41 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 44700 | critic_loss: 3.3303 | q1_mean: 246.4346 | actor_loss: -0.7369 | bc_loss: 0.4878 | alpha_loss: 51.7519 | alpha: 0.2000
+2025-12-12 20:23:42 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 44800 | critic_loss: 4.0524 | q1_mean: 243.2344 | actor_loss: -0.6737 | bc_loss: 0.5397 | alpha_loss: 52.6893 | alpha: 0.2000
+2025-12-12 20:23:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 44900 | critic_loss: 6.4101 | q1_mean: 215.8628 | actor_loss: -0.6834 | bc_loss: 0.3874 | alpha_loss: 51.3972 | alpha: 0.2000
+2025-12-12 20:23:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 45000 | critic_loss: 5.4043 | q1_mean: 249.7219 | actor_loss: 1.0875 | bc_loss: 2.3436 | alpha_loss: 50.9566 | alpha: 0.2000
+2025-12-12 20:23:47 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 45100 | critic_loss: 7.2225 | q1_mean: 220.3265 | actor_loss: -0.6317 | bc_loss: 0.4675 | alpha_loss: 51.7646 | alpha: 0.2000
+2025-12-12 20:23:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 45200 | critic_loss: 4.8635 | q1_mean: 237.6242 | actor_loss: -0.4474 | bc_loss: 0.7353 | alpha_loss: 53.0075 | alpha: 0.2000
+2025-12-12 20:23:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 45300 | critic_loss: 9.6474 | q1_mean: 229.4975 | actor_loss: -0.6557 | bc_loss: 0.4886 | alpha_loss: 52.3223 | alpha: 0.2000
+2025-12-12 20:23:52 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 45400 | critic_loss: 10.7613 | q1_mean: 254.3053 | actor_loss: -0.7473 | bc_loss: 0.5398 | alpha_loss: 53.4698 | alpha: 0.2000
+2025-12-12 20:23:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 45500 | critic_loss: 8.5607 | q1_mean: 231.0504 | actor_loss: -0.5813 | bc_loss: 0.5561 | alpha_loss: 54.0573 | alpha: 0.2000
+2025-12-12 20:23:55 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 45600 | critic_loss: 5.9418 | q1_mean: 206.8275 | actor_loss: -0.5236 | bc_loss: 0.4821 | alpha_loss: 53.6225 | alpha: 0.2000
+2025-12-12 20:23:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 45700 | critic_loss: 6.8517 | q1_mean: 262.0541 | actor_loss: -0.8283 | bc_loss: 0.4848 | alpha_loss: 52.7355 | alpha: 0.2000
+2025-12-12 20:23:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 45800 | critic_loss: 8.6927 | q1_mean: 234.4401 | actor_loss: -0.6718 | bc_loss: 0.5200 | alpha_loss: 50.6480 | alpha: 0.2000
+2025-12-12 20:23:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 45900 | critic_loss: 2.9432 | q1_mean: 205.4166 | actor_loss: -0.4635 | bc_loss: 0.5453 | alpha_loss: 52.2422 | alpha: 0.2000
+2025-12-12 20:24:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 46000 | critic_loss: 3.3842 | q1_mean: 213.8936 | actor_loss: -0.4170 | bc_loss: 0.6328 | alpha_loss: 53.0687 | alpha: 0.2000
+2025-12-12 20:24:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 46100 | critic_loss: 5.8443 | q1_mean: 240.9207 | actor_loss: -0.6126 | bc_loss: 0.5941 | alpha_loss: 51.8625 | alpha: 0.2000
+2025-12-12 20:24:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 46200 | critic_loss: 6.1466 | q1_mean: 255.3006 | actor_loss: -0.6828 | bc_loss: 0.5949 | alpha_loss: 53.2986 | alpha: 0.2000
+2025-12-12 20:24:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 46300 | critic_loss: 7.1881 | q1_mean: 241.6546 | actor_loss: -0.7130 | bc_loss: 0.4997 | alpha_loss: 54.3655 | alpha: 0.2000
+2025-12-12 20:24:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 46400 | critic_loss: 5.3891 | q1_mean: 272.1866 | actor_loss: -0.7648 | bc_loss: 0.6088 | alpha_loss: 53.1494 | alpha: 0.2000
+2025-12-12 20:24:08 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 46500 | critic_loss: 8.2143 | q1_mean: 240.7511 | actor_loss: -0.6697 | bc_loss: 0.5561 | alpha_loss: 53.5833 | alpha: 0.2000
+2025-12-12 20:24:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 46600 | critic_loss: 7.5468 | q1_mean: 267.6385 | actor_loss: -0.8600 | bc_loss: 0.5094 | alpha_loss: 51.4563 | alpha: 0.2000
+2025-12-12 20:24:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 46700 | critic_loss: 6.4812 | q1_mean: 259.3278 | actor_loss: -0.8774 | bc_loss: 0.4429 | alpha_loss: 52.8328 | alpha: 0.2000
+2025-12-12 20:24:12 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 46800 | critic_loss: 9.3898 | q1_mean: 257.8274 | actor_loss: -0.8187 | bc_loss: 0.5124 | alpha_loss: 51.4926 | alpha: 0.2000
+2025-12-12 20:24:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 46900 | critic_loss: 7.2440 | q1_mean: 267.9415 | actor_loss: -0.9316 | bc_loss: 0.4387 | alpha_loss: 52.9510 | alpha: 0.2000
+2025-12-12 20:24:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 47000 | critic_loss: 7.5218 | q1_mean: 277.4615 | actor_loss: -0.9216 | bc_loss: 0.4812 | alpha_loss: 50.9613 | alpha: 0.2000
+2025-12-12 20:24:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 47100 | critic_loss: 5.6373 | q1_mean: 245.2498 | actor_loss: -0.3969 | bc_loss: 0.8431 | alpha_loss: 52.2215 | alpha: 0.2000
+2025-12-12 20:24:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 47200 | critic_loss: 9.8634 | q1_mean: 242.7414 | actor_loss: -0.7446 | bc_loss: 0.4815 | alpha_loss: 52.0891 | alpha: 0.2000
+2025-12-12 20:24:20 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 47300 | critic_loss: 10.7713 | q1_mean: 251.3881 | actor_loss: -0.6934 | bc_loss: 0.5871 | alpha_loss: 51.3303 | alpha: 0.2000
+2025-12-12 20:24:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 47400 | critic_loss: 14.8153 | q1_mean: 271.7936 | actor_loss: 5.4183 | bc_loss: 6.8415 | alpha_loss: 54.4656 | alpha: 0.2000
+2025-12-12 20:24:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 47500 | critic_loss: 10.7318 | q1_mean: 291.7333 | actor_loss: -0.9286 | bc_loss: 0.6074 | alpha_loss: 52.7394 | alpha: 0.2000
+2025-12-12 20:24:24 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 47600 | critic_loss: 12.1358 | q1_mean: 306.9057 | actor_loss: -1.1026 | bc_loss: 0.5061 | alpha_loss: 51.9532 | alpha: 0.2000
+2025-12-12 20:24:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 47700 | critic_loss: 15.6243 | q1_mean: 287.5697 | actor_loss: -1.0222 | bc_loss: 0.4727 | alpha_loss: 53.7051 | alpha: 0.2000
+2025-12-12 20:24:28 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 47800 | critic_loss: 13.2298 | q1_mean: 267.3886 | actor_loss: -0.9950 | bc_loss: 0.3873 | alpha_loss: 53.6054 | alpha: 0.2000
+2025-12-12 20:24:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 47900 | critic_loss: 16.9393 | q1_mean: 298.5073 | actor_loss: -1.1643 | bc_loss: 0.4090 | alpha_loss: 50.2411 | alpha: 0.2000
+2025-12-12 20:24:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 48000 | critic_loss: 17.4233 | q1_mean: 334.3210 | actor_loss: -1.2241 | bc_loss: 0.5480 | alpha_loss: 54.4442 | alpha: 0.2000
+2025-12-12 20:24:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 48100 | critic_loss: 18.4251 | q1_mean: 288.4209 | actor_loss: -0.9449 | bc_loss: 0.5676 | alpha_loss: 52.6785 | alpha: 0.2000
+2025-12-12 20:24:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 48200 | critic_loss: 14.6127 | q1_mean: 310.6440 | actor_loss: 4.6887 | bc_loss: 6.3241 | alpha_loss: 54.6961 | alpha: 0.2000
+2025-12-12 20:24:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 48300 | critic_loss: 12.6883 | q1_mean: 262.9710 | actor_loss: -0.8391 | bc_loss: 0.5009 | alpha_loss: 52.8260 | alpha: 0.2000
+2025-12-12 20:24:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 48400 | critic_loss: 20.5611 | q1_mean: 338.6935 | actor_loss: -1.3798 | bc_loss: 0.4182 | alpha_loss: 55.1966 | alpha: 0.2000
+2025-12-12 20:24:37 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 48500 | critic_loss: 24.1486 | q1_mean: 299.0799 | actor_loss: 11.2570 | bc_loss: 12.8186 | alpha_loss: 56.8826 | alpha: 0.2000
+2025-12-12 20:24:39 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 48600 | critic_loss: 23.7005 | q1_mean: 377.0801 | actor_loss: -1.5634 | bc_loss: 0.4304 | alpha_loss: 52.3426 | alpha: 0.2000
+2025-12-12 20:24:41 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 48700 | critic_loss: 25.1317 | q1_mean: 319.1863 | actor_loss: -1.2367 | bc_loss: 0.4859 | alpha_loss: 50.7313 | alpha: 0.2000
+2025-12-12 20:24:42 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 48800 | critic_loss: 19.7102 | q1_mean: 318.6324 | actor_loss: -1.1064 | bc_loss: 0.5167 | alpha_loss: 54.5709 | alpha: 0.2000
+2025-12-12 20:24:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 48900 | critic_loss: 16.2973 | q1_mean: 353.1943 | actor_loss: -1.2969 | bc_loss: 0.5074 | alpha_loss: 53.2590 | alpha: 0.2000
+2025-12-12 20:24:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 49000 | critic_loss: 27.8610 | q1_mean: 343.3961 | actor_loss: -1.3407 | bc_loss: 0.4612 | alpha_loss: 52.8505 | alpha: 0.2000
+2025-12-12 20:24:47 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 49100 | critic_loss: 33.3962 | q1_mean: 290.1078 | actor_loss: -1.0416 | bc_loss: 0.4771 | alpha_loss: 53.4306 | alpha: 0.2000
+2025-12-12 20:24:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 49200 | critic_loss: 21.7208 | q1_mean: 340.3856 | actor_loss: -1.1254 | bc_loss: 0.6645 | alpha_loss: 56.4072 | alpha: 0.2000
+2025-12-12 20:24:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 49300 | critic_loss: 19.4394 | q1_mean: 321.9363 | actor_loss: -1.2227 | bc_loss: 0.4469 | alpha_loss: 54.1059 | alpha: 0.2000
+2025-12-12 20:24:52 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 49400 | critic_loss: 18.5836 | q1_mean: 476.5299 | actor_loss: 10.1542 | bc_loss: 12.6517 | alpha_loss: 55.5208 | alpha: 0.2000
+2025-12-12 20:24:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 49500 | critic_loss: 21.1556 | q1_mean: 375.0913 | actor_loss: -1.4872 | bc_loss: 0.4874 | alpha_loss: 51.8323 | alpha: 0.2000
+2025-12-12 20:24:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 49600 | critic_loss: 30.0641 | q1_mean: 417.0167 | actor_loss: -1.7929 | bc_loss: 0.4233 | alpha_loss: 56.1023 | alpha: 0.2000
+2025-12-12 20:24:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 49700 | critic_loss: 25.5047 | q1_mean: 331.3457 | actor_loss: -1.1881 | bc_loss: 0.5515 | alpha_loss: 52.6289 | alpha: 0.2000
+2025-12-12 20:24:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 49800 | critic_loss: 27.1443 | q1_mean: 461.6468 | actor_loss: -1.8473 | bc_loss: 0.5951 | alpha_loss: 56.9013 | alpha: 0.2000
+2025-12-12 20:25:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 49900 | critic_loss: 31.6133 | q1_mean: 367.3876 | actor_loss: -1.4675 | bc_loss: 0.5135 | alpha_loss: 55.4229 | alpha: 0.2000
+2025-12-12 20:25:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 50000 | critic_loss: 27.8242 | q1_mean: 371.8641 | actor_loss: -1.0353 | bc_loss: 0.9425 | alpha_loss: 53.3898 | alpha: 0.2000
+2025-12-12 20:25:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Validation Step 50000 | Reward: 3568.07
+2025-12-12 20:25:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 50100 | critic_loss: 28.4742 | q1_mean: 428.6169 | actor_loss: -1.8298 | bc_loss: 0.4389 | alpha_loss: 54.5664 | alpha: 0.2000
+2025-12-12 20:25:22 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 50200 | critic_loss: 26.8757 | q1_mean: 402.2579 | actor_loss: -1.6814 | bc_loss: 0.4272 | alpha_loss: 57.0631 | alpha: 0.2000
+2025-12-12 20:25:24 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 50300 | critic_loss: 34.2867 | q1_mean: 416.9552 | actor_loss: -1.7565 | bc_loss: 0.4713 | alpha_loss: 58.4724 | alpha: 0.2000
+2025-12-12 20:25:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 50400 | critic_loss: 34.1522 | q1_mean: 450.6898 | actor_loss: -1.9367 | bc_loss: 0.5054 | alpha_loss: 53.6613 | alpha: 0.2000
+2025-12-12 20:25:27 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 50500 | critic_loss: 29.7285 | q1_mean: 405.3179 | actor_loss: -1.6270 | bc_loss: 0.5534 | alpha_loss: 55.4611 | alpha: 0.2000
+2025-12-12 20:25:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 50600 | critic_loss: 35.9482 | q1_mean: 405.4001 | actor_loss: -1.5762 | bc_loss: 0.6037 | alpha_loss: 54.2183 | alpha: 0.2000
+2025-12-12 20:25:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 50700 | critic_loss: 28.2881 | q1_mean: 402.3306 | actor_loss: -1.6107 | bc_loss: 0.5390 | alpha_loss: 56.2522 | alpha: 0.2000
+2025-12-12 20:25:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 50800 | critic_loss: 33.3809 | q1_mean: 420.2147 | actor_loss: -1.7107 | bc_loss: 0.5393 | alpha_loss: 58.1325 | alpha: 0.2000
+2025-12-12 20:25:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 50900 | critic_loss: 55.0584 | q1_mean: 475.6536 | actor_loss: -1.6030 | bc_loss: 1.0645 | alpha_loss: 58.0664 | alpha: 0.2000
+2025-12-12 20:25:35 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 51000 | critic_loss: 31.1426 | q1_mean: 382.2781 | actor_loss: -1.5170 | bc_loss: 0.5570 | alpha_loss: 56.7966 | alpha: 0.2000
+2025-12-12 20:25:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 51100 | critic_loss: 37.2777 | q1_mean: 466.2120 | actor_loss: -1.9271 | bc_loss: 0.6032 | alpha_loss: 56.8754 | alpha: 0.2000
+2025-12-12 20:25:38 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 51200 | critic_loss: 33.3449 | q1_mean: 493.6493 | actor_loss: -1.8802 | bc_loss: 0.7902 | alpha_loss: 55.8533 | alpha: 0.2000
+2025-12-12 20:25:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 51300 | critic_loss: 31.9263 | q1_mean: 418.3664 | actor_loss: -1.7371 | bc_loss: 0.5017 | alpha_loss: 56.4797 | alpha: 0.2000
+2025-12-12 20:25:41 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 51400 | critic_loss: 36.8394 | q1_mean: 468.5966 | actor_loss: -2.0772 | bc_loss: 0.4567 | alpha_loss: 56.2251 | alpha: 0.2000
+2025-12-12 20:25:43 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 51500 | critic_loss: 55.1096 | q1_mean: 439.8097 | actor_loss: -2.0110 | bc_loss: 0.3936 | alpha_loss: 57.5774 | alpha: 0.2000
+2025-12-12 20:25:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 51600 | critic_loss: 64.4904 | q1_mean: 520.2678 | actor_loss: -2.3576 | bc_loss: 0.5550 | alpha_loss: 55.5894 | alpha: 0.2000
+2025-12-12 20:25:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 51700 | critic_loss: 60.6625 | q1_mean: 459.2925 | actor_loss: -1.7285 | bc_loss: 0.8222 | alpha_loss: 55.1472 | alpha: 0.2000
+2025-12-12 20:25:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 51800 | critic_loss: 53.7815 | q1_mean: 540.7136 | actor_loss: -2.1844 | bc_loss: 0.7153 | alpha_loss: 59.1318 | alpha: 0.2000
+2025-12-12 20:25:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 51900 | critic_loss: 49.9734 | q1_mean: 492.1319 | actor_loss: -2.1664 | bc_loss: 0.4910 | alpha_loss: 54.5226 | alpha: 0.2000
+2025-12-12 20:25:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 52000 | critic_loss: 61.2285 | q1_mean: 649.2386 | actor_loss: -3.0706 | bc_loss: 0.4453 | alpha_loss: 61.6756 | alpha: 0.2000
+2025-12-12 20:25:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 52100 | critic_loss: 71.4496 | q1_mean: 555.7595 | actor_loss: -2.2120 | bc_loss: 0.8755 | alpha_loss: 54.7076 | alpha: 0.2000
+2025-12-12 20:25:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 52200 | critic_loss: 76.8035 | q1_mean: 520.2176 | actor_loss: -2.3883 | bc_loss: 0.5123 | alpha_loss: 57.3510 | alpha: 0.2000
+2025-12-12 20:25:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 52300 | critic_loss: 68.8680 | q1_mean: 710.5786 | actor_loss: -3.3415 | bc_loss: 0.5322 | alpha_loss: 58.2176 | alpha: 0.2000
+2025-12-12 20:25:57 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 52400 | critic_loss: 53.4381 | q1_mean: 520.5862 | actor_loss: -2.2202 | bc_loss: 0.5593 | alpha_loss: 58.6243 | alpha: 0.2000
+2025-12-12 20:25:59 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 52500 | critic_loss: 90.7078 | q1_mean: 579.2742 | actor_loss: -2.8294 | bc_loss: 0.4596 | alpha_loss: 57.0577 | alpha: 0.2000
+2025-12-12 20:26:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 52600 | critic_loss: 86.0961 | q1_mean: 480.5757 | actor_loss: -2.2903 | bc_loss: 0.4263 | alpha_loss: 56.8160 | alpha: 0.2000
+2025-12-12 20:26:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 52700 | critic_loss: 63.3004 | q1_mean: 650.4057 | actor_loss: -3.1196 | bc_loss: 0.3937 | alpha_loss: 57.6560 | alpha: 0.2000
+2025-12-12 20:26:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 52800 | critic_loss: 62.0887 | q1_mean: 632.8063 | actor_loss: -2.9445 | bc_loss: 0.4545 | alpha_loss: 62.1773 | alpha: 0.2000
+2025-12-12 20:26:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 52900 | critic_loss: 79.1158 | q1_mean: 603.2578 | actor_loss: -2.9055 | bc_loss: 0.4303 | alpha_loss: 58.5732 | alpha: 0.2000
+2025-12-12 20:26:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 53000 | critic_loss: 72.0136 | q1_mean: 578.5524 | actor_loss: -2.6049 | bc_loss: 0.5830 | alpha_loss: 56.5344 | alpha: 0.2000
+2025-12-12 20:26:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 53100 | critic_loss: 62.5423 | q1_mean: 640.4235 | actor_loss: -3.0173 | bc_loss: 0.4081 | alpha_loss: 57.9468 | alpha: 0.2000
+2025-12-12 20:26:10 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 53200 | critic_loss: 103.5093 | q1_mean: 622.7024 | actor_loss: -2.9900 | bc_loss: 0.4636 | alpha_loss: 56.7598 | alpha: 0.2000
+2025-12-12 20:26:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 53300 | critic_loss: 63.0088 | q1_mean: 522.6670 | actor_loss: -2.2669 | bc_loss: 0.5742 | alpha_loss: 59.8235 | alpha: 0.2000
+2025-12-12 20:26:12 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 53400 | critic_loss: 72.3251 | q1_mean: 542.2181 | actor_loss: -2.4685 | bc_loss: 0.5348 | alpha_loss: 56.6383 | alpha: 0.2000
+2025-12-12 20:26:14 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 53500 | critic_loss: 88.0825 | q1_mean: 665.2251 | actor_loss: -2.9944 | bc_loss: 0.6731 | alpha_loss: 56.8243 | alpha: 0.2000
+2025-12-12 20:26:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 53600 | critic_loss: 91.1066 | q1_mean: 627.1714 | actor_loss: -3.0517 | bc_loss: 0.3981 | alpha_loss: 55.5914 | alpha: 0.2000
+2025-12-12 20:26:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 53700 | critic_loss: 106.4597 | q1_mean: 659.9946 | actor_loss: -3.0685 | bc_loss: 0.6118 | alpha_loss: 58.1694 | alpha: 0.2000
+2025-12-12 20:26:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 53800 | critic_loss: 98.3984 | q1_mean: 673.8479 | actor_loss: -3.2884 | bc_loss: 0.3799 | alpha_loss: 59.5286 | alpha: 0.2000
+2025-12-12 20:26:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 53900 | critic_loss: 83.2433 | q1_mean: 714.4432 | actor_loss: -3.4208 | bc_loss: 0.4511 | alpha_loss: 58.5220 | alpha: 0.2000
+2025-12-12 20:26:22 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 54000 | critic_loss: 92.1605 | q1_mean: 684.0305 | actor_loss: -3.2350 | bc_loss: 0.5007 | alpha_loss: 56.0859 | alpha: 0.2000
+2025-12-12 20:26:24 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 54100 | critic_loss: 50.0368 | q1_mean: 760.6757 | actor_loss: -3.5271 | bc_loss: 0.4359 | alpha_loss: 60.2007 | alpha: 0.2000
+2025-12-12 20:26:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 54200 | critic_loss: 97.4476 | q1_mean: 609.2231 | actor_loss: -2.8056 | bc_loss: 0.5291 | alpha_loss: 56.0978 | alpha: 0.2000
+2025-12-12 20:26:27 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 54300 | critic_loss: 98.1924 | q1_mean: 927.6608 | actor_loss: -4.3289 | bc_loss: 0.6037 | alpha_loss: 58.0999 | alpha: 0.2000
+2025-12-12 20:26:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 54400 | critic_loss: 161.9079 | q1_mean: 736.1965 | actor_loss: -3.3975 | bc_loss: 0.6176 | alpha_loss: 57.8792 | alpha: 0.2000
+2025-12-12 20:26:31 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 54500 | critic_loss: 67.7314 | q1_mean: 779.8295 | actor_loss: -3.6633 | bc_loss: 0.4419 | alpha_loss: 59.2905 | alpha: 0.2000
+2025-12-12 20:26:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 54600 | critic_loss: 80.9381 | q1_mean: 760.1880 | actor_loss: -3.5352 | bc_loss: 0.5470 | alpha_loss: 59.2325 | alpha: 0.2000
+2025-12-12 20:26:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 54700 | critic_loss: 91.0533 | q1_mean: 874.8971 | actor_loss: -4.1624 | bc_loss: 0.5128 | alpha_loss: 59.8632 | alpha: 0.2000
+2025-12-12 20:26:36 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 54800 | critic_loss: 117.5121 | q1_mean: 861.1166 | actor_loss: -4.2231 | bc_loss: 0.4243 | alpha_loss: 59.8492 | alpha: 0.2000
+2025-12-12 20:26:37 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 54900 | critic_loss: 73.3178 | q1_mean: 614.4903 | actor_loss: -2.8356 | bc_loss: 0.4688 | alpha_loss: 62.6441 | alpha: 0.2000
+2025-12-12 20:26:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 55000 | critic_loss: 97.9553 | q1_mean: 784.9570 | actor_loss: -3.7628 | bc_loss: 0.4623 | alpha_loss: 56.6945 | alpha: 0.2000
+2025-12-12 20:26:41 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 55100 | critic_loss: 99.4617 | q1_mean: 821.1976 | actor_loss: -3.8444 | bc_loss: 0.5674 | alpha_loss: 56.2610 | alpha: 0.2000
+2025-12-12 20:26:42 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 55200 | critic_loss: 92.2648 | q1_mean: 819.6191 | actor_loss: -3.4396 | bc_loss: 0.9517 | alpha_loss: 56.4479 | alpha: 0.2000
+2025-12-12 20:26:45 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 55300 | critic_loss: 77.9509 | q1_mean: 737.3649 | actor_loss: -3.3925 | bc_loss: 0.5230 | alpha_loss: 57.0694 | alpha: 0.2000
+2025-12-12 20:26:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 55400 | critic_loss: 88.8957 | q1_mean: 1015.1978 | actor_loss: -4.7269 | bc_loss: 0.6089 | alpha_loss: 58.9635 | alpha: 0.2000
+2025-12-12 20:26:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 55500 | critic_loss: 89.9825 | q1_mean: 755.4382 | actor_loss: -3.6524 | bc_loss: 0.4312 | alpha_loss: 58.1544 | alpha: 0.2000
+2025-12-12 20:26:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 55600 | critic_loss: 93.1935 | q1_mean: 981.6677 | actor_loss: -4.7036 | bc_loss: 0.5010 | alpha_loss: 56.6661 | alpha: 0.2000
+2025-12-12 20:26:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 55700 | critic_loss: 78.7170 | q1_mean: 941.8139 | actor_loss: -4.4556 | bc_loss: 0.4972 | alpha_loss: 60.1206 | alpha: 0.2000
+2025-12-12 20:26:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 55800 | critic_loss: 99.1737 | q1_mean: 943.1968 | actor_loss: -4.5197 | bc_loss: 0.5289 | alpha_loss: 57.4612 | alpha: 0.2000
+2025-12-12 20:26:55 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 55900 | critic_loss: 90.4183 | q1_mean: 1159.9707 | actor_loss: -5.6799 | bc_loss: 0.4801 | alpha_loss: 66.3278 | alpha: 0.2000
+2025-12-12 20:26:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 56000 | critic_loss: 102.9335 | q1_mean: 906.1769 | actor_loss: -4.3378 | bc_loss: 0.4679 | alpha_loss: 57.3252 | alpha: 0.2000
+2025-12-12 20:26:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 56100 | critic_loss: 92.2892 | q1_mean: 833.4357 | actor_loss: -3.8596 | bc_loss: 0.6404 | alpha_loss: 59.0426 | alpha: 0.2000
+2025-12-12 20:27:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 56200 | critic_loss: 68.2974 | q1_mean: 958.2058 | actor_loss: -4.5659 | bc_loss: 0.4548 | alpha_loss: 55.6289 | alpha: 0.2000
+2025-12-12 20:27:01 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 56300 | critic_loss: 74.6003 | q1_mean: 1001.5903 | actor_loss: -3.7452 | bc_loss: 1.5435 | alpha_loss: 62.8390 | alpha: 0.2000
+2025-12-12 20:27:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 56400 | critic_loss: 74.6730 | q1_mean: 1006.9575 | actor_loss: -4.7856 | bc_loss: 0.4888 | alpha_loss: 56.8185 | alpha: 0.2000
+2025-12-12 20:27:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 56500 | critic_loss: 141.1339 | q1_mean: 910.5114 | actor_loss: -4.4701 | bc_loss: 0.5732 | alpha_loss: 56.0953 | alpha: 0.2000
+2025-12-12 20:27:06 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 56600 | critic_loss: 74.2478 | q1_mean: 812.5836 | actor_loss: -3.8861 | bc_loss: 0.3772 | alpha_loss: 57.3976 | alpha: 0.2000
+2025-12-12 20:27:08 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 56700 | critic_loss: 161.3687 | q1_mean: 1178.4773 | actor_loss: -5.9416 | bc_loss: 0.4448 | alpha_loss: 63.7980 | alpha: 0.2000
+2025-12-12 20:27:10 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 56800 | critic_loss: 101.2982 | q1_mean: 1144.4087 | actor_loss: -5.4418 | bc_loss: 0.5531 | alpha_loss: 54.5025 | alpha: 0.2000
+2025-12-12 20:27:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 56900 | critic_loss: 126.0650 | q1_mean: 1024.8473 | actor_loss: -5.0451 | bc_loss: 0.5340 | alpha_loss: 57.0296 | alpha: 0.2000
+2025-12-12 20:27:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 57000 | critic_loss: 110.6623 | q1_mean: 882.5175 | actor_loss: -4.2841 | bc_loss: 0.4842 | alpha_loss: 59.1851 | alpha: 0.2000
+2025-12-12 20:27:15 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 57100 | critic_loss: 64.4216 | q1_mean: 935.9167 | actor_loss: -3.9727 | bc_loss: 0.8911 | alpha_loss: 56.8787 | alpha: 0.2000
+2025-12-12 20:27:16 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 57200 | critic_loss: 75.8579 | q1_mean: 978.6611 | actor_loss: -4.6855 | bc_loss: 0.4758 | alpha_loss: 60.2146 | alpha: 0.2000
+2025-12-12 20:27:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 57300 | critic_loss: 114.3659 | q1_mean: 1013.5900 | actor_loss: -4.9331 | bc_loss: 0.4737 | alpha_loss: 59.7775 | alpha: 0.2000
+2025-12-12 20:27:20 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 57400 | critic_loss: 85.7962 | q1_mean: 905.4954 | actor_loss: -3.9413 | bc_loss: 0.8857 | alpha_loss: 55.2841 | alpha: 0.2000
+2025-12-12 20:27:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 57500 | critic_loss: 97.0569 | q1_mean: 1031.8512 | actor_loss: -4.9838 | bc_loss: 0.5160 | alpha_loss: 58.2120 | alpha: 0.2000
+2025-12-12 20:27:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 57600 | critic_loss: 124.3996 | q1_mean: 1230.1256 | actor_loss: -6.0293 | bc_loss: 0.5626 | alpha_loss: 56.7184 | alpha: 0.2000
+2025-12-12 20:27:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 57700 | critic_loss: 99.0443 | q1_mean: 1239.4028 | actor_loss: -6.1733 | bc_loss: 0.4272 | alpha_loss: 62.2214 | alpha: 0.2000
+2025-12-12 20:27:26 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 57800 | critic_loss: 71.1850 | q1_mean: 851.1760 | actor_loss: -4.0632 | bc_loss: 0.4462 | alpha_loss: 58.1995 | alpha: 0.2000
+2025-12-12 20:27:28 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 57900 | critic_loss: 94.7254 | q1_mean: 1003.6074 | actor_loss: -4.8887 | bc_loss: 0.5389 | alpha_loss: 57.8969 | alpha: 0.2000
+2025-12-12 20:27:29 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 58000 | critic_loss: 147.5052 | q1_mean: 1213.0210 | actor_loss: -6.0925 | bc_loss: 0.5337 | alpha_loss: 64.7461 | alpha: 0.2000
+2025-12-12 20:27:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 58100 | critic_loss: 80.2380 | q1_mean: 995.7140 | actor_loss: -4.7499 | bc_loss: 0.4769 | alpha_loss: 61.8212 | alpha: 0.2000
+2025-12-12 20:27:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 58200 | critic_loss: 108.6357 | q1_mean: 1172.1879 | actor_loss: -5.6459 | bc_loss: 0.6726 | alpha_loss: 60.7250 | alpha: 0.2000
+2025-12-12 20:27:34 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 58300 | critic_loss: 62.4976 | q1_mean: 1361.1230 | actor_loss: -6.6997 | bc_loss: 0.4297 | alpha_loss: 59.0531 | alpha: 0.2000
+2025-12-12 20:27:37 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 58400 | critic_loss: 108.0921 | q1_mean: 1256.0005 | actor_loss: -6.1782 | bc_loss: 0.5480 | alpha_loss: 56.7245 | alpha: 0.2000
+2025-12-12 20:27:38 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 58500 | critic_loss: 67.4540 | q1_mean: 1289.5656 | actor_loss: -6.3377 | bc_loss: 0.4000 | alpha_loss: 61.7679 | alpha: 0.2000
+2025-12-12 20:27:39 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 58600 | critic_loss: 91.3991 | q1_mean: 1383.4749 | actor_loss: -6.7912 | bc_loss: 0.4434 | alpha_loss: 58.1789 | alpha: 0.2000
+2025-12-12 20:27:42 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 58700 | critic_loss: 111.5026 | q1_mean: 1280.0845 | actor_loss: -6.0753 | bc_loss: 0.7907 | alpha_loss: 59.8849 | alpha: 0.2000
+2025-12-12 20:27:43 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 58800 | critic_loss: 125.8749 | q1_mean: 1404.4479 | actor_loss: -6.8379 | bc_loss: 0.6743 | alpha_loss: 62.2447 | alpha: 0.2000
+2025-12-12 20:27:45 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 58900 | critic_loss: 70.5382 | q1_mean: 1205.6294 | actor_loss: -5.9261 | bc_loss: 0.5143 | alpha_loss: 59.8722 | alpha: 0.2000
+2025-12-12 20:27:46 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 59000 | critic_loss: 150.5865 | q1_mean: 1074.1997 | actor_loss: -5.2610 | bc_loss: 0.7515 | alpha_loss: 56.3494 | alpha: 0.2000
+2025-12-12 20:27:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 59100 | critic_loss: 377.3835 | q1_mean: 1670.8149 | actor_loss: -8.3037 | bc_loss: 0.6715 | alpha_loss: 60.9637 | alpha: 0.2000
+2025-12-12 20:27:50 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 59200 | critic_loss: 125.6445 | q1_mean: 1267.8833 | actor_loss: -6.4004 | bc_loss: 0.4347 | alpha_loss: 59.6867 | alpha: 0.2000
+2025-12-12 20:27:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 59300 | critic_loss: 131.3389 | q1_mean: 1208.6410 | actor_loss: -5.9939 | bc_loss: 0.5468 | alpha_loss: 57.8063 | alpha: 0.2000
+2025-12-12 20:27:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 59400 | critic_loss: 92.1481 | q1_mean: 1435.7209 | actor_loss: -7.1159 | bc_loss: 0.4436 | alpha_loss: 64.4663 | alpha: 0.2000
+2025-12-12 20:27:55 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 59500 | critic_loss: 92.4967 | q1_mean: 1280.2563 | actor_loss: -6.3527 | bc_loss: 0.5361 | alpha_loss: 60.0599 | alpha: 0.2000
+2025-12-12 20:27:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 59600 | critic_loss: 124.1434 | q1_mean: 1584.9377 | actor_loss: -7.9856 | bc_loss: 0.5186 | alpha_loss: 61.2979 | alpha: 0.2000
+2025-12-12 20:27:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 59700 | critic_loss: 92.8265 | q1_mean: 1228.5513 | actor_loss: -5.5336 | bc_loss: 1.0285 | alpha_loss: 59.6739 | alpha: 0.2000
+2025-12-12 20:28:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 59800 | critic_loss: 97.2350 | q1_mean: 1378.5288 | actor_loss: -6.7179 | bc_loss: 0.6461 | alpha_loss: 60.7691 | alpha: 0.2000
+2025-12-12 20:28:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 59900 | critic_loss: 166.1896 | q1_mean: 1352.9745 | actor_loss: -6.9160 | bc_loss: 0.4995 | alpha_loss: 60.4754 | alpha: 0.2000
+2025-12-12 20:28:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 60000 | critic_loss: 102.4601 | q1_mean: 1460.6672 | actor_loss: -7.3780 | bc_loss: 0.4148 | alpha_loss: 64.9440 | alpha: 0.2000
+2025-12-12 20:28:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - Validation Step 60000 | Reward: 1870.55
+2025-12-12 20:28:20 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 60100 | critic_loss: 121.3763 | q1_mean: 1244.3431 | actor_loss: -6.1181 | bc_loss: 0.6106 | alpha_loss: 60.5890 | alpha: 0.2000
+2025-12-12 20:28:21 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 60200 | critic_loss: 67.1984 | q1_mean: 1833.9023 | actor_loss: -9.0670 | bc_loss: 0.5672 | alpha_loss: 63.0110 | alpha: 0.2000
+2025-12-12 20:28:23 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 60300 | critic_loss: 77.3440 | q1_mean: 1700.4932 | actor_loss: -8.3930 | bc_loss: 0.5559 | alpha_loss: 66.1054 | alpha: 0.2000
+2025-12-12 20:28:25 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 60400 | critic_loss: 94.6090 | q1_mean: 1621.5850 | actor_loss: -7.7460 | bc_loss: 0.8805 | alpha_loss: 61.9884 | alpha: 0.2000
+2025-12-12 20:28:27 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 60500 | critic_loss: 91.9075 | q1_mean: 1505.6665 | actor_loss: -7.4113 | bc_loss: 0.5934 | alpha_loss: 61.0678 | alpha: 0.2000
+2025-12-12 20:28:28 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 60600 | critic_loss: 107.2743 | q1_mean: 1687.4459 | actor_loss: -8.3435 | bc_loss: 0.5960 | alpha_loss: 56.4709 | alpha: 0.2000
+2025-12-12 20:28:30 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 60700 | critic_loss: 369.4494 | q1_mean: 1841.9304 | actor_loss: -9.0392 | bc_loss: 0.6071 | alpha_loss: 60.1082 | alpha: 0.2000
+2025-12-12 20:28:32 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 60800 | critic_loss: 104.8750 | q1_mean: 1891.4854 | actor_loss: -9.3569 | bc_loss: 0.6581 | alpha_loss: 63.8239 | alpha: 0.2000
+2025-12-12 20:28:33 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 60900 | critic_loss: 140.4832 | q1_mean: 1673.7123 | actor_loss: -5.2351 | bc_loss: 3.6129 | alpha_loss: 62.6056 | alpha: 0.2000
+2025-12-12 20:28:35 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 61000 | critic_loss: 77.6888 | q1_mean: 1592.2666 | actor_loss: -7.9379 | bc_loss: 0.4357 | alpha_loss: 60.0698 | alpha: 0.2000
+2025-12-12 20:28:37 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 61100 | critic_loss: 118.8461 | q1_mean: 2003.6233 | actor_loss: -10.1012 | bc_loss: 0.4768 | alpha_loss: 60.7098 | alpha: 0.2000
+2025-12-12 20:28:39 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 61200 | critic_loss: 91.0101 | q1_mean: 1667.0229 | actor_loss: -8.1824 | bc_loss: 0.5269 | alpha_loss: 57.7330 | alpha: 0.2000
+2025-12-12 20:28:40 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 61300 | critic_loss: 104.7512 | q1_mean: 1947.3508 | actor_loss: -9.7931 | bc_loss: 0.5777 | alpha_loss: 58.0157 | alpha: 0.2000
+2025-12-12 20:28:43 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 61400 | critic_loss: 106.1745 | q1_mean: 1930.3347 | actor_loss: -9.6844 | bc_loss: 0.5243 | alpha_loss: 60.0983 | alpha: 0.2000
+2025-12-12 20:28:44 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 61500 | critic_loss: 103.5619 | q1_mean: 1334.0505 | actor_loss: -6.5051 | bc_loss: 0.5917 | alpha_loss: 56.0549 | alpha: 0.2000
+2025-12-12 20:28:45 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 61600 | critic_loss: 123.6302 | q1_mean: 1789.9664 | actor_loss: -9.0928 | bc_loss: 0.4296 | alpha_loss: 56.2241 | alpha: 0.2000
+2025-12-12 20:28:48 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 61700 | critic_loss: 100.5643 | q1_mean: 2435.8721 | actor_loss: -11.9732 | bc_loss: 0.7453 | alpha_loss: 61.5896 | alpha: 0.2000
+2025-12-12 20:28:49 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 61800 | critic_loss: 90.9192 | q1_mean: 1602.3997 | actor_loss: -7.7375 | bc_loss: 0.7826 | alpha_loss: 56.2665 | alpha: 0.2000
+2025-12-12 20:28:51 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 61900 | critic_loss: 92.6814 | q1_mean: 2134.2180 | actor_loss: -10.2611 | bc_loss: 0.9322 | alpha_loss: 61.5950 | alpha: 0.2000
+2025-12-12 20:28:53 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 62000 | critic_loss: 102.3633 | q1_mean: 1947.9180 | actor_loss: -9.5410 | bc_loss: 0.6676 | alpha_loss: 59.0545 | alpha: 0.2000
+2025-12-12 20:28:54 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 62100 | critic_loss: 452.1135 | q1_mean: 1872.5714 | actor_loss: -8.9583 | bc_loss: 0.8040 | alpha_loss: 58.3929 | alpha: 0.2000
+2025-12-12 20:28:56 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 62200 | critic_loss: 374.6561 | q1_mean: 1675.7836 | actor_loss: -8.2071 | bc_loss: 0.5200 | alpha_loss: 56.6247 | alpha: 0.2000
+2025-12-12 20:28:58 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 62300 | critic_loss: 69.9595 | q1_mean: 1455.5728 | actor_loss: -7.1524 | bc_loss: 0.5613 | alpha_loss: 57.6449 | alpha: 0.2000
+2025-12-12 20:29:00 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 62400 | critic_loss: 78.8568 | q1_mean: 2116.0586 | actor_loss: -10.5404 | bc_loss: 0.5658 | alpha_loss: 55.9869 | alpha: 0.2000
+2025-12-12 20:29:02 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 62500 | critic_loss: 85.1306 | q1_mean: 2068.2778 | actor_loss: -10.2325 | bc_loss: 0.6095 | alpha_loss: 60.1399 | alpha: 0.2000
+2025-12-12 20:29:03 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 62600 | critic_loss: 71.3215 | q1_mean: 2204.9404 | actor_loss: -10.9833 | bc_loss: 0.5619 | alpha_loss: 58.8358 | alpha: 0.2000
+2025-12-12 20:29:05 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 62700 | critic_loss: 74.5662 | q1_mean: 1484.5905 | actor_loss: -7.1388 | bc_loss: 0.7593 | alpha_loss: 53.5120 | alpha: 0.2000
+2025-12-12 20:29:07 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 62800 | critic_loss: 236.6232 | q1_mean: 1922.6427 | actor_loss: -9.3509 | bc_loss: 0.6687 | alpha_loss: 63.4445 | alpha: 0.2000
+2025-12-12 20:29:09 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 62900 | critic_loss: 85.8607 | q1_mean: 2235.9153 | actor_loss: -11.0912 | bc_loss: 0.5061 | alpha_loss: 59.9771 | alpha: 0.2000
+2025-12-12 20:29:11 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 63000 | critic_loss: 735.8482 | q1_mean: 2693.6338 | actor_loss: -13.3024 | bc_loss: 0.7437 | alpha_loss: 59.6734 | alpha: 0.2000
+2025-12-12 20:29:13 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 63100 | critic_loss: 708.4649 | q1_mean: 2375.6326 | actor_loss: -11.8457 | bc_loss: 0.6224 | alpha_loss: 61.8812 | alpha: 0.2000
+2025-12-12 20:29:14 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 63200 | critic_loss: 71.1689 | q1_mean: 2004.5895 | actor_loss: -9.9994 | bc_loss: 0.4718 | alpha_loss: 57.0367 | alpha: 0.2000
+2025-12-12 20:29:17 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 63300 | critic_loss: 77.2694 | q1_mean: 2305.4863 | actor_loss: -11.1007 | bc_loss: 0.9733 | alpha_loss: 58.2645 | alpha: 0.2000
+2025-12-12 20:29:18 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 63400 | critic_loss: 116.2046 | q1_mean: 2133.4954 | actor_loss: -10.9088 | bc_loss: 0.4464 | alpha_loss: 60.7749 | alpha: 0.2000
+2025-12-12 20:29:19 [INFO] E2E_Teleoperation.E2E_RL.sac_training_algorithm - [Stage3_SAC] Step 63500 | critic_loss: 285.2759 | q1_mean: 2661.8164 | actor_loss: -13.4833 | bc_loss: 0.4668 | alpha_loss: 62.0373 | alpha: 0.2000
