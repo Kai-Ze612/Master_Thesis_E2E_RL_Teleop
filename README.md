@@ -9,15 +9,14 @@ Stochastic communication delays in teleoperation introduce signal discontinuitie
 To address this, this research proposes a **End-to-End Deep Reinforcement Learning (RL)** framework. By incorporating **Long Short-Term Memory (LSTM)** units directly into the policy network, the agent effectively handles the partial observability caused by delays. It learns to reconstruct the system state internally and directly outputs **optimal torque commands**, balancing tracking accuracy with velocity smoothness without relying on separate state estimators or classical controllers.
 
 ## Author
-
 **Kai-Ze Deng** M.Sc. Robotics, Cognition and Intelligence  
 Department of Informatics  
 Technical University of Munich (TUM)
 
 ## Supervisor
-
 **Zewen Yang**
 Postdoctoral Researcher
+Munich Institute of Robotics and Machine Intelligence (MIRMI)
 Technical University of Munich (TUM)
 
 ## Repository Structure
