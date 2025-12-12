@@ -10,8 +10,8 @@ To address this, this research proposes a **End-to-End Deep Reinforcement Learni
 
 ## Author
 
-**Kai-Ze Deng**
-Department of Informatics, M.Sc. Robotics, Cognition and Intelligence
+**Kai-Ze Deng** M.Sc. Robotics, Cognition and Intelligence  
+Department of Informatics  
 Technical University of Munich (TUM)
 
 ## Supervisor
