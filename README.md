@@ -94,7 +94,7 @@ source install/setup.bash
 ### Launch
 In terminal 1
 ```bash
-ros2 launch Model_based_Reinforcement_Learning_In_Teleoperation remote_agent.launch.py config:=1 seed:=50 robot_ip:=192.168.03.108
+ros2 launch Model_based_Reinforcement_Learning_In_Teleoperation remote_agent.launch.py config:={experiment config = 1, 2 or 3} robot_ip:={your robot ip}
 ```
 
 In terminal 2
