@@ -23,26 +23,37 @@ Technical University of Munich (TUM)
 
 The repository tracks the progressive development of the solution, containing the baselines and the final proposed framework.
 
+## Repository Structure
+
+The repository is organized as a ROS 2 workspace (`libfranka_ws`). Each major framework is contained within its own package, following a modular structure (Config, Nodes, Utils, and Core Algorithms).
+
 ```text
 libfranka_ws/
 ├── src/
-│   ├── E2E_Teleoperation/             # [Proposed Method] Novel End-to-End LSTM-based Policy
-│   │                                  # (The core contribution of this Master's Thesis)
+│   ├── E2E_Teleoperation/                 # [Proposed Method] Novel End-to-End LSTM-based Policy
+│   │   ├── config/                        # Hyperparameter configurations
+│   │   ├── E2E_RL/                        # Core Reinforcement Learning implementation
+│   │   │   ├── sac_policy_network.py      # Network architecture (Actor-Critic + LSTM)
+│   │   │   ├── sac_training_algorithm.py  # SAC algorithm logic
+│   │   │   ├── training_env.py            # Gymnasium environment wrapper
+│   │   │   ├── train_agent.py             # Main training entry point
+│   │   │   ├── local_robot_simulator.py   # Leader robot physics/simulation
+│   │   │   └── remote_robot_simulator.py  # Follower robot physics/simulation
+│   │   ├── nodes/                         # ROS 2 Nodes for deployment
+│   │   └── utils/                         # Shared utilities (delay simulator, IK solver)
 │   │
-│   ├── Model_Based_RL_Teleoperation/  # [Previous Iteration] Dynamics-aware RL framework
-│   │                                  # (Submitted to IFAC 2026)
+│   ├── Model_Based_RL_Teleoperation/      # [Previous Iteration] Dynamics-aware RL framework
+│   │                                      # (Contains: Dynamics Models, MPC Controllers, Data Buffers)
 │   │
-│   ├── Hierarchical_RL_Teleoperation/ # [Previous Iteration] Multi-level architecture
-│   │                                  # (Submitted to ICRA 2026)
+│   ├── Hierarchical_RL_Teleoperation/     # [Previous Iteration] Multi-level control architecture
+│   │                                      # (Contains: High-level Planner, Low-level Controller)
 │   │
-│   ├── SBSP/                          # [Baseline] SOTA Model-Based RL Framework
-│   │                                  # (Benchmarking candidate for sample efficiency)
+│   ├── SBSP/                              # [Baseline] SOTA Model-Based RL Framework
 │   │
-│   └── A-SAC/                         # [Baseline] SOTA Model-Free RL Framework
-│   │                                  # (Benchmarking candidate for asymptotic performance)
+│   ├── A-SAC/                             # [Baseline] SOTA Model-Free RL Framework
 │   │
-│   ├── mujoco_ros_pkgs/               # [Simulation] MuJoCo physics engine interface for ROS 2
+│   ├── mujoco_ros_pkgs/                   # [Simulation] MuJoCo physics engine interface for ROS2
 │   │
-│   └── multipanda_ros2/               # [Simulation] Franka Panda robot descriptions & scenes
-│                                      # (Adapted from: [github.com/tenfoldpaper/multipanda_ros2]
+│   └── multipanda_ros2/                   # [Simulation] Franka Panda robot descriptions & scenes
+│   |                                      # (Adapted from: [github.com/tenfoldpaper/multipanda_ros2]
 
