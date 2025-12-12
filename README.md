@@ -56,4 +56,10 @@ libfranka_ws/
 │   │
 │   └── multipanda_ros2/                   # [Simulation] Franka Panda robot descriptions & scenes
 │   |                                      # (Adapted from: [github.com/tenfoldpaper/multipanda_ros2]
+```
 
+## Installation and Usage
+### Prerequisites
+* Operating System: Ubuntu 22.04 (Jammy)
+* ROS 2 Humble
+* Python: 3.10+
