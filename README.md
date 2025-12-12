@@ -44,5 +44,5 @@ libfranka_ws/
 │   ├── mujoco_ros_pkgs/               # [Simulation] MuJoCo physics engine interface for ROS 2
 │   │
 │   └── multipanda_ros2/               # [Simulation] Franka Panda robot descriptions & scenes
-│                                      # (Adapted from: [github.com/tenfoldpaper/multipanda_ros2
+│                                      # (Adapted from: [github.com/tenfoldpaper/multipanda_ros2]
 
