@@ -65,9 +65,43 @@ libfranka_ws/
 * Python: 3.10+
 
 ### Install Python Libraries
-```
+```bash
 pip3 install -r requirements.txt
 ```
 
-### 
+### Install Simulation Environment (Multipanda)
+Please follow the official installation guide from the Multipanda repository:
+[https://github.com/tenfoldpaper/multipanda_ros2](https://github.com/tenfoldpaper/multipanda_ros2)
+
+Ensure thay you can launch the default simulation scene before proceeding:
+```bash
+ros2 launch multipanda_bringup multipanda.launch.py
+```
+
+### Setup this repository
+```bash
+cd ~/libfranka_ws
+
+# Install dependencies
+rosdep install --from-paths src --ignore-src -r -y
+
+# Build workspace
+colcon build
+
+source install/setup.bash
+```
+
+### Launch
+In terminal 1
+```bash
+ros2 launch Model_based_Reinforcement_Learning_In_Teleoperation remote_agent.launch.py config:=1 seed:=50 robot_ip:=192.168.03.108
+```
+
+In terminal 2
+```bash
+ros2 launch Model_based_Reinforcement_Learning_In_Teleoperation local_robot.launch.py
+```
+
+
+
 
