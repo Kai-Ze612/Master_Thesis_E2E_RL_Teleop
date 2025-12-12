@@ -1,0 +1,18 @@
+2025-12-05 19:20:34,934 [INFO] Initializing SBSP Training...
+2025-12-05 19:20:35,896 [INFO] Environment and SBSP Wrapper Initialized.
+2025-12-05 19:20:36,024 [INFO] Injecting SBSP Wrapper into Validation Environment...
+2025-12-05 19:20:36,024 [INFO] Injecting SBSP Wrapper into Validation Environment...
+2025-12-05 19:20:36,027 [INFO] Validation Environment successfully patched with shared SBSP models.
+2025-12-05 19:20:36,027 [INFO] Starting Training Loop...
+2025-12-05 19:20:36,028 [INFO] Tensorboard logs at: ./rl_training_output/SBSP_SAC_MEDIUM_DELAY_figure_8_20251205_192034/tensorboard_sac
+2025-12-05 19:20:36,028 [INFO] ======================================================================
+2025-12-05 19:20:36,028 [INFO] Starting SAC Training (Environment-Centric Prediction)
+2025-12-05 19:20:36,028 [INFO]   Input Dim: 113 | Output Dim: 7
+2025-12-05 19:20:36,028 [INFO] ======================================================================
+2025-12-05 19:27:11,253 [INFO] Validation Reward: -3283.7261
+2025-12-05 19:27:11,257 [INFO] Checkpoint saved: ./rl_training_output/SBSP_SAC_MEDIUM_DELAY_figure_8_20251205_192034/best_policy.pth
+2025-12-05 19:41:56,750 [INFO] Validation Reward: -3166.5039
+2025-12-05 19:41:56,771 [INFO] Checkpoint saved: ./rl_training_output/SBSP_SAC_MEDIUM_DELAY_figure_8_20251205_192034/best_policy.pth
+2025-12-05 20:42:51,126 [INFO] Validation Reward: -3227.2664
+2025-12-05 20:51:58,161 [WARNING] Training Interrupted by User (Ctrl+C).
+2025-12-05 20:51:58,164 [INFO] Checkpoint saved: ./rl_training_output/SBSP_SAC_MEDIUM_DELAY_figure_8_20251205_192034/interrupted_sbsp_policy.pth

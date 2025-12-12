@@ -50,7 +50,7 @@ class RemoteRobotSimulator:
         self.delay_simulator = DelaySimulator(self.control_freq, config=delay_config, seed=seed)
         self.action_queue: List[Tuple[int, np.ndarray]] = []  # For storing actions in delayed sequence
         self.internal_tick = 0
-        self.last_executed_rl_torque = np.zeros(self.n_joints)
+        self.last_executed_torque = np.zeros(self.n_joints) # Renamed for clarity
 
         # Warmup (No delay initially)
         total_grace_time = cfg.WARM_UP_DURATION + cfg.NO_DELAY_DURATION
@@ -92,7 +92,7 @@ class RemoteRobotSimulator:
         self.action_queue = []
         heapq.heapify(self.action_queue)
         self.internal_tick = 0
-        self.last_executed_rl_torque = np.zeros(self.n_joints)
+        self.last_executed_torque = np.zeros(self.n_joints)
         
         # Reset Physics Data
         self._reset_mujoco_data(self.data, initial_qpos)
@@ -143,10 +143,10 @@ class RemoteRobotSimulator:
         
         # Retrieve arrived action
         while self.action_queue and self.action_queue[0][0] <= self.internal_tick:
-            _, self.last_executed_rl_torque = heapq.heappop(self.action_queue)
+            _, self.last_executed_torque = heapq.heappop(self.action_queue)
             
         # Apply tau
-        tau_total = self.last_executed_rl_torque
+        tau_total = self.last_executed_torque
         tau_clipped = np.clip(tau_total, -self.torque_limits, self.torque_limits)
         
         self.data.ctrl[:self.n_joints] = tau_clipped
@@ -173,33 +173,37 @@ class RemoteRobotSimulator:
         raw_track_diff = ground_truth_q - q_current
         tracking_error_norm = np.linalg.norm(self._normalize_angle(raw_track_diff))
 
-        # # 3. Prediction Error: || True State - Predicted State ||
-        # prediction_error_norm = 0.0
-        # if predicted_q is not None:
-        #     raw_pred_diff = ground_truth_q - predicted_q
-        #     prediction_error_norm = np.linalg.norm(self._normalize_angle(raw_pred_diff))
+        # Prediction Error Calculation (Just for display)
+        pred_error = 0.0
+        if predicted_q is not None:
+            raw_pred_diff = ground_truth_q - predicted_q
+            pred_error = np.linalg.norm(self._normalize_angle(raw_pred_diff))
 
-        # --- PRINTING ---
+        # --- [ENABLED PRINTING] ---
+        # Only print every 10th step to avoid flooding logs, or keep it if you want full details
+        # For now, I'll leave it every step as per your debugging request
+        
         np.set_printoptions(precision=3, suppress=True, linewidth=200)
         print(f"\n[Step {self.internal_tick}]")
-        print(f"  True q:      {ground_truth_q}")      # LOCAL ROBOT TRUE STATE
-        # if predicted_q is not None:
-        #     print(f"  Pred q:      {predicted_q}")     # LSTM OUTPUT
-        # else:
-        #     print(f"  Pred q:      N/A (Warmup)")
-            
-        print(f"  Remote Q:    {q_current}")           # REMOTE ROBOT STATE
-        print(f"  RL Torque:   {self.last_executed_rl_torque}")
+        print(f"  True q (ID Goal): {ground_truth_q}")     # What the ID Controller is aiming for
         
-        print(f"  Track Error: {tracking_error_norm:.4f}") # (True - Remote)
-        # print(f"  Pred Error:  {prediction_error_norm:.4f}") # (True - Pred)
+        if predicted_q is not None:
+            print(f"  Pred q (LSTM):    {predicted_q}")    # What the LSTM thinks is happening
+        else:
+            print(f"  Pred q (LSTM):    N/A (Warmup/None)")
+            
+        print(f"  Remote Q:         {q_current}")          # Actual Robot State
+        print(f"  Total Torque:     {self.last_executed_torque}") # Total (Grav + ID + RL)
+        
+        print(f"  Track Error:      {tracking_error_norm:.4f}")
+        if predicted_q is not None:
+            print(f"  Pred Error:       {pred_error:.4f}")
         
         return {
             "joint_error": np.linalg.norm(ground_truth_q - q_current),
             "tracking_error": tracking_error_norm,
-            # "prediction_error": prediction_error_norm,
-            "tau_rl": self.last_executed_rl_torque, 
-            "tau_total": self.last_executed_rl_torque
+            "prediction_error": pred_error,
+            "tau_total": self.last_executed_torque
         }
         
     def render(self) -> bool:

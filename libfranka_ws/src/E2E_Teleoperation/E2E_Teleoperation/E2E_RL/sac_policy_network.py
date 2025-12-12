@@ -7,6 +7,7 @@ Key Changes:
 3. Proper weight sharing reduces parameters and improves learning
 """
 
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -64,7 +65,6 @@ class JointActor(nn.Module):
         # Use shared encoder
         self.encoder = shared_encoder
         
-        # --- [MODIFIED SECTION START] ---
         # Calculate dimensions based on config
         self.robot_state_dim = 14  # 7 q + 7 qd
         self.target_hist_dim = cfg.RNN_SEQUENCE_LENGTH * cfg.ESTIMATOR_STATE_DIM # 80 * 15 = 1200
@@ -73,7 +73,6 @@ class JointActor(nn.Module):
         # Policy Backbone Input: 
         # LSTM Features (256) + Current State (14) + Robot History (1120)
         policy_input_dim = cfg.RNN_HIDDEN_DIM + self.robot_state_dim + self.robot_hist_dim
-        # --- [MODIFIED SECTION END] ---
         
         layers = []
         last_dim = policy_input_dim
@@ -87,6 +86,14 @@ class JointActor(nn.Module):
         self.fc_mean = nn.Linear(last_dim, action_dim)
         self.fc_log_std = nn.Linear(last_dim, action_dim)
         
+        # --- [CRITICAL FIX FOR RESIDUAL RL] ---
+        # Initialize the final layer weights to be very small.
+        # This ensures the initial output is close to 0, so the RL agent 
+        # doesn't disturb the ID controller at the beginning.
+        nn.init.uniform_(self.fc_mean.weight, -1e-3, 1e-3)
+        nn.init.constant_(self.fc_mean.bias, 0.0)
+        # --------------------------------------
+        
         self.register_buffer('action_scale', torch.tensor(cfg.MAX_TORQUE_COMPENSATION))
         self.register_buffer('action_bias', torch.tensor(0.0))
         
@@ -94,16 +101,14 @@ class JointActor(nn.Module):
         """
         Input: Flat Observation Vector [Current State | Robot History | Target History]
         """
-        # --- [MODIFIED SECTION START] ---
         # 1. Slice the inputs
         # Current State: First 14
         remote_state = obs_flat[:, :self.robot_state_dim]
         
-        # Robot History: Middle Chunk (14 to -1200)
-        # This gives the actor the "eyes" to see its own past oscillations
+        # Robot History: Middle Chunk
         robot_history = obs_flat[:, self.robot_state_dim : -self.target_hist_dim]
         
-        # Target History: Last Chunk (Last 1200) -> Goes to Encoder
+        # Target History: Last Chunk
         target_history = obs_flat[:, -self.target_hist_dim:]
         
         # 2. Process Target History through Shared Encoder
@@ -114,11 +119,9 @@ class JointActor(nn.Module):
         lstm_features, pred_state = self.encoder(history_seq)
         
         # 3. Concatenate EVERYTHING for the Policy MLP
-        # [Embedding (z)] + [Current State] + [Robot History (Momentum)]
         policy_input = torch.cat([lstm_features.detach(), remote_state, robot_history], dim=1)
         
         x = self.backbone(policy_input)
-        # --- [MODIFIED SECTION END] ---
         
         mean = self.fc_mean(x)
         log_std = self.fc_log_std(x)
@@ -126,7 +129,6 @@ class JointActor(nn.Module):
         
         return mean, log_std, pred_state
 
-    # --- [THIS METHOD WAS MISSING] ---
     def sample(self, obs_flat: torch.Tensor, deterministic: bool = False):
         mean, log_std, pred_state = self.forward(obs_flat)
         std = log_std.exp()
@@ -159,15 +161,12 @@ class JointCritic(nn.Module):
         # Use the SAME shared encoder as actor
         self.encoder = shared_encoder
         
-        # --- [MODIFIED SECTION START] ---
         self.robot_state_dim = 14
         self.target_hist_dim = cfg.RNN_SEQUENCE_LENGTH * cfg.ESTIMATOR_STATE_DIM
         self.robot_hist_dim = cfg.RNN_SEQUENCE_LENGTH * self.robot_state_dim
         
-        # Q-network input: 
-        # LSTM features (256) + Current (14) + Robot Hist (1120) + Action (7)
+        # Q-network input
         input_dim = cfg.RNN_HIDDEN_DIM + self.robot_state_dim + self.robot_hist_dim + action_dim
-        # --- [MODIFIED SECTION END] ---
         
         # Q1 network
         self.q1_net = nn.Sequential(
@@ -183,9 +182,12 @@ class JointCritic(nn.Module):
             nn.Linear(256, 1)
         )
 
+        # [FIX] Register action scale to normalize inputs in forward()
+        # This matches the scale used in JointActor
+        self.register_buffer('action_scale', torch.tensor(cfg.MAX_TORQUE_COMPENSATION))
+
     def forward(self, obs_flat: torch.Tensor, action: torch.Tensor):
-        # --- [MODIFIED SECTION START] ---
-        # 1. Slice inputs (Same logic as Actor)
+        # 1. Slice inputs
         remote_state = obs_flat[:, :self.robot_state_dim]
         robot_history = obs_flat[:, self.robot_state_dim : -self.target_hist_dim]
         target_history = obs_flat[:, -self.target_hist_dim:]
@@ -196,26 +198,22 @@ class JointCritic(nn.Module):
         
         # Get LSTM features
         lstm_features, _ = self.encoder(history_seq)
+
+        # [FIX] Normalize Action (Torque -> [-1, 1])
+        # The critic must see normalized actions to match the scale of the state inputs.
+        # Otherwise, large torque values (e.g., 50.0) destabilize the gradients.
+        action_normalized = action / self.action_scale
         
         # 3. Concatenate for Q-Networks
-        # Note: We do NOT detach LSTM features here during updates, usually
-        xu = torch.cat([lstm_features, remote_state, robot_history, action], dim=1)
-        # --- [MODIFIED SECTION END] ---
+        # Note: We do NOT detach LSTM features here during updates
+        xu = torch.cat([lstm_features, remote_state, robot_history, action_normalized], dim=1)
         
         return self.q1_net(xu), self.q2_net(xu)
 
 
-# ============================================================================
-# Factory function to create Actor and Critic with shared encoder
-# ============================================================================
 def create_actor_critic(device: str = 'cuda'):
     """
     Create Actor and Critic networks with a shared LSTM encoder.
-    
-    Returns:
-        shared_encoder: The shared LSTM encoder
-        actor: JointActor using the shared encoder
-        critic: JointCritic using the shared encoder
     """
     shared_encoder = SharedLSTMEncoder().to(device)
     actor = JointActor(shared_encoder, action_dim=cfg.N_JOINTS).to(device)

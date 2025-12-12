@@ -1,0 +1,20 @@
+INFO:__main__:>>> Filling Replay Buffer...
+INFO:__main__:>>> Buffer Filled. Starting AR Training...
+INFO:__main__:Update 5000 | Loss: 0.000026 | Val Error: 0.006646 | SS: 0.7788 | LR: 5.00e-04
+INFO:__main__:  [>] New Best Model Saved! (0.006646)
+INFO:__main__:Update 10000 | Loss: 0.000020 | Val Error: 0.005493 | SS: 0.6065 | LR: 5.00e-04
+INFO:__main__:  [>] New Best Model Saved! (0.005493)
+INFO:__main__:Update 15000 | Loss: 0.000017 | Val Error: 0.005133 | SS: 0.4724 | LR: 5.00e-04
+INFO:__main__:  [>] New Best Model Saved! (0.005133)
+INFO:__main__:Update 20000 | Loss: 0.000017 | Val Error: 0.003948 | SS: 0.3679 | LR: 5.00e-04
+INFO:__main__:  [>] New Best Model Saved! (0.003948)
+INFO:__main__:Update 25000 | Loss: 0.000019 | Val Error: 0.012358 | SS: 0.2865 | LR: 5.00e-04
+INFO:__main__:Update 30000 | Loss: 0.000018 | Val Error: 0.004227 | SS: 0.2231 | LR: 5.00e-04
+INFO:__main__:Update 35000 | Loss: 0.000018 | Val Error: 0.006019 | SS: 0.1738 | LR: 5.00e-04
+INFO:__main__:Update 40000 | Loss: 0.000029 | Val Error: 0.008540 | SS: 0.1353 | LR: 5.00e-04
+INFO:__main__:Update 45000 | Loss: 0.000046 | Val Error: 0.009362 | SS: 0.1054 | LR: 2.50e-04
+INFO:__main__:Update 50000 | Loss: 0.000027 | Val Error: 0.006253 | SS: 0.0821 | LR: 2.50e-04
+INFO:__main__:Update 55000 | Loss: 0.000047 | Val Error: 0.006519 | SS: 0.0639 | LR: 2.50e-04
+INFO:__main__:Update 60000 | Loss: 0.000040 | Val Error: 0.008132 | SS: 0.0498 | LR: 2.50e-04
+INFO:__main__:Update 65000 | Loss: 0.000056 | Val Error: 0.007852 | SS: 0.0388 | LR: 1.25e-04
+INFO:__main__:Update 70000 | Loss: 0.000036 | Val Error: 0.009389 | SS: 0.0302 | LR: 1.25e-04

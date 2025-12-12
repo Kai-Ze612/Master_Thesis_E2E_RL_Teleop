@@ -28,7 +28,7 @@ JOINT_LIMITS_LOWER = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, 0.54
 JOINT_LIMITS_UPPER = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 4.5169, 3.0159], dtype=np.float32)
 
 TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
-MAX_TORQUE_COMPENSATION = np.array([2.0, 5.0, 2.0, 5.0, 2.0, 2.0, 1.0], dtype=np.float32)
+MAX_TORQUE_COMPENSATION = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 1.0], dtype=np.float32)
 
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], dtype=np.float32)
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
@@ -113,12 +113,12 @@ SAC_MLP_HIDDEN_DIMS = [512, 256]
 SAC_ACTIVATION = 'relu'
 
 # Learning Rates
-SAC_LEARNING_RATE = 5e-5        # LR for Actor and Critic
+SAC_LEARNING_RATE = 1e-5        # LR for Actor and Critic
 ALPHA_LEARNING_RATE = 5e-5      # LR for temperature auto-tuning
 
 # SAC Parameters
 SAC_GAMMA = 0.9
-SAC_TAU = 0.005
+SAC_TAU = 0.001
 SAC_TARGET_ENTROPY = 'auto'
 
 # Action distribution numerical stability
@@ -127,7 +127,7 @@ LOG_STD_MAX = 2
 
 # Training Schedule
 SAC_BUFFER_SIZE = 1_000_000     # Max size of replay buffer
-SAC_BATCH_SIZE = 1024            # batch size of gradient updates
+SAC_BATCH_SIZE = 2048            # batch size of gradient updates
 
 # Training Schedule
 SAC_START_STEPS = 10000          # Number of random exploration steps (before learning)
