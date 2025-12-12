@@ -63,3 +63,11 @@ libfranka_ws/
 * Operating System: Ubuntu 22.04 (Jammy)
 * ROS 2 Humble
 * Python: 3.10+
+
+### Install Python Libraries
+```
+pip3 install -r requirements.txt
+```
+
+### 
+
