@@ -24,15 +24,25 @@ Technical University of Munich (TUM)
 The repository tracks the progressive development of the solution, containing the baselines and the final proposed framework.
 
 ```text
-Master_Study_Master_Thesis/
+libfranka_ws/
 ├── src/
-│   ├── e2e_rl/              # [Proposed Method] LSTM-based End-to-End Policy
-│   ├── baselines/           # Comparative Models
-│   │   ├── state_aug/       # Baseline 1: State Augmentation (Frame Stacking)
-│   │   └── model_based/     # Baseline 2: Model-Based Dynamics Approach
-│   ├── envs/                # Teleoperation Simulation (Franka Panda / Gymnasium)
-│   └── utils/               # Signal processing & Delay emulation
-├── configs/                 # Hyperparameters (PPO/SAC, LSTM, etc.)
-├── results/                 # Comparative plots and metrics
-├── data/                    # Stochastic delay profiles
-└── Thesis_Paper.pdf         # Full research paper
+│   ├── E2E_Teleoperation/             # [Proposed Method] Novel End-to-End LSTM-based Policy
+│   │                                  # (The core contribution of this Master's Thesis)
+│   │
+│   ├── Model_Based_RL_Teleoperation/  # [Previous Iteration] Dynamics-aware RL framework
+│   │                                  # (Submitted to IFAC 2026)
+│   │
+│   ├── Hierarchical_RL_Teleoperation/ # [Previous Iteration] Multi-level architecture
+│   │                                  # (Submitted to ICRA 2026)
+│   │
+│   ├── SBSP/                          # [Baseline] SOTA Model-Based RL Framework
+│   │                                  # (Benchmarking candidate for sample efficiency)
+│   │
+│   └── A-SAC/                         # [Baseline] SOTA Model-Free RL Framework
+│   │                                  # (Benchmarking candidate for asymptotic performance)
+│   │
+│   ├── mujoco_ros_pkgs/               # [Simulation] MuJoCo physics engine interface for ROS 2
+│   │
+│   └── multipanda_ros2/               # [Simulation] Franka Panda robot descriptions & scenes
+│                                      # (Adapted from: [github.com/tenfoldpaper/multipanda_ros2
+
