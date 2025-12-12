@@ -1,9 +1,10 @@
 """
-TeleoperationEnvWithDelay - Version 11: 10x Reward
+TeleoperationEnvWithDelay - Version 12: Normalized Reward
 
 CHANGES:
-1. Scaled Reward by 10.0.
-   - Provides strong signal without causing Q-value explosion.
+1. [FIX] Reward Scale = 1.0 (Standard).
+   - Keeps Q-values in a healthy range (~100).
+   - Prevents Critic divergence/instability.
 """
 
 import gymnasium as gym
@@ -194,8 +195,8 @@ class TeleoperationEnvWithDelay(gym.Env):
         log_pred_q = denormalized_lstm_pred if denormalized_lstm_pred is not None else target_q_gt
         self.remote_robot.step(target_q=target_q_gt, target_qd=target_qd_gt, torque_input=tau_total, true_local_q=target_q_gt, predicted_q=log_pred_q)
         
-        # [FIX] Scaled Reward by 10.0
-        reward = 10.0 * np.exp(-5.0 * np.linalg.norm(target_q_gt - remote_q))
+        # [FIX] Reward Scale = 1.0 (Stable)
+        reward = np.exp(-5.0 * np.linalg.norm(target_q_gt - remote_q))
         
         remote_q_new, _ = self.remote_robot.get_joint_state()
         joint_error = np.linalg.norm(target_q_gt - remote_q_new)

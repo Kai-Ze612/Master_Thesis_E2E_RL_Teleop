@@ -1,13 +1,12 @@
 """
-SAC Training Algorithm - Version 20: Tuned Weights & Logit Regularization
+SAC Training Algorithm - Version 20: Standard Scale (Final)
 
-CRITICAL FIXES:
-1. [FIX] Reduced Stage 3 'sac_weight' to 0.005.
-   - Math: 0.005 * 250 (Q) = 1.25. This matches the BC signal (~1.0).
-   - Prevents RL from overpowering the teacher.
-2. [FIX] Added 'Logit Regularization' to Actor Loss.
-   - Penalizes the pre-activation outputs if they grow too large.
-   - Physically prevents the "Saturation Death Spiral" (stuck at max torque).
+CHANGES:
+1. [FIX] Retuned weights for Reward Scale = 1.0.
+   - alpha: 0.01 - 0.05 (Small entropy bonus)
+   - sac_weight: 1.0
+   - bc_weight: 10.0 (Dominate anchor)
+2. This creates a standard, stable RL setup.
 """
 
 import numpy as np
@@ -30,31 +29,25 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SACConfig:
-    """Configuration for SAC training."""
-    # Conservative Learning Rates
+    # Stable parameters
     actor_lr: float = 1e-4
     critic_lr: float = 1e-4
     alpha_lr: float = 1e-4
     encoder_lr: float = 5e-4
-    
     gamma: float = 0.99
     tau: float = 0.001
     
-    # Alpha settings
-    initial_alpha: float = 0.05
+    # [FIX] Lower Alpha for 0-1 Reward Scale
+    initial_alpha: float = 0.01
     alpha_min: float = 0.001
-    alpha_max: float = 0.2
+    alpha_max: float = 0.05
     target_entropy_scale: float = 0.5
     fixed_alpha: bool = False
     
-    # Training phases
     encoder_warmup_steps: int = 10000
     teacher_warmup_steps: int = 30000
-    
-    # Replay buffer
     buffer_size: int = 1000000
     batch_size: int = 256
-    
     policy_delay: int = 2
     validation_freq: int = 5000
     checkpoint_freq: int = 50000
@@ -67,7 +60,6 @@ class ReplayBuffer:
         self.device = device
         self.ptr = 0
         self.size = 0
-        
         self.obs = np.zeros((capacity, obs_dim), dtype=np.float32)
         self.actions = np.zeros((capacity, action_dim), dtype=np.float32)
         self.rewards = np.zeros((capacity, 1), dtype=np.float32)
@@ -75,7 +67,6 @@ class ReplayBuffer:
         self.dones = np.zeros((capacity, 1), dtype=np.float32)
         self.is_demo = np.zeros((capacity, 1), dtype=np.float32)
         self.true_states = np.zeros((capacity, true_state_dim), dtype=np.float32)
-        
     def add(self, obs, action, reward, next_obs, done, true_state, is_demo=False):
         self.obs[self.ptr] = obs
         self.actions[self.ptr] = action
@@ -86,7 +77,6 @@ class ReplayBuffer:
         self.true_states[self.ptr] = true_state
         self.ptr = (self.ptr + 1) % self.capacity
         self.size = min(self.size + 1, self.capacity)
-        
     def sample(self, batch_size: int) -> Dict[str, torch.Tensor]:
         idxs = np.random.randint(0, self.size, size=batch_size)
         return {
@@ -98,7 +88,6 @@ class ReplayBuffer:
             'is_demo': torch.FloatTensor(self.is_demo[idxs]).to(self.device),
             'true_states': torch.FloatTensor(self.true_states[idxs]).to(self.device),
         }
-    
     def __len__(self): return self.size
 
 
@@ -110,7 +99,6 @@ class SACTrainer:
         self.output_dir = output_dir
         self.checkpoint_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
-        
         self.num_envs = env.num_envs
         self.obs_dim = cfg.OBS_DIM
         self.action_dim = cfg.N_JOINTS
@@ -120,22 +108,17 @@ class SACTrainer:
         self.critic = JointCritic(shared_encoder=self.shared_encoder, action_dim=self.action_dim).to(self.device)
         self.critic_target = copy.deepcopy(self.critic)
         for param in self.critic_target.parameters(): param.requires_grad = False
-        
         self.log_alpha = torch.tensor(np.log(self.config.initial_alpha), dtype=torch.float32, device=self.device, requires_grad=True)
         self.target_entropy = -self.action_dim * self.config.target_entropy_scale
-        
         self._build_optimizers()
         self.replay_buffer = ReplayBuffer(self.config.buffer_size, self.obs_dim, self.action_dim, self.true_state_dim, self.device)
-        
         self.total_timesteps = 0
         self.update_count = 0
         self.writer = SummaryWriter(os.path.join(output_dir, "tensorboard_sac"))
-        
         if hasattr(cfg, 'MAX_TORQUE_COMPENSATION'):
             self.action_scale = np.array(cfg.MAX_TORQUE_COMPENSATION, dtype=np.float32)
         else:
             self.action_scale = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 1.0], dtype=np.float32)
-        
         logger.info(f"Initial alpha: {self.alpha:.4f}")
 
     def _build_optimizers(self):
@@ -143,17 +126,13 @@ class SACTrainer:
         self.actor_optimizer = optim.Adam([p for n, p in self.actor.named_parameters() if 'encoder' not in n], lr=self.config.actor_lr)
         self.critic_optimizer = optim.Adam([p for n, p in self.critic.named_parameters() if 'encoder' not in n], lr=self.config.critic_lr)
         self.alpha_optimizer = optim.Adam([self.log_alpha], lr=self.config.alpha_lr)
-
     @property
     def alpha(self): return self.log_alpha.exp().item()
-    
     def _freeze_encoder(self):
         for param in self.shared_encoder.parameters(): param.requires_grad = False
         logger.info("FREEZING SHARED ENCODER")
-        
     def _set_teacher_mode(self, val): self.env.env_method("set_teacher_mode", val)
     def _set_ground_truth_mode(self, val): self.env.env_method("set_ground_truth_mode", val)
-    
     def select_action(self, obs, deterministic=False):
         with torch.no_grad():
             obs_tensor = torch.FloatTensor(obs).to(self.device)
@@ -170,19 +149,15 @@ class SACTrainer:
         true_states = batch['true_states']
         is_demo = batch['is_demo']
         metrics = {}
-
-        # Stage 1: Encoder
         if self.total_timesteps < self.config.encoder_warmup_steps:
             target_hist = obs[:, -(cfg.RNN_SEQUENCE_LENGTH * cfg.ESTIMATOR_STATE_DIM):]
             history = target_hist.view(-1, cfg.RNN_SEQUENCE_LENGTH, cfg.ESTIMATOR_STATE_DIM)
             _, pred = self.shared_encoder(history)
-            
             true_q = true_states[:, :cfg.N_JOINTS]
             true_qd = true_states[:, cfg.N_JOINTS:]
             q_norm = (true_q - torch.tensor(cfg.Q_MEAN, device=self.device)) / torch.tensor(cfg.Q_STD, device=self.device)
             qd_norm = (true_qd - torch.tensor(cfg.QD_MEAN, device=self.device)) / torch.tensor(cfg.QD_STD, device=self.device)
             target = torch.cat([q_norm, qd_norm], dim=1)
-            
             aux_loss = F.mse_loss(pred, target)
             self.encoder_optimizer.zero_grad()
             aux_loss.backward()
@@ -191,7 +166,6 @@ class SACTrainer:
             metrics['aux_loss'] = aux_loss.item()
             return metrics
 
-        # Stage 2/3: RL
         with torch.no_grad():
             next_act, next_lp, _, _ = self.actor.sample(next_obs)
             nq1, nq2 = self.critic_target(next_obs, next_act)
@@ -200,31 +174,22 @@ class SACTrainer:
 
         cq1, cq2 = self.critic(obs, actions)
         critic_loss = F.smooth_l1_loss(cq1, target_q) + F.smooth_l1_loss(cq2, target_q)
-        
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
         torch.nn.utils.clip_grad_norm_([p for n, p in self.critic.named_parameters() if 'encoder' not in n], 1.0)
         self.critic_optimizer.step()
-        
         metrics['critic_loss'] = critic_loss.item()
         metrics['q1_mean'] = cq1.mean().item()
 
         if update_policy:
-            # Note: sample() returns (scaled_action, log_prob, raw_action, pred_state)
             new_act, log_prob, raw_act, _ = self.actor.sample(obs)
-            
             q1_new, q2_new = self.critic(obs, new_act)
             q_min = torch.min(q1_new, q2_new)
-            
             sac_loss = (self.alpha * log_prob - q_min).mean()
             
-            # --- WEIGHT ADJUSTMENT ---
             is_teacher_phase = self.total_timesteps < self.config.teacher_warmup_steps
-            
-            # Stage 2: Pure BC
-            # Stage 3: RL (0.005) + BC (50.0) -> Balanced
-            sac_weight = 0.0 if is_teacher_phase else 0.005 
-            bc_weight = 100.0 if is_teacher_phase else 50.0 
+            sac_weight = 0.0 if is_teacher_phase else 1.0 
+            bc_weight = 100.0 if is_teacher_phase else 10.0 # [FIX] Adjusted for Unit Reward
             
             bc_loss = 0.0
             if is_demo.sum() > 0:
@@ -233,10 +198,7 @@ class SACTrainer:
                     bc_error = F.mse_loss(new_act[demo_mask], actions[demo_mask])
                     bc_loss = bc_error * bc_weight
             
-            # [FIX] Logit Regularization: Penalize extreme raw outputs (before tanh)
-            # This prevents the policy from saturating at max torque
             logit_reg_loss = (raw_act**2).mean() * 0.001
-            
             actor_loss = (sac_weight * sac_loss) + bc_loss + logit_reg_loss
             
             self.actor_optimizer.zero_grad()
@@ -255,10 +217,8 @@ class SACTrainer:
                 with torch.no_grad():
                     self.log_alpha.data = torch.clamp(self.log_alpha.data, min=np.log(self.config.alpha_min), max=np.log(self.config.alpha_max))
                 metrics['alpha_loss'] = alpha_loss.item()
-            
             metrics['alpha'] = self.alpha
             self._soft_update_targets()
-
         return metrics
 
     def _soft_update_targets(self):
@@ -273,30 +233,24 @@ class SACTrainer:
         pure_rl_started = False
         self._set_teacher_mode(True)
         self._set_ground_truth_mode(True)
-        
         while self.total_timesteps < total_timesteps:
             if not encoder_frozen and self.total_timesteps >= self.config.encoder_warmup_steps:
                 self._freeze_encoder()
                 self._set_ground_truth_mode(False)
                 encoder_frozen = True
-            
             if not pure_rl_started and self.total_timesteps >= self.config.teacher_warmup_steps:
                 self._set_teacher_mode(False)
                 pure_rl_started = True
-            
             actions, pred = self.select_action(obs)
             for i in range(self.num_envs): self.env.env_method("set_predicted_state", pred[i], indices=i)
             next_obs, rewards, dones, infos = self.env.step(actions)
-            
             for i in range(self.num_envs):
                 is_demo = (self.total_timesteps < self.config.teacher_warmup_steps)
                 actual_action = infos[i].get('actual_action', actions[i])
                 clipped_action = np.clip(actual_action, -self.action_scale, self.action_scale)
                 self.replay_buffer.add(obs[i], clipped_action, rewards[i], next_obs[i], float(dones[i]), infos[i]['true_state'], is_demo)
-            
             obs = next_obs
             self.total_timesteps += self.num_envs
-            
             if len(self.replay_buffer) >= self.config.batch_size:
                 batch = self.replay_buffer.sample(self.config.batch_size)
                 update_policy = (self.update_count % self.config.policy_delay == 0) and encoder_frozen
@@ -306,15 +260,12 @@ class SACTrainer:
                     phase = "Stage1" if not encoder_frozen else "Stage2_BC" if not pure_rl_started else "Stage3_SAC"
                     metrics_str = " | ".join([f"{k}: {v:.4f}" for k, v in metrics.items()])
                     logger.info(f"[{phase}] Step {self.total_timesteps} | {metrics_str}")
-            
             if self.total_timesteps % self.config.validation_freq == 0 and encoder_frozen:
                 val = self.validate()
                 logger.info(f"Validation Step {self.total_timesteps} | Reward: {val['reward']:.2f}")
                 self.writer.add_scalar("val/reward", val['reward'], self.total_timesteps)
-
             if self.total_timesteps % self.config.checkpoint_freq == 0:
                 self.save_checkpoint(f"checkpoint_{self.total_timesteps}.pth")
-        
         self.save_checkpoint("final_policy.pth")
 
     def validate(self, num_episodes: int = 5) -> Dict[str, float]:
@@ -328,8 +279,7 @@ class SACTrainer:
             done = False
             while not done:
                 action, pred_state = self.select_action(obs, deterministic=True)
-                for i in range(self.num_envs):
-                    self.env.env_method("set_predicted_state", pred_state[i], indices=i)
+                for i in range(self.num_envs): self.env.env_method("set_predicted_state", pred_state[i], indices=i)
                 next_obs, reward, done_arr, _ = self.env.step(action)
                 ep_reward += reward[0]
                 done = done_arr[0]
