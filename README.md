@@ -15,9 +15,9 @@ Technical University of Munich (TUM)
 
 ## Supervisor
 **Zewen Yang**
-Postdoctoral Researcher
-Munich Institute of Robotics and Machine Intelligence (MIRMI)
-Technical University of Munich (TUM)
+Postdoctoral Researcher  
+Munich Institute of Robotics and Machine Intelligence (MIRMI)  
+Technical University of Munich (TUM)  
 
 ## Repository Structure
 
