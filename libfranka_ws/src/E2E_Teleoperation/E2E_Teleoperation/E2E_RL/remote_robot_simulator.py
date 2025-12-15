@@ -2,15 +2,19 @@
 MuJoCo-based simulator for the remote robot (follower).
 
 Pipelines:
-1. Subscribe to predicted local robot state (for error calculation).
-2. Subscribe to direct torque command from RL. (for moving to the desired state) (the RL output is the goal tau)
-3. Step the MuJoCo simulation.
+1. Subscribe to predicted local robot state (for error calculation)
+2. Subscribe to true local robot state (for error calculation)
+3. Subscribe to RL output tau (RL made decision)
+4. Step the MuJoCo simulation.
+5. Subscribe to remote robot state.
 """
 
-
 from __future__ import annotations
-from typing import Tuple, Optional, List
 import heapq
+import logging
+from typing import Tuple, Optional, List, Dict, Any
+from pathlib import Path
+
 import mujoco
 import mujoco.viewer
 import numpy as np
@@ -19,6 +23,7 @@ from numpy.typing import NDArray
 from E2E_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
 import E2E_Teleoperation.config.robot_config as cfg
 
+logger = logging.getLogger(__name__)
 
 class RemoteRobotSimulator:
     def __init__(
@@ -26,199 +31,225 @@ class RemoteRobotSimulator:
         delay_config: ExperimentConfig = ExperimentConfig.HIGH_VARIANCE,
         seed: Optional[int] = None,
         render: bool = False,
-        render_fps: Optional[int] = 120
+        render_fps: int = 60,
+        verbose: bool = True # [UPDATED] Default to True to see prints
     ):
         
-        # Load MuJoCo model
-        self.model_path = cfg.DEFAULT_MUJOCO_MODEL_PATH
-        self.model = mujoco.MjModel.from_xml_path(self.model_path)
+        self._verbose = verbose
+        self._render_enabled = render
+        self._render_fps = render_fps
         
-        # Separate Data: One for Physics, One for Math
-        self.data = mujoco.MjData(self.model)
-        self.data_control = mujoco.MjData(self.model)
-        
-        # Control Parameters
-        self.control_freq = cfg.DEFAULT_CONTROL_FREQ
-        sim_freq = int(1.0 / self.model.opt.timestep)
-        self.n_substeps = sim_freq // self.control_freq
+        # 1. Load MuJoCo Model
+        self.model_path = str(cfg.DEFAULT_MUJOCO_MODEL_PATH)
+        if not Path(self.model_path).exists():
+            raise FileNotFoundError(f"MuJoCo model not found at: {self.model_path}")
 
-        # Robot Parameters
+        try:
+            self.model = mujoco.MjModel.from_xml_path(self.model_path)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load MuJoCo model: {e}")
+
+        # 2. Initialize Data Structures
+        self.data = mujoco.MjData(self.model)
+        self._data_control = mujoco.MjData(self.model)
+
+        # 3. Setup Simulation Parameters
+        self.control_freq = cfg.CONTROL_FREQ
+        sim_timestep = self.model.opt.timestep
+        self._n_substeps = int(1.0 / (sim_timestep * self.control_freq))
+
+        # 4. Robot Parameters
         self.torque_limits = cfg.TORQUE_LIMITS.copy()
         self.n_joints = cfg.N_JOINTS
-        
-        # Simulation State
-        self.delay_simulator = DelaySimulator(self.control_freq, config=delay_config, seed=seed)
-        self.action_queue: List[Tuple[int, np.ndarray]] = []  # For storing actions in delayed sequence
-        self.internal_tick = 0
-        self.last_executed_torque = np.zeros(self.n_joints) # Renamed for clarity
 
-        # Warmup (No delay initially)
+        # 5. Delay Simulation State
+        self.delay_simulator = DelaySimulator(self.control_freq, config=delay_config, seed=seed)
+        self._action_queue: List[Tuple[int, np.ndarray]] = []
+        self._internal_tick = 0
+        self._last_executed_torque = np.zeros(self.n_joints)
+
+        # 6. Warmup Configuration
         total_grace_time = cfg.WARM_UP_DURATION + cfg.NO_DELAY_DURATION
-        self.no_delay_steps = int(total_grace_time * self.control_freq)
-        
-        # Rendering
-        self._render_enabled = render
+        self._no_delay_steps = int(total_grace_time * self.control_freq)
+
+        # 7. Initialize Viewer
         self._viewer = None
-        self._render_fps = render_fps
         self._render_interval = max(1, self.control_freq // self._render_fps)
-        
         if self._render_enabled:
             self._init_viewer()
 
     def _init_viewer(self) -> None:
-        """Initialize the MuJoCo passive viewer."""
         self._viewer = mujoco.viewer.launch_passive(self.model, self.data)
         self._viewer.cam.azimuth = 135
         self._viewer.cam.elevation = -20
         self._viewer.cam.distance = 2.0
         self._viewer.cam.lookat[:] = [0.4, 0.0, 0.4]
-        print("MuJoCo Viewer initialized.")
 
     def _reset_mujoco_data(self, mj_data: mujoco.MjData, q_init: NDArray[np.float64]) -> None:
-        """Reset a MuJoCo data structure to a specific joint configuration."""
-        mj_data.qvel[:] = 0.0
-        mj_data.qacc[:] = 0.0
-        mj_data.qacc_warmstart[:] = 0.0
-        mj_data.ctrl[:] = 0.0
-        mj_data.qfrc_applied[:] = 0.0
-        mj_data.xfrc_applied[:] = 0.0
-        mj_data.time = 0.0
+        mujoco.mj_resetData(self.model, mj_data)
         mj_data.qpos[:self.n_joints] = q_init
         mujoco.mj_forward(self.model, mj_data)
-        
-    def reset(self, initial_qpos: NDArray[np.float64]) -> None:
-        
-        # Reset Internal State
-        self.action_queue = []
-        heapq.heapify(self.action_queue)
-        self.internal_tick = 0
-        self.last_executed_torque = np.zeros(self.n_joints)
-        
-        # Reset Physics Data
-        self._reset_mujoco_data(self.data, initial_qpos)
-        self._reset_mujoco_data(self.data_control, initial_qpos)
 
-        # Calculate Gravity Compensation (Just for settling)
-        # We still need data_control here to calculate the torque needed to hold still
-        self.data_control.qpos[:self.n_joints] = initial_qpos
-        self.data_control.qvel[:self.n_joints] = 0.0
-        self.data_control.qacc[:self.n_joints] = 0.0
-        mujoco.mj_inverse(self.model, self.data_control)
-        gravity_torque = self.data_control.qfrc_inverse[:self.n_joints].copy()
-        
-        # Settling Loop (Anti-Shock)
-        for _ in range(100):
-            self.data.ctrl[:self.n_joints] = gravity_torque
-            self.data.qvel[:self.n_joints] = 0.0 
-            mujoco.mj_step(self.model, self.data)
-        
-        if self._render_enabled and self._viewer is not None:
+    def reset(self, initial_qpos: NDArray[np.float64]) -> None:
+        self._action_queue = []
+        heapq.heapify(self._action_queue)
+        self._internal_tick = 0
+        self._last_executed_torque = np.zeros(self.n_joints)
+
+        self._reset_mujoco_data(self.data, initial_qpos)
+        self._reset_mujoco_data(self._data_control, initial_qpos)
+        self._stabilize_robot(initial_qpos)
+
+        if self._render_enabled and self._viewer:
             self._viewer.sync()
 
-    def _normalize_angle(self, angle: np.ndarray) -> np.ndarray:
-        """Because joint angles can wrap around, normalize to [-pi, pi]."""
+    def _stabilize_robot(self, q_pos: NDArray[np.float64], steps: int = 100) -> None:
+        """
+        Transitions the robot from a mathematical initial state to a stable physical state.
+        
+        Pipeline:
+        1. Apply Gravity Compensation to hold robot state
+        2. Set joint velocities and accelerations to zero.
+        3. Step the simulation for a number of steps to allow it to settle.
+        """
+        self._data_control.qpos[:self.n_joints] = q_pos
+        self._data_control.qvel[:self.n_joints] = 0.0
+        self._data_control.qacc[:self.n_joints] = 0.0
+       
+        mujoco.mj_inverse(self.model, self._data_control)
+        gravity_torque = self._data_control.qfrc_inverse[:self.n_joints].copy()
+
+        for _ in range(steps):
+            self.data.ctrl[:self.n_joints] = gravity_torque
+            self.data.qvel[:] = 0.0
+            mujoco.mj_step(self.model, self.data)
+
+    def _normalize_angle(self, angle: NDArray) -> NDArray:
+        """
+        trun angle into [-pi, pi]
+        """
         return (angle + np.pi) % (2 * np.pi) - np.pi
-    
+
     def step(
         self,
         target_q: np.ndarray,
         target_qd: np.ndarray,
-        torque_input: np.ndarray, 
+        torque_input: np.ndarray,
         true_local_q: Optional[np.ndarray] = None,
         predicted_q: Optional[np.ndarray] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         
-        self.internal_tick += 1
-        
-        # 1. Handle Delay
-        if self.internal_tick < self.no_delay_steps:
+        self._internal_tick += 1
+
+        # 1. Simulate Network Delay
+        if self._internal_tick < self._no_delay_steps:
             delay_steps = 0
         else:
             delay_steps = int(self.delay_simulator.get_action_delay_steps())
-            
-        arrival_time = self.internal_tick + delay_steps
-        
-        # Queue the RL action
-        heapq.heappush(self.action_queue, (arrival_time, torque_input.copy()))
-        
-        # Retrieve arrived action
-        while self.action_queue and self.action_queue[0][0] <= self.internal_tick:
-            _, self.last_executed_torque = heapq.heappop(self.action_queue)
-            
-        # Apply tau
-        tau_total = self.last_executed_torque
-        tau_clipped = np.clip(tau_total, -self.torque_limits, self.torque_limits)
-        
+
+        arrival_time = self._internal_tick + delay_steps
+        heapq.heappush(self._action_queue, (arrival_time, torque_input.copy()))
+
+        # 2. Retrieve Pending Actions
+        while self._action_queue and self._action_queue[0][0] <= self._internal_tick:
+            _, self._last_executed_torque = heapq.heappop(self._action_queue)
+
+        # 3. Apply Torque
+        tau_clipped = np.clip(self._last_executed_torque, -self.torque_limits, self.torque_limits)
         self.data.ctrl[:self.n_joints] = tau_clipped
-        for _ in range(self.n_substeps):
+
+        for _ in range(self._n_substeps):
             mujoco.mj_step(self.model, self.data)
-        
-        # Rendering
+
+        # 4. Rendering
         if self._render_enabled:
             self.render()
 
-        # Metrics
-        if true_local_q is not None:
-            raw_pred_diff = target_q - true_local_q
-            prediction_error_norm = np.linalg.norm(self._normalize_angle(raw_pred_diff))
-        else:
-            prediction_error_norm = 0.0
-
+        # 5. Metrics & State
         q_current = self.data.qpos[:self.n_joints].copy()
-
-        # 2. Tracking Error: || True State - Remote State ||
-        # We use true_local_q as the ground truth source
+        
+        # Ground Truth is the Local Robot State (Leader)
         ground_truth_q = true_local_q if true_local_q is not None else target_q
         
-        raw_track_diff = ground_truth_q - q_current
-        tracking_error_norm = np.linalg.norm(self._normalize_angle(raw_track_diff))
-
-        # Prediction Error Calculation (Just for display)
+        # Tracking Error (Remote vs. Local)
+        tracking_error = np.linalg.norm(self._normalize_angle(ground_truth_q - q_current))
+        
+        # Prediction Error (Predicted vs. Local)
         pred_error = 0.0
         if predicted_q is not None:
-            raw_pred_diff = ground_truth_q - predicted_q
-            pred_error = np.linalg.norm(self._normalize_angle(raw_pred_diff))
+            pred_error = np.linalg.norm(self._normalize_angle(ground_truth_q - predicted_q))
 
-        # --- [ENABLED PRINTING] ---
-        # Only print every 10th step to avoid flooding logs, or keep it if you want full details
-        # For now, I'll leave it every step as per your debugging request
-        
-        np.set_printoptions(precision=3, suppress=True, linewidth=200)
-        print(f"\n[Step {self.internal_tick}]")
-        print(f"  True q (ID Goal): {ground_truth_q}")     # What the ID Controller is aiming for
-        
-        if predicted_q is not None:
-            print(f"  Pred q (LSTM):    {predicted_q}")    # What the LSTM thinks is happening
-        else:
-            print(f"  Pred q (LSTM):    N/A (Warmup/None)")
-            
-        print(f"  Remote Q:         {q_current}")          # Actual Robot State
-        print(f"  Total Torque:     {self.last_executed_torque}") # Total (Grav + ID + RL)
-        
-        print(f"  Track Error:      {tracking_error_norm:.4f}")
-        if predicted_q is not None:
-            print(f"  Pred Error:       {pred_error:.4f}")
-        
+        # 6. Logging [UPDATED]
+        if self._verbose:
+            self._log_step_info(ground_truth_q, q_current, predicted_q, self._last_executed_torque)
+
         return {
             "joint_error": np.linalg.norm(ground_truth_q - q_current),
-            "tracking_error": tracking_error_norm,
+            "tracking_error": tracking_error,
             "prediction_error": pred_error,
-            "tau_total": self.last_executed_torque
+            "tau_total": self._last_executed_torque
         }
+
+    def _log_step_info(self, local_true_q, remote_true_q, predicted_q, rl_tau):
+        """
+        Prints the 3 key comparison metrics requested.
+        """
+        np.set_printoptions(precision=3, suppress=True, linewidth=150)
         
+        print(f"\n[Step {self._internal_tick}]")
+        
+        # 1. Prediction Comparison
+        if predicted_q is not None:
+            diff_pred = local_true_q - predicted_q
+            err_pred = np.linalg.norm(diff_pred)
+            print(f"1. PREDICTION (Local True vs Pred):")
+            print(f"   True Local: {local_true_q}")
+            print(f"   Predicted:  {predicted_q}")
+            print(f"   Diff:       {diff_pred}")
+            print(f"   Error Norm: {err_pred:.4f}")
+        else:
+            print(f"1. PREDICTION: N/A (Warmup)")
+
+        # 2. Tracking Comparison
+        diff_track = local_true_q - remote_true_q
+        err_track = np.linalg.norm(diff_track)
+        print(f"2. TRACKING (Local True vs Remote True):")
+        print(f"   True Local: {local_true_q}")
+        print(f"   True Remote:{remote_true_q}")
+        print(f"   Diff:       {diff_track}")
+        print(f"   Error Norm: {err_track:.4f}")
+
+        # 3. RL Output
+        print(f"3. CONTROL (RL Output Tau):")
+        print(f"   Tau:        {rl_tau}")
+        print("-" * 60)
+
     def render(self) -> bool:
-        if not self._render_enabled or self._viewer is None: return True
-        if not self._viewer.is_running(): return False
-        if self.internal_tick % self._render_interval == 0: self._viewer.sync()
+        if not self._render_enabled or self._viewer is None:
+            return True
+        if not self._viewer.is_running():
+            return False
+        
+        if self._internal_tick % self._render_interval == 0:
+            self._viewer.sync()
         return True
 
-    def get_joint_state(self):
-        return self.data.qpos[:self.n_joints].copy(), self.data.qvel[:self.n_joints].copy()
-    
+    def get_joint_state(self) -> Tuple[NDArray, NDArray]:
+        return (
+            self.data.qpos[:self.n_joints].copy(),
+            self.data.qvel[:self.n_joints].copy()
+        )
+
     def close(self) -> None:
         if self._viewer is not None:
             self._viewer.close()
             self._viewer = None
-    
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def __del__(self):
         self.close()

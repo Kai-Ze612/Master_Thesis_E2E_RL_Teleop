@@ -19,6 +19,7 @@ from enum import Enum
 import numpy as np
 import gymnasium as gym
 import mujoco
+from pathlib import Path
 
 from E2E_Teleoperation.utils.inverse_kinematics import IKSolver
 import E2E_Teleoperation.config.robot_config as cfg
@@ -101,7 +102,7 @@ class LissajousTrajectoryGenerator(TrajectoryGenerator):
 
 class LocalRobotSimulator(gym.Env):    
     def __init__(self, model_path=cfg.DEFAULT_MUJOCO_MODEL_PATH,
-                 control_freq=cfg.DEFAULT_CONTROL_FREQ,
+                 control_freq=cfg.CONTROL_FREQ,
                  trajectory_type=TrajectoryType.FIGURE_8,
                  randomize_params=False, **kwargs):
        
@@ -113,7 +114,8 @@ class LocalRobotSimulator(gym.Env):
         self._randomize_params = randomize_params
         self._tick = 0
         
-        self.model = mujoco.MjModel.from_xml_path(model_path)
+        self.model_path = str(model_path)
+        self.model = mujoco.MjModel.from_xml_path(self.model_path)
         self.data = mujoco.MjData(self.model)
         
         self.ik_solver = IKSolver(self.model, cfg.JOINT_LIMITS_LOWER, cfg.JOINT_LIMITS_UPPER)
@@ -176,7 +178,6 @@ class LocalRobotSimulator(gym.Env):
             q_target_raw = self._q_current.copy()
         
         # 2. Calculate Raw Velocity (Unconstrained)
-        # No more clipping. We want to see if the physics are broken.
         qd_raw = (q_target_raw - self._q_previous) / self._dt
         
         # 3. Update State

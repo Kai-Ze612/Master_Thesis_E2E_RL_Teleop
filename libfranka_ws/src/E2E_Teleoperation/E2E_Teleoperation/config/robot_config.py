@@ -3,19 +3,38 @@ Shared Robot configuration settings
 """
 
 import numpy as np
+from pathlib import Path
 
 ######################################
 # File Paths
 ######################################
-# DEFAULT_MUJOCO_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
-# RL_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent/rl_training_output/ModelBasedSAC_LOW_DELAY_figure_8_20251126_000433/best_policy.pth"
-# LSTM_MODEL_PATH = "/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/Model_based_Reinforcement_Learning_In_Teleoperation/Model_based_Reinforcement_Learning_In_Teleoperation/rl_agent_autoregressive/lstm_training_output/Autoregressive_LSTM_FULL_RANGE_COVER_20251201_120616/autoregressive_estimator.pth"
-######################################
-DEFAULT_MUJOCO_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml"
+CONFIG_FILE_PATH = Path(__file__).resolve()  # current file path
 
+CONFIG_DIR = CONFIG_FILE_PATH.parent  # Config foler
 
-######################################
-CHECKPOINT_DIR_RL = "./rl_training_output"
+PACKAGE_ROOT = CONFIG_DIR.parent # Package folder 
+
+PROJECT_ROOT = PACKAGE_ROOT.parent # Project folder
+
+WORKSPACE_SRC = PROJECT_ROOT.parent # Workspace src folder
+
+# RL training model checkpoint
+CHECKPOINT_DIR = PACKAGE_ROOT / "trained_RL"
+LOG_DIR = PACKAGE_ROOT / "logs"
+
+# Mujoco path
+DEFAULT_MUJOCO_MODEL_PATH = (
+    WORKSPACE_SRC / 
+    "multipanda_ros2" / 
+    "franka_description" / 
+    "mujoco" / 
+    "franka" / 
+    "scene.xml"
+)
+
+# Ensure the path exist
+CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 ######################################
 # Franka Panda Robot Parameters
@@ -24,28 +43,36 @@ N_JOINTS = 7
 EE_BODY_NAME = "panda_hand"
 TCP_OFFSET = np.array([0.0, 0.0, 0.1034], dtype=np.float32)
 
+# Robot joints physical limits
 JOINT_LIMITS_LOWER = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, 0.5445, -3.0159], dtype=np.float32)
 JOINT_LIMITS_UPPER = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 4.5169, 3.0159], dtype=np.float32)
-
-TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
-MAX_TORQUE_COMPENSATION = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 1.0], dtype=np.float32)
-
-INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], dtype=np.float32)
 JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
-WARM_UP_DURATION = 0.1  # sec (before starting moving)
-NO_DELAY_DURATION = 0.1  # sec (before starting delay simulation)
+# Physical torque limits
+TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
+MAX_ACTION_TORQUE = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 1.0], dtype=np.float32) # RL action space
 
+INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], dtype=np.float32)
+WARM_UP_DURATION = 1  # sec (before starting moving)
+NO_DELAY_DURATION = 1  # sec (before starting delay simulation)
+
+# Normalization Statistics
 Q_MEAN = np.array([0.0, -0.78, 0.0, -2.35, 0.0, 1.57, 0.78], dtype=np.float32)
 Q_STD  = np.array([1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0], dtype=np.float32) 
 QD_MEAN = np.zeros(7, dtype=np.float32)
-QD_STD  = np.ones(7, dtype=np.float32) * 2.0 
+QD_STD  = np.ones(7, dtype=np.float32) * 2.0
+
+DELAY_INPUT_NORM_FACTOR = 100.0  # Normalize delay time
 
 ######################################
-# Control Parameters
+# Simulation and Control Parameters
 ######################################
-DEFAULT_CONTROL_FREQ = 250
-DEFAULT_PUBLISH_FREQ = 250
+CONTROL_FREQ = 250
+DT = 1.0 / CONTROL_FREQ
+WARM_UP_DURATION = 0.1
+NO_DELAY_DURATION = 0.1
+MAX_EPISODE_STEPS = 5500
+MAX_JOINT_ERROR_TERMINATION = 1.0
 
 ######################################
 # IK Solver Parameterss
@@ -69,98 +96,48 @@ TRAJECTORY_SCALE = np.array([0.2, 0.2, 0.02], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1  # Hz
 
 ######################################
-# pre-trained LSTM hyperparameters
+# Network Architecture
 ######################################
-ESTIMATOR_PREDICTION_HORIZON = 50  # steps into the future
-
 RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 3
-RNN_SEQUENCE_LENGTH = 80 # Input sequence for LSTM
-REMOTE_HISTORY_LEN = RNN_SEQUENCE_LENGTH
-
-DELAY_INPUT_NORM_FACTOR = 100.0
-TARGET_DELTA_SCALE = 10.0
-
-AUGMENTATION_STRIDE = 4
-DT = 1.0 / DEFAULT_CONTROL_FREQ
-
-ESTIMATOR_STATE_DIM = 15  # 7 q + 7 qd + 1 delay
-ESTIMATOR_OUTPUT_DIM = 14 # 7 predicted q + 7 predicted qd
-
-MAX_AR_STEPS = 240 / (1/DEFAULT_CONTROL_FREQ * 1000) + 5
-
-######################################
-# RL Environment Parameters
-######################################
-MAX_JOINT_ERROR_TERMINATION = 1  # radians
-
-ROBOT_STATE_DIM = 14  # 7 q + 7 qd
-ROBOT_HISTORY_DIM = RNN_SEQUENCE_LENGTH * ROBOT_STATE_DIM  # 80 * 14 = 1120
-TARGET_HISTORY_DIM = RNN_SEQUENCE_LENGTH * ESTIMATOR_STATE_DIM  # 80 * 15 = 1200
-
-# OBS_DIM now includes both histories
-OBS_DIM = (
-    ROBOT_STATE_DIM +       # Current state (14)
-    ROBOT_HISTORY_DIM +     # Robot history (1120) <- NEW
-    TARGET_HISTORY_DIM      # Target history (1200)
-)
-
-######################################
-# SAC Hyperparameters
-######################################
-# SAC MLP architecture
-SAC_MLP_HIDDEN_DIMS = [512, 256]
-SAC_ACTIVATION = 'relu'
-
-# Learning Rates
-SAC_LEARNING_RATE = 1e-5        # LR for Actor and Critic
-ALPHA_LEARNING_RATE = 5e-5      # LR for temperature auto-tuning
-
-# SAC Parameters
-SAC_GAMMA = 0.9
-SAC_TAU = 0.001
-SAC_TARGET_ENTROPY = 'auto'
-
-# Action distribution numerical stability
+RNN_SEQUENCE_LENGTH = 80
+ESTIMATOR_STATE_DIM = 15
+ESTIMATOR_OUTPUT_DIM = 14
+MLP_HIDDEN_DIMS = [512, 256]
 LOG_STD_MIN = -20
 LOG_STD_MAX = 2
 
-# Training Schedule
-SAC_BUFFER_SIZE = 1_000_000     # Max size of replay buffer
-SAC_BATCH_SIZE = 2048            # batch size of gradient updates
+# Observation Space
+ROBOT_STATE_DIM = 14
+ROBOT_HISTORY_DIM = RNN_SEQUENCE_LENGTH * ROBOT_STATE_DIM
+TARGET_HISTORY_DIM = RNN_SEQUENCE_LENGTH * ESTIMATOR_STATE_DIM
+OBS_DIM = ROBOT_STATE_DIM + ROBOT_HISTORY_DIM + TARGET_HISTORY_DIM
 
-# Training Schedule
-SAC_START_STEPS = 10000          # Number of random exploration steps (before learning)
-SAC_UPDATES_PER_STEP = 1.0       # Number of SAC updates per env step
-SAC_TOTAL_TIMESTEPS = 30_000_000  # Total training timesteps
+# --- Training Stages ---
+SEED = 42
+BATCH_SIZE = 2048
+BUFFER_SIZE = 1_000_000
 
-# Validation and Early Stopping
-SAC_VAL_FREQ = 5000
-SAC_VAL_EPISODES = 5
-SAC_EARLY_STOPPING_PATIENCE = 30
+STAGE1_STEPS = 30_000
+ENCODER_LR = 1e-3
 
-######################################
-# Reward Function Configuration
-######################################
-TRACKING_ERROR_SCALE = 5       # Gaussian bandwidth for exp(-scale * error²)
-VELOCITY_ERROR_SCALE = 1       # Gaussian bandwidth for velocity tracking
+STAGE2_TOTAL_STEPS = 2_000_000 
+ACTOR_LR = 1e-4
+CRITIC_LR = 1e-4
+ALPHA_LR = 1e-4 
+GAMMA = 0.99
+TAU = 0.005
 
-######################################
-# Environment Settings
-######################################
-NUM_ENVIRONMENTS = 1
-MAX_EPISODE_STEPS = 5500
-
-
-######################################
-# Logging and Checkpointing
-######################################
-LOG_FREQ = 100   # Log metrics every N *env steps*
-SAVE_FREQ = 1000  # Save checkpoint every N *env steps*
+MAX_GRAD_NORM = 1.0
+POLICY_DELAY = 2
+VAL_FREQ = 10_000
+VAL_EPISODES = 5
+EARLY_STOP_PATIENCE = 10
+CHECKPOINT_FREQ = 50_000
 
 ######################################
-# Deployment Parameters
+# Teacher Model Gains
 ######################################
-
-DEPLOYMENT_HISTORY_BUFFER_SIZE = 200  # Must be > max_delay_steps + RNN sequence length
-
+TEACHER_KP = np.array([100.0, 100.0, 100.0, 100.0, 80.0, 60.0, 40.0], dtype=np.float64)
+TEACHER_KD = np.array([20.0, 20.0, 20.0, 20.0, 12.0, 10.0, 8.0], dtype=np.float64)
+TEACHER_SMOOTHING = 0.3
