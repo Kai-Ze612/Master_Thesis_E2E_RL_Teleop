@@ -31,12 +31,6 @@ class EarlyStopper:
         self.best_metric = -np.inf  # (Reward higher is better)
         
     def check(self, metric: float) -> Tuple[bool, bool]:
-        """
-        Args:
-            metric: The validation score (e.g., Reward).
-        Returns:
-            (stop_training, is_new_best)
-        """
         if metric > self.best_metric:
             self.best_metric = metric
             self.counter = 0
@@ -58,7 +52,6 @@ class ReplayBuffer:
         self.ptr = 0
         self.size = 0
         
-        # Preallocate memory
         self.obs = np.zeros((capacity, obs_dim), dtype=np.float32)
         self.teacher_actions = np.zeros((capacity, action_dim), dtype=np.float32) # Target Labels
         self.true_states = np.zeros((capacity, 14), dtype=np.float32) # For Encoder Loss
@@ -97,13 +90,8 @@ class PhasedTrainer:
         self.writer = SummaryWriter(os.path.join(output_dir, "tensorboard"))
         
         # Networks
-        # Shared Encoder (State Estimator)
         self.shared_encoder = SharedLSTMEncoder().to(self.device)
-        
-        # Student Actor (Policy)
         self.actor = JointActor(shared_encoder=self.shared_encoder, action_dim=cfg.N_JOINTS).to(self.device)
-        
-        # Critic (Optional for BC)
         self.critic = JointCritic(shared_encoder=self.shared_encoder, action_dim=cfg.N_JOINTS).to(self.device)
         
         # Optimizers
@@ -123,11 +111,12 @@ class PhasedTrainer:
         obs, _ = self.env.reset()
         
         for _ in range(steps):
-            # 1. (Optional) Feed prediction back to env for State Estimation robustness
+            # 1. Feed prediction back to env for State Estimation robustness
             if use_prediction:
                 with torch.no_grad():
                     obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
-                    _, _, pred = self.actor.sample(obs_t, deterministic=True)
+                    # [FIX 1] Unpack 4 values (action, log_prob, raw, pred)
+                    _, _, _, pred = self.actor.sample(obs_t, deterministic=True)
                     pred_np = pred.cpu().numpy()[0]
                 self.env.set_predicted_state(pred_np)
  
@@ -176,9 +165,10 @@ class PhasedTrainer:
             history_seq = target_history.view(-1, cfg.RNN_SEQUENCE_LENGTH, cfg.ESTIMATOR_STATE_DIM)
             
             # Forward Encoder
-            _, pred_state = self.shared_encoder(history_seq)
+            # [FIX 2] Unpack 3 values (features, pred_state, hidden)
+            _, pred_state, _ = self.shared_encoder(history_seq)
             
-            # Prepare Targets (Normalized True State)
+            # Prepare Targets
             t_q = true_states[:, :7]
             t_qd = true_states[:, 7:]
             t_q_norm = (t_q - torch.tensor(cfg.Q_MEAN, device=self.device)) / torch.tensor(cfg.Q_STD, device=self.device)
@@ -200,9 +190,9 @@ class PhasedTrainer:
         for param in self.actor.parameters(): param.requires_grad = True
         logger.info(">>> STAGE 1 COMPLETE")
 
-    def train_stage_2_3_distillation(self):
+    def train_stage_2_distillation(self):
         """
-        Stage 2/3: Train Student (Actor) to mimic Teacher (ID Controller).
+        Stage 2: Train Student (Actor) to mimic Teacher (ID Controller).
         Uses Behavioral Cloning (MSE Loss).
         """
         logger.info("="*60)
@@ -217,14 +207,14 @@ class PhasedTrainer:
             self.global_step += 200
             
             # 2. Train Loop
-            for _ in range(50): # Perform multiple updates per collection
+            for _ in range(50): 
                 obs, teacher_actions, _ = self.buffer.sample(cfg.BATCH_SIZE)
                 
                 # Forward Student (Deterministic)
+                # Unpack 4 values: (action, log_prob, raw, pred)
                 student_action, _, _, _ = self.actor.sample(obs, deterministic=True)
                 
                 # Behavioral Cloning Loss (MSE)
-                # We want Student(obs) ~= Teacher(obs)
                 bc_loss = F.mse_loss(student_action, teacher_actions)
                 
                 # Update Student & Fine-tune Encoder
@@ -250,7 +240,6 @@ class PhasedTrainer:
                 
                 if is_best:
                     self.save_checkpoint("best_policy.pth")
-                    logger.info(">>> New Best Model Saved!")
                 
                 if stop:
                     logger.info(">>> Early Stopping Triggered. Training Finished.")
@@ -259,7 +248,7 @@ class PhasedTrainer:
     def validate(self) -> float:
         """
         Evaluates the Student Policy in the environment.
-        The Student drives the robot here (not the Teacher).
+        The Student drives the robot here.
         """
         total_reward = 0.0
         
@@ -271,13 +260,12 @@ class PhasedTrainer:
             while not done:
                 with torch.no_grad():
                     obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
-                    # Student acts deterministically during validation
-                    action, _, pred, _ = self.actor.sample(obs_t, deterministic=True)
+                    # Unpack 4 values: (action, log_prob, raw, pred)
+                    action, _, _, pred = self.actor.sample(obs_t, deterministic=True)
                     
                     action_np = action.cpu().numpy()[0]
                     pred_np = pred.cpu().numpy()[0]
                 
-                # Use Student's predicted state
                 self.env.set_predicted_state(pred_np)
                 
                 # Step Environment with STUDENT action
