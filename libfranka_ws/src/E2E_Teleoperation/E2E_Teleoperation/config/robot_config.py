@@ -135,6 +135,8 @@ VAL_EPISODES = 5
 EARLY_STOP_PATIENCE = 10
 CHECKPOINT_FREQ = 50_000
 
+LOG_FREQ = 1_000
+
 ######################################
 # Teacher Model Gains
 ######################################

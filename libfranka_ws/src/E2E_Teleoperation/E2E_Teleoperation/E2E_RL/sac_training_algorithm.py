@@ -1,297 +1,299 @@
 """
-SAC Training Algorithm - Version 20: Standard Scale (Final)
+SAC training algorithm
 
-CHANGES:
-1. [FIX] Retuned weights for Reward Scale = 1.0.
-   - alpha: 0.01 - 0.05 (Small entropy bonus)
-   - sac_weight: 1.0
-   - bc_weight: 10.0 (Dominate anchor)
-2. This creates a standard, stable RL setup.
+Two stages training:
+1. LSTM encoder pre-training (state estimator)
+2. Policy distillation (teacher - student learning)
 """
 
+import os
+import logging
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-import copy
-import os
-import logging
-from typing import Optional, Tuple, Dict
-from dataclasses import dataclass
+from typing import Dict, Tuple, Optional
 
-from E2E_Teleoperation.E2E_RL.sac_policy_network import SharedLSTMEncoder, JointActor, JointCritic
 import E2E_Teleoperation.config.robot_config as cfg
+from E2E_Teleoperation.E2E_RL.sac_policy_network import JointActor, JointCritic, SharedLSTMEncoder
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class SACConfig:
-    # Stable parameters
-    actor_lr: float = 1e-4
-    critic_lr: float = 1e-4
-    alpha_lr: float = 1e-4
-    encoder_lr: float = 5e-4
-    gamma: float = 0.99
-    tau: float = 0.001
-    
-    # [FIX] Lower Alpha for 0-1 Reward Scale
-    initial_alpha: float = 0.01
-    alpha_min: float = 0.001
-    alpha_max: float = 0.05
-    target_entropy_scale: float = 0.5
-    fixed_alpha: bool = False
-    
-    encoder_warmup_steps: int = 10000
-    teacher_warmup_steps: int = 30000
-    buffer_size: int = 1000000
-    batch_size: int = 256
-    policy_delay: int = 2
-    validation_freq: int = 5000
-    checkpoint_freq: int = 50000
-    log_freq: int = 1000
-
-
+class EarlyStopper:
+    """
+    Handles early stopping based on validation reward/loss.
+    """
+    def __init__(self, patience: int = cfg.EARLY_STOP_PATIENCE):
+        self.patience = patience
+        self.counter = 0
+        self.best_metric = -np.inf  # (Reward higher is better)
+        
+    def check(self, metric: float) -> Tuple[bool, bool]:
+        """
+        Args:
+            metric: The validation score (e.g., Reward).
+        Returns:
+            (stop_training, is_new_best)
+        """
+        if metric > self.best_metric:
+            self.best_metric = metric
+            self.counter = 0
+            return False, True
+        else:
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True, False
+            return False, False
+        
+        
 class ReplayBuffer:
-    def __init__(self, capacity: int, obs_dim: int, action_dim: int, true_state_dim: int, device: torch.device):
+    """
+    Simple Replay Buffer for storing Expert (Teacher) Trajectories.
+    """
+    def __init__(self, capacity: int, obs_dim: int, action_dim: int, device: torch.device):
         self.capacity = capacity
         self.device = device
         self.ptr = 0
         self.size = 0
+        
+        # Preallocate memory
         self.obs = np.zeros((capacity, obs_dim), dtype=np.float32)
-        self.actions = np.zeros((capacity, action_dim), dtype=np.float32)
-        self.rewards = np.zeros((capacity, 1), dtype=np.float32)
-        self.next_obs = np.zeros((capacity, obs_dim), dtype=np.float32)
-        self.dones = np.zeros((capacity, 1), dtype=np.float32)
-        self.is_demo = np.zeros((capacity, 1), dtype=np.float32)
-        self.true_states = np.zeros((capacity, true_state_dim), dtype=np.float32)
-    def add(self, obs, action, reward, next_obs, done, true_state, is_demo=False):
+        self.teacher_actions = np.zeros((capacity, action_dim), dtype=np.float32) # Target Labels
+        self.true_states = np.zeros((capacity, 14), dtype=np.float32) # For Encoder Loss
+        
+    def add(self, obs: np.ndarray, teacher_action: np.ndarray, true_state: np.ndarray):
         self.obs[self.ptr] = obs
-        self.actions[self.ptr] = action
-        self.rewards[self.ptr] = reward
-        self.next_obs[self.ptr] = next_obs
-        self.dones[self.ptr] = done
-        self.is_demo[self.ptr] = float(is_demo)
+        self.teacher_actions[self.ptr] = teacher_action
         self.true_states[self.ptr] = true_state
+        
         self.ptr = (self.ptr + 1) % self.capacity
         self.size = min(self.size + 1, self.capacity)
-    def sample(self, batch_size: int) -> Dict[str, torch.Tensor]:
+        
+    def sample(self, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         idxs = np.random.randint(0, self.size, size=batch_size)
-        return {
-            'obs': torch.FloatTensor(self.obs[idxs]).to(self.device),
-            'actions': torch.FloatTensor(self.actions[idxs]).to(self.device),
-            'rewards': torch.FloatTensor(self.rewards[idxs]).to(self.device),
-            'next_obs': torch.FloatTensor(self.next_obs[idxs]).to(self.device),
-            'dones': torch.FloatTensor(self.dones[idxs]).to(self.device),
-            'is_demo': torch.FloatTensor(self.is_demo[idxs]).to(self.device),
-            'true_states': torch.FloatTensor(self.true_states[idxs]).to(self.device),
-        }
-    def __len__(self): return self.size
-
-
-class SACTrainer:
-    def __init__(self, env, policy_network: JointActor, config: SACConfig = None, output_dir: str = "./rl_training_output", device: torch.device = None):
-        self.env = env
-        self.config = config or SACConfig()
-        self.device = device or torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.output_dir = output_dir
-        self.checkpoint_dir = output_dir
-        os.makedirs(output_dir, exist_ok=True)
-        self.num_envs = env.num_envs
-        self.obs_dim = cfg.OBS_DIM
-        self.action_dim = cfg.N_JOINTS
-        self.true_state_dim = 14
-        self.actor = policy_network.to(self.device)
-        self.shared_encoder = self.actor.encoder
-        self.critic = JointCritic(shared_encoder=self.shared_encoder, action_dim=self.action_dim).to(self.device)
-        self.critic_target = copy.deepcopy(self.critic)
-        for param in self.critic_target.parameters(): param.requires_grad = False
-        self.log_alpha = torch.tensor(np.log(self.config.initial_alpha), dtype=torch.float32, device=self.device, requires_grad=True)
-        self.target_entropy = -self.action_dim * self.config.target_entropy_scale
-        self._build_optimizers()
-        self.replay_buffer = ReplayBuffer(self.config.buffer_size, self.obs_dim, self.action_dim, self.true_state_dim, self.device)
-        self.total_timesteps = 0
-        self.update_count = 0
-        self.writer = SummaryWriter(os.path.join(output_dir, "tensorboard_sac"))
-        if hasattr(cfg, 'MAX_TORQUE_COMPENSATION'):
-            self.action_scale = np.array(cfg.MAX_TORQUE_COMPENSATION, dtype=np.float32)
-        else:
-            self.action_scale = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 1.0], dtype=np.float32)
-        logger.info(f"Initial alpha: {self.alpha:.4f}")
-
-    def _build_optimizers(self):
-        self.encoder_optimizer = optim.Adam(self.shared_encoder.parameters(), lr=self.config.encoder_lr)
-        self.actor_optimizer = optim.Adam([p for n, p in self.actor.named_parameters() if 'encoder' not in n], lr=self.config.actor_lr)
-        self.critic_optimizer = optim.Adam([p for n, p in self.critic.named_parameters() if 'encoder' not in n], lr=self.config.critic_lr)
-        self.alpha_optimizer = optim.Adam([self.log_alpha], lr=self.config.alpha_lr)
-    @property
-    def alpha(self): return self.log_alpha.exp().item()
-    def _freeze_encoder(self):
-        for param in self.shared_encoder.parameters(): param.requires_grad = False
-        logger.info("FREEZING SHARED ENCODER")
-    def _set_teacher_mode(self, val): self.env.env_method("set_teacher_mode", val)
-    def _set_ground_truth_mode(self, val): self.env.env_method("set_ground_truth_mode", val)
-    def select_action(self, obs, deterministic=False):
-        with torch.no_grad():
-            obs_tensor = torch.FloatTensor(obs).to(self.device)
-            if obs_tensor.dim() == 1: obs_tensor = obs_tensor.unsqueeze(0)
-            action, _, _, pred = self.actor.sample(obs_tensor, deterministic=deterministic)
-            return action.cpu().numpy(), pred.cpu().numpy()
-
-    def update(self, batch: Dict[str, torch.Tensor], update_policy: bool = True):
-        obs = batch['obs']
-        actions = batch['actions']
-        rewards = batch['rewards']
-        next_obs = batch['next_obs']
-        dones = batch['dones']
-        true_states = batch['true_states']
-        is_demo = batch['is_demo']
-        metrics = {}
-        if self.total_timesteps < self.config.encoder_warmup_steps:
-            target_hist = obs[:, -(cfg.RNN_SEQUENCE_LENGTH * cfg.ESTIMATOR_STATE_DIM):]
-            history = target_hist.view(-1, cfg.RNN_SEQUENCE_LENGTH, cfg.ESTIMATOR_STATE_DIM)
-            _, pred = self.shared_encoder(history)
-            true_q = true_states[:, :cfg.N_JOINTS]
-            true_qd = true_states[:, cfg.N_JOINTS:]
-            q_norm = (true_q - torch.tensor(cfg.Q_MEAN, device=self.device)) / torch.tensor(cfg.Q_STD, device=self.device)
-            qd_norm = (true_qd - torch.tensor(cfg.QD_MEAN, device=self.device)) / torch.tensor(cfg.QD_STD, device=self.device)
-            target = torch.cat([q_norm, qd_norm], dim=1)
-            aux_loss = F.mse_loss(pred, target)
-            self.encoder_optimizer.zero_grad()
-            aux_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.shared_encoder.parameters(), 1.0)
-            self.encoder_optimizer.step()
-            metrics['aux_loss'] = aux_loss.item()
-            return metrics
-
-        with torch.no_grad():
-            next_act, next_lp, _, _ = self.actor.sample(next_obs)
-            nq1, nq2 = self.critic_target(next_obs, next_act)
-            min_nq = torch.min(nq1, nq2) - self.alpha * next_lp
-            target_q = rewards + (1 - dones) * self.config.gamma * min_nq
-
-        cq1, cq2 = self.critic(obs, actions)
-        critic_loss = F.smooth_l1_loss(cq1, target_q) + F.smooth_l1_loss(cq2, target_q)
-        self.critic_optimizer.zero_grad()
-        critic_loss.backward()
-        torch.nn.utils.clip_grad_norm_([p for n, p in self.critic.named_parameters() if 'encoder' not in n], 1.0)
-        self.critic_optimizer.step()
-        metrics['critic_loss'] = critic_loss.item()
-        metrics['q1_mean'] = cq1.mean().item()
-
-        if update_policy:
-            new_act, log_prob, raw_act, _ = self.actor.sample(obs)
-            q1_new, q2_new = self.critic(obs, new_act)
-            q_min = torch.min(q1_new, q2_new)
-            sac_loss = (self.alpha * log_prob - q_min).mean()
-            
-            is_teacher_phase = self.total_timesteps < self.config.teacher_warmup_steps
-            sac_weight = 0.0 if is_teacher_phase else 1.0 
-            bc_weight = 100.0 if is_teacher_phase else 10.0 # [FIX] Adjusted for Unit Reward
-            
-            bc_loss = 0.0
-            if is_demo.sum() > 0:
-                demo_mask = (is_demo > 0.5).flatten()
-                if demo_mask.any():
-                    bc_error = F.mse_loss(new_act[demo_mask], actions[demo_mask])
-                    bc_loss = bc_error * bc_weight
-            
-            logit_reg_loss = (raw_act**2).mean() * 0.001
-            actor_loss = (sac_weight * sac_loss) + bc_loss + logit_reg_loss
-            
-            self.actor_optimizer.zero_grad()
-            actor_loss.backward()
-            torch.nn.utils.clip_grad_norm_([p for n, p in self.actor.named_parameters() if 'encoder' not in n], 1.0)
-            self.actor_optimizer.step()
-            
-            metrics['actor_loss'] = actor_loss.item()
-            metrics['bc_loss'] = bc_loss.item() if isinstance(bc_loss, torch.Tensor) else 0.0
-            
-            if not self.config.fixed_alpha and not is_teacher_phase:
-                alpha_loss = -(self.log_alpha * (log_prob + self.target_entropy).detach()).mean()
-                self.alpha_optimizer.zero_grad()
-                alpha_loss.backward()
-                self.alpha_optimizer.step()
-                with torch.no_grad():
-                    self.log_alpha.data = torch.clamp(self.log_alpha.data, min=np.log(self.config.alpha_min), max=np.log(self.config.alpha_max))
-                metrics['alpha_loss'] = alpha_loss.item()
-            metrics['alpha'] = self.alpha
-            self._soft_update_targets()
-        return metrics
-
-    def _soft_update_targets(self):
-        tau = self.config.tau
-        for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-            target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
+        return (
+            torch.FloatTensor(self.obs[idxs]).to(self.device),
+            torch.FloatTensor(self.teacher_actions[idxs]).to(self.device),
+            torch.FloatTensor(self.true_states[idxs]).to(self.device)
+        )
     
-    def train(self, total_timesteps: int):
-        logger.info("Starting SAC Training v20")
-        obs = self.env.reset()[0]
-        encoder_frozen = False
-        pure_rl_started = False
-        self._set_teacher_mode(True)
-        self._set_ground_truth_mode(True)
-        while self.total_timesteps < total_timesteps:
-            if not encoder_frozen and self.total_timesteps >= self.config.encoder_warmup_steps:
-                self._freeze_encoder()
-                self._set_ground_truth_mode(False)
-                encoder_frozen = True
-            if not pure_rl_started and self.total_timesteps >= self.config.teacher_warmup_steps:
-                self._set_teacher_mode(False)
-                pure_rl_started = True
-            actions, pred = self.select_action(obs)
-            for i in range(self.num_envs): self.env.env_method("set_predicted_state", pred[i], indices=i)
-            next_obs, rewards, dones, infos = self.env.step(actions)
-            for i in range(self.num_envs):
-                is_demo = (self.total_timesteps < self.config.teacher_warmup_steps)
-                actual_action = infos[i].get('actual_action', actions[i])
-                clipped_action = np.clip(actual_action, -self.action_scale, self.action_scale)
-                self.replay_buffer.add(obs[i], clipped_action, rewards[i], next_obs[i], float(dones[i]), infos[i]['true_state'], is_demo)
+    @property
+    def current_size(self):
+        return self.size
+    
+
+class PhasedTrainer:
+    """
+    Manages the two-stage training process:
+    1. Encoder Training
+    2. Student Distillation
+    """
+    def __init__(self, env, output_dir: str):
+        self.env = env
+        self.output_dir = output_dir
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.writer = SummaryWriter(os.path.join(output_dir, "tensorboard"))
+        
+        # Networks
+        # Shared Encoder (State Estimator)
+        self.shared_encoder = SharedLSTMEncoder().to(self.device)
+        
+        # Student Actor (Policy)
+        self.actor = JointActor(shared_encoder=self.shared_encoder, action_dim=cfg.N_JOINTS).to(self.device)
+        
+        # Critic (Optional for BC)
+        self.critic = JointCritic(shared_encoder=self.shared_encoder, action_dim=cfg.N_JOINTS).to(self.device)
+        
+        # Optimizers
+        self.enc_optimizer = optim.Adam(self.shared_encoder.parameters(), lr=cfg.ENCODER_LR)
+        self.actor_optimizer = optim.Adam(
+            [p for n, p in self.actor.named_parameters() if 'encoder' not in n], 
+            lr=cfg.ACTOR_LR
+        )
+        
+        # Data & Utils
+        self.buffer = ReplayBuffer(cfg.BUFFER_SIZE, cfg.OBS_DIM, cfg.N_JOINTS, self.device)
+        self.stopper = EarlyStopper()
+        self.global_step = 0
+
+    def collect_expert_data(self, steps: int, use_prediction: bool = False):
+        
+        obs, _ = self.env.reset()
+        
+        for _ in range(steps):
+            # 1. (Optional) Feed prediction back to env for State Estimation robustness
+            if use_prediction:
+                with torch.no_grad():
+                    obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
+                    _, _, pred = self.actor.sample(obs_t, deterministic=True)
+                    pred_np = pred.cpu().numpy()[0]
+                self.env.set_predicted_state(pred_np)
+ 
+            # Extract raw state data needed for Teacher Calculation
+            r_q, r_qd = self.env.remote.get_joint_state()
+            target_q, target_qd = self.env.leader_hist[-1] # Ground Truth Target
+            
+            # Compute Optimal Torque (Label)
+            teacher_action = self.env._compute_total_torque(r_q, r_qd, target_q, target_qd)
+            
+            # Apply Teacher Action (Drive the robot perfectly)
+            next_obs, reward, done, _, info = self.env.step(teacher_action)
+            true_state = info['true_state']
+            
+            # Store Transition
+            self.buffer.add(obs, teacher_action, true_state)
+            
             obs = next_obs
-            self.total_timesteps += self.num_envs
-            if len(self.replay_buffer) >= self.config.batch_size:
-                batch = self.replay_buffer.sample(self.config.batch_size)
-                update_policy = (self.update_count % self.config.policy_delay == 0) and encoder_frozen
-                metrics = self.update(batch, update_policy)
-                self.update_count += 1
-                if self.total_timesteps % self.config.log_freq == 0:
-                    phase = "Stage1" if not encoder_frozen else "Stage2_BC" if not pure_rl_started else "Stage3_SAC"
-                    metrics_str = " | ".join([f"{k}: {v:.4f}" for k, v in metrics.items()])
-                    logger.info(f"[{phase}] Step {self.total_timesteps} | {metrics_str}")
-            if self.total_timesteps % self.config.validation_freq == 0 and encoder_frozen:
-                val = self.validate()
-                logger.info(f"Validation Step {self.total_timesteps} | Reward: {val['reward']:.2f}")
-                self.writer.add_scalar("val/reward", val['reward'], self.total_timesteps)
-            if self.total_timesteps % self.config.checkpoint_freq == 0:
-                self.save_checkpoint(f"checkpoint_{self.total_timesteps}.pth")
-        self.save_checkpoint("final_policy.pth")
+            if done: 
+                obs, _ = self.env.reset()
 
-    def validate(self, num_episodes: int = 5) -> Dict[str, float]:
-        was_teacher = (self.total_timesteps < self.config.teacher_warmup_steps)
-        self._set_teacher_mode(False)
-        self._set_ground_truth_mode(False)
-        total_rewards = []
-        for _ in range(num_episodes):
-            obs = self.env.reset()[0]
-            ep_reward = 0
+    def train_stage_1_encoder(self):
+        """
+        Stage 1: Train LSTM to predict current state from delayed history.
+        Policy is frozen.
+        """
+        logger.info("="*60)
+        logger.info(">>> STARTING STAGE 1: ENCODER PRE-TRAINING")
+        logger.info("="*60)
+        
+        # Freeze Policy Backbone
+        for param in self.actor.backbone.parameters(): param.requires_grad = False
+        self.actor.fc_mean.requires_grad = False
+        self.actor.fc_log_std.requires_grad = False
+        
+        for step in range(cfg.STAGE1_STEPS):
+            # Collect data periodically
+            if self.buffer.current_size < cfg.BATCH_SIZE or step % 5000 == 0:
+                self.collect_expert_data(steps=1000, use_prediction=False)
+            
+            # Sample
+            obs, _, true_states = self.buffer.sample(cfg.BATCH_SIZE)
+            
+            # Prepare Inputs
+            target_history = obs[:, -cfg.TARGET_HISTORY_DIM:]
+            history_seq = target_history.view(-1, cfg.RNN_SEQUENCE_LENGTH, cfg.ESTIMATOR_STATE_DIM)
+            
+            # Forward Encoder
+            _, pred_state = self.shared_encoder(history_seq)
+            
+            # Prepare Targets (Normalized True State)
+            t_q = true_states[:, :7]
+            t_qd = true_states[:, 7:]
+            t_q_norm = (t_q - torch.tensor(cfg.Q_MEAN, device=self.device)) / torch.tensor(cfg.Q_STD, device=self.device)
+            t_qd_norm = (t_qd - torch.tensor(cfg.QD_MEAN, device=self.device)) / torch.tensor(cfg.QD_STD, device=self.device)
+            target = torch.cat([t_q_norm, t_qd_norm], dim=1)
+            
+            # Loss & Update
+            loss = F.mse_loss(pred_state, target)
+            
+            self.enc_optimizer.zero_grad()
+            loss.backward()
+            self.enc_optimizer.step()
+            
+            if step % 1000 == 0:
+                logger.info(f"[Stage 1] Step {step} | Encoder Loss: {loss.item():.6f}")
+                self.writer.add_scalar("Stage1/Loss", loss.item(), step)
+
+        # Unfreeze Policy for Stage 2
+        for param in self.actor.parameters(): param.requires_grad = True
+        logger.info(">>> STAGE 1 COMPLETE")
+
+    def train_stage_2_3_distillation(self):
+        """
+        Stage 2/3: Train Student (Actor) to mimic Teacher (ID Controller).
+        Uses Behavioral Cloning (MSE Loss).
+        """
+        logger.info("="*60)
+        logger.info(">>> STARTING STAGE 2: TEACHER DISTILLATION (BC)")
+        logger.info("="*60)
+        
+        self.global_step = 0
+        
+        while self.global_step < cfg.STAGE2_TOTAL_STEPS:
+            # 1. Collect Data (Teacher drives, but we can use Student prediction for state estimation)
+            self.collect_expert_data(steps=200, use_prediction=True)
+            self.global_step += 200
+            
+            # 2. Train Loop
+            for _ in range(50): # Perform multiple updates per collection
+                obs, teacher_actions, _ = self.buffer.sample(cfg.BATCH_SIZE)
+                
+                # Forward Student (Deterministic)
+                student_action, _, _, _ = self.actor.sample(obs, deterministic=True)
+                
+                # Behavioral Cloning Loss (MSE)
+                # We want Student(obs) ~= Teacher(obs)
+                bc_loss = F.mse_loss(student_action, teacher_actions)
+                
+                # Update Student & Fine-tune Encoder
+                self.actor_optimizer.zero_grad()
+                self.enc_optimizer.zero_grad()
+                
+                bc_loss.backward()
+                
+                self.actor_optimizer.step()
+                self.enc_optimizer.step()
+            
+            # 3. Validation & Logging
+            if self.global_step % cfg.LOG_FREQ == 0:
+                logger.info(f"[Stage 2] Step {self.global_step} | BC Loss: {bc_loss.item():.6f}")
+                self.writer.add_scalar("Stage2/BC_Loss", bc_loss.item(), self.global_step)
+            
+            if self.global_step % cfg.VAL_FREQ == 0:
+                val_reward = self.validate()
+                stop, is_best = self.stopper.check(val_reward)
+                
+                logger.info(f"[Validation] Step {self.global_step} | Mean Reward: {val_reward:.2f}")
+                self.writer.add_scalar("Validation/Reward", val_reward, self.global_step)
+                
+                if is_best:
+                    self.save_checkpoint("best_policy.pth")
+                    logger.info(">>> New Best Model Saved!")
+                
+                if stop:
+                    logger.info(">>> Early Stopping Triggered. Training Finished.")
+                    break
+
+    def validate(self) -> float:
+        """
+        Evaluates the Student Policy in the environment.
+        The Student drives the robot here (not the Teacher).
+        """
+        total_reward = 0.0
+        
+        for _ in range(cfg.VAL_EPISODES):
+            obs, _ = self.env.reset()
             done = False
+            ep_reward = 0.0
+            
             while not done:
-                action, pred_state = self.select_action(obs, deterministic=True)
-                for i in range(self.num_envs): self.env.env_method("set_predicted_state", pred_state[i], indices=i)
-                next_obs, reward, done_arr, _ = self.env.step(action)
-                ep_reward += reward[0]
-                done = done_arr[0]
+                with torch.no_grad():
+                    obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
+                    # Student acts deterministically during validation
+                    action, _, pred, _ = self.actor.sample(obs_t, deterministic=True)
+                    
+                    action_np = action.cpu().numpy()[0]
+                    pred_np = pred.cpu().numpy()[0]
+                
+                # Use Student's predicted state
+                self.env.set_predicted_state(pred_np)
+                
+                # Step Environment with STUDENT action
+                next_obs, reward, done, _, _ = self.env.step(action_np)
+                
+                ep_reward += reward
                 obs = next_obs
-            total_rewards.append(ep_reward)
-        self._set_teacher_mode(was_teacher)
-        self._set_ground_truth_mode(self.total_timesteps < self.config.encoder_warmup_steps)
-        return {'reward': np.mean(total_rewards)}
+            
+            total_reward += ep_reward
+            
+        return total_reward / cfg.VAL_EPISODES
 
-    def save_checkpoint(self, filename):
-        path = os.path.join(self.checkpoint_dir, filename)
-        torch.save({'actor': self.actor.state_dict(), 'critic': self.critic.state_dict()}, path)
-
-    def load_checkpoint(self, path):
-        pass
+    def save_checkpoint(self, filename: str):
+        path = os.path.join(self.output_dir, filename)
+        torch.save({
+            'actor': self.actor.state_dict(),
+            'encoder': self.shared_encoder.state_dict(),
+            'optimizer': self.actor_optimizer.state_dict()
+        }, path)
