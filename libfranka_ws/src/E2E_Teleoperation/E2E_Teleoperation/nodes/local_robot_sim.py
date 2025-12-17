@@ -7,7 +7,6 @@ Pipeline:
 3. publish joint states to /local_robot/joint_states topic
 """
 
-
 from __future__ import annotations 
 
 from abc import ABC, abstractmethod
@@ -24,22 +23,8 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import PointStamped
 
 # Custom imports
-from Model_based_Reinforcement_Learning_In_Teleoperation.utils.inverse_kinematics import IKSolver
-from Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config import (
-    DEFAULT_MUJOCO_MODEL_PATH,
-    N_JOINTS,
-    EE_BODY_NAME,
-    TCP_OFFSET,
-    INITIAL_JOINT_CONFIG,
-    JOINT_LIMITS_LOWER,
-    JOINT_LIMITS_UPPER,
-    DEFAULT_PUBLISH_FREQ,
-    TRAJECTORY_CENTER,
-    TRAJECTORY_SCALE,
-    TRAJECTORY_FREQUENCY,
-    WARM_UP_DURATION,
-)
-
+from E2E_Teleoperation.utils.inverse_kinematics import IKSolver
+import E2E_Teleoperation.config.robot_config as cfg  #
 
 class TrajectoryType(Enum):
     """Enumeration of available trajectory types."""
@@ -52,12 +37,12 @@ class TrajectoryType(Enum):
 class TrajectoryParams:
     """Trajectory parameters - matches RL training."""
     center: NDArray[np.float64] = field(
-        default_factory=lambda: TRAJECTORY_CENTER.copy()
+        default_factory=lambda: cfg.TRAJECTORY_CENTER.copy()
     )
     scale: NDArray[np.float64] = field(
-        default_factory=lambda: TRAJECTORY_SCALE.copy()
+        default_factory=lambda: cfg.TRAJECTORY_SCALE.copy()
     )
-    frequency: float = TRAJECTORY_FREQUENCY
+    frequency: float = cfg.TRAJECTORY_FREQUENCY
     initial_phase: float = 0.0
 
     @classmethod
@@ -131,7 +116,8 @@ class LeaderRobotPublisher(Node):
         super().__init__('leader_robot_publisher')
 
         # ROS2 parameters
-        self.publish_freq = DEFAULT_PUBLISH_FREQ
+        # MODIFICATION: Set publish_freq to match CONTROL_FREQ from config
+        self.publish_freq = cfg.CONTROL_FREQ  #
         self._dt = 1.0 / self.publish_freq
 
         # Parameter Setup
@@ -140,17 +126,19 @@ class LeaderRobotPublisher(Node):
         ).value
         self._trajectory_type = TrajectoryType(traj_type_str)
         self._randomize_params = self.declare_parameter('randomize_params', False).value
-        self.model_path = self.declare_parameter('model_path', DEFAULT_MUJOCO_MODEL_PATH).value
+        # MODIFICATION: Added cfg. prefix
+        self.model_path = self.declare_parameter('model_path', str(cfg.DEFAULT_MUJOCO_MODEL_PATH)).value 
 
         # Physics Constraints (MUST MATCH TRAINING)
         self.max_velocity_ = 1.5 
 
         # Robot parameters
-        self.n_joints = N_JOINTS
-        self.ee_body_name = EE_BODY_NAME
-        self.tcp_offset = TCP_OFFSET.copy()
-        self.joint_limits_lower = JOINT_LIMITS_LOWER.copy()
-        self.joint_limits_upper = JOINT_LIMITS_UPPER.copy()
+        # MODIFICATION: Added cfg. prefix to all constants below
+        self.n_joints = cfg.N_JOINTS
+        self.ee_body_name = cfg.EE_BODY_NAME
+        self.tcp_offset = cfg.TCP_OFFSET.copy()
+        self.joint_limits_lower = cfg.JOINT_LIMITS_LOWER.copy()
+        self.joint_limits_upper = cfg.JOINT_LIMITS_UPPER.copy()
         self.joint_names = [f'panda_joint{i+1}' for i in range(self.n_joints)]
 
         # Load MuJoCo model
@@ -165,7 +153,8 @@ class LeaderRobotPublisher(Node):
         )
 
         # Get actual start position
-        self._q_start = INITIAL_JOINT_CONFIG.copy()
+        # MODIFICATION: Added cfg. prefix
+        self._q_start = cfg.INITIAL_JOINT_CONFIG.copy()
         self.data.qpos[:self.n_joints] = self._q_start
         mujoco.mj_forward(self.model, self.data)
         ee_site_id = self.model.site('panda_ee_site').id
@@ -197,7 +186,7 @@ class LeaderRobotPublisher(Node):
         
         # Timer
         self.timer = self.create_timer(self._dt, self.timer_callback)
-        self.get_logger().info("Leader Robot Publisher started with Velocity Clipping.")
+        self.get_logger().info(f"Leader Robot Publisher started at {self.publish_freq} Hz.")
 
     def _create_generator(self, trajectory_type: TrajectoryType, params: TrajectoryParams) -> TrajectoryGenerator:
         generators = {
@@ -219,10 +208,12 @@ class LeaderRobotPublisher(Node):
         t = self._trajectory_time
 
         # 1. Generate Raw Target via IK
-        if t < WARM_UP_DURATION:
+        # MODIFICATION: Added cfg. prefix
+        if t < cfg.WARM_UP_DURATION:
             q_target_raw = self._q_start.copy()
         else:
-            movement_time = t - WARM_UP_DURATION
+            # MODIFICATION: Added cfg. prefix
+            movement_time = t - cfg.WARM_UP_DURATION
             cartesian_target = self._generator.compute_position(movement_time)
             q_target_raw, ik_success, ik_error = self.ik_solver.solve(cartesian_target, self._q_current)
             
