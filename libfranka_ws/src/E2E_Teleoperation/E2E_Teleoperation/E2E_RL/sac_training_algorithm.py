@@ -519,7 +519,8 @@ class Trainer:
         # =====================================================================
         logger.info("--- Phase 2a: BC with Noise Injection ---")
         
-        PHASE_2A_STEPS = 50000
+        PHASE_2A_STEPS = cfg.STAGE2A_TOTAL_STEPS
+        
         noise_schedule = [
             (0, 0.5),       # Steps 0-10k: very small noise
             (10000, 1.0),   # Steps 10k-20k: small noise
@@ -627,6 +628,230 @@ class Trainer:
         
         logger.info(">>> STAGE 2 COMPLETE")
 
+    # =========================================================================
+    # STAGE 3: SAC Fine-tuning
+    # =========================================================================
+
+    def train_stage_3_sac(self):
+        """
+        Stage 3: SAC Fine-tuning (Reinforcement Learning).
+        
+        In this stage, the agent learns from its own experience to maximize 
+        reward (minimize tracking error) using the SAC algorithm.
+        """
+        logger.info("=" * 60)
+        logger.info(">>> STAGE 3: SAC FINE-TUNING")
+        logger.info("=" * 60)
+        
+        # Reset stopper for Stage 3
+        self.stopper.reset()
+        
+        # Hyperparameters
+        STAGE3_STEPS = getattr(cfg, 'STAGE3_TOTAL_STEPS', 100000)
+        UPDATES_PER_STEP = 1
+        LOG_INTERVAL = 1000
+        
+        # Reset environment for pure RL
+        obs, info = self.env.reset()
+        hidden = self.shared_encoder.init_hidden(batch_size=1, device=self.device)
+        prev_prediction = torch.zeros(1, 14, device=self.device)
+        
+        # Statistics
+        ep_reward = 0
+        ep_len = 0
+        
+        while self.global_step < STAGE3_STEPS:
+            self.global_step += 1
+            
+            # 1. Select Action (Stochastic for exploration)
+            has_new_obs = info.get('has_new_obs', True)
+            obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
+            
+            with torch.no_grad():
+                # Note: We use deterministic=False for exploration in Stage 3
+                action, _, _, pred, next_hidden = self.actor.sample(
+                    obs_t, hidden=hidden, prev_prediction=prev_prediction,
+                    has_new_obs=has_new_obs, deterministic=False
+                )
+            
+            driving_action = action.cpu().numpy()[0]
+            
+            # 2. Step Environment
+            next_obs, reward, terminated, truncated, next_info = self.env.step(driving_action)
+            done = terminated or truncated
+            
+            # 3. Store in Buffer
+            # Note: teacher_action is stored but not strictly used for SAC loss, 
+            # though we keep it if we want to add auxiliary BC loss.
+            true_state = next_info['true_state']
+            
+            # Get teacher action just for logging/compatibility (optional)
+            r_q, r_qd = self.env.remote.get_joint_state()
+            t_q, t_qd = self.env.leader_hist[-1]
+            teacher_action = self.env._compute_teacher_torque(r_q, r_qd, t_q, t_qd)
+
+            self.buffer.add(
+                obs=obs,
+                action=driving_action,
+                reward=reward,
+                next_obs=next_obs,
+                done=done,
+                teacher_action=teacher_action,
+                true_state=true_state,
+                has_new_obs=has_new_obs,
+                prev_prediction=prev_prediction.cpu().numpy()[0],
+                is_recovery=terminated
+            )
+            
+            # Update state
+            obs = next_obs
+            info = next_info
+            hidden = next_hidden
+            prev_prediction = pred
+            ep_reward += reward
+            ep_len += 1
+            
+            # 4. Update Parameters (SAC Step)
+            if self.buffer.current_size > cfg.BATCH_SIZE:
+                c_loss, a_loss, alpha_loss, alpha_val = self.update_parameters_sac(UPDATES_PER_STEP)
+                
+                if self.global_step % LOG_INTERVAL == 0:
+                    self.writer.add_scalar("Stage3/CriticLoss", c_loss, self.global_step)
+                    self.writer.add_scalar("Stage3/ActorLoss", a_loss, self.global_step)
+                    self.writer.add_scalar("Stage3/Alpha", alpha_val, self.global_step)
+
+            # 5. Handle Episode End
+            if done:
+                logger.info(f"Step {self.global_step} | Episode Reward: {ep_reward:.2f} | Len: {ep_len}")
+                self.writer.add_scalar("Stage3/EpReward", ep_reward, self.global_step)
+                
+                obs, info = self.env.reset()
+                hidden = self.shared_encoder.init_hidden(batch_size=1, device=self.device)
+                prev_prediction = torch.zeros(1, 14, device=self.device)
+                ep_reward = 0
+                ep_len = 0
+            
+            # 6. Validation
+            if self.global_step % cfg.VAL_FREQ == 0:
+                val_reward = self.validate()
+                logger.info(f"[Stage 3 Validation] Reward: {val_reward:.2f}")
+                self.writer.add_scalar("Validation/Reward", val_reward, self.global_step)
+                
+                should_stop, is_best = self.stopper.check(val_reward, self.global_step)
+                if is_best:
+                    self.save_checkpoint("best_policy_stage3.pth")
+                if should_stop:
+                    break
+
+        logger.info(">>> STAGE 3 COMPLETE")
+
+    def update_parameters_sac(self, updates: int):
+        """
+        Standard SAC update loop adapted for the LSTM architecture.
+        """
+        c_loss_accum, a_loss_accum, alpha_loss_accum = 0, 0, 0
+        alpha = self._get_alpha()
+        gamma = cfg.GAMMA
+        tau = getattr(cfg, 'POLYAK_TAU', 0.005)
+
+        for _ in range(updates):
+            # 1. Sample Batch
+            # In Stage 3, we usually sample uniformly, or we can keep recovery weighting
+            batch = self.buffer.sample_with_recovery_weight(cfg.BATCH_SIZE, recovery_weight=1.0)
+            
+            obs = batch['obs']
+            next_obs = batch['next_obs']
+            actions = batch['actions']
+            rewards = batch['rewards']
+            dones = batch['dones']
+            
+            # ==============================
+            # Critic Update
+            # ==============================
+            with torch.no_grad():
+                # Get next action from target policy
+                # Note: We pass has_new_obs=True to rely on the history window in next_obs
+                next_action, next_log_prob, _, _, _ = self.actor.sample(
+                    next_obs, hidden=None, prev_prediction=None, 
+                    has_new_obs=True, deterministic=False
+                )
+                
+                # Target Q-values
+                target_q1, target_q2, _ = self.critic_target(
+                    next_obs, next_action, hidden=None, prev_prediction=None, has_new_obs=True
+                )
+                min_target_q = torch.min(target_q1, target_q2) - alpha * next_log_prob
+                target_q = rewards + (1 - dones) * gamma * min_target_q
+
+            # Current Q-values
+            current_q1, current_q2, _ = self.critic(
+                obs, actions, hidden=None, prev_prediction=None, has_new_obs=True
+            )
+            
+            critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(current_q2, target_q)
+
+            self.critic_optimizer.zero_grad()
+            self.enc_optimizer.zero_grad() # Encoder gradients flow from Critic too
+            critic_loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 1.0)
+            torch.nn.utils.clip_grad_norm_(self.shared_encoder.parameters(), 1.0)
+            self.critic_optimizer.step()
+            self.enc_optimizer.step()
+
+            # ==============================
+            # Actor Update
+            # ==============================
+            # Sample action from current policy
+            new_action, log_prob, _, _, _ = self.actor.sample(
+                obs, hidden=None, prev_prediction=None, 
+                has_new_obs=True, deterministic=False
+            )
+            
+            # Get Q-values for new action
+            # Note: We detach encoder here to prevent Actor update from messing up representation 
+            # trained by Critic/Supervised loss, or we can allow it. 
+            # Usually standard SAC allows it.
+            q1_pi, q2_pi, _ = self.critic(
+                obs, new_action, hidden=None, prev_prediction=None, has_new_obs=True
+            )
+            min_q_pi = torch.min(q1_pi, q2_pi)
+            
+            actor_loss = (alpha * log_prob - min_q_pi).mean()
+
+            self.actor_optimizer.zero_grad()
+            actor_loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)
+            self.actor_optimizer.step()
+
+            # ==============================
+            # Alpha Update (Automatic Entropy Tuning)
+            # ==============================
+            alpha_loss = -(self.log_alpha * (log_prob + self.target_entropy).detach()).mean()
+            
+            self.alpha_optimizer.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optimizer.step()
+            alpha = self._get_alpha()
+
+            # ==============================
+            # Polyak Averaging (Target Networks)
+            # ==============================
+            with torch.no_grad():
+                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                    target_param.data.mul_(1 - tau)
+                    target_param.data.add_(tau * param.data)
+            
+            c_loss_accum += critic_loss.item()
+            a_loss_accum += actor_loss.item()
+            alpha_loss_accum += alpha_loss.item()
+
+        return (
+            c_loss_accum / updates, 
+            a_loss_accum / updates, 
+            alpha_loss_accum / updates, 
+            alpha.item()
+        )
+    
     def validate(self) -> float:
         """Run validation."""
         total_reward = 0.0
