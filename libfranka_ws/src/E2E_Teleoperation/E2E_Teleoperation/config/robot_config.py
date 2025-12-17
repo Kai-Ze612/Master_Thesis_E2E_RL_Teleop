@@ -50,7 +50,7 @@ JOINT_LIMIT_MARGIN = 0.05  # Margin to avoid hitting joint limits
 
 # Physical torque limits
 TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
-MAX_ACTION_TORQUE = np.array([10.0, 10.0, 10.0, 10.0, 5.0, 5.0, 1.0], dtype=np.float32) # RL action space
+MAX_ACTION_TORQUE = TORQUE_LIMITS.copy()
 
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], dtype=np.float32)
 WARM_UP_DURATION = 1  # sec (before starting moving)
@@ -118,7 +118,7 @@ SEED = 42
 BATCH_SIZE = 2048
 BUFFER_SIZE = 1_000_000
 
-STAGE1_STEPS = 30_000
+STAGE1_STEPS = 10_000
 ENCODER_LR = 1e-3
 
 STAGE2_TOTAL_STEPS = 2_000_000 

@@ -10,6 +10,7 @@ import torch
 import numpy as np
 import argparse
 import multiprocessing
+from pathlib import Path 
 
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.env_util import make_vec_env
@@ -57,11 +58,14 @@ def train_agent(args: argparse.Namespace) -> None:
     
     # 3. Environment
     logger.info("Initializing Environment...")
+    render_mode = "human" if args.render else None
+    
     env = None
     try:
         env = TeleoperationEnv(
             delay_config=args.config,
-            seed=args.seed
+            seed=args.seed,
+            render_mode=render_mode
         )
     except FileNotFoundError as e:
         logger.error(f"Environment Error: {e}")
@@ -102,6 +106,7 @@ def parse_arguments() -> argparse.Namespace:
     train_group = parser.add_argument_group('Training Configuration')
     train_group.add_argument("--seed", type=int, default=42)
     train_group.add_argument("--skip-stage1", action="store_true", help="Skip LSTM pre-training")
+    train_group.add_argument("--render", action="store_true", help="Enable MuJoCo viewer during training")
     
     args = parser.parse_args()
     

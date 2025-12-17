@@ -131,64 +131,73 @@ class RemoteRobotSimulator:
         return (angle + np.pi) % (2 * np.pi) - np.pi
 
     def step(
-        self,
-        target_q: np.ndarray,
-        target_qd: np.ndarray,
-        torque_input: np.ndarray,
-        true_local_q: Optional[np.ndarray] = None,
-        predicted_q: Optional[np.ndarray] = None
-    ) -> Dict[str, Any]:
-        
-        self._internal_tick += 1
+            self,
+            target_q: np.ndarray,
+            target_qd: np.ndarray,
+            torque_input: np.ndarray,
+            true_local_q: Optional[np.ndarray] = None,
+            predicted_q: Optional[np.ndarray] = None
+        ) -> Dict[str, Any]:
+            
+            self._internal_tick += 1
 
-        # 1. Simulate Network Delay
-        if self._internal_tick < self._no_delay_steps:
-            delay_steps = 0
-        else:
-            delay_steps = int(self.delay_simulator.get_action_delay_steps())
+            # 1. Simulate Network Delay
+            if self._internal_tick < self._no_delay_steps:
+                delay_steps = 0
+            else:
+                delay_steps = int(self.delay_simulator.get_action_delay_steps())
 
-        arrival_time = self._internal_tick + delay_steps
-        heapq.heappush(self._action_queue, (arrival_time, torque_input.copy()))
+            arrival_time = self._internal_tick + delay_steps
+            heapq.heappush(self._action_queue, (arrival_time, torque_input.copy()))
 
-        # 2. Retrieve Pending Actions
-        while self._action_queue and self._action_queue[0][0] <= self._internal_tick:
-            _, self._last_executed_torque = heapq.heappop(self._action_queue)
+            # 2. Retrieve Pending Actions
+            while self._action_queue and self._action_queue[0][0] <= self._internal_tick:
+                _, self._last_executed_torque = heapq.heappop(self._action_queue)
 
-        # 3. Apply Torque
-        tau_clipped = np.clip(self._last_executed_torque, -self.torque_limits, self.torque_limits)
-        self.data.ctrl[:self.n_joints] = tau_clipped
+            # 3. Apply Torque
+            tau_clipped = np.clip(self._last_executed_torque, -self.torque_limits, self.torque_limits)
+            self.data.ctrl[:self.n_joints] = tau_clipped
 
-        for _ in range(self._n_substeps):
-            mujoco.mj_step(self.model, self.data)
+            for _ in range(self._n_substeps):
+                mujoco.mj_step(self.model, self.data)
 
-        # 4. Rendering
-        if self._render_enabled:
-            self.render()
+            # 4. Rendering
+            if self._render_enabled:
+                self.render()
 
-        # 5. Metrics & State
-        q_current = self.data.qpos[:self.n_joints].copy()
-        
-        # Ground Truth is the Local Robot State (Leader)
-        ground_truth_q = true_local_q if true_local_q is not None else target_q
-        
-        # Tracking Error (Remote vs. Local)
-        tracking_error = np.linalg.norm(self._normalize_angle(ground_truth_q - q_current))
-        
-        # Prediction Error (Predicted vs. Local)
-        pred_error = 0.0
-        if predicted_q is not None:
-            pred_error = np.linalg.norm(self._normalize_angle(ground_truth_q - predicted_q))
+            # 5. Metrics & State
+            q_current = self.data.qpos[:self.n_joints].copy()
+            
+            # Ground Truth is the Local Robot State (Leader)
+            ground_truth_q = true_local_q if true_local_q is not None else target_q
+            
+            # Tracking Error (Remote vs. Local)
+            tracking_error = np.linalg.norm(self._normalize_angle(ground_truth_q - q_current))
+            
+            # Prediction Error (Predicted vs. Local)
+            pred_error = 0.0
+            pred_q_eval = None
+            
+            if predicted_q is not None:
+                # If prediction includes velocities (14 dims), take only positions (7 dims)
+                if predicted_q.shape[0] > self.n_joints:
+                    pred_q_eval = predicted_q[:self.n_joints]
+                else:
+                    pred_q_eval = predicted_q
+                    
+                pred_error = np.linalg.norm(self._normalize_angle(ground_truth_q - pred_q_eval))
 
-        # 6. Logging [UPDATED]
-        if self._verbose:
-            self._log_step_info(ground_truth_q, q_current, predicted_q, self._last_executed_torque)
+            # 6. Logging [UPDATED]
+            if self._verbose:
+                # Pass the processed (sliced) prediction to the logger to avoid crashes there too
+                self._log_step_info(ground_truth_q, q_current, pred_q_eval, self._last_executed_torque)
 
-        return {
-            "joint_error": np.linalg.norm(ground_truth_q - q_current),
-            "tracking_error": tracking_error,
-            "prediction_error": pred_error,
-            "tau_total": self._last_executed_torque
-        }
+            return {
+                "joint_error": np.linalg.norm(ground_truth_q - q_current),
+                "tracking_error": tracking_error,
+                "prediction_error": pred_error,
+                "tau_total": self._last_executed_torque
+            }
 
     def _log_step_info(self, local_true_q, remote_true_q, predicted_q, rl_tau):
         """

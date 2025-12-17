@@ -36,17 +36,21 @@ class SharedLSTMEncoder(nn.Module):
             nn.Linear(128, cfg.ESTIMATOR_OUTPUT_DIM)  # 14: Predicts q, qd
         )
     
-    def forward(self, history_seq: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, 
+        history_seq: torch.Tensor, 
+        hidden: Optional[Tuple[torch.Tensor, torch.Tensor]] = None
+    ) -> Tuple[torch.Tensor, torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """
         Forward pass for the Shared LSTM Encoder.
         
         Input: history_sequence (15D * sequence length)
         Ouput: 14D current local robot state
         """
-        lstm_out, _ = self.lstm(history_seq)
+        lstm_out, next_hidden = self.lstm(history_seq, hidden)
         lstm_features = lstm_out[:, -1, :]  # Last hidden state
         pred_state = self.aux_head(lstm_features)
-        return lstm_features, pred_state
+        return lstm_features, pred_state, next_hidden
 
 class JointActor(nn.Module):
     def __init__(
@@ -96,7 +100,7 @@ class JointActor(nn.Module):
         # 2. Encoder Pass
         batch_size = obs_flat.shape[0]
         history_seq = target_history.view(batch_size, cfg.RNN_SEQUENCE_LENGTH, cfg.ESTIMATOR_STATE_DIM)
-        lstm_features, pred_state = self.encoder(history_seq)
+        lstm_features, pred_state, _ = self.encoder(history_seq)
         
         # 3. Policy Pass
         policy_input = torch.cat([lstm_features.detach(), remote_state, robot_history], dim=1)
@@ -165,7 +169,7 @@ class JointCritic(nn.Module):
         
         batch_size = obs_flat.shape[0]
         history_seq = target_history.view(batch_size, cfg.RNN_SEQUENCE_LENGTH, cfg.ESTIMATOR_STATE_DIM)
-        lstm_features, _ = self.encoder(history_seq)
+        lstm_features, _, _ = self.encoder(history_seq)
 
         # Normalize Action (Full Torque -> [-1, 1])
         action_normalized = action / self.action_scale
