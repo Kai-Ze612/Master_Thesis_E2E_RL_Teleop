@@ -10,6 +10,7 @@ Pipeline:
 6. Calculate and log Real-Time Tracking Error (Remote vs Local)
 """
 
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
@@ -50,10 +51,9 @@ class RemoteRobotNode(Node):
             self.mj_data, 
             key_callback=lambda key: self._on_key(key)
         )
-        self.get_logger().info("MuJoCo Viewer Launched (Forward Dynamics Mode).")
 
         # --- 3. Delay & Experiment Config ---
-        self.declare_parameter('experiment_config', ExperimentConfig.HIGH_DELAY.value)
+        self.declare_parameter('experiment_config', ExperimentConfig.HIGH_VARIANCE.value)
         self.declare_parameter('seed', 42)
         
         exp_config_val = self.get_parameter('experiment_config').value
@@ -123,6 +123,7 @@ class RemoteRobotNode(Node):
         2. Step MuJoCo Physics (Forward Dynamics)
         3. Sync Viewer
         4. Publish State
+        5. LOGGING (Desired Q, True Q, RL Tau)
         """
         # 1. Apply Delay Simulation
         self.torque_history.append(self.current_rl_tau)
@@ -151,13 +152,20 @@ class RemoteRobotNode(Node):
         remote_q = self.mj_data.qpos[:self.n_joints].copy()
         remote_qd = self.mj_data.qvel[:self.n_joints].copy()
 
-        # 5. Calculate Tracking Error (Remote vs Local)
+        # 5. LOGGING (Modified)
         if self.local_state_received:
             tracking_error = np.linalg.norm(remote_q - self.local_q)
             
+            # Configure numpy print options for readability
+            np.set_printoptions(precision=3, suppress=True, linewidth=200)
+            
             self.get_logger().info(
-                f"Tracking Error (L2): {tracking_error:.4f} | "
-                f"Applied Tau[0]: {applied_tau[0]:.2f}",
+                f"\n=== CONTROL LOOP DEBUG ===\n"
+                f"Desired Q (Leader): {self.local_q}\n"
+                f"True Q (Remote):    {remote_q}\n"
+                f"RL Tau (Action):    {applied_tau}\n"
+                f"L2 Error:           {tracking_error:.4f}\n"
+                f"==========================",
                 throttle_duration_sec=0.5
             )
 
