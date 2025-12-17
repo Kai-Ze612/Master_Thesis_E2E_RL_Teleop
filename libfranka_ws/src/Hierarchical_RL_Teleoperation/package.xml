@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays</name>
+  <name>Hierarchical_RL_Teleoperation</name>
   <version>0.0.0</version>
   <description>Hierarchical Reinforcement Learning for Adaptive Control Under Stochastic Network Delays</description>
   <maintainer email="ge62meq@mytum.de">kai</maintainer>

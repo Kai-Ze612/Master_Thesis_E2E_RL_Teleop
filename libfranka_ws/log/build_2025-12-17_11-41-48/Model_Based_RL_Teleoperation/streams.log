@@ -1,0 +1,19 @@
+[1.832s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Model_Based_RL_Teleoperation': PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Model_Based_RL_Teleoperation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Model_Based_RL_Teleoperation/build --no-deps symlink_data
+[2.540s] running develop
+[3.061s] running egg_info
+[3.062s] writing Model_Based_RL_Teleoperation.egg-info/PKG-INFO
+[3.363s] writing dependency_links to Model_Based_RL_Teleoperation.egg-info/dependency_links.txt
+[3.680s] writing entry points to Model_Based_RL_Teleoperation.egg-info/entry_points.txt
+[3.681s] writing requirements to Model_Based_RL_Teleoperation.egg-info/requires.txt
+[3.681s] writing top-level names to Model_Based_RL_Teleoperation.egg-info/top_level.txt
+[3.685s] reading manifest file 'Model_Based_RL_Teleoperation.egg-info/SOURCES.txt'
+[3.688s] writing manifest file 'Model_Based_RL_Teleoperation.egg-info/SOURCES.txt'
+[3.921s] running build_ext
+[3.921s] Creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation/lib/python3.10/site-packages/Model-Based-RL-Teleoperation.egg-link (link to .)
+[3.924s] Installing agent_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation/lib/Model_Based_RL_Teleoperation
+[3.925s] Installing local_robot script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation/lib/Model_Based_RL_Teleoperation
+[3.925s] Installing remote_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation/lib/Model_Based_RL_Teleoperation
+[3.926s] 
+[3.926s] Installed /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Model_Based_RL_Teleoperation
+[3.926s] running symlink_data
+[4.615s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Model_Based_RL_Teleoperation' returned '0': PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Model_Based_RL_Teleoperation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Model_Based_RL_Teleoperation/build --no-deps symlink_data

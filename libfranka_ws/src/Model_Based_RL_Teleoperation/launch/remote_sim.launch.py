@@ -8,7 +8,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
-from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
+from Model_based_RL_Teleoperation.utils.delay_simulator import ExperimentConfig
 
 def generate_launch_description():
     pkg_name = 'Model_based_Reinforcement_Learning_In_Teleoperation'

@@ -1,0 +1,85 @@
+[0.033s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/panda_motion_generator_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_multi_mode_controller/panda_motion_generator_msgs -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/panda_motion_generator_msgs
+[0.636s] -- The C compiler identification is GNU 11.4.0
+[0.636s] -- The CXX compiler identification is GNU 11.4.0
+[0.636s] -- Detecting C compiler ABI info
+[0.636s] -- Detecting C compiler ABI info - done
+[0.637s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.641s] -- Detecting C compile features
+[0.641s] -- Detecting C compile features - done
+[0.641s] -- Detecting CXX compiler ABI info
+[0.641s] -- Detecting CXX compiler ABI info - done
+[0.641s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.641s] -- Detecting CXX compile features
+[0.642s] -- Detecting CXX compile features - done
+[0.642s] -- Found ament_cmake: 1.3.12 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.826s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.952s] -- Override CMake install command with custom implementation using symlinks instead of copying resources
+[1.019s] -- Found geometry_msgs: 4.9.0 (/opt/ros/humble/share/geometry_msgs/cmake)
+[1.077s] -- Found rosidl_generator_c: 3.1.7 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[1.084s] -- Found rosidl_adapter: 3.1.7 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[1.096s] -- Found rosidl_generator_cpp: 3.1.7 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[1.113s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.137s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.192s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[1.716s] -- Found ament_cmake_ros: 0.10.0 (/opt/ros/humble/share/ament_cmake_ros/cmake)
+[2.982s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[3.452s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[3.579s] -- Found PythonInterp: /usr/bin/python3 (found suitable version "3.10.12", minimum required is "3.6") 
+[3.584s] -- Found python_cmake_module: 0.10.0 (/opt/ros/humble/share/python_cmake_module/cmake)
+[3.678s] -- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.10.so (found suitable version "3.10.12", minimum required is "3.5") 
+[3.679s] -- Using PYTHON_EXECUTABLE: /usr/bin/python3
+[3.679s] -- Using PYTHON_INCLUDE_DIRS: /usr/include/python3.10
+[3.679s] -- Using PYTHON_LIBRARIES: /usr/lib/x86_64-linux-gnu/libpython3.10.so
+[3.771s] -- Found PythonExtra: .so  
+[4.010s] -- Found ament_lint_auto: 0.12.14 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[4.049s] -- Added test 'lint_cmake' to check CMake code style
+[4.053s] -- Added test 'xmllint' to check XML markup files
+[4.064s] -- Configuring done
+[4.208s] -- Generating done
+[4.295s] -- Build files have been written to: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/panda_motion_generator_msgs
+[4.400s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/panda_motion_generator_msgs' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation:/opt/ros/humble /usr/bin/cmake /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/src/multipanda_ros2/franka_multi_mode_controller/panda_motion_generator_msgs -DAMENT_CMAKE_SYMLINK_INSTALL=1 -DCMAKE_INSTALL_PREFIX=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/panda_motion_generator_msgs
+[4.403s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/panda_motion_generator_msgs': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/panda_motion_generator_msgs -- -j9 -l9
+[6.905s] [  1%] [34m[1mGenerating C code for ROS interfaces[0m
+[6.905s] [  3%] [34m[1mGenerating C++ code for ROS interfaces[0m
+[8.412s] [  3%] Built target panda_motion_generator_msgs__cpp
+[10.283s] [  4%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_generator_c.dir/rosidl_generator_c/panda_motion_generator_msgs/msg/detail/joint_pose__functions.c.o[0m
+[10.564s] [  6%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_generator_c.dir/rosidl_generator_c/panda_motion_generator_msgs/action/detail/joint_via_motion__functions.c.o[0m
+[11.224s] [  7%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_generator_c.dir/rosidl_generator_c/panda_motion_generator_msgs/action/detail/cartesian_via_motion__functions.c.o[0m
+[11.867s] [  9%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_generator_c.dir/rosidl_generator_c/panda_motion_generator_msgs/msg/detail/simple_action_result__functions.c.o[0m
+[12.110s] [ 11%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_generator_c.dir/rosidl_generator_c/panda_motion_generator_msgs/msg/detail/set_time_scaling__functions.c.o[0m
+[12.427s] [ 12%] [32m[1mLinking C shared library libpanda_motion_generator_msgs__rosidl_generator_c.so[0m
+[12.700s] [ 12%] Built target panda_motion_generator_msgs__rosidl_generator_c
+[12.779s] [ 14%] [34m[1mGenerating C++ introspection for ROS interfaces[0m
+[15.654s] [ 15%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/panda_motion_generator_msgs/msg/detail/joint_pose__type_support.cpp.o[0m
+[17.098s] [ 17%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/panda_motion_generator_msgs/msg/detail/simple_action_result__type_support.cpp.o[0m
+[18.783s] [ 19%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/panda_motion_generator_msgs/action/detail/cartesian_via_motion__type_support.cpp.o[0m
+[20.207s] [ 20%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/panda_motion_generator_msgs/action/detail/joint_via_motion__type_support.cpp.o[0m
+[23.077s] [ 22%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_cpp.dir/rosidl_typesupport_introspection_cpp/panda_motion_generator_msgs/msg/detail/set_time_scaling__type_support.cpp.o[0m
+[23.788s] [ 23%] [32m[1mLinking CXX shared library libpanda_motion_generator_msgs__rosidl_typesupport_introspection_cpp.so[0m
+[24.214s] [ 23%] Built target panda_motion_generator_msgs__rosidl_typesupport_introspection_cpp
+[24.257s] [ 25%] [34m[1mGenerating C type support dispatch for ROS interfaces[0m
+[25.928s] [ 26%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/joint_pose__type_support.cpp.o[0m
+[26.008s] [ 28%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/action/cartesian_via_motion__type_support.cpp.o[0m
+[26.106s] [ 30%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/action/joint_via_motion__type_support.cpp.o[0m
+[26.301s] [ 31%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/simple_action_result__type_support.cpp.o[0m
+[26.345s] [ 33%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_c.dir/rosidl_typesupport_c/panda_motion_generator_msgs/msg/set_time_scaling__type_support.cpp.o[0m
+[26.489s] [ 34%] [32m[1mLinking CXX shared library libpanda_motion_generator_msgs__rosidl_typesupport_c.so[0m
+[26.721s] [ 34%] Built target panda_motion_generator_msgs__rosidl_typesupport_c
+[26.778s] [ 36%] [34m[1mGenerating C introspection for ROS interfaces[0m
+[28.679s] [ 38%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/panda_motion_generator_msgs/msg/detail/joint_pose__type_support.c.o[0m
+[28.736s] [ 39%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/panda_motion_generator_msgs/action/detail/joint_via_motion__type_support.c.o[0m
+[28.813s] [ 41%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/panda_motion_generator_msgs/action/detail/cartesian_via_motion__type_support.c.o[0m
+[28.898s] [ 42%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/panda_motion_generator_msgs/msg/detail/simple_action_result__type_support.c.o[0m
+[28.947s] [ 44%] [32mBuilding C object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_introspection_c.dir/rosidl_typesupport_introspection_c/panda_motion_generator_msgs/msg/detail/set_time_scaling__type_support.c.o[0m
+[29.004s] [ 46%] [32m[1mLinking C shared library libpanda_motion_generator_msgs__rosidl_typesupport_introspection_c.so[0m
+[29.081s] [ 46%] Built target panda_motion_generator_msgs__rosidl_typesupport_introspection_c
+[29.097s] [ 47%] [34m[1mGenerating C type support for eProsima Fast-RTPS[0m
+[30.122s] [ 49%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/msg/detail/joint_pose__type_support_c.cpp.o[0m
+[30.805s] [ 50%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/action/detail/joint_via_motion__type_support_c.cpp.o[0m
+[31.463s] [ 52%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/action/detail/cartesian_via_motion__type_support_c.cpp.o[0m
+[32.234s] [ 53%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/msg/detail/simple_action_result__type_support_c.cpp.o[0m
+[32.990s] [ 55%] [32mBuilding CXX object CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/msg/detail/set_time_scaling__type_support_c.cpp.o[0m
+[33.082s] gmake[2]: *** [CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/build.make:202: CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/panda_motion_generator_msgs/msg/detail/set_time_scaling__type_support_c.cpp.o] Interrupt
+[33.082s] gmake[1]: *** [CMakeFiles/Makefile2:239: CMakeFiles/panda_motion_generator_msgs__rosidl_typesupport_fastrtps_c.dir/all] Interrupt
+[33.084s] gmake: *** [Makefile:146: all] Interrupt
+[33.101s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/panda_motion_generator_msgs' returned '-2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Hierarchical_Reinforcement_Learning_for_Adaptive_Control_Under_Stochastic_Network_Delays:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_based_Reinforcement_Learning_In_Teleoperation:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation:/opt/ros/humble /usr/bin/cmake --build /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/panda_motion_generator_msgs -- -j9 -l9

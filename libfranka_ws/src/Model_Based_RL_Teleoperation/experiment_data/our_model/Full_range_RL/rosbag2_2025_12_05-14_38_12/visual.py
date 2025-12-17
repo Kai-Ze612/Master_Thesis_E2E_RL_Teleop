@@ -22,9 +22,9 @@ from geometry_msgs.msg import PointStamped
 from std_msgs.msg import Float32
 
 # Project Imports
-from Model_based_Reinforcement_Learning_In_Teleoperation.utils.inverse_kinematics import IKSolver
-from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-import Model_based_Reinforcement_Learning_In_Teleoperation.config.robot_config as cfg
+from Model_based_RL_Teleoperation.utils.inverse_kinematics import IKSolver
+from Model_based_RL_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
+import Model_based_RL_Teleoperation.config.robot_config as cfg
 
 # =============================================================================
 # PUBLISH RATE CONFIGURATION

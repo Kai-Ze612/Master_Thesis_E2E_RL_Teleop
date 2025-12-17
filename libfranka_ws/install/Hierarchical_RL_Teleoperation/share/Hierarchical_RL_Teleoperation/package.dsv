@@ -1,0 +1,9 @@
+source;share/Hierarchical_RL_Teleoperation/hook/pythonpath.ps1
+source;share/Hierarchical_RL_Teleoperation/hook/pythonpath.dsv
+source;share/Hierarchical_RL_Teleoperation/hook/pythonpath.sh
+source;share/Hierarchical_RL_Teleoperation/hook/ament_prefix_path.ps1
+source;share/Hierarchical_RL_Teleoperation/hook/ament_prefix_path.dsv
+source;share/Hierarchical_RL_Teleoperation/hook/ament_prefix_path.sh
+source;../../build/Hierarchical_RL_Teleoperation/share/Hierarchical_RL_Teleoperation/hook/pythonpath_develop.ps1
+source;../../build/Hierarchical_RL_Teleoperation/share/Hierarchical_RL_Teleoperation/hook/pythonpath_develop.dsv
+source;../../build/Hierarchical_RL_Teleoperation/share/Hierarchical_RL_Teleoperation/hook/pythonpath_develop.sh

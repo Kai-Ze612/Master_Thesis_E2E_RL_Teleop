@@ -1,0 +1,22 @@
+[0.677s] Invoking command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/E2E_Teleoperation': PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/E2E_Teleoperation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/E2E_Teleoperation/build --no-deps symlink_data
+[0.955s] running develop
+[1.166s] running egg_info
+[1.166s] writing E2E_Teleoperation.egg-info/PKG-INFO
+[1.167s] writing dependency_links to E2E_Teleoperation.egg-info/dependency_links.txt
+[1.167s] writing entry points to E2E_Teleoperation.egg-info/entry_points.txt
+[1.167s] writing requirements to E2E_Teleoperation.egg-info/requires.txt
+[1.167s] writing top-level names to E2E_Teleoperation.egg-info/top_level.txt
+[1.169s] reading manifest file 'E2E_Teleoperation.egg-info/SOURCES.txt'
+[1.170s] writing manifest file 'E2E_Teleoperation.egg-info/SOURCES.txt'
+[1.171s] running build_ext
+[1.171s] Creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation/lib/python3.10/site-packages/E2E-Teleoperation.egg-link (link to .)
+[1.172s] Installing agent_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation/lib/E2E_Teleoperation
+[1.172s] Installing local_robot script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation/lib/E2E_Teleoperation
+[1.172s] Installing remote_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation/lib/E2E_Teleoperation
+[1.173s] 
+[1.173s] Installed /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/E2E_Teleoperation
+[1.173s] running symlink_data
+[1.173s] symbolically linking /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/E2E_Teleoperation/launch/local_robot.launch.py -> /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation/launch
+[1.173s] symbolically linking /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/E2E_Teleoperation/launch/remote_agent.launch.py -> /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation/launch
+[1.173s] symbolically linking /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/E2E_Teleoperation/launch/remote_sim.launch.py -> /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation/launch
+[1.195s] Invoked command in '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/E2E_Teleoperation' returned '0': PYTHONPATH=/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/E2E_Teleoperation/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/E2E_Teleoperation/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/E2E_Teleoperation/build --no-deps symlink_data

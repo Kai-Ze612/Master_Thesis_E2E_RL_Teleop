@@ -1,0 +1,5 @@
+[console_scripts]
+agent_node = Model_Based_RL_Teleoperation.nodes.agent:main
+local_robot = Model_Based_RL_Teleoperation.nodes.local_robot_sim:main
+remote_node = Model_Based_RL_Teleoperation.nodes.remote_robot:main
+

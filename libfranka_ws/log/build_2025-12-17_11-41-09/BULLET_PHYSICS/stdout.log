@@ -1,0 +1,80 @@
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenGL: /usr/lib/x86_64-linux-gnu/libOpenGL.so   
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/BULLET_PHYSICS
+[  0%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btAlignedAllocator.cpp.o[0m
+[  0%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btAxisSweep3.cpp.o[0m
+[  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btConvexHull.cpp.o[0m
+[  1%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/CloneTreeCreator.cpp.o[0m
+[  1%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/CoilCreator.cpp.o[0m
+[  1%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/Jacobian.cpp.o[0m
+[  1%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btBroadphaseProxy.cpp.o[0m
+[  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btConvexHullComputer.cpp.o[0m
+[  1%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btCollisionAlgorithm.cpp.o[0m
+[  1%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/MultiBodyTreeCreator.cpp.o[0m
+[  1%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btDbvt.cpp.o[0m
+[  1%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/LinearR2.cpp.o[0m
+[  1%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/btMultiBodyTreeCreator.cpp.o[0m
+[  1%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btDbvtBroadphase.cpp.o[0m
+[  1%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/LinearR3.cpp.o[0m
+[  1%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/DillCreator.cpp.o[0m
+[  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btGeometryUtil.cpp.o[0m
+[  1%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/LinearR4.cpp.o[0m
+[  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btPolarDecomposition.cpp.o[0m
+[  2%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btDispatcher.cpp.o[0m
+[  2%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btQuickprof.cpp.o[0m
+[  3%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/MultiBodyTreeDebugGraph.cpp.o[0m
+[  3%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btOverlappingPairCache.cpp.o[0m
+[  3%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btReducedVector.cpp.o[0m
+[  4%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/MatrixRmn.cpp.o[0m
+[  4%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/invdyn_bullet_comparison.cpp.o[0m
+[  4%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btQuantizedBvh.cpp.o[0m
+[  4%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/IDRandomUtil.cpp.o[0m
+[  4%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btSerializer.cpp.o[0m
+[  4%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btSerializer64.cpp.o[0m
+[  4%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/Misc.cpp.o[0m
+[  4%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btThreads.cpp.o[0m
+[  4%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/RandomTreeCreator.cpp.o[0m
+[  5%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btVector3.cpp.o[0m
+[  5%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/Node.cpp.o[0m
+[  5%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/TaskScheduler/btTaskScheduler.cpp.o[0m
+[  5%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/SimpleTreeCreator.cpp.o[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btSimpleBroadphase.cpp.o[0m
+[  5%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/TaskScheduler/btThreadSupportPosix.cpp.o[0m
+[  5%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/MultiBodyNameMap.cpp.o[0m
+[  5%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/TaskScheduler/btThreadSupportWin32.cpp.o[0m
+[  5%] [32m[1mLinking CXX static library libLinearMath.a[0m
+[  5%] Built target LinearMath
+[  5%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/Tree.cpp.o[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btActivatingCollisionAlgorithm.cpp.o[0m
+[  5%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/User2InternalIndex.cpp.o[0m
+[  5%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/VectorRn.cpp.o[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btBoxBoxCollisionAlgorithm.cpp.o[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btBox2dBox2dCollisionAlgorithm.cpp.o[0m
+[  5%] [32m[1mLinking CXX static library libBulletInverseDynamicsUtils.a[0m
+[  5%] Built target BulletInverseDynamicsUtils
+[  5%] [32m[1mLinking CXX static library libBussIK.a[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btBoxBoxDetector.cpp.o[0m
+[  5%] Built target BussIK
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionDispatcher.cpp.o[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionDispatcherMt.cpp.o[0m
+[  6%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionObject.cpp.o[0m
+[  6%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionWorld.cpp.o[0m
+[  6%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionWorldImporter.cpp.o[0m

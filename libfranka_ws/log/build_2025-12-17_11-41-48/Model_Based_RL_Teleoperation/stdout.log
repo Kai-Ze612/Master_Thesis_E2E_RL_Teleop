@@ -1,0 +1,17 @@
+running develop
+running egg_info
+writing Model_Based_RL_Teleoperation.egg-info/PKG-INFO
+writing dependency_links to Model_Based_RL_Teleoperation.egg-info/dependency_links.txt
+writing entry points to Model_Based_RL_Teleoperation.egg-info/entry_points.txt
+writing requirements to Model_Based_RL_Teleoperation.egg-info/requires.txt
+writing top-level names to Model_Based_RL_Teleoperation.egg-info/top_level.txt
+reading manifest file 'Model_Based_RL_Teleoperation.egg-info/SOURCES.txt'
+writing manifest file 'Model_Based_RL_Teleoperation.egg-info/SOURCES.txt'
+running build_ext
+Creating /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation/lib/python3.10/site-packages/Model-Based-RL-Teleoperation.egg-link (link to .)
+Installing agent_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation/lib/Model_Based_RL_Teleoperation
+Installing local_robot script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation/lib/Model_Based_RL_Teleoperation
+Installing remote_node script to /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation/lib/Model_Based_RL_Teleoperation
+
+Installed /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/Model_Based_RL_Teleoperation
+running symlink_data

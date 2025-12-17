@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 import os
 from glob import glob
 
-package_name = 'Model_based_Reinforcement_Learning_In_Teleoperation'
+package_name = 'Model_Based_RL_Teleoperation'
 
 setup(
     name=package_name,
@@ -28,10 +28,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'remote_node = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.remote_robot:main',
-            'local_node = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.local_robot_sim:main',
-            'agent_node = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.agent:main',
-            'remote_sim = Model_based_Reinforcement_Learning_In_Teleoperation.nodes.remote_sim:main',
+            'remote_node = Model_Based_RL_Teleoperation.nodes.remote_robot:main',
+            'local_robot = Model_Based_RL_Teleoperation.nodes.local_robot_sim:main',
+            'agent_node = Model_Based_RL_Teleoperation.nodes.agent:main',
         ],
     },
 )

@@ -1,0 +1,171 @@
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenGL: /usr/lib/x86_64-linux-gnu/libOpenGL.so   
+-- Looking for pthread.h
+[0mLinux[0m
+[33mCMake Warning (dev) at /usr/share/cmake-3.22/Modules/FindOpenGL.cmake:315 (message):
+  Policy CMP0072 is not set: FindOpenGL prefers GLVND by default when
+  available.  Run "cmake --help-policy CMP0072" for policy details.  Use the
+  cmake_policy command to set the policy and suppress this warning.
+
+  FindOpenGL found both a legacy GL library:
+
+    OPENGL_gl_LIBRARY: /usr/lib/x86_64-linux-gnu/libGL.so
+
+  and GLVND libraries for OpenGL and GLX:
+
+    OPENGL_opengl_LIBRARY: /usr/lib/x86_64-linux-gnu/libOpenGL.so
+    OPENGL_glx_LIBRARY: /usr/lib/x86_64-linux-gnu/libGLX.so
+
+  OpenGL_GL_PREFERENCE has not been set to "GLVND" or "LEGACY", so for
+  compatibility with CMake 3.10 and below the legacy GL library will be used.
+Call Stack (most recent call first):
+  CMakeLists.txt:312 (FIND_PACKAGE)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+[0m
+[0mOPENGL FOUND[0m
+[0m/usr/lib/x86_64-linux-gnu/libGL.so/usr/lib/x86_64-linux-gnu/libGLU.so[0m
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/build/BULLET_PHYSICS
+[  0%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btAlignedAllocator.cpp.o[0m
+[  0%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btAxisSweep3.cpp.o[0m
+[  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btConvexHull.cpp.o[0m
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.h:23[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:18[m[K:
+In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = int][m[K’,
+    inlined from ‘[01m[Kbool HullLibrary::_ZN11HullLibrary15CleanupVerticesEjPK9btVector3jRjPS0_fRS0_.part.0(unsigned int, const btVector3*, unsigned int, unsigned int&, btVector3*, btScalar, btVector3&)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:834:29[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 4 and 8589934592 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+  223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+      |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.h:23[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:18[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[Kbool HullLibrary::_ZN11HullLibrary15CleanupVerticesEjPK9btVector3jRjPS0_fRS0_.part.0(unsigned int, const btVector3*, unsigned int, unsigned int&, btVector3*, btScalar, btVector3&)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-8589934592, -4] into destination object ‘[01m[K((btAlignedObjectArray<int>*)this)[1].btAlignedObjectArray<int>::m_data[m[K’ of size [0, 9223372036854775807]
+  109 |                 if ([01;36m[Km_data[m[K)
+      |                     [01;36m[K^~~~~~[m[K
+[  1%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/CloneTreeCreator.cpp.o[0m
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.h:23[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:18[m[K:
+In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = btHullTriangle*][m[K’,
+    inlined from ‘[01m[Kint HullLibrary::calchull(btVector3*, int, TUIntArray&, int&, int)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:628:15[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 8 and 17179869184 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+  223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+      |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.h:23[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHull.cpp:18[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[Kint HullLibrary::calchull(btVector3*, int, TUIntArray&, int&, int)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-17179869184, -8] into destination object ‘[01m[K*(btAlignedObjectArray<btHullTriangle*>*)this.btAlignedObjectArray<btHullTriangle*>::m_data[m[K’ of size [0, 9223372036854775807]
+  109 |                 if ([01;36m[Km_data[m[K)
+      |                     [01;36m[K^~~~~~[m[K
+[  1%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/CoilCreator.cpp.o[0m
+[  1%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/Jacobian.cpp.o[0m
+[  1%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btBroadphaseProxy.cpp.o[0m
+[  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btConvexHullComputer.cpp.o[0m
+[  1%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btCollisionAlgorithm.cpp.o[0m
+[  1%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/MultiBodyTreeCreator.cpp.o[0m
+[  1%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btDbvt.cpp.o[0m
+[  1%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/LinearR2.cpp.o[0m
+[  1%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/btMultiBodyTreeCreator.cpp.o[0m
+[  1%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btDbvtBroadphase.cpp.o[0m
+[  1%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/LinearR3.cpp.o[0m
+[  1%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/DillCreator.cpp.o[0m
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.h:19[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:17[m[K:
+In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = int][m[K’,
+    inlined from ‘[01m[KbtScalar btConvexHullComputer::compute(const void*, bool, int, int, btScalar, btScalar)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:2676:30[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 4 and 8589934592 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+  223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+      |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.h:19[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:17[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[KbtScalar btConvexHullComputer::compute(const void*, bool, int, int, btScalar, btScalar)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-8589934592, -4] into destination object ‘[01m[K((btAlignedObjectArray<int>*)this)[1].btAlignedObjectArray<int>::m_data[m[K’ of size [0, 9223372036854775807]
+  109 |                 if ([01;36m[Km_data[m[K)
+      |                     [01;36m[K^~~~~~[m[K
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.h:19[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:17[m[K:
+In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = int][m[K’,
+    inlined from ‘[01m[KbtScalar btConvexHullComputer::compute(const void*, bool, int, int, btScalar, btScalar)[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:2678:14[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 4 and 8589934592 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+  223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+      |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.h:19[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btConvexHullComputer.cpp:17[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[KbtScalar btConvexHullComputer::compute(const void*, bool, int, int, btScalar, btScalar)[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-8589934592, -4] into destination object ‘[01m[K((btAlignedObjectArray<int>*)this)[3].btAlignedObjectArray<int>::m_data[m[K’ of size [0, 9223372036854775807]
+  109 |                 if ([01;36m[Km_data[m[K)
+      |                     [01;36m[K^~~~~~[m[K
+[  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btGeometryUtil.cpp.o[0m
+[  1%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/LinearR4.cpp.o[0m
+[  1%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btPolarDecomposition.cpp.o[0m
+[  2%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btDispatcher.cpp.o[0m
+[  2%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btQuickprof.cpp.o[0m
+[  3%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/MultiBodyTreeDebugGraph.cpp.o[0m
+[  3%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btOverlappingPairCache.cpp.o[0m
+[  3%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btReducedVector.cpp.o[0m
+[  4%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/MatrixRmn.cpp.o[0m
+[  4%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/invdyn_bullet_comparison.cpp.o[0m
+[  4%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btQuantizedBvh.cpp.o[0m
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.h:11[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.cpp:8[m[K:
+In member function ‘[01m[Kvoid btAlignedObjectArray<T>::resize(int, const T&) [with T = int][m[K’,
+    inlined from ‘[01m[Kvoid btReducedVector::simplify()[m[K’ at [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.h:57:25[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:223:33:[m[K [01;35m[Kwarning: [m[K‘[01m[Kvoid* __builtin_memset(void*, int, long unsigned int)[m[K’ writing between 4 and 8589934592 bytes into a region of size 0 overflows the destination [[01;35m[K]8;;https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html#index-Wstringop-overflow=-Wstringop-overflow=]8;;[m[K]
+  223 |                                 [01;35m[Knew (&m_data[i]) T(fillData)[m[K;
+      |                                 [01;35m[K^~~~~~~~~~~~~~~~~~~~~~~~~~~~[m[K
+In file included from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.h:11[m[K,
+                 from [01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btReducedVector.cpp:8[m[K:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:[m[K In member function ‘[01m[Kvoid btReducedVector::simplify()[m[K’:
+[01m[K/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/bullet3/src/LinearMath/btAlignedObjectArray.h:109:21:[m[K [01;36m[Knote: [m[Kat offset [-8589934592, -4] into destination object ‘[01m[K*(btAlignedObjectArray<int>*)this.btAlignedObjectArray<int>::m_data[m[K’ of size [0, 9223372036854775807]
+  109 |                 if ([01;36m[Km_data[m[K)
+      |                     [01;36m[K^~~~~~[m[K
+[  4%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/IDRandomUtil.cpp.o[0m
+[  4%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btSerializer.cpp.o[0m
+[  4%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btSerializer64.cpp.o[0m
+[  4%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/Misc.cpp.o[0m
+[  4%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btThreads.cpp.o[0m
+[  4%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/RandomTreeCreator.cpp.o[0m
+[  5%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/btVector3.cpp.o[0m
+[  5%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/Node.cpp.o[0m
+[  5%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/TaskScheduler/btTaskScheduler.cpp.o[0m
+[  5%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/SimpleTreeCreator.cpp.o[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/BroadphaseCollision/btSimpleBroadphase.cpp.o[0m
+[  5%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/TaskScheduler/btThreadSupportPosix.cpp.o[0m
+[  5%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/MultiBodyNameMap.cpp.o[0m
+[  5%] [32mBuilding CXX object src/LinearMath/CMakeFiles/LinearMath.dir/TaskScheduler/btThreadSupportWin32.cpp.o[0m
+[  5%] [32m[1mLinking CXX static library libLinearMath.a[0m
+[  5%] Built target LinearMath
+[  5%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/Tree.cpp.o[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btActivatingCollisionAlgorithm.cpp.o[0m
+[  5%] [32mBuilding CXX object Extras/InverseDynamics/CMakeFiles/BulletInverseDynamicsUtils.dir/User2InternalIndex.cpp.o[0m
+[  5%] [32mBuilding CXX object examples/ThirdPartyLibs/BussIK/CMakeFiles/BussIK.dir/VectorRn.cpp.o[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btBoxBoxCollisionAlgorithm.cpp.o[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btBox2dBox2dCollisionAlgorithm.cpp.o[0m
+[  5%] [32m[1mLinking CXX static library libBulletInverseDynamicsUtils.a[0m
+[  5%] Built target BulletInverseDynamicsUtils
+[  5%] [32m[1mLinking CXX static library libBussIK.a[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btBoxBoxDetector.cpp.o[0m
+[  5%] Built target BussIK
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionDispatcher.cpp.o[0m
+[  5%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionDispatcherMt.cpp.o[0m
+[  6%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionObject.cpp.o[0m
+[  6%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionWorld.cpp.o[0m
+[  6%] [32mBuilding CXX object src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionWorldImporter.cpp.o[0m
+gmake[2]: *** [src/BulletCollision/CMakeFiles/BulletCollision.dir/build.make:314: src/BulletCollision/CMakeFiles/BulletCollision.dir/CollisionDispatch/btCollisionWorldImporter.cpp.o] Interrupt
+gmake[1]: *** [CMakeFiles/Makefile2:1745: src/BulletCollision/CMakeFiles/BulletCollision.dir/all] Interrupt
+gmake: *** [Makefile:146: all] Interrupt

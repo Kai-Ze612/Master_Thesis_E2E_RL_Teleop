@@ -13,11 +13,12 @@ E2E_Teleoperation/config/__init__.py
 E2E_Teleoperation/config/robot_config.py
 E2E_Teleoperation/nodes/__init__.py
 E2E_Teleoperation/nodes/agent.py
-E2E_Teleoperation/nodes/local_robot_real.py
 E2E_Teleoperation/nodes/local_robot_sim.py
 E2E_Teleoperation/nodes/remote_robot.py
-E2E_Teleoperation/nodes/remote_sim.py
 E2E_Teleoperation/utils/__init__.py
 E2E_Teleoperation/utils/delay_simulator.py
 E2E_Teleoperation/utils/inverse_kinematics.py
+launch/local_robot.launch.py
+launch/remote_agent.launch.py
+launch/remote_sim.launch.py
 resource/E2E_Teleoperation

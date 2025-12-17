@@ -16,7 +16,7 @@ from launch.substitutions import Command, FindExecutable, LaunchConfiguration, P
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
     
-from Model_based_Reinforcement_Learning_In_Teleoperation.utils.delay_simulator import ExperimentConfig
+from Model_based_RL_Teleoperation.utils.delay_simulator import ExperimentConfig
 
 def generate_launch_description():
     
