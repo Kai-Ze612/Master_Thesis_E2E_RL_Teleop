@@ -32,13 +32,7 @@ DEFAULT_MUJOCO_MODEL_PATH = (
     "scene.xml"
 )
 
-DEFAULT_RL_MODEL_PATH = (
-    WORKSPACE_SRC /
-    "E2E_Teleoperation" /
-    "E2E_Teleoperation" /
-    "trained_RL" / 
-    "best_policy.pth"
-)
+DEFAULT_RL_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251215_210023/best_policy.pth"
 
 # Ensure the path exist
 CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)

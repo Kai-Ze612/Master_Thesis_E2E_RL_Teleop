@@ -1,11 +1,17 @@
 """
-SAC training algorithm
+SAC Training Algorithm with Continuous LSTM
 
-Two stages training:
-1. LSTM encoder pre-training (state estimator)
-2. ID Learning
-3. Policy Distallation (Teacher - Student learning)
+E2E Training that matches real-world deployment:
+1. LSTM maintains hidden state across episode steps
+2. When observation arrives: use observation sequence
+3. When no observation: use autoregressive prediction
+
+Training Stages:
+1. Stage 1: LSTM encoder pre-training (supervised)
+2. Stage 2: Behavioral cloning with DAgger
+3. Stage 3: SAC fine-tuning (optional, for true RL)
 """
+
 
 import os
 import logging
@@ -15,32 +21,667 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from typing import Dict, Tuple, Optional
+import copy
 
 import E2E_Teleoperation.config.robot_config as cfg
-from E2E_Teleoperation.E2E_RL.sac_policy_network import JointActor, JointCritic, SharedLSTMEncoder
+from E2E_Teleoperation.E2E_RL.sac_policy_network import (
+    ContinuousLSTMEncoder, JointActor, JointCritic, create_actor_critic
+)
 
 logger = logging.getLogger(__name__)
 
 
 class EarlyStopper:
-    def __init__(self, patience: int = cfg.EARLY_STOP_PATIENCE):
+    """
+    Early stopping based on validation reward.
+    
+    Stops training when validation reward does not improve for `patience` evaluations.
+    """
+    
+    def __init__(self, patience: int = 10, min_delta: float = 0.0):
+        """
+        Args:
+            patience: Number of evaluations to wait for improvement
+            min_delta: Minimum change to qualify as improvement
+        """
         self.patience = patience
+        self.min_delta = min_delta
         self.counter = 0
-        self.best_metric = -np.inf 
+        self.best_metric = -np.inf
+        self.best_step = 0
+    
+    def check(self, metric: float, current_step: int = 0) -> Tuple[bool, bool]:
+        """
+        Check if training should stop.
         
-    def check(self, metric: float) -> Tuple[bool, bool]:
-        if metric > self.best_metric:
+        Args:
+            metric: Current validation metric (higher is better)
+            current_step: Current training step (for logging)
+            
+        Returns:
+            should_stop: True if patience exceeded
+            is_best: True if this is a new best
+        """
+        if metric > self.best_metric + self.min_delta:
             self.best_metric = metric
+            self.best_step = current_step
             self.counter = 0
             return False, True
         else:
             self.counter += 1
             if self.counter >= self.patience:
+                logger.info(
+                    f"Early stopping triggered. Best metric: {self.best_metric:.2f} "
+                    f"at step {self.best_step}. No improvement for {self.patience} evaluations."
+                )
                 return True, False
             return False, False
+    
+    def reset(self):
+        """Reset the stopper for a new training phase."""
+        self.counter = 0
+        self.best_metric = -np.inf
+        self.best_step = 0
+
+
+class Trainer:
+    """
+    Trainer that explicitly teaches recovery behavior.
+    
+    Training Phases:
+    1. Stage 1: LSTM encoder pre-training
+    2. Stage 2a: Pure BC with noise injection (learn nominal + nearby states)
+    3. Stage 2b: DAgger with recovery focus (learn from student mistakes)
+    4. Stage 3: SAC fine-tuning (learn optimal recovery through RL)
+    """
+    
+    def __init__(self, env, output_dir: str):
+        self.env = env
+        self.output_dir = output_dir
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.writer = SummaryWriter(os.path.join(output_dir, "tensorboard"))
         
+        # Networks
+        self.shared_encoder, self.actor, self.critic = create_actor_critic(self.device)
+        self.critic_target = copy.deepcopy(self.critic)
+        for param in self.critic_target.parameters():
+            param.requires_grad = False
         
-class ReplayBuffer:
+        # Optimizers
+        self.enc_optimizer = optim.Adam(self.shared_encoder.parameters(), lr=cfg.ENCODER_LR)
+        self.actor_optimizer = optim.Adam(
+            [p for n, p in self.actor.named_parameters() if 'encoder' not in n],
+            lr=cfg.ACTOR_LR
+        )
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=cfg.CRITIC_LR)
+        
+        # SAC entropy
+        self.target_entropy = -cfg.N_JOINTS
+        self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
+        self.alpha_optimizer = optim.Adam([self.log_alpha], lr=cfg.ALPHA_LR)
+        
+        # Buffer
+        self.buffer = RecoveryBuffer(cfg.BUFFER_SIZE, cfg.OBS_DIM, cfg.N_JOINTS, self.device)
+        
+        # Early stopping
+        self.stopper = EarlyStopper(
+            patience=getattr(cfg, 'EARLY_STOP_PATIENCE', 10),
+            min_delta=1.0  # Require at least 1.0 reward improvement
+        )
+        
+        # Training state
+        self.global_step = 0
+        self._episode_count = 0
+        
+        # Noise schedule (curriculum)
+        self.noise_scale = 0.0
+        self.max_noise_scale = 5.0  # Nm
+        
+    def _get_alpha(self):
+        return self.log_alpha.exp()
+
+    def train_stage_1_encoder(self):
+        """
+        Stage 1: Supervised LSTM encoder pre-training.
+        
+        Train the LSTM to predict current state from delayed observations.
+        Policy layers are frozen during this stage.
+        """
+        logger.info("=" * 60)
+        logger.info(">>> STAGE 1: ENCODER PRE-TRAINING")
+        logger.info("=" * 60)
+        
+        # Freeze policy layers (only train encoder)
+        for param in self.actor.backbone.parameters():
+            param.requires_grad = False
+        for param in self.actor.fc_mean.parameters():
+            param.requires_grad = False
+        for param in self.actor.fc_log_std.parameters():
+            param.requires_grad = False
+        
+        updates_completed = 0
+        COLLECTION_STEPS = 5000
+        STAGE1_STEPS = getattr(cfg, 'STAGE1_STEPS', 50000)
+        
+        while updates_completed < STAGE1_STEPS:
+            # Collect data with Teacher (no noise for encoder training)
+            logger.info(f"Collecting {COLLECTION_STEPS} steps for encoder training...")
+            self.collect_with_noise_injection(
+                steps=COLLECTION_STEPS,
+                noise_scale=0.0,  # No noise for encoder pre-training
+                noise_type='gaussian'
+            )
+            
+            # Train encoder
+            logger.info(f"Training encoder...")
+            for _ in range(COLLECTION_STEPS):
+                if updates_completed >= STAGE1_STEPS:
+                    break
+                
+                batch = self.buffer.sample_with_recovery_weight(cfg.BATCH_SIZE, recovery_weight=1.0)
+                obs = batch['obs']
+                
+                # Extract target history from observation
+                target_history = obs[:, -cfg.TARGET_HISTORY_DIM:]
+                history_seq = target_history.view(-1, cfg.RNN_SEQUENCE_LENGTH, cfg.ESTIMATOR_STATE_DIM)
+                
+                # Forward pass through encoder
+                _, pred_state, _ = self.shared_encoder(history_seq)
+                
+                # Get ground truth
+                idxs = np.random.randint(0, self.buffer.size, size=cfg.BATCH_SIZE)
+                true_states = torch.FloatTensor(self.buffer.true_states[idxs]).to(self.device)
+                
+                # Normalize targets
+                t_q = true_states[:, :7]
+                t_qd = true_states[:, 7:]
+                t_q_norm = (t_q - torch.tensor(cfg.Q_MEAN, device=self.device)) / torch.tensor(cfg.Q_STD, device=self.device)
+                t_qd_norm = (t_qd - torch.tensor(cfg.QD_MEAN, device=self.device)) / torch.tensor(cfg.QD_STD, device=self.device)
+                target = torch.cat([t_q_norm, t_qd_norm], dim=1)
+                
+                # Loss
+                loss = F.mse_loss(pred_state, target)
+                
+                self.enc_optimizer.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.shared_encoder.parameters(), max_norm=1.0)
+                self.enc_optimizer.step()
+                
+                updates_completed += 1
+                
+                if updates_completed % 1000 == 0:
+                    logger.info(f"[Stage 1] Update {updates_completed}/{STAGE1_STEPS} | Loss: {loss.item():.6f}")
+                    self.writer.add_scalar("Stage1/EncoderLoss", loss.item(), updates_completed)
+        
+        # Unfreeze policy layers for Stage 2
+        for param in self.actor.parameters():
+            param.requires_grad = True
+        
+        logger.info(">>> STAGE 1 COMPLETE")
+        self.save_checkpoint("stage1_complete.pth")
+    
+    # =========================================================================
+    # STAGE 2a: BC with Noise Injection
+    # =========================================================================
+    
+    def collect_with_noise_injection(
+        self,
+        steps: int,
+        noise_scale: float = 2.0,
+        noise_type: str = 'gaussian'
+    ):
+        """
+        Collect data with Teacher + Noise.
+        
+        This exposes the student to states NEAR the optimal trajectory,
+        teaching it to recover from small perturbations.
+        
+        Args:
+            steps: Number of steps to collect
+            noise_scale: Standard deviation of noise (Nm)
+            noise_type: 'gaussian', 'uniform', or 'occasional'
+        """
+        obs, info = self.env.reset()
+        hidden = self.shared_encoder.init_hidden(batch_size=1, device=self.device)
+        prev_prediction = torch.zeros(1, 14, device=self.device)
+        
+        episode_step = 0
+        episodes_completed = 0
+        
+        for i in range(steps):
+            episode_step += 1
+            has_new_obs = info.get('has_new_obs', True)
+            
+            # Get Teacher action
+            r_q, r_qd = self.env.remote.get_joint_state()
+            t_q, t_qd = self.env.leader_hist[-1]
+            teacher_action = self.env._compute_teacher_torque(r_q, r_qd, t_q, t_qd)
+            
+            # Add noise to driving action (but NOT to the label)
+            if noise_type == 'gaussian':
+                noise = np.random.normal(0, noise_scale, size=teacher_action.shape)
+            elif noise_type == 'uniform':
+                noise = np.random.uniform(-noise_scale, noise_scale, size=teacher_action.shape)
+            elif noise_type == 'occasional':
+                # Add noise only 30% of the time (larger magnitude)
+                if np.random.random() < 0.3:
+                    noise = np.random.normal(0, noise_scale * 2, size=teacher_action.shape)
+                else:
+                    noise = np.zeros_like(teacher_action)
+            else:
+                noise = np.zeros_like(teacher_action)
+            
+            driving_action = teacher_action + noise
+            driving_action = np.clip(driving_action, -cfg.TORQUE_LIMITS, cfg.TORQUE_LIMITS)
+            
+            # Get student prediction (for logging, not driving)
+            obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
+            with torch.no_grad():
+                _, _, _, pred, next_hidden = self.actor.sample(
+                    obs_t, hidden=hidden, prev_prediction=prev_prediction,
+                    has_new_obs=has_new_obs, deterministic=True
+                )
+            
+            # Step environment with noisy teacher
+            next_obs, reward, terminated, truncated, next_info = self.env.step(driving_action)
+            done = terminated or truncated
+            
+            true_state = next_info['true_state']
+            
+            # Store: observation, CLEAN teacher label, noisy driving action
+            self.buffer.add(
+                obs=obs,
+                action=driving_action,
+                reward=reward,
+                next_obs=next_obs,
+                done=done,
+                teacher_action=teacher_action,  # Clean label!
+                true_state=true_state,
+                has_new_obs=has_new_obs,
+                prev_prediction=prev_prediction.cpu().numpy()[0],
+                is_recovery=terminated  # Mark if this led to failure
+            )
+            
+            # Update state
+            obs = next_obs
+            info = next_info
+            hidden = next_hidden
+            prev_prediction = pred
+            
+            if done:
+                self._episode_count += 1
+                episodes_completed += 1
+                
+                obs, info = self.env.reset()
+                hidden = self.shared_encoder.init_hidden(batch_size=1, device=self.device)
+                prev_prediction = torch.zeros(1, 14, device=self.device)
+                episode_step = 0
+        
+        logger.info(
+            f"Collected {steps} steps with noise={noise_scale:.1f}Nm, "
+            f"{episodes_completed} episodes"
+        )
+
+    # =========================================================================
+    # STAGE 2b: DAgger with Recovery Focus
+    # =========================================================================
+    
+    def collect_with_recovery_focus(
+        self,
+        steps: int,
+        student_prob: float = 0.5,
+        recovery_bonus_steps: int = 50
+    ):
+        """
+        DAgger collection that emphasizes recovery situations.
+        
+        When student causes an error, we:
+        1. Record the error state
+        2. Let Teacher demonstrate recovery for next N steps
+        3. Mark these as "recovery" samples (can be weighted higher in loss)
+        
+        Args:
+            steps: Number of steps to collect
+            student_prob: Probability of student driving
+            recovery_bonus_steps: Extra steps to record after error
+        """
+        obs, info = self.env.reset()
+        hidden = self.shared_encoder.init_hidden(batch_size=1, device=self.device)
+        prev_prediction = torch.zeros(1, 14, device=self.device)
+        
+        episode_step = 0
+        episodes_completed = 0
+        recovery_mode = False
+        recovery_steps_remaining = 0
+        
+        for i in range(steps):
+            episode_step += 1
+            has_new_obs = info.get('has_new_obs', True)
+            obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
+            
+            # Decide who drives
+            if recovery_mode:
+                # During recovery, Teacher ALWAYS drives
+                use_student = False
+                recovery_steps_remaining -= 1
+                if recovery_steps_remaining <= 0:
+                    recovery_mode = False
+            else:
+                use_student = np.random.random() < student_prob
+            
+            # Get Teacher action (always computed for label)
+            r_q, r_qd = self.env.remote.get_joint_state()
+            t_q, t_qd = self.env.leader_hist[-1]
+            teacher_action = self.env._compute_teacher_torque(r_q, r_qd, t_q, t_qd)
+            
+            # Get driving action
+            if use_student:
+                with torch.no_grad():
+                    action, _, _, pred, next_hidden = self.actor.sample(
+                        obs_t, hidden=hidden, prev_prediction=prev_prediction,
+                        has_new_obs=has_new_obs, deterministic=True
+                    )
+                driving_action = action.cpu().numpy()[0]
+            else:
+                driving_action = teacher_action
+                with torch.no_grad():
+                    _, _, _, pred, next_hidden = self.actor.sample(
+                        obs_t, hidden=hidden, prev_prediction=prev_prediction,
+                        has_new_obs=has_new_obs, deterministic=True
+                    )
+            
+            # Step
+            next_obs, reward, terminated, truncated, next_info = self.env.step(driving_action)
+            done = terminated or truncated
+            
+            # Check for error (potential recovery situation)
+            tracking_error = next_info.get('tracking_error', 0.0)
+            is_recovery_sample = recovery_mode or (tracking_error > 0.1)  # Threshold
+            
+            # If student caused significant error, switch to recovery mode
+            if use_student and tracking_error > 0.05 and not recovery_mode:
+                recovery_mode = True
+                recovery_steps_remaining = recovery_bonus_steps
+                logger.debug(f"Recovery mode activated at step {i}, error={tracking_error:.3f}")
+            
+            # Store
+            self.buffer.add(
+                obs=obs,
+                action=driving_action,
+                reward=reward,
+                next_obs=next_obs,
+                done=done,
+                teacher_action=teacher_action,
+                true_state=next_info['true_state'],
+                has_new_obs=has_new_obs,
+                prev_prediction=prev_prediction.cpu().numpy()[0],
+                is_recovery=is_recovery_sample
+            )
+            
+            # Update
+            obs = next_obs
+            info = next_info
+            hidden = next_hidden
+            prev_prediction = pred
+            
+            if done:
+                self._episode_count += 1
+                episodes_completed += 1
+                
+                obs, info = self.env.reset()
+                hidden = self.shared_encoder.init_hidden(batch_size=1, device=self.device)
+                prev_prediction = torch.zeros(1, 14, device=self.device)
+                episode_step = 0
+                recovery_mode = False
+                recovery_steps_remaining = 0
+        
+        # Log recovery statistics
+        recovery_ratio = self.buffer.get_recovery_ratio()
+        logger.info(
+            f"Collected {steps} steps, {episodes_completed} episodes, "
+            f"recovery_ratio={recovery_ratio:.2%}"
+        )
+
+    # =========================================================================
+    # Training with Recovery Weighting
+    # =========================================================================
+    
+    def train_bc_with_recovery_weighting(self, num_updates: int, recovery_weight: float = 2.0):
+        """
+        Train BC loss with higher weight on recovery samples.
+        
+        This makes the model pay more attention to "how to recover"
+        rather than "how to follow perfectly".
+        """
+        total_loss = 0.0
+        
+        for _ in range(num_updates):
+            batch = self.buffer.sample_with_recovery_weight(
+                cfg.BATCH_SIZE, 
+                recovery_weight=recovery_weight
+            )
+            
+            obs = batch['obs']
+            teacher_actions = batch['teacher_actions']
+            sample_weights = batch['weights']  # Higher for recovery samples
+            
+            # Student action
+            student_action, _, _, _, _ = self.actor.sample(
+                obs, hidden=None, prev_prediction=None,
+                has_new_obs=True, deterministic=True
+            )
+            
+            # Weighted BC loss
+            scale = self.actor.action_scale
+            per_sample_loss = F.mse_loss(
+                student_action / scale, 
+                teacher_actions / scale,
+                reduction='none'
+            ).mean(dim=1)
+            
+            # Apply weights
+            weighted_loss = (per_sample_loss * sample_weights).mean()
+            
+            self.actor_optimizer.zero_grad()
+            self.enc_optimizer.zero_grad()
+            weighted_loss.backward()
+            
+            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(self.shared_encoder.parameters(), max_norm=1.0)
+            
+            self.actor_optimizer.step()
+            self.enc_optimizer.step()
+            
+            total_loss += weighted_loss.item()
+        
+        return total_loss / num_updates
+
+    # =========================================================================
+    # Full Training Pipeline
+    # =========================================================================
+    
+    def train_stage_2_with_recovery(self):
+        """
+        Improved Stage 2 with explicit recovery learning.
+        
+        Phase 2a: BC with noise injection (curriculum)
+        Phase 2b: DAgger with recovery focus
+        """
+        logger.info("=" * 60)
+        logger.info(">>> STAGE 2: BC WITH RECOVERY LEARNING")
+        logger.info("=" * 60)
+        
+        self.global_step = 0
+        COLLECTION_STEPS = 5000
+        
+        # =====================================================================
+        # Phase 2a: BC with Noise Injection (Curriculum)
+        # =====================================================================
+        logger.info("--- Phase 2a: BC with Noise Injection ---")
+        
+        PHASE_2A_STEPS = 50000
+        noise_schedule = [
+            (0, 0.5),       # Steps 0-10k: very small noise
+            (10000, 1.0),   # Steps 10k-20k: small noise
+            (20000, 2.0),   # Steps 20k-30k: medium noise
+            (30000, 3.0),   # Steps 30k-40k: larger noise
+            (40000, 4.0),   # Steps 40k-50k: significant noise
+        ]
+        
+        while self.global_step < PHASE_2A_STEPS:
+            # Get noise scale from schedule
+            noise_scale = 0.5
+            for threshold, scale in noise_schedule:
+                if self.global_step >= threshold:
+                    noise_scale = scale
+            
+            logger.info(f"Step {self.global_step} | Noise injection, scale={noise_scale:.1f}Nm")
+            
+            self.collect_with_noise_injection(
+                steps=COLLECTION_STEPS,
+                noise_scale=noise_scale,
+                noise_type='gaussian'
+            )
+            
+            self.global_step += COLLECTION_STEPS
+            
+            # Train
+            avg_loss = self.train_bc_with_recovery_weighting(
+                num_updates=COLLECTION_STEPS,
+                recovery_weight=1.5  # Slight preference for recovery
+            )
+            
+            logger.info(f"[Phase 2a] Avg BC Loss: {avg_loss:.6f}")
+            self.writer.add_scalar("Stage2a/BCLoss", avg_loss, self.global_step)
+            self.writer.add_scalar("Stage2a/NoiseScale", noise_scale, self.global_step)
+            
+            # Validation
+            if self.global_step % cfg.VAL_FREQ == 0:
+                val_reward = self.validate()
+                logger.info(f"[Validation] Reward: {val_reward:.2f}")
+                self.writer.add_scalar("Validation/Reward", val_reward, self.global_step)
+                
+                # Early stopping check
+                should_stop, is_best = self.stopper.check(val_reward, self.global_step)
+                
+                if is_best:
+                    self.save_checkpoint("best_policy_phase2a.pth")
+                    logger.info(">>> New Best Model Saved!")
+                
+                if should_stop:
+                    logger.info(">>> Early Stopping in Phase 2a")
+                    break
+        
+        # Reset stopper for Phase 2b
+        self.stopper.reset()
+        
+        # =====================================================================
+        # Phase 2b: DAgger with Recovery Focus
+        # =====================================================================
+        logger.info("--- Phase 2b: DAgger with Recovery Focus ---")
+        
+        PHASE_2B_STEPS = cfg.STAGE2_TOTAL_STEPS - PHASE_2A_STEPS
+        
+        # DAgger schedule (slower ramp)
+        while self.global_step < cfg.STAGE2_TOTAL_STEPS:
+            # Student probability: 0% -> 30% over phase 2b
+            progress = (self.global_step - PHASE_2A_STEPS) / PHASE_2B_STEPS
+            student_prob = min(0.3, progress * 0.3)
+            
+            logger.info(f"Step {self.global_step} | DAgger, p_student={student_prob:.2f}")
+            
+            self.collect_with_recovery_focus(
+                steps=COLLECTION_STEPS,
+                student_prob=student_prob,
+                recovery_bonus_steps=50
+            )
+            
+            self.global_step += COLLECTION_STEPS
+            
+            # Train with higher recovery weight
+            avg_loss = self.train_bc_with_recovery_weighting(
+                num_updates=COLLECTION_STEPS,
+                recovery_weight=2.0  # Higher weight for recovery samples
+            )
+            
+            logger.info(f"[Phase 2b] Avg BC Loss: {avg_loss:.6f}")
+            self.writer.add_scalar("Stage2b/BCLoss", avg_loss, self.global_step)
+            self.writer.add_scalar("Stage2b/StudentProb", student_prob, self.global_step)
+            
+            # Validation
+            if self.global_step % cfg.VAL_FREQ == 0:
+                val_reward = self.validate()
+                logger.info(f"[Validation] Reward: {val_reward:.2f}")
+                self.writer.add_scalar("Validation/Reward", val_reward, self.global_step)
+                
+                # Early stopping check
+                should_stop, is_best = self.stopper.check(val_reward, self.global_step)
+                
+                if is_best:
+                    self.save_checkpoint("best_policy.pth")
+                    logger.info(">>> New Best Model Saved!")
+                
+                if should_stop:
+                    logger.info(">>> Early Stopping in Phase 2b")
+                    break
+        
+        logger.info(">>> STAGE 2 COMPLETE")
+
+    def validate(self) -> float:
+        """Run validation."""
+        total_reward = 0.0
+        self.actor.eval()
+        
+        for ep_idx in range(cfg.VAL_EPISODES):
+            obs, info = self.env.reset()
+            hidden = self.shared_encoder.init_hidden(batch_size=1, device=self.device)
+            prev_prediction = torch.zeros(1, 14, device=self.device)
+            ep_reward = 0.0
+            
+            while True:
+                has_new_obs = info.get('has_new_obs', True)
+                obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
+                
+                with torch.no_grad():
+                    action, _, _, pred, next_hidden = self.actor.sample(
+                        obs_t, hidden=hidden, prev_prediction=prev_prediction,
+                        has_new_obs=has_new_obs, deterministic=True
+                    )
+                
+                action_np = action.cpu().numpy()[0]
+                next_obs, reward, terminated, truncated, next_info = self.env.step(action_np)
+                done = terminated or truncated
+                
+                ep_reward += reward
+                obs = next_obs
+                info = next_info
+                hidden = next_hidden
+                prev_prediction = pred
+                
+                if done:
+                    break
+            
+            total_reward += ep_reward
+        
+        self.actor.train()
+        return total_reward / cfg.VAL_EPISODES
+
+    def save_checkpoint(self, filename: str):
+        path = os.path.join(self.output_dir, filename)
+        torch.save({
+            'encoder': self.shared_encoder.state_dict(),
+            'actor': self.actor.state_dict(),
+            'critic': self.critic.state_dict(),
+            'global_step': self.global_step,
+        }, path)
+        logger.info(f"Saved: {path}")
+
+
+class RecoveryBuffer:
+    """
+    Replay buffer that tracks recovery samples separately.
+    """
+    
     def __init__(self, capacity: int, obs_dim: int, action_dim: int, device: torch.device):
         self.capacity = capacity
         self.device = device
@@ -48,292 +689,71 @@ class ReplayBuffer:
         self.size = 0
         
         self.obs = np.zeros((capacity, obs_dim), dtype=np.float32)
+        self.actions = np.zeros((capacity, action_dim), dtype=np.float32)
+        self.rewards = np.zeros((capacity, 1), dtype=np.float32)
+        self.next_obs = np.zeros((capacity, obs_dim), dtype=np.float32)
+        self.dones = np.zeros((capacity, 1), dtype=np.float32)
         self.teacher_actions = np.zeros((capacity, action_dim), dtype=np.float32)
         self.true_states = np.zeros((capacity, 14), dtype=np.float32)
-        
-    def add(self, obs: np.ndarray, teacher_action: np.ndarray, true_state: np.ndarray):
+        self.has_new_obs = np.zeros((capacity, 1), dtype=np.float32)
+        self.prev_predictions = np.zeros((capacity, 14), dtype=np.float32)
+        self.is_recovery = np.zeros((capacity, 1), dtype=np.float32)  # NEW
+    
+    def add(
+        self,
+        obs, action, reward, next_obs, done,
+        teacher_action, true_state, has_new_obs, prev_prediction,
+        is_recovery: bool = False
+    ):
         self.obs[self.ptr] = obs
+        self.actions[self.ptr] = action
+        self.rewards[self.ptr] = reward
+        self.next_obs[self.ptr] = next_obs
+        self.dones[self.ptr] = float(done)
         self.teacher_actions[self.ptr] = teacher_action
         self.true_states[self.ptr] = true_state
+        self.has_new_obs[self.ptr] = float(has_new_obs)
+        self.prev_predictions[self.ptr] = prev_prediction
+        self.is_recovery[self.ptr] = float(is_recovery)
         
         self.ptr = (self.ptr + 1) % self.capacity
         self.size = min(self.size + 1, self.capacity)
+    
+    def sample_with_recovery_weight(
+        self, 
+        batch_size: int, 
+        recovery_weight: float = 2.0
+    ) -> Dict[str, torch.Tensor]:
+        """
+        Sample with higher probability for recovery samples.
+        """
+        # Compute sampling weights
+        weights = np.ones(self.size)
+        recovery_mask = self.is_recovery[:self.size, 0] > 0.5
+        weights[recovery_mask] = recovery_weight
+        weights = weights / weights.sum()
         
-    def sample(self, batch_size: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        idxs = np.random.randint(0, self.size, size=batch_size)
-        return (
-            torch.FloatTensor(self.obs[idxs]).to(self.device),
-            torch.FloatTensor(self.teacher_actions[idxs]).to(self.device),
-            torch.FloatTensor(self.true_states[idxs]).to(self.device)
-        )
+        # Weighted sampling
+        idxs = np.random.choice(self.size, size=batch_size, p=weights)
+        
+        # Compute loss weights (inverse of sampling probability for unbiased gradients)
+        # Or just use recovery flag as weight
+        sample_weights = np.ones(batch_size)
+        sample_weights[self.is_recovery[idxs, 0] > 0.5] = recovery_weight
+        
+        return {
+            'obs': torch.FloatTensor(self.obs[idxs]).to(self.device),
+            'teacher_actions': torch.FloatTensor(self.teacher_actions[idxs]).to(self.device),
+            'weights': torch.FloatTensor(sample_weights).to(self.device),
+            'is_recovery': torch.FloatTensor(self.is_recovery[idxs]).to(self.device),
+        }
+    
+    def get_recovery_ratio(self) -> float:
+        """Get ratio of recovery samples in buffer."""
+        if self.size == 0:
+            return 0.0
+        return self.is_recovery[:self.size].mean()
     
     @property
     def current_size(self):
         return self.size
-    
-
-class PhasedTrainer:
-    def __init__(self, env, output_dir: str):
-        self.env = env
-        self.output_dir = output_dir
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.writer = SummaryWriter(os.path.join(output_dir, "tensorboard"))
-        
-        self.shared_encoder = SharedLSTMEncoder().to(self.device)
-        self.actor = JointActor(shared_encoder=self.shared_encoder, action_dim=cfg.N_JOINTS).to(self.device)
-        self.critic = JointCritic(shared_encoder=self.shared_encoder, action_dim=cfg.N_JOINTS).to(self.device)
-        
-        self.enc_optimizer = optim.Adam(self.shared_encoder.parameters(), lr=cfg.ENCODER_LR)
-        self.actor_optimizer = optim.Adam(
-            [p for n, p in self.actor.named_parameters() if 'encoder' not in n], 
-            lr=cfg.ACTOR_LR
-        )
-        
-        self.buffer = ReplayBuffer(cfg.BUFFER_SIZE, cfg.OBS_DIM, cfg.N_JOINTS, self.device)
-        self.stopper = EarlyStopper()
-        self.global_step = 0
-
-    def collect_expert_data(self, steps: int, use_student_driver: bool = False):
-        """
-        Collects data for the replay buffer. 
-        Supports DAgger (Student drives) and Teacher Forcing.
-        Includes debug prints to verify Teacher strength.
-        """
-        obs, _ = self.env.reset()
-        
-        for i in range(steps):
-            # 1. Decide who drives the PHYSICAL robot
-            if use_student_driver:
-                with torch.no_grad():
-                    obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
-                    # Student drives (deterministic=True is standard for DAgger)
-                    action, _, _, pred = self.actor.sample(obs_t, deterministic=True)
-                    
-                    # Denormalize prediction for Env visualization/logging
-                    pred_np = pred.cpu().numpy()[0]
-                    pred_denorm = np.zeros_like(pred_np)
-                    pred_denorm[:7] = pred_np[:7] * cfg.Q_STD + cfg.Q_MEAN
-                    pred_denorm[7:] = pred_np[7:] * cfg.QD_STD + cfg.QD_MEAN
-                    self.env.set_predicted_state(pred_denorm)
-                    
-                    # The physical action executed in the env
-                    driving_action = action.cpu().numpy()[0]
-            else:
-                # Teacher drives (Perfect Trajectory)
-                r_q, r_qd = self.env.remote.get_joint_state()
-                t_q, t_qd = self.env.leader_hist[-1]
-                driving_action = self.env._compute_teacher_torque(r_q, r_qd, t_q, t_qd)
-
-            # 2. ALWAYS Calculate Teacher Label (The "Correct" Action)
-            # This is what we save to the buffer as the "Target" for the loss function
-            r_q_curr, r_qd_curr = self.env.remote.get_joint_state()
-            target_q, target_qd = self.env.leader_hist[-1]
-            teacher_label = self.env._compute_teacher_torque(r_q_curr, r_qd_curr, target_q, target_qd)
-            
-            # DEBUG PRINT
-            if i % 100 == 0:
-                print(f"Step {i} Teacher Torque: {np.round(teacher_label, 3)}")
-            
-            # Only print for the first 5 steps of the collection phase to avoid spam
-            if i < 5: 
-                # Pick a specific joint to monitor (e.g., Joint 4 which fights gravity)
-                j_idx = 3 
-                print(f"[Teacher Debug] Step {i}")
-                print(f"  Robot Q[{j_idx}]:     {r_q_curr[j_idx]:.3f}")
-                print(f"  Teacher Tau[{j_idx}]: {teacher_label[j_idx]:.3f} (Should be > 10.0 for gravity)")
-                print(f"  Driving Tau[{j_idx}]: {driving_action[j_idx]:.3f}")
-                print("-" * 40)
-
-            # 3. Step Env
-            next_obs, reward, done, _, info = self.env.step(driving_action)
-            true_state = info['true_state']
-            
-            # 4. Save to Buffer: (Obs, Teacher_Label, True_State)
-            # Crucial: We save 'teacher_label', NOT 'driving_action' as the target!
-            self.buffer.add(obs, teacher_label, true_state)
-            
-            obs = next_obs
-            if done: 
-                obs, _ = self.env.reset()
-
-    def train_stage_1_encoder(self):
-        """Stage 1: Encoder Pre-training."""
-        logger.info("="*60)
-        logger.info(">>> STAGE 1: ENCODER PRE-TRAINING")
-        logger.info("="*60)
-        
-        # Freeze Policy
-        for param in self.actor.backbone.parameters(): param.requires_grad = False
-        self.actor.fc_mean.requires_grad = False
-        self.actor.fc_log_std.requires_grad = False
-        
-        updates_completed = 0
-        COLLECTION_STEPS = 5000 
-        
-        while updates_completed < cfg.STAGE1_STEPS:
-            # 1. Collect Data (Teacher always drives in Stage 1)
-            logger.info(f"Collecting {COLLECTION_STEPS} steps of expert data...")
-            
-            # [FIXED] Updated argument name
-            self.collect_expert_data(steps=COLLECTION_STEPS, use_student_driver=False)
-            
-            # 2. Train
-            logger.info(f"Training for {COLLECTION_STEPS} updates...")
-            train_steps = COLLECTION_STEPS
-            
-            for _ in range(train_steps):
-                if updates_completed >= cfg.STAGE1_STEPS: break
-                
-                obs, _, true_states = self.buffer.sample(cfg.BATCH_SIZE)
-                target_history = obs[:, -cfg.TARGET_HISTORY_DIM:]
-                history_seq = target_history.view(-1, cfg.RNN_SEQUENCE_LENGTH, cfg.ESTIMATOR_STATE_DIM)
-                
-                _, pred_state, _ = self.shared_encoder(history_seq)
-                
-                t_q = true_states[:, :7]
-                t_qd = true_states[:, 7:]
-                t_q_norm = (t_q - torch.tensor(cfg.Q_MEAN, device=self.device)) / torch.tensor(cfg.Q_STD, device=self.device)
-                t_qd_norm = (t_qd - torch.tensor(cfg.QD_MEAN, device=self.device)) / torch.tensor(cfg.QD_STD, device=self.device)
-                target = torch.cat([t_q_norm, t_qd_norm], dim=1)
-                
-                loss = F.mse_loss(pred_state, target)
-                
-                self.enc_optimizer.zero_grad()
-                loss.backward()
-                self.enc_optimizer.step()
-                
-                updates_completed += 1
-                if updates_completed % 1000 == 0:
-                    logger.info(f"[Stage 1] Update {updates_completed} | Loss: {loss.item():.6f}")
-                    self.writer.add_scalar("Stage1/Loss", loss.item(), updates_completed)
-
-        # Unfreeze Policy
-        for param in self.actor.parameters(): param.requires_grad = True
-        logger.info(">>> STAGE 1 COMPLETE")
-
-    def train_stage_2_distillation(self):
-        """Stage 2: Teacher Distillation (DAgger)."""
-        logger.info("="*60)
-        logger.info(">>> STAGE 2: TEACHER DISTILLATION (DAgger)")
-        logger.info("="*60)
-        
-        self.global_step = 0
-        COLLECTION_STEPS = 5000
-        
-        while self.global_step < cfg.STAGE2_TOTAL_STEPS:
-            # DAgger Strategy:
-            # Initially, let Teacher drive (warm start).
-            # As training progresses, let Student drive more often to learn recovery.
-            use_student = (self.global_step > 20000)
-            
-            driver_name = "Student (DAgger)" if use_student else "Teacher (Expert)"
-            logger.info(f"Collecting {COLLECTION_STEPS} steps | Driver: {driver_name}")
-            
-            # [FIXED] Using correct argument
-            self.collect_expert_data(steps=COLLECTION_STEPS, use_student_driver=use_student)
-            
-            self.global_step += COLLECTION_STEPS
-            
-            logger.info(f"Training for {COLLECTION_STEPS} updates...")
-            
-            for i in range(COLLECTION_STEPS): 
-                obs, teacher_actions, _ = self.buffer.sample(cfg.BATCH_SIZE)
-                
-                # Student outputs SCALED action (Nm)
-                student_action, _, _, _ = self.actor.sample(obs, deterministic=True)
-                
-                # [FIX] Normalization Fix:
-                # We normalize both student and teacher actions to [-1, 1] range for the loss.
-                # Calculating loss on raw Torque (e.g. 87.0) is numerically unstable.
-                scale = self.actor.action_scale
-                
-                # Note: student_action / scale essentially recovers the 'tanh' output
-                # teacher_actions are loaded from buffer in raw Nm
-                bc_loss = F.mse_loss(student_action / scale, teacher_actions / scale)
-                
-                self.actor_optimizer.zero_grad()
-                self.enc_optimizer.zero_grad()
-                bc_loss.backward()
-                self.actor_optimizer.step()
-                self.enc_optimizer.step()
-            
-                if i % 1000 == 0:
-                    logger.info(f"[Stage 2] Batch Loss: {bc_loss.item():.6f}")
-
-            # 3. Validation
-            if self.global_step % cfg.VAL_FREQ == 0:
-                val_reward = self.validate()
-                stop, is_best = self.stopper.check(val_reward)
-                
-                logger.info(f"[Validation] Step {self.global_step} | Mean Reward: {val_reward:.2f}")
-                self.writer.add_scalar("Validation/Reward", val_reward, self.global_step)
-                
-                if is_best:
-                    self.save_checkpoint("best_policy.pth")
-                    logger.info(">>> New Best Model Saved!")
-                
-                if stop:
-                    logger.info(">>> Early Stopping Triggered.")
-                    break
-
-    def validate(self) -> float:
-        """
-        Runs validation with Debug prints to verify LSTM and Torque saturation.
-        """
-        total_reward = 0.0
-        self.actor.eval() # Set eval mode
-        
-        debug_limit = 5 
-        
-        for ep_idx in range(cfg.VAL_EPISODES):
-            obs, _ = self.env.reset()
-            done = False
-            ep_reward = 0.0
-            step = 0
-            
-            while not done:
-                with torch.no_grad():
-                    # 1. Inference
-                    obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
-                    action, _, _, pred = self.actor.sample(obs_t, deterministic=True)
-                    
-                    action_np = action.cpu().numpy()[0]
-                    pred_np = pred.cpu().numpy()[0]
-
-                # 2. Denormalize Prediction for Env/Logging
-                pred_denorm = np.zeros_like(pred_np)
-                pred_denorm[:7] = pred_np[:7] * cfg.Q_STD + cfg.Q_MEAN
-                pred_denorm[7:] = pred_np[7:] * cfg.QD_STD + cfg.QD_MEAN
-                
-                self.env.set_predicted_state(pred_denorm)
-
-                # 3. [DEBUG] Compare True vs Pred vs Action
-                if ep_idx == 0 and step < debug_limit:
-                    true_q, _ = self.env.leader_hist[-1]
-                    
-                    print(f"\n[Validation Debug] Step {step}")
-                    print(f"  True Pose:   {np.round(true_q, 3)}")
-                    print(f"  LSTM Pred:   {np.round(pred_denorm[:7], 3)}")
-                    print(f"  Action (Nm): {np.round(action_np, 2)}")
-                    
-                    if np.any(np.abs(action_np) >= (cfg.MAX_ACTION_TORQUE - 0.1)):
-                         print("  >>> WARNING: Action saturated! Robot may be too weak to lift arm.")
-
-                # 4. Step
-                next_obs, reward, done, _, info = self.env.step(action_np)
-                ep_reward += reward
-                obs = next_obs
-                step += 1
-            
-            total_reward += ep_reward
-            
-        self.actor.train() # Reset to train mode
-        return total_reward / cfg.VAL_EPISODES
-
-    def save_checkpoint(self, filename: str):
-        path = os.path.join(self.output_dir, filename)
-        torch.save({
-            'actor': self.actor.state_dict(),
-            'encoder': self.shared_encoder.state_dict(),
-            'optimizer': self.actor_optimizer.state_dict()
-        }, path)

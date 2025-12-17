@@ -1,0 +1,74 @@
+running egg_info
+creating ../../build/E2E_Teleoperation/E2E_Teleoperation.egg-info
+writing ../../build/E2E_Teleoperation/E2E_Teleoperation.egg-info/PKG-INFO
+writing dependency_links to ../../build/E2E_Teleoperation/E2E_Teleoperation.egg-info/dependency_links.txt
+writing entry points to ../../build/E2E_Teleoperation/E2E_Teleoperation.egg-info/entry_points.txt
+writing requirements to ../../build/E2E_Teleoperation/E2E_Teleoperation.egg-info/requires.txt
+writing top-level names to ../../build/E2E_Teleoperation/E2E_Teleoperation.egg-info/top_level.txt
+writing manifest file '../../build/E2E_Teleoperation/E2E_Teleoperation.egg-info/SOURCES.txt'
+reading manifest file '../../build/E2E_Teleoperation/E2E_Teleoperation.egg-info/SOURCES.txt'
+writing manifest file '../../build/E2E_Teleoperation/E2E_Teleoperation.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation
+copying E2E_Teleoperation/__init__.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/nodes
+copying E2E_Teleoperation/nodes/local_robot_sim.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/nodes
+copying E2E_Teleoperation/nodes/__init__.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/nodes
+copying E2E_Teleoperation/nodes/agent.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/nodes
+copying E2E_Teleoperation/nodes/remote_robot.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/nodes
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/utils
+copying E2E_Teleoperation/utils/inverse_kinematics.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/utils
+copying E2E_Teleoperation/utils/delay_simulator.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/utils
+copying E2E_Teleoperation/utils/__init__.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/utils
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/config
+copying E2E_Teleoperation/config/__init__.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/config
+copying E2E_Teleoperation/config/robot_config.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/config
+running install
+running install_lib
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation
+copying /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/__init__.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/nodes
+copying /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/nodes/local_robot_sim.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/nodes
+copying /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/nodes/__init__.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/nodes
+copying /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/nodes/agent.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/nodes
+copying /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/nodes/remote_robot.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/nodes
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/utils
+copying /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/utils/inverse_kinematics.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/utils
+copying /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/utils/delay_simulator.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/utils
+copying /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/utils/__init__.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/utils
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/config
+copying /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/config/__init__.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/config
+copying /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/build/lib/E2E_Teleoperation/config/robot_config.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/config
+byte-compiling /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/__init__.py to __init__.cpython-312.pyc
+byte-compiling /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/nodes/local_robot_sim.py to local_robot_sim.cpython-312.pyc
+byte-compiling /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/nodes/__init__.py to __init__.cpython-312.pyc
+byte-compiling /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/nodes/agent.py to agent.cpython-312.pyc
+byte-compiling /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/nodes/remote_robot.py to remote_robot.cpython-312.pyc
+byte-compiling /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/utils/inverse_kinematics.py to inverse_kinematics.cpython-312.pyc
+byte-compiling /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/utils/delay_simulator.py to delay_simulator.cpython-312.pyc
+byte-compiling /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/utils/__init__.py to __init__.cpython-312.pyc
+byte-compiling /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/config/__init__.py to __init__.cpython-312.pyc
+byte-compiling /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation/config/robot_config.py to robot_config.cpython-312.pyc
+running install_data
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/ament_index
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/ament_index/resource_index
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/ament_index/resource_index/packages
+copying resource/E2E_Teleoperation -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/ament_index/resource_index/packages
+copying package.xml -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation/launch
+copying launch/remote_sim.launch.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation/launch
+copying launch/local_robot.launch.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation/launch
+copying launch/remote_agent.launch.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation/launch
+creating /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation/config
+copying E2E_Teleoperation/config/__init__.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation/config
+copying E2E_Teleoperation/config/robot_config.py -> /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/share/E2E_Teleoperation/config
+running install_egg_info
+Copying ../../build/E2E_Teleoperation/E2E_Teleoperation.egg-info to /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/python3.12/site-packages/E2E_Teleoperation-0.0.0-py3.12.egg-info
+running install_scripts
+Installing agent_node script to /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/E2E_Teleoperation
+Installing local_robot script to /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/E2E_Teleoperation
+Installing remote_node script to /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/install/E2E_Teleoperation/lib/E2E_Teleoperation
+writing list of installed files to '/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/build/E2E_Teleoperation/install.log'

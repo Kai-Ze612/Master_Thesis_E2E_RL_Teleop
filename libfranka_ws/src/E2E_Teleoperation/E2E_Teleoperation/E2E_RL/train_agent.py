@@ -12,14 +12,11 @@ import argparse
 import multiprocessing
 from pathlib import Path 
 
-from stable_baselines3.common.vec_env import SubprocVecEnv
-from stable_baselines3.common.env_util import make_vec_env
-
 from E2E_Teleoperation.config import robot_config as cfg
 from E2E_Teleoperation.E2E_RL.training_env import TeleoperationEnv
-from E2E_Teleoperation.E2E_RL.sac_training_algorithm import PhasedTrainer
 from E2E_Teleoperation.utils.delay_simulator import ExperimentConfig
 from E2E_Teleoperation.E2E_RL.local_robot_simulator import TrajectoryType
+from E2E_Teleoperation.E2E_RL.sac_training_algorithm import Trainer
 
 def setup_logging(output_dir: Path):
     log_file = output_dir / "training.log"
@@ -33,12 +30,12 @@ def setup_logging(output_dir: Path):
     )
     return logging.getLogger(__name__)
 
+
 def train_agent(args: argparse.Namespace) -> None:
     # 1. Setup Output Directories
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"E2E_RL_{args.config.name}_{args.trajectory_type.value}_{timestamp}"
     
-    # Using pathlib / operator
     output_dir = cfg.CHECKPOINT_DIR / run_name
     output_dir.mkdir(parents=True, exist_ok=True)
     
@@ -73,17 +70,21 @@ def train_agent(args: argparse.Namespace) -> None:
         sys.exit(1)
     
     # 4. Trainer
-    trainer = PhasedTrainer(env, str(output_dir))
+    trainer = Trainer(env, str(output_dir))
     
     try:
-        # Phase 1: LSTM Only (Supervised State Estimation)
+        # Stage 1: LSTM Encoder Pre-training
         if not args.skip_stage1:
             trainer.train_stage_1_encoder()
         else:
             logger.info("Skipping Stage 1 (Encoder Pre-training)...")
         
-        # Phase 2: Teacher Distillation (Behavioral Cloning)
-        trainer.train_stage_2_distillation()
+        # Stage 2: BC with Recovery Learning
+        trainer.train_stage_2_with_recovery()
+        
+        # Stage 3: SAC Fine-tuning (optional)
+        if args.stage3:
+            trainer.train_stage_3_sac()
         
     except KeyboardInterrupt:
         logger.warning("Training interrupted by user.")
@@ -93,20 +94,41 @@ def train_agent(args: argparse.Namespace) -> None:
         trainer.save_checkpoint("crash_model.pth")
     finally:
         trainer.save_checkpoint("final_model.pth")
-        if env: env.close()
+        if env: 
+            env.close()
         logger.info("Training Finished.")
 
+
 def parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="E2E Phased Training", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description="E2E Training with Recovery Learning", 
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     
     exp_group = parser.add_argument_group('Experiment Configuration')
-    exp_group.add_argument("--config", type=str, default="3", choices=['1', '2', '3'], help="Delay config (1=Low, 2=High, 3=Var)")
-    exp_group.add_argument("--trajectory-type", type=str.lower, default="figure_8", choices=[t.value for t in TrajectoryType])
+    exp_group.add_argument(
+        "--config", type=str, default="3", choices=['1', '2', '3'], 
+        help="Delay config (1=Low, 2=High, 3=Var)"
+    )
+    exp_group.add_argument(
+        "--trajectory-type", type=str.lower, default="figure_8", 
+        choices=[t.value for t in TrajectoryType]
+    )
     
     train_group = parser.add_argument_group('Training Configuration')
     train_group.add_argument("--seed", type=int, default=42)
-    train_group.add_argument("--skip-stage1", action="store_true", help="Skip LSTM pre-training")
-    train_group.add_argument("--render", action="store_true", help="Enable MuJoCo viewer during training")
+    train_group.add_argument(
+        "--skip-stage1", action="store_true", 
+        help="Skip LSTM pre-training"
+    )
+    train_group.add_argument(
+        "--stage3", action="store_true", 
+        help="Enable Stage 3 SAC fine-tuning"
+    )
+    train_group.add_argument(
+        "--render", action="store_true", 
+        help="Enable MuJoCo viewer during training"
+    )
     
     args = parser.parse_args()
     
@@ -116,9 +138,13 @@ def parse_arguments() -> argparse.Namespace:
     args.config = CONFIG_MAP[args.config]
     
     # Map trajectory string to Enum
-    args.trajectory_type = next(t for t in TrajectoryType if t.value.lower() == args.trajectory_type.lower())
+    args.trajectory_type = next(
+        t for t in TrajectoryType 
+        if t.value.lower() == args.trajectory_type.lower()
+    )
     
     return args
+
 
 if __name__ == "__main__":
     train_agent(parse_arguments())

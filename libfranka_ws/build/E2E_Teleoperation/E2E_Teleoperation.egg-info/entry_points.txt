@@ -2,4 +2,3 @@
 agent_node = E2E_Teleoperation.nodes.agent:main
 local_robot = E2E_Teleoperation.nodes.local_robot_sim:main
 remote_node = E2E_Teleoperation.nodes.remote_robot:main
-

@@ -16,7 +16,8 @@ from collections import deque
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Float64MultiArray 
+from std_msgs.msg import Float64MultiArray
+from pathlib import Path
 
 # Custom imports matching your structure
 from E2E_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
@@ -96,15 +97,16 @@ class AgentNode(Node):
         self.get_logger().info(f"Delay Config: {self.delay_config.name}")
 
     def _load_checkpoint(self, path):
+        path = Path(path)
+        
         if not path.exists():
             self.get_logger().error(f"Model checkpoint not found: {path}")
             return
             
         try:
             checkpoint = torch.load(path, map_location=self.device)
-            # Load Actor state (which includes the shared encoder state inside it)
             self.actor.load_state_dict(checkpoint['actor'])
-            self.actor.eval() # Set to inference mode
+            self.actor.eval()
             self.get_logger().info(f"Loaded model from {path}")
         except Exception as e:
             self.get_logger().fatal(f"Failed to load model: {e}")
@@ -168,7 +170,7 @@ class AgentNode(Node):
         # 3. Process Delayed Target History
         # Get delay steps
         history_len = len(self.leader_hist_q)
-        delay_steps = self.delay_sim.get_observation_delay_steps(history_len)
+        delay_steps = self.delay_sim.get_state_delay_steps(history_len)
         norm_delay = delay_steps / cfg.DELAY_INPUT_NORM_FACTOR
         
         target_seq = []
