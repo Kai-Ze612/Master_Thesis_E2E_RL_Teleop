@@ -18,7 +18,6 @@ from torch.distributions import Normal
 
 import E2E_Teleoperation.config.robot_config as cfg
 
-
 class ContinuousLSTMEncoder(nn.Module):
     """
     LSTM encoder that supports both:
@@ -44,18 +43,20 @@ class ContinuousLSTMEncoder(nn.Module):
         )
         
         # Prediction head: LSTM hidden -> predicted state (14D)
+        #
         self.pred_head = nn.Sequential(
-            nn.Linear(self.hidden_dim, 128),
+            nn.Linear(self.hidden_dim, cfg.LSTM_PRED_HEAD_DIM),
             nn.ReLU(),
-            nn.Linear(128, self.output_dim)
+            nn.Linear(cfg.LSTM_PRED_HEAD_DIM, self.output_dim)
         )
         
         # Autoregressive input projection: predicted state (14D) -> LSTM input (15D)
         # This learns to convert a prediction back into LSTM input format
+        #
         self.ar_projection = nn.Sequential(
-            nn.Linear(self.output_dim, 64),
+            nn.Linear(self.output_dim, cfg.LSTM_AR_PROJ_DIM),
             nn.ReLU(),
-            nn.Linear(64, self.state_dim)
+            nn.Linear(cfg.LSTM_AR_PROJ_DIM, self.state_dim)
         )
         
         self._init_weights()

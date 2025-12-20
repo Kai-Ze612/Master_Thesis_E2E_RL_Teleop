@@ -1,17 +1,3 @@
-"""
-SAC Training Algorithm with Continuous LSTM
-
-E2E Training that matches real-world deployment:
-1. LSTM maintains hidden state across episode steps
-2. When observation arrives: use observation sequence
-3. When no observation: use autoregressive prediction
-
-Training Stages:
-1. Stage 1: LSTM encoder pre-training (supervised)
-2. Stage 2: Behavioral cloning with DAgger
-3. Stage 3: SAC fine-tuning (Frozen Encoder + Residual RL)
-"""
-
 import os
 import logging
 import numpy as np
@@ -32,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class EarlyStopper:
     """Early stopping based on validation reward."""
-    def __init__(self, patience: int = 10, min_delta: float = 0.0):
+    def __init__(self, patience: int = cfg.EARLY_STOP_PATIENCE, min_delta: float = 0.0):
         self.patience = patience
         self.min_delta = min_delta
         self.counter = 0
@@ -83,7 +69,7 @@ class Trainer:
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=cfg.CRITIC_LR)
         
         # SAC entropy
-        self.target_entropy = -cfg.N_JOINTS
+        self.target_entropy = getattr(cfg, 'TARGET_ENTROPY', -cfg.N_JOINTS)
         self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
         self.alpha_optimizer = optim.Adam([self.log_alpha], lr=cfg.ALPHA_LR)
         
@@ -91,14 +77,10 @@ class Trainer:
         self.buffer = RecoveryBuffer(cfg.BUFFER_SIZE, cfg.OBS_DIM, cfg.N_JOINTS, self.device)
         
         # Early stopping
-        self.stopper = EarlyStopper(
-            patience=getattr(cfg, 'EARLY_STOP_PATIENCE', 10),
-            min_delta=1.0
-        )
+        self.stopper = EarlyStopper(patience=cfg.EARLY_STOP_PATIENCE, min_delta=1.0)
         
         # Training state
         self.global_step = 0
-        self._episode_count = 0
         
     def _get_alpha(self):
         return self.log_alpha.exp()
@@ -117,16 +99,14 @@ class Trainer:
         for param in self.actor.fc_log_std.parameters(): param.requires_grad = False
         
         updates_completed = 0
-        COLLECTION_STEPS = 5000
-        STAGE1_STEPS = getattr(cfg, 'STAGE1_STEPS', 50000)
         
-        while updates_completed < STAGE1_STEPS:
-            logger.info(f"Collecting {COLLECTION_STEPS} steps for encoder training...")
-            self.collect_with_noise_injection(steps=COLLECTION_STEPS, noise_scale=0.0, noise_type='gaussian')
+        while updates_completed < cfg.STAGE1_STEPS:
+            logger.info(f"Collecting {cfg.STAGE1_COLLECTION_STEPS} steps for encoder training...")
+            self.collect_with_noise_injection(steps=cfg.STAGE1_COLLECTION_STEPS, noise_scale=0.0, noise_type='gaussian')
             
             logger.info(f"Training encoder...")
-            for _ in range(COLLECTION_STEPS):
-                if updates_completed >= STAGE1_STEPS: break
+            for _ in range(cfg.STAGE1_COLLECTION_STEPS):
+                if updates_completed >= cfg.STAGE1_STEPS: break
                 
                 batch = self.buffer.sample_with_recovery_weight(cfg.BATCH_SIZE, recovery_weight=1.0)
                 obs = batch['obs']
@@ -151,12 +131,12 @@ class Trainer:
                 
                 self.enc_optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.shared_encoder.parameters(), max_norm=1.0)
+                torch.nn.utils.clip_grad_norm_(self.shared_encoder.parameters(), max_norm=cfg.MAX_GRAD_NORM)
                 self.enc_optimizer.step()
                 
                 updates_completed += 1
-                if updates_completed % 1000 == 0:
-                    logger.info(f"[Stage 1] Update {updates_completed}/{STAGE1_STEPS} | Loss: {loss.item():.6f}")
+                if updates_completed % cfg.LOG_INTERVAL == 0:
+                    logger.info(f"[Stage 1] Update {updates_completed}/{cfg.STAGE1_STEPS} | Loss: {loss.item():.6f}")
                     self.writer.add_scalar("Stage1/EncoderLoss", loss.item(), updates_completed)
         
         for param in self.actor.parameters(): param.requires_grad = True
@@ -212,7 +192,7 @@ class Trainer:
         
         logger.info(f"Collected {steps} steps, noise={noise_scale:.1f}Nm, {episodes_completed} episodes")
 
-    def train_bc_with_recovery_weighting(self, num_updates: int, recovery_weight: float = 2.0):
+    def train_bc_with_recovery_weighting(self, num_updates: int, recovery_weight: float):
         total_loss = 0.0
         for _ in range(num_updates):
             batch = self.buffer.sample_with_recovery_weight(cfg.BATCH_SIZE, recovery_weight=recovery_weight)
@@ -229,8 +209,8 @@ class Trainer:
             self.actor_optimizer.zero_grad()
             self.enc_optimizer.zero_grad()
             weighted_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=1.0)
-            torch.nn.utils.clip_grad_norm_(self.shared_encoder.parameters(), max_norm=1.0)
+            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=cfg.MAX_GRAD_NORM)
+            torch.nn.utils.clip_grad_norm_(self.shared_encoder.parameters(), max_norm=cfg.MAX_GRAD_NORM)
             self.actor_optimizer.step()
             self.enc_optimizer.step()
             total_loss += weighted_loss.item()
@@ -239,21 +219,18 @@ class Trainer:
     def train_stage_2_with_recovery(self):
         logger.info("=" * 60); logger.info(">>> STAGE 2: BC WITH RECOVERY LEARNING"); logger.info("=" * 60)
         self.global_step = 0
-        COLLECTION_STEPS = 5000
-        PHASE_2A_STEPS = cfg.STAGE2A_TOTAL_STEPS
         
-        # Phase 2a
-        noise_schedule = [(0, 0.5), (10000, 1.0), (20000, 2.0), (30000, 3.0), (40000, 4.0)]
-        while self.global_step < PHASE_2A_STEPS:
+        # Phase 2a: Noise Injection
+        while self.global_step < cfg.STAGE2A_TOTAL_STEPS:
             noise_scale = 0.5
-            for threshold, scale in noise_schedule:
+            for threshold, scale in cfg.STAGE2_NOISE_SCHEDULE:
                 if self.global_step >= threshold: noise_scale = scale
             
             logger.info(f"Step {self.global_step} | Noise injection, scale={noise_scale:.1f}Nm")
-            self.collect_with_noise_injection(steps=COLLECTION_STEPS, noise_scale=noise_scale)
-            self.global_step += COLLECTION_STEPS
+            self.collect_with_noise_injection(steps=cfg.STAGE2_COLLECTION_STEPS, noise_scale=noise_scale)
+            self.global_step += cfg.STAGE2_COLLECTION_STEPS
             
-            avg_loss = self.train_bc_with_recovery_weighting(num_updates=COLLECTION_STEPS, recovery_weight=1.5)
+            avg_loss = self.train_bc_with_recovery_weighting(num_updates=cfg.STAGE2_COLLECTION_STEPS, recovery_weight=cfg.STAGE2_RECOVERY_WEIGHT)
             logger.info(f"[Phase 2a] Avg BC Loss: {avg_loss:.6f}")
             self.writer.add_scalar("Stage2a/BCLoss", avg_loss, self.global_step)
             
@@ -266,16 +243,12 @@ class Trainer:
         
         self.stopper.reset()
         
-        # Phase 2b (DAgger omitted for brevity, uses collect_with_noise_injection or specialized DAgger logic)
-        # Assuming you want to jump to Stage 3 fixes, I'm keeping the core structure.
-        # ... (Stage 2b logic remains as per original or previous correct version) ...
-        # For simplicity in this copy-paste, I will assume Stage 2b follows standard DAgger loop:
-        
+        # Phase 2b: DAgger (Clean collection)
         logger.info("--- Phase 2b: DAgger with Recovery Focus ---")
         while self.global_step < cfg.STAGE2_TOTAL_STEPS:
-            self.collect_with_noise_injection(steps=COLLECTION_STEPS, noise_scale=0.0) # Clean collection for DAgger
-            self.global_step += COLLECTION_STEPS
-            avg_loss = self.train_bc_with_recovery_weighting(num_updates=COLLECTION_STEPS, recovery_weight=2.0)
+            self.collect_with_noise_injection(steps=cfg.STAGE2_COLLECTION_STEPS, noise_scale=0.0)
+            self.global_step += cfg.STAGE2_COLLECTION_STEPS
+            avg_loss = self.train_bc_with_recovery_weighting(num_updates=cfg.STAGE2_COLLECTION_STEPS, recovery_weight=cfg.STAGE2_RECOVERY_WEIGHT)
             if self.global_step % cfg.VAL_FREQ == 0:
                 val_reward = self.validate()
                 logger.info(f"[Validation] Reward: {val_reward:.2f}")
@@ -285,7 +258,7 @@ class Trainer:
         logger.info(">>> STAGE 2 COMPLETE")
 
     # =========================================================================
-    # STAGE 3: SAC Fine-tuning (FINAL FIXED VERSION)
+    # STAGE 3: SAC Fine-tuning
     # =========================================================================
     def train_stage_3_sac(self):
         logger.info("=" * 60)
@@ -294,27 +267,12 @@ class Trainer:
         
         self.stopper.reset()
         
-        # --- CONFIGURATION ---
-        STAGE3_STEPS = getattr(cfg, 'STAGE3_TOTAL_STEPS', 1000000)
-        CRITIC_WARMUP_STEPS = 20000
-        
-        # WEIGHTS: Slower decay, Permanent Minimum (Safety Rail)
-        BC_DECAY_STEPS = 200000
-        INITIAL_BC_WEIGHT = 10.0
-        MIN_BC_WEIGHT = 2.5
-        
-        # REWARD SCALING: Critical for gradient stability
-        REWARD_SCALE = 0.01
-        
-        LOG_INTERVAL = 1000
-
         # --- FIX 1: FREEZE THE ENCODER ---
         logger.info("Freezing Shared Encoder for Stage 3...")
         for param in self.shared_encoder.parameters():
             param.requires_grad = False
             
         # --- FIX 2: VARIANCE SUPPRESSION ---
-        # Force stochastic policy to start deterministic-like
         with torch.no_grad():
             self.actor.fc_log_std.bias.fill_(-5.0)
             self.actor.fc_log_std.weight.fill_(0.01)
@@ -322,43 +280,40 @@ class Trainer:
 
         # Reduce learning rates
         for param_group in self.actor_optimizer.param_groups:
-            param_group['lr'] = cfg.ACTOR_LR * 0.05
+            param_group['lr'] = cfg.ACTOR_LR * cfg.S3_LR_SCALE
         for param_group in self.alpha_optimizer.param_groups:
-            param_group['lr'] = cfg.ALPHA_LR * 0.05
+            param_group['lr'] = cfg.ALPHA_LR * cfg.S3_ALPHA_LR_SCALE
             
-        # --- FIX 3: CRITIC WARM-UP (TEACHER DRIVING) ---
-        logger.info(f"Phase 3a: Critic Warm-up ({CRITIC_WARMUP_STEPS} steps)...")
+        # --- FIX 3: CRITIC WARM-UP ---
+        logger.info(f"Phase 3a: Critic Warm-up ({cfg.S3_CRITIC_WARMUP_STEPS} steps)...")
         obs, info = self.env.reset()
         hidden = self.shared_encoder.init_hidden(batch_size=1, device=self.device)
         prev_prediction = torch.zeros(1, 14, device=self.device)
         ep_reward = 0
         
-        for warmup_step in range(CRITIC_WARMUP_STEPS):
+        for warmup_step in range(cfg.S3_CRITIC_WARMUP_STEPS):
             has_new_obs = info.get('has_new_obs', True)
             obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
             
-            # Teacher Drives (Perfect Action)
+            # Teacher Drives
             r_q, r_qd = self.env.remote.get_joint_state()
             t_q, t_qd = self.env.leader_hist[-1]
             teacher_action = self.env._compute_teacher_torque(r_q, r_qd, t_q, t_qd)
             
-            # Sync LSTM (Forward pass only, no gradient tracking needed here technically, but good to keep state)
             with torch.no_grad():
                 _, _, _, pred, next_hidden = self.actor.sample(
                     obs_t, hidden=hidden, prev_prediction=prev_prediction,
                     has_new_obs=has_new_obs, deterministic=False
                 )
             
-            # Execute Teacher Action
             driving_action = teacher_action
             next_obs, reward, terminated, truncated, next_info = self.env.step(driving_action)
             done = terminated or truncated
             ep_reward += reward
 
-            # Store in Buffer with SCALED REWARD
             self.buffer.add(
                 obs=obs, action=driving_action, 
-                reward=reward * REWARD_SCALE, # Scaling
+                reward=reward * cfg.S3_REWARD_SCALE, 
                 next_obs=next_obs, done=done, 
                 teacher_action=teacher_action, true_state=next_info['true_state'],
                 has_new_obs=has_new_obs, prev_prediction=prev_prediction.cpu().numpy()[0],
@@ -373,12 +328,11 @@ class Trainer:
                 prev_prediction = torch.zeros(1, 14, device=self.device)
                 ep_reward = 0
 
-            # Train Critic Only (using frozen encoder helper)
             if self.buffer.current_size > cfg.BATCH_SIZE:
                 self._update_critic_only_frozen_encoder()
                 
             if warmup_step % 5000 == 0:
-                logger.info(f"Warmup Step {warmup_step}/{CRITIC_WARMUP_STEPS}")
+                logger.info(f"Warmup Step {warmup_step}/{cfg.S3_CRITIC_WARMUP_STEPS}")
 
         logger.info(">>> Critic Warm-up Complete.")
 
@@ -392,18 +346,17 @@ class Trainer:
         debug_sac_loss = 0.0
         debug_bc_loss = 0.0
         
-        while self.global_step < STAGE3_STEPS:
+        while self.global_step < cfg.STAGE3_TOTAL_STEPS:
             self.global_step += 1
             stage3_step_counter += 1
             
-            # BC Decay (Permanent Residual)
-            progress = max(0, min(1, stage3_step_counter / BC_DECAY_STEPS))
-            bc_weight = INITIAL_BC_WEIGHT - (progress * (INITIAL_BC_WEIGHT - MIN_BC_WEIGHT))
+            # BC Decay
+            progress = max(0, min(1, stage3_step_counter / cfg.S3_BC_DECAY_STEPS))
+            bc_weight = cfg.S3_INITIAL_BC_WEIGHT - (progress * (cfg.S3_INITIAL_BC_WEIGHT - cfg.S3_MIN_BC_WEIGHT))
             
             has_new_obs = info.get('has_new_obs', True)
             obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
             
-            # Student Drives (Stochastic)
             with torch.no_grad():
                 action, _, _, pred, next_hidden = self.actor.sample(
                     obs_t, hidden=hidden, prev_prediction=prev_prediction,
@@ -414,15 +367,13 @@ class Trainer:
             next_obs, reward, terminated, truncated, next_info = self.env.step(driving_action)
             done = terminated or truncated
             
-            # Teacher Action for BC Loss
             r_q, r_qd = self.env.remote.get_joint_state()
             t_q, t_qd = self.env.leader_hist[-1]
             teacher_action = self.env._compute_teacher_torque(r_q, r_qd, t_q, t_qd)
 
-            # Store (Scaled Reward)
             self.buffer.add(
                 obs=obs, action=driving_action, 
-                reward=reward * REWARD_SCALE, 
+                reward=reward * cfg.S3_REWARD_SCALE, 
                 next_obs=next_obs, done=done, 
                 teacher_action=teacher_action, true_state=next_info['true_state'],
                 has_new_obs=has_new_obs, prev_prediction=prev_prediction.cpu().numpy()[0],
@@ -433,12 +384,11 @@ class Trainer:
             ep_reward += reward
             
             if self.buffer.current_size > cfg.BATCH_SIZE:
-                # Use Frozen Encoder Update
                 loss_info = self._update_parameters_sac_frozen_encoder(bc_weight)
                 debug_sac_loss = loss_info['a_loss']
                 debug_bc_loss = loss_info['bc_loss']
                 
-                if self.global_step % LOG_INTERVAL == 0:
+                if self.global_step % cfg.LOG_INTERVAL == 0:
                     self.writer.add_scalar("Stage3/CriticLoss", loss_info['c_loss'], self.global_step)
                     self.writer.add_scalar("Stage3/ActorLoss", loss_info['a_loss'], self.global_step)
                     self.writer.add_scalar("Stage3/BCLoss", loss_info['bc_loss'], self.global_step)
@@ -486,13 +436,11 @@ class Trainer:
 
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 1.0)
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), cfg.MAX_GRAD_NORM)
         self.critic_optimizer.step()
 
     def _update_parameters_sac_frozen_encoder(self, bc_weight: float):
         alpha = self._get_alpha()
-        gamma = cfg.GAMMA
-        tau = getattr(cfg, 'POLYAK_TAU', 0.005)
         batch = self.buffer.sample_with_recovery_weight(cfg.BATCH_SIZE, recovery_weight=1.0)
         
         obs, next_obs = batch['obs'], batch['next_obs']
@@ -506,14 +454,14 @@ class Trainer:
             )
             target_q1, target_q2, _ = self.critic_target(next_obs, next_action, hidden=None, has_new_obs=True)
             min_target_q = torch.min(target_q1, target_q2) - alpha * next_log_prob
-            target_q = rewards + (1 - dones) * gamma * min_target_q
+            target_q = rewards + (1 - dones) * cfg.GAMMA * min_target_q
 
         current_q1, current_q2, _ = self.critic(obs, actions, hidden=None, has_new_obs=True)
         critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(current_q2, target_q)
 
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 1.0)
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), cfg.MAX_GRAD_NORM)
         self.critic_optimizer.step()
 
         # 2. Actor Update
@@ -528,8 +476,8 @@ class Trainer:
 
         self.actor_optimizer.zero_grad()
         total_actor_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.0)
-        self.actor_optimizer.step() # NO encoder step here!
+        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), cfg.MAX_GRAD_NORM)
+        self.actor_optimizer.step()
 
         # 3. Alpha Update
         alpha_loss = -(self.log_alpha * (log_prob + self.target_entropy).detach()).mean()
@@ -540,8 +488,8 @@ class Trainer:
         # 4. Polyak
         with torch.no_grad():
             for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                target_param.data.mul_(1 - tau)
-                target_param.data.add_(tau * param.data)
+                target_param.data.mul_(1 - cfg.POLYAK_TAU)
+                target_param.data.add_(cfg.POLYAK_TAU * param.data)
                 
         return {'c_loss': critic_loss.item(), 'a_loss': sac_loss.item(), 'bc_loss': bc_loss.item(), 'alpha': alpha.item()}
 
