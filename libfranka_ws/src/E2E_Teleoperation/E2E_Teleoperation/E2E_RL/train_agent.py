@@ -72,32 +72,21 @@ def train_agent(args: argparse.Namespace) -> None:
     # 4. Trainer
     trainer = Trainer(env, str(output_dir))
     
-    try:
-        # Stage 1: LSTM Encoder Pre-training
+    # NEW LOGIC: Resume or Start Fresh
+    if args.resume_path:
+        # Load the Stage 2 model (Encoder + Actor)
+        # We generally do NOT load the critic because Stage 2 didn't train it for SAC
+        trainer.load_checkpoint(args.resume_path, load_critic=False)
+        logger.info("Skipping Stage 1 & 2 (Resuming from checkpoint)")
+    else:
+        # Standard full training
         if not args.skip_stage1:
             trainer.train_stage_1_encoder()
-        else:
-            logger.info("Skipping Stage 1 (Encoder Pre-training)...")
-        
-        # Stage 2: BC with Recovery Learning
         trainer.train_stage_2_with_recovery()
-        
-        # Stage 3: SAC Fine-tuning (optional)
-        if args.stage3:
-            trainer.train_stage_3_sac()
-        
-    except KeyboardInterrupt:
-        logger.warning("Training interrupted by user.")
-        trainer.save_checkpoint("interrupted_model.pth")
-    except Exception as e:
-        logger.error(f"Training crashed: {e}", exc_info=True)
-        trainer.save_checkpoint("crash_model.pth")
-    finally:
-        trainer.save_checkpoint("final_model.pth")
-        if env: 
-            env.close()
-        logger.info("Training Finished.")
 
+    # Always run Stage 3 (The Refined/Corrected Version)
+    if args.stage3 or args.resume_path:
+        trainer.train_stage_3_sac()
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -130,6 +119,11 @@ def parse_arguments() -> argparse.Namespace:
         help="Enable MuJoCo viewer during training"
     )
     
+    train_group.add_argument(
+        "--resume-path", type=str, default=None,
+        help="Path to 'best_policy.pth' from Stage 2 to resume from"
+    )
+
     args = parser.parse_args()
     
     # Map config ID to Enum

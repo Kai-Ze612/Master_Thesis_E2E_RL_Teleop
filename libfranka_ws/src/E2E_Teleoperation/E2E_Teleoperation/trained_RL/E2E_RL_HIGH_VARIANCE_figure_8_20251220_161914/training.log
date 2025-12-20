@@ -1,0 +1,29 @@
+2025-12-20 16:19:14,717 [INFO] ============================================================
+2025-12-20 16:19:14,717 [INFO] STARTING TRAINING: E2E_RL_HIGH_VARIANCE_figure_8_20251220_161914
+2025-12-20 16:19:14,717 [INFO] Checkpoint Dir: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251220_161914
+2025-12-20 16:19:14,717 [INFO] Model Path: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml
+2025-12-20 16:19:14,717 [INFO] ============================================================
+2025-12-20 16:19:14,728 [INFO] Initializing Environment...
+2025-12-20 16:19:15,668 [INFO] Loading checkpoint from: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy.pth
+2025-12-20 16:19:15,678 [INFO] Critic NOT loaded (fresh start for SAC).
+2025-12-20 16:19:15,678 [INFO] Checkpoint loaded successfully.
+2025-12-20 16:19:15,678 [INFO] Skipping Stage 1 & 2 (Resuming from checkpoint)
+2025-12-20 16:19:15,678 [INFO] ============================================================
+2025-12-20 16:19:15,678 [INFO] >>> STAGE 3: SAC FINE-TUNING (TEACHER FORCED WARMUP)
+2025-12-20 16:19:15,678 [INFO] ============================================================
+2025-12-20 16:19:15,678 [INFO] Phase 3a: Critic Warm-up (20000 steps) - TEACHER DRIVING...
+2025-12-20 16:19:15,829 [INFO] Warmup Step 0/20000
+2025-12-20 16:21:27,918 [INFO] Warmup Step 5000/20000
+2025-12-20 16:25:05,114 [INFO] Warmup Step 10000/20000
+2025-12-20 16:28:42,480 [INFO] Warmup Step 15000/20000
+2025-12-20 16:32:19,893 [INFO] >>> Critic Warm-up Complete.
+2025-12-20 16:32:46,488 [INFO] Step 364 | R: 88 | Est.Q: 2 | BC Loss: 4.8 (w=10.0)
+2025-12-20 16:37:03,915 [INFO] Step 3907 | R: 766 | Est.Q: 12 | BC Loss: 84.4 (w=9.9)
+2025-12-20 16:40:18,917 [INFO] Step 6582 | R: 545 | Est.Q: 17 | BC Loss: 20.7 (w=9.8)
+2025-12-20 16:40:59,067 [INFO] Step 7133 | R: 280 | Est.Q: 18 | BC Loss: 11.9 (w=9.7)
+2025-12-20 16:41:51,223 [INFO] Step 7822 | R: 305 | Est.Q: 19 | BC Loss: 81.2 (w=9.7)
+2025-12-20 16:42:36,978 [INFO] Step 8441 | R: 328 | Est.Q: 20 | BC Loss: 22.6 (w=9.7)
+2025-12-20 16:44:18,101 [INFO] Step 9732 | R: 479 | Est.Q: 22 | BC Loss: 6.4 (w=9.6)
+2025-12-20 16:44:48,608 [INFO] [Stage 3 Validation] Reward: 404.39
+2025-12-20 16:44:48,618 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251220_161914/best_policy_stage3.pth
+2025-12-20 16:44:48,691 [INFO] Step 10001 | R: 184 | Est.Q: 22 | BC Loss: 40.1 (w=9.6)

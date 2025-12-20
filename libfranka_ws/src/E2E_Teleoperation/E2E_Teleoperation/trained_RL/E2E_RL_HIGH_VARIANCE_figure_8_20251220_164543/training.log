@@ -1,0 +1,47 @@
+2025-12-20 16:45:43,516 [INFO] ============================================================
+2025-12-20 16:45:43,516 [INFO] STARTING TRAINING: E2E_RL_HIGH_VARIANCE_figure_8_20251220_164543
+2025-12-20 16:45:43,516 [INFO] Checkpoint Dir: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251220_164543
+2025-12-20 16:45:43,516 [INFO] Model Path: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml
+2025-12-20 16:45:43,516 [INFO] ============================================================
+2025-12-20 16:45:43,526 [INFO] Initializing Environment...
+2025-12-20 16:45:44,487 [INFO] Loading checkpoint from: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy.pth
+2025-12-20 16:45:44,497 [INFO] Critic NOT loaded (fresh start for SAC).
+2025-12-20 16:45:44,497 [INFO] Checkpoint loaded successfully.
+2025-12-20 16:45:44,497 [INFO] Skipping Stage 1 & 2 (Resuming from checkpoint)
+2025-12-20 16:45:44,497 [INFO] ============================================================
+2025-12-20 16:45:44,497 [INFO] >>> STAGE 3: SAC FINE-TUNING (REWARD SCALED)
+2025-12-20 16:45:44,497 [INFO] ============================================================
+2025-12-20 16:45:44,497 [INFO] Phase 3a: Critic Warm-up (20000 steps)...
+2025-12-20 16:45:44,649 [INFO] Warmup Step 0/20000
+2025-12-20 16:47:56,984 [INFO] Warmup Step 5000/20000
+2025-12-20 16:51:34,472 [INFO] Warmup Step 10000/20000
+2025-12-20 16:55:12,253 [INFO] Warmup Step 15000/20000
+2025-12-20 16:58:50,127 [INFO] >>> Critic Warm-up Complete.
+2025-12-20 17:03:18,906 [INFO] Step 3694 | R: 2134 | Est.Q: -0.36 | BC Loss: 10.98
+2025-12-20 17:05:13,601 [INFO] Step 5266 | R: 483 | Est.Q: -0.50 | BC Loss: 7.69
+2025-12-20 17:05:44,703 [INFO] Step 5691 | R: 237 | Est.Q: -0.56 | BC Loss: 8.94
+2025-12-20 17:09:41,984 [INFO] Step 8947 | R: 710 | Est.Q: -1.07 | BC Loss: 19.60
+2025-12-20 17:11:16,640 [INFO] [Stage 3 Validation] Reward: 667.97
+2025-12-20 17:11:16,649 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251220_164543/best_policy_stage3.pth
+2025-12-20 17:11:16,728 [INFO] Step 10001 | R: 455 | Est.Q: -1.20 | BC Loss: 19.01
+2025-12-20 17:12:32,629 [INFO] Step 11043 | R: 298 | Est.Q: -1.54 | BC Loss: 55.58
+2025-12-20 17:15:41,334 [INFO] Step 13629 | R: 1144 | Est.Q: -2.36 | BC Loss: 19.96
+2025-12-20 17:20:00,703 [INFO] Step 17180 | R: 695 | Est.Q: -2.94 | BC Loss: 82.75
+2025-12-20 17:21:14,188 [INFO] Step 18185 | R: 433 | Est.Q: -3.09 | BC Loss: 103.50
+2025-12-20 17:22:02,142 [INFO] Step 18840 | R: 266 | Est.Q: -3.14 | BC Loss: 40.84
+2025-12-20 17:23:23,810 [INFO] Step 19957 | R: 668 | Est.Q: -3.27 | BC Loss: 56.70
+2025-12-20 17:23:33,657 [INFO] [Stage 3 Validation] Reward: 242.85
+2025-12-20 17:23:33,735 [INFO] Step 20001 | R: 40 | Est.Q: -3.24 | BC Loss: 22.72
+2025-12-20 17:24:16,558 [INFO] Step 20587 | R: 250 | Est.Q: -3.39 | BC Loss: 19.21
+2025-12-20 17:25:19,667 [INFO] Step 21449 | R: 212 | Est.Q: -3.54 | BC Loss: 25.74
+2025-12-20 17:26:48,595 [INFO] Step 22664 | R: 480 | Est.Q: -4.60 | BC Loss: 35.05
+2025-12-20 17:28:01,089 [INFO] Step 23654 | R: 389 | Est.Q: -5.47 | BC Loss: 63.68
+2025-12-20 17:29:07,581 [INFO] Step 24562 | R: 310 | Est.Q: -7.17 | BC Loss: 26.63
+2025-12-20 17:30:12,728 [INFO] Step 25427 | R: 366 | Est.Q: -8.92 | BC Loss: 103.82
+2025-12-20 17:32:01,079 [INFO] Step 26836 | R: 648 | Est.Q: -23.93 | BC Loss: 31.24
+2025-12-20 17:33:02,680 [INFO] Step 27614 | R: 250 | Est.Q: -30.29 | BC Loss: 21.80
+2025-12-20 17:34:28,531 [INFO] Step 28780 | R: 268 | Est.Q: -67.08 | BC Loss: 21.52
+2025-12-20 17:36:12,837 [INFO] [Stage 3 Validation] Reward: 329.00
+2025-12-20 17:36:12,909 [INFO] Step 30001 | R: 775 | Est.Q: -108.89 | BC Loss: 18.15
+2025-12-20 17:38:03,202 [INFO] Step 31401 | R: 452 | Est.Q: -185.31 | BC Loss: 23.62
+2025-12-20 17:39:39,938 [INFO] Step 32701 | R: 479 | Est.Q: -337.60 | BC Loss: 64.50

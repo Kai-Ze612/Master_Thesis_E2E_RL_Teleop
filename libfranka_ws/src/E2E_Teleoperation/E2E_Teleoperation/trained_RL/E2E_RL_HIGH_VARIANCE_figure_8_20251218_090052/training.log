@@ -1,0 +1,410 @@
+2025-12-18 09:00:52,609 [INFO] ============================================================
+2025-12-18 09:00:52,609 [INFO] STARTING TRAINING: E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052
+2025-12-18 09:00:52,609 [INFO] Checkpoint Dir: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052
+2025-12-18 09:00:52,609 [INFO] Model Path: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/multipanda_ros2/franka_description/mujoco/franka/scene.xml
+2025-12-18 09:00:52,609 [INFO] ============================================================
+2025-12-18 09:00:52,636 [INFO] Initializing Environment...
+2025-12-18 09:00:53,962 [INFO] ============================================================
+2025-12-18 09:00:53,963 [INFO] >>> STAGE 1: ENCODER PRE-TRAINING
+2025-12-18 09:00:53,963 [INFO] ============================================================
+2025-12-18 09:00:53,963 [INFO] Collecting 5000 steps for encoder training...
+2025-12-18 09:01:06,649 [INFO] Collected 5000 steps with noise=0.0Nm, 0 episodes
+2025-12-18 09:01:06,649 [INFO] Training encoder...
+2025-12-18 09:01:31,995 [INFO] [Stage 1] Update 1000/10000 | Loss: 0.047884
+2025-12-18 09:01:57,253 [INFO] [Stage 1] Update 2000/10000 | Loss: 0.047873
+2025-12-18 09:02:22,524 [INFO] [Stage 1] Update 3000/10000 | Loss: 0.048131
+2025-12-18 09:02:47,860 [INFO] [Stage 1] Update 4000/10000 | Loss: 0.047830
+2025-12-18 09:03:13,283 [INFO] [Stage 1] Update 5000/10000 | Loss: 0.047845
+2025-12-18 09:03:13,283 [INFO] Collecting 5000 steps for encoder training...
+2025-12-18 09:03:25,792 [INFO] Collected 5000 steps with noise=0.0Nm, 0 episodes
+2025-12-18 09:03:25,792 [INFO] Training encoder...
+2025-12-18 09:03:51,131 [INFO] [Stage 1] Update 6000/10000 | Loss: 0.047967
+2025-12-18 09:04:16,502 [INFO] [Stage 1] Update 7000/10000 | Loss: 0.047644
+2025-12-18 09:04:41,990 [INFO] [Stage 1] Update 8000/10000 | Loss: 0.047631
+2025-12-18 09:05:07,380 [INFO] [Stage 1] Update 9000/10000 | Loss: 0.047766
+2025-12-18 09:05:32,821 [INFO] [Stage 1] Update 10000/10000 | Loss: 0.047905
+2025-12-18 09:05:32,821 [INFO] >>> STAGE 1 COMPLETE
+2025-12-18 09:05:32,831 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/stage1_complete.pth
+2025-12-18 09:05:32,831 [INFO] ============================================================
+2025-12-18 09:05:32,831 [INFO] >>> STAGE 2: BC WITH RECOVERY LEARNING
+2025-12-18 09:05:32,831 [INFO] ============================================================
+2025-12-18 09:05:32,831 [INFO] --- Phase 2a: BC with Noise Injection ---
+2025-12-18 09:05:32,831 [INFO] Step 0 | Noise injection, scale=0.5Nm
+2025-12-18 09:05:45,368 [INFO] Collected 5000 steps with noise=0.5Nm, 0 episodes
+2025-12-18 09:07:02,481 [INFO] [Phase 2a] Avg BC Loss: 0.000045
+2025-12-18 09:07:02,481 [INFO] Step 5000 | Noise injection, scale=0.5Nm
+2025-12-18 09:07:15,024 [INFO] Collected 5000 steps with noise=0.5Nm, 0 episodes
+2025-12-18 09:08:32,152 [INFO] [Phase 2a] Avg BC Loss: 0.000021
+2025-12-18 09:08:47,781 [INFO] [Validation] Reward: 417.65
+2025-12-18 09:08:47,790 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy_phase2a.pth
+2025-12-18 09:08:47,790 [INFO] >>> New Best Model Saved!
+2025-12-18 09:08:47,790 [INFO] Step 10000 | Noise injection, scale=1.0Nm
+2025-12-18 09:09:00,315 [INFO] Collected 5000 steps with noise=1.0Nm, 0 episodes
+2025-12-18 09:10:17,588 [INFO] [Phase 2a] Avg BC Loss: 0.000021
+2025-12-18 09:10:17,588 [INFO] Step 15000 | Noise injection, scale=1.0Nm
+2025-12-18 09:10:30,164 [INFO] Collected 5000 steps with noise=1.0Nm, 0 episodes
+2025-12-18 09:11:47,491 [INFO] [Phase 2a] Avg BC Loss: 0.000020
+2025-12-18 09:12:06,082 [INFO] [Validation] Reward: 545.67
+2025-12-18 09:12:06,137 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy_phase2a.pth
+2025-12-18 09:12:06,137 [INFO] >>> New Best Model Saved!
+2025-12-18 09:12:06,137 [INFO] Step 20000 | Noise injection, scale=2.0Nm
+2025-12-18 09:12:18,581 [INFO] Collected 5000 steps with noise=2.0Nm, 0 episodes
+2025-12-18 09:13:36,039 [INFO] [Phase 2a] Avg BC Loss: 0.000022
+2025-12-18 09:13:36,039 [INFO] Step 25000 | Noise injection, scale=2.0Nm
+2025-12-18 09:13:48,518 [INFO] Collected 5000 steps with noise=2.0Nm, 0 episodes
+2025-12-18 09:15:06,155 [INFO] [Phase 2a] Avg BC Loss: 0.000023
+2025-12-18 09:15:50,512 [INFO] [Validation] Reward: 1280.16
+2025-12-18 09:15:50,564 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy_phase2a.pth
+2025-12-18 09:15:50,564 [INFO] >>> New Best Model Saved!
+2025-12-18 09:15:50,564 [INFO] Step 30000 | Noise injection, scale=3.0Nm
+2025-12-18 09:16:03,119 [INFO] Collected 5000 steps with noise=3.0Nm, 0 episodes
+2025-12-18 09:17:21,013 [INFO] [Phase 2a] Avg BC Loss: 0.000026
+2025-12-18 09:17:21,013 [INFO] Step 35000 | Noise injection, scale=3.0Nm
+2025-12-18 09:17:33,433 [INFO] Collected 5000 steps with noise=3.0Nm, 0 episodes
+2025-12-18 09:18:51,407 [INFO] [Phase 2a] Avg BC Loss: 0.000026
+2025-12-18 09:19:40,583 [INFO] [Validation] Reward: 2221.29
+2025-12-18 09:19:40,635 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy_phase2a.pth
+2025-12-18 09:19:40,635 [INFO] >>> New Best Model Saved!
+2025-12-18 09:19:40,635 [INFO] Step 40000 | Noise injection, scale=4.0Nm
+2025-12-18 09:19:52,349 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:21:06,225 [INFO] [Phase 2a] Avg BC Loss: 0.000029
+2025-12-18 09:21:06,225 [INFO] Step 45000 | Noise injection, scale=4.0Nm
+2025-12-18 09:21:17,901 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:22:32,099 [INFO] [Phase 2a] Avg BC Loss: 0.000030
+2025-12-18 09:23:35,398 [INFO] [Validation] Reward: 3189.04
+2025-12-18 09:23:35,417 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy_phase2a.pth
+2025-12-18 09:23:35,417 [INFO] >>> New Best Model Saved!
+2025-12-18 09:23:35,417 [INFO] Step 50000 | Noise injection, scale=4.0Nm
+2025-12-18 09:23:47,089 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:25:01,296 [INFO] [Phase 2a] Avg BC Loss: 0.000033
+2025-12-18 09:25:01,296 [INFO] Step 55000 | Noise injection, scale=4.0Nm
+2025-12-18 09:25:12,994 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:26:27,682 [INFO] [Phase 2a] Avg BC Loss: 0.000034
+2025-12-18 09:27:30,870 [INFO] [Validation] Reward: 3053.88
+2025-12-18 09:27:30,870 [INFO] Step 60000 | Noise injection, scale=4.0Nm
+2025-12-18 09:27:42,592 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:28:57,225 [INFO] [Phase 2a] Avg BC Loss: 0.000035
+2025-12-18 09:28:57,225 [INFO] Step 65000 | Noise injection, scale=4.0Nm
+2025-12-18 09:29:08,959 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:30:23,768 [INFO] [Phase 2a] Avg BC Loss: 0.000037
+2025-12-18 09:31:26,912 [INFO] [Validation] Reward: 530.96
+2025-12-18 09:31:26,912 [INFO] Step 70000 | Noise injection, scale=4.0Nm
+2025-12-18 09:31:38,641 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:32:53,459 [INFO] [Phase 2a] Avg BC Loss: 0.000038
+2025-12-18 09:32:53,459 [INFO] Step 75000 | Noise injection, scale=4.0Nm
+2025-12-18 09:33:05,151 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:34:20,302 [INFO] [Phase 2a] Avg BC Loss: 0.000040
+2025-12-18 09:35:23,596 [INFO] [Validation] Reward: 2083.13
+2025-12-18 09:35:23,596 [INFO] Step 80000 | Noise injection, scale=4.0Nm
+2025-12-18 09:35:35,276 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:36:50,532 [INFO] [Phase 2a] Avg BC Loss: 0.000042
+2025-12-18 09:36:50,532 [INFO] Step 85000 | Noise injection, scale=4.0Nm
+2025-12-18 09:37:02,277 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:38:17,751 [INFO] [Phase 2a] Avg BC Loss: 0.000042
+2025-12-18 09:39:21,064 [INFO] [Validation] Reward: 530.65
+2025-12-18 09:39:21,064 [INFO] Step 90000 | Noise injection, scale=4.0Nm
+2025-12-18 09:39:32,823 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:40:48,500 [INFO] [Phase 2a] Avg BC Loss: 0.000043
+2025-12-18 09:40:48,500 [INFO] Step 95000 | Noise injection, scale=4.0Nm
+2025-12-18 09:41:00,271 [INFO] Collected 5000 steps with noise=4.0Nm, 0 episodes
+2025-12-18 09:42:15,965 [INFO] [Phase 2a] Avg BC Loss: 0.000045
+2025-12-18 09:43:19,135 [INFO] [Validation] Reward: 3920.85
+2025-12-18 09:43:19,187 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy_phase2a.pth
+2025-12-18 09:43:19,187 [INFO] >>> New Best Model Saved!
+2025-12-18 09:43:19,187 [INFO] --- Phase 2b: DAgger with Recovery Focus ---
+2025-12-18 09:43:19,187 [INFO] Step 100000 | DAgger, p_student=0.00
+2025-12-18 09:43:30,838 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=0.30%
+2025-12-18 09:44:46,067 [INFO] [Phase 2b] Avg BC Loss: 0.000034
+2025-12-18 09:44:46,067 [INFO] Step 105000 | DAgger, p_student=0.00
+2025-12-18 09:44:57,787 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=0.66%
+2025-12-18 09:46:13,192 [INFO] [Phase 2b] Avg BC Loss: 0.000030
+2025-12-18 09:47:16,457 [INFO] [Validation] Reward: 531.52
+2025-12-18 09:47:16,466 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy.pth
+2025-12-18 09:47:16,467 [INFO] >>> New Best Model Saved!
+2025-12-18 09:47:16,467 [INFO] Step 110000 | DAgger, p_student=0.00
+2025-12-18 09:47:28,269 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=1.16%
+2025-12-18 09:48:43,790 [INFO] [Phase 2b] Avg BC Loss: 0.000026
+2025-12-18 09:48:43,790 [INFO] Step 115000 | DAgger, p_student=0.01
+2025-12-18 09:48:55,556 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=1.72%
+2025-12-18 09:50:11,264 [INFO] [Phase 2b] Avg BC Loss: 0.000024
+2025-12-18 09:51:14,798 [INFO] [Validation] Reward: 531.40
+2025-12-18 09:51:14,798 [INFO] Step 120000 | DAgger, p_student=0.01
+2025-12-18 09:51:26,514 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=2.37%
+2025-12-18 09:52:44,258 [INFO] [Phase 2b] Avg BC Loss: 0.000022
+2025-12-18 09:52:44,258 [INFO] Step 125000 | DAgger, p_student=0.01
+2025-12-18 09:52:56,112 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=3.25%
+2025-12-18 09:54:13,998 [INFO] [Phase 2b] Avg BC Loss: 0.000021
+2025-12-18 09:55:18,386 [INFO] [Validation] Reward: 4274.91
+2025-12-18 09:55:18,437 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy.pth
+2025-12-18 09:55:18,437 [INFO] >>> New Best Model Saved!
+2025-12-18 09:55:18,438 [INFO] Step 130000 | DAgger, p_student=0.01
+2025-12-18 09:55:30,319 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=4.19%
+2025-12-18 09:56:48,358 [INFO] [Phase 2b] Avg BC Loss: 0.000019
+2025-12-18 09:56:48,358 [INFO] Step 135000 | DAgger, p_student=0.01
+2025-12-18 09:57:00,340 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=5.04%
+2025-12-18 09:58:18,334 [INFO] [Phase 2b] Avg BC Loss: 0.000018
+2025-12-18 09:59:22,983 [INFO] [Validation] Reward: 2729.66
+2025-12-18 09:59:22,983 [INFO] Step 140000 | DAgger, p_student=0.01
+2025-12-18 09:59:34,882 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=5.83%
+2025-12-18 10:00:53,322 [INFO] [Phase 2b] Avg BC Loss: 0.000018
+2025-12-18 10:00:53,322 [INFO] Step 145000 | DAgger, p_student=0.01
+2025-12-18 10:01:05,220 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=6.57%
+2025-12-18 10:02:23,968 [INFO] [Phase 2b] Avg BC Loss: 0.000017
+2025-12-18 10:03:29,012 [INFO] [Validation] Reward: 3942.73
+2025-12-18 10:03:29,012 [INFO] Step 150000 | DAgger, p_student=0.02
+2025-12-18 10:03:40,939 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=7.37%
+2025-12-18 10:04:59,815 [INFO] [Phase 2b] Avg BC Loss: 0.000016
+2025-12-18 10:04:59,815 [INFO] Step 155000 | DAgger, p_student=0.02
+2025-12-18 10:05:11,744 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=8.11%
+2025-12-18 10:06:30,827 [INFO] [Phase 2b] Avg BC Loss: 0.000016
+2025-12-18 10:07:35,736 [INFO] [Validation] Reward: 3522.20
+2025-12-18 10:07:35,736 [INFO] Step 160000 | DAgger, p_student=0.02
+2025-12-18 10:07:47,707 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=8.84%
+2025-12-18 10:09:06,814 [INFO] [Phase 2b] Avg BC Loss: 0.000015
+2025-12-18 10:09:06,814 [INFO] Step 165000 | DAgger, p_student=0.02
+2025-12-18 10:09:18,793 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=9.55%
+2025-12-18 10:10:38,648 [INFO] [Phase 2b] Avg BC Loss: 0.000015
+2025-12-18 10:11:43,678 [INFO] [Validation] Reward: 2497.14
+2025-12-18 10:11:43,678 [INFO] Step 170000 | DAgger, p_student=0.02
+2025-12-18 10:11:55,634 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=10.27%
+2025-12-18 10:13:15,244 [INFO] [Phase 2b] Avg BC Loss: 0.000014
+2025-12-18 10:13:15,244 [INFO] Step 175000 | DAgger, p_student=0.02
+2025-12-18 10:13:27,112 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=11.06%
+2025-12-18 10:14:47,482 [INFO] [Phase 2b] Avg BC Loss: 0.000014
+2025-12-18 10:15:52,384 [INFO] [Validation] Reward: 3142.43
+2025-12-18 10:15:52,384 [INFO] Step 180000 | DAgger, p_student=0.03
+2025-12-18 10:16:04,348 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=11.66%
+2025-12-18 10:17:23,945 [INFO] [Phase 2b] Avg BC Loss: 0.000014
+2025-12-18 10:17:23,945 [INFO] Step 185000 | DAgger, p_student=0.03
+2025-12-18 10:17:35,822 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=12.34%
+2025-12-18 10:18:56,304 [INFO] [Phase 2b] Avg BC Loss: 0.000013
+2025-12-18 10:20:00,889 [INFO] [Validation] Reward: 2959.09
+2025-12-18 10:20:00,889 [INFO] Step 190000 | DAgger, p_student=0.03
+2025-12-18 10:20:12,810 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=13.07%
+2025-12-18 10:21:32,908 [INFO] [Phase 2b] Avg BC Loss: 0.000013
+2025-12-18 10:21:32,908 [INFO] Step 195000 | DAgger, p_student=0.03
+2025-12-18 10:21:44,810 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=13.65%
+2025-12-18 10:23:05,660 [INFO] [Phase 2b] Avg BC Loss: 0.000013
+2025-12-18 10:24:10,456 [INFO] [Validation] Reward: 4344.10
+2025-12-18 10:24:10,507 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy.pth
+2025-12-18 10:24:10,508 [INFO] >>> New Best Model Saved!
+2025-12-18 10:24:10,508 [INFO] Step 200000 | DAgger, p_student=0.03
+2025-12-18 10:24:22,385 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=14.27%
+2025-12-18 10:25:42,850 [INFO] [Phase 2b] Avg BC Loss: 0.000013
+2025-12-18 10:25:42,850 [INFO] Step 205000 | DAgger, p_student=0.03
+2025-12-18 10:25:54,758 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=14.87%
+2025-12-18 10:27:15,303 [INFO] [Phase 2b] Avg BC Loss: 0.000012
+2025-12-18 10:28:20,167 [INFO] [Validation] Reward: 4298.44
+2025-12-18 10:28:20,167 [INFO] Step 210000 | DAgger, p_student=0.04
+2025-12-18 10:28:32,125 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=15.47%
+2025-12-18 10:29:52,894 [INFO] [Phase 2b] Avg BC Loss: 0.000012
+2025-12-18 10:29:52,894 [INFO] Step 215000 | DAgger, p_student=0.04
+2025-12-18 10:30:04,953 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=16.11%
+2025-12-18 10:31:27,228 [INFO] [Phase 2b] Avg BC Loss: 0.000012
+2025-12-18 10:32:32,088 [INFO] [Validation] Reward: 2273.80
+2025-12-18 10:32:32,088 [INFO] Step 220000 | DAgger, p_student=0.04
+2025-12-18 10:32:44,019 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=16.71%
+2025-12-18 10:34:06,233 [INFO] [Phase 2b] Avg BC Loss: 0.000012
+2025-12-18 10:34:06,233 [INFO] Step 225000 | DAgger, p_student=0.04
+2025-12-18 10:34:18,152 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=17.20%
+2025-12-18 10:35:41,238 [INFO] [Phase 2b] Avg BC Loss: 0.000012
+2025-12-18 10:36:46,019 [INFO] [Validation] Reward: 4428.90
+2025-12-18 10:36:46,073 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy.pth
+2025-12-18 10:36:46,073 [INFO] >>> New Best Model Saved!
+2025-12-18 10:36:46,073 [INFO] Step 230000 | DAgger, p_student=0.04
+2025-12-18 10:36:57,981 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=17.71%
+2025-12-18 10:38:21,071 [INFO] [Phase 2b] Avg BC Loss: 0.000012
+2025-12-18 10:38:21,071 [INFO] Step 235000 | DAgger, p_student=0.04
+2025-12-18 10:38:32,978 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=18.27%
+2025-12-18 10:39:56,150 [INFO] [Phase 2b] Avg BC Loss: 0.000012
+2025-12-18 10:41:00,938 [INFO] [Validation] Reward: 4394.38
+2025-12-18 10:41:00,938 [INFO] Step 240000 | DAgger, p_student=0.05
+2025-12-18 10:41:12,825 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=18.75%
+2025-12-18 10:42:36,081 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 10:42:36,081 [INFO] Step 245000 | DAgger, p_student=0.05
+2025-12-18 10:42:47,958 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=19.28%
+2025-12-18 10:44:11,208 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 10:45:16,078 [INFO] [Validation] Reward: 4461.55
+2025-12-18 10:45:16,161 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy.pth
+2025-12-18 10:45:16,162 [INFO] >>> New Best Model Saved!
+2025-12-18 10:45:16,162 [INFO] Step 250000 | DAgger, p_student=0.05
+2025-12-18 10:45:28,181 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=19.76%
+2025-12-18 10:46:51,575 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 10:46:51,575 [INFO] Step 255000 | DAgger, p_student=0.05
+2025-12-18 10:47:03,518 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=20.23%
+2025-12-18 10:48:26,949 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 10:49:31,781 [INFO] [Validation] Reward: 3846.63
+2025-12-18 10:49:31,781 [INFO] Step 260000 | DAgger, p_student=0.05
+2025-12-18 10:49:43,734 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=20.70%
+2025-12-18 10:51:07,139 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 10:51:07,139 [INFO] Step 265000 | DAgger, p_student=0.05
+2025-12-18 10:51:18,934 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=21.18%
+2025-12-18 10:52:42,274 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 10:53:30,102 [INFO] [Validation] Reward: 2326.74
+2025-12-18 10:53:30,102 [INFO] Step 270000 | DAgger, p_student=0.06
+2025-12-18 10:53:42,623 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=21.64%
+2025-12-18 10:55:06,156 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 10:55:06,156 [INFO] Step 275000 | DAgger, p_student=0.06
+2025-12-18 10:55:18,578 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=22.08%
+2025-12-18 10:56:42,183 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 10:57:49,821 [INFO] [Validation] Reward: 3891.12
+2025-12-18 10:57:49,821 [INFO] Step 280000 | DAgger, p_student=0.06
+2025-12-18 10:58:02,403 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=22.51%
+2025-12-18 10:59:26,094 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 10:59:26,094 [INFO] Step 285000 | DAgger, p_student=0.06
+2025-12-18 10:59:38,587 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=22.93%
+2025-12-18 11:01:02,806 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 11:02:10,602 [INFO] [Validation] Reward: 3788.77
+2025-12-18 11:02:10,602 [INFO] Step 290000 | DAgger, p_student=0.06
+2025-12-18 11:02:23,038 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=23.36%
+2025-12-18 11:03:46,717 [INFO] [Phase 2b] Avg BC Loss: 0.000011
+2025-12-18 11:03:46,717 [INFO] Step 295000 | DAgger, p_student=0.07
+2025-12-18 11:03:59,118 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=23.77%
+2025-12-18 11:05:22,987 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:06:30,653 [INFO] [Validation] Reward: 4251.13
+2025-12-18 11:06:30,653 [INFO] Step 300000 | DAgger, p_student=0.07
+2025-12-18 11:06:43,065 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=24.13%
+2025-12-18 11:08:07,239 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:08:07,240 [INFO] Step 305000 | DAgger, p_student=0.07
+2025-12-18 11:08:19,622 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=24.51%
+2025-12-18 11:09:44,301 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:10:52,083 [INFO] [Validation] Reward: 3978.25
+2025-12-18 11:10:52,083 [INFO] Step 310000 | DAgger, p_student=0.07
+2025-12-18 11:11:04,511 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=24.87%
+2025-12-18 11:12:29,005 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:12:29,005 [INFO] Step 315000 | DAgger, p_student=0.07
+2025-12-18 11:12:41,444 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=25.28%
+2025-12-18 11:14:06,618 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:15:14,251 [INFO] [Validation] Reward: 4166.29
+2025-12-18 11:15:14,251 [INFO] Step 320000 | DAgger, p_student=0.07
+2025-12-18 11:15:26,666 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=25.61%
+2025-12-18 11:16:51,754 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:16:51,754 [INFO] Step 325000 | DAgger, p_student=0.07
+2025-12-18 11:17:04,190 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=25.94%
+2025-12-18 11:18:29,792 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:19:37,244 [INFO] [Validation] Reward: 4340.07
+2025-12-18 11:19:37,244 [INFO] Step 330000 | DAgger, p_student=0.08
+2025-12-18 11:19:49,705 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=26.31%
+2025-12-18 11:21:15,779 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:21:15,780 [INFO] Step 335000 | DAgger, p_student=0.08
+2025-12-18 11:21:28,240 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=26.65%
+2025-12-18 11:22:54,701 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:24:02,274 [INFO] [Validation] Reward: 4707.62
+2025-12-18 11:24:02,328 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy.pth
+2025-12-18 11:24:02,328 [INFO] >>> New Best Model Saved!
+2025-12-18 11:24:02,328 [INFO] Step 340000 | DAgger, p_student=0.08
+2025-12-18 11:24:14,819 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=27.01%
+2025-12-18 11:25:41,283 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:25:41,283 [INFO] Step 345000 | DAgger, p_student=0.08
+2025-12-18 11:25:53,722 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=27.33%
+2025-12-18 11:27:20,390 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:28:27,777 [INFO] [Validation] Reward: 4142.55
+2025-12-18 11:28:27,777 [INFO] Step 350000 | DAgger, p_student=0.08
+2025-12-18 11:28:40,201 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=27.62%
+2025-12-18 11:30:06,992 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:30:06,992 [INFO] Step 355000 | DAgger, p_student=0.08
+2025-12-18 11:30:19,355 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=27.92%
+2025-12-18 11:31:46,650 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:32:54,214 [INFO] [Validation] Reward: 2250.70
+2025-12-18 11:32:54,214 [INFO] Step 360000 | DAgger, p_student=0.09
+2025-12-18 11:33:06,626 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=28.19%
+2025-12-18 11:34:34,029 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:34:34,030 [INFO] Step 365000 | DAgger, p_student=0.09
+2025-12-18 11:34:46,395 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=28.50%
+2025-12-18 11:36:14,014 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:37:21,402 [INFO] [Validation] Reward: 4259.46
+2025-12-18 11:37:21,402 [INFO] Step 370000 | DAgger, p_student=0.09
+2025-12-18 11:37:33,866 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=28.81%
+2025-12-18 11:39:01,567 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:39:01,567 [INFO] Step 375000 | DAgger, p_student=0.09
+2025-12-18 11:39:13,980 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=29.11%
+2025-12-18 11:40:42,009 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:41:50,190 [INFO] [Validation] Reward: 3037.88
+2025-12-18 11:41:50,190 [INFO] Step 380000 | DAgger, p_student=0.09
+2025-12-18 11:42:02,740 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=29.40%
+2025-12-18 11:43:31,493 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:43:31,493 [INFO] Step 385000 | DAgger, p_student=0.09
+2025-12-18 11:43:44,025 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=29.68%
+2025-12-18 11:45:13,088 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:46:21,059 [INFO] [Validation] Reward: 3853.96
+2025-12-18 11:46:21,059 [INFO] Step 390000 | DAgger, p_student=0.10
+2025-12-18 11:46:33,584 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=29.95%
+2025-12-18 11:48:02,730 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:48:02,730 [INFO] Step 395000 | DAgger, p_student=0.10
+2025-12-18 11:48:15,203 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=30.21%
+2025-12-18 11:49:44,746 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:50:53,152 [INFO] [Validation] Reward: 3288.64
+2025-12-18 11:50:53,152 [INFO] Step 400000 | DAgger, p_student=0.10
+2025-12-18 11:51:05,666 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=30.49%
+2025-12-18 11:52:35,039 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:52:35,040 [INFO] Step 405000 | DAgger, p_student=0.10
+2025-12-18 11:52:47,564 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=30.77%
+2025-12-18 11:54:17,364 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:55:25,302 [INFO] [Validation] Reward: 2740.43
+2025-12-18 11:55:25,302 [INFO] Step 410000 | DAgger, p_student=0.10
+2025-12-18 11:55:37,778 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=31.00%
+2025-12-18 11:57:07,528 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:57:07,529 [INFO] Step 415000 | DAgger, p_student=0.10
+2025-12-18 11:57:20,069 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=31.27%
+2025-12-18 11:58:50,299 [INFO] [Phase 2b] Avg BC Loss: 0.000010
+2025-12-18 11:59:58,512 [INFO] [Validation] Reward: 4696.64
+2025-12-18 11:59:58,512 [INFO] Step 420000 | DAgger, p_student=0.11
+2025-12-18 12:00:11,042 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=31.52%
+2025-12-18 12:01:41,327 [INFO] [Phase 2b] Avg BC Loss: 0.000009
+2025-12-18 12:01:41,328 [INFO] Step 425000 | DAgger, p_student=0.11
+2025-12-18 12:01:53,888 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=31.75%
+2025-12-18 12:03:24,230 [INFO] [Phase 2b] Avg BC Loss: 0.000009
+2025-12-18 12:04:32,691 [INFO] [Validation] Reward: 3633.89
+2025-12-18 12:04:32,691 [INFO] Step 430000 | DAgger, p_student=0.11
+2025-12-18 12:04:45,217 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=32.01%
+2025-12-18 12:06:15,802 [INFO] [Phase 2b] Avg BC Loss: 0.000009
+2025-12-18 12:06:15,802 [INFO] Step 435000 | DAgger, p_student=0.11
+2025-12-18 12:06:28,269 [INFO] Collected 5000 steps, 0 episodes, recovery_ratio=32.25%
+2025-12-18 12:07:59,154 [INFO] [Phase 2b] Avg BC Loss: 0.000009
+2025-12-18 12:08:49,307 [INFO] [Validation] Reward: 1950.50
+2025-12-18 12:08:49,307 [INFO] Early stopping triggered. Best metric: 4707.62 at step 340000. No improvement for 10 evaluations.
+2025-12-18 12:08:49,307 [INFO] >>> Early Stopping in Phase 2b
+2025-12-18 12:08:49,307 [INFO] >>> STAGE 2 COMPLETE
+2025-12-18 12:08:49,307 [INFO] ============================================================
+2025-12-18 12:08:49,307 [INFO] >>> STAGE 3: SAC FINE-TUNING (REFINED)
+2025-12-18 12:08:49,307 [INFO] ============================================================
+2025-12-18 12:08:49,307 [INFO] Phase 3a: Critic Warm-up (20000 steps)...
+2025-12-18 12:08:49,354 [INFO] Warmup Step 0/20000 completed
+2025-12-18 12:13:01,775 [INFO] Warmup Step 5000/20000 completed
+2025-12-18 12:17:14,304 [INFO] Warmup Step 10000/20000 completed
+2025-12-18 12:21:27,455 [INFO] Warmup Step 15000/20000 completed
+2025-12-18 12:25:40,479 [INFO] >>> Critic Warm-up Complete. Starting Full Training.
+2025-12-18 12:25:46,010 [INFO] Step 440067 | Ep Reward: 19.83 | BC Weight: 1.0000
+2025-12-18 12:25:54,105 [INFO] Step 440166 | Ep Reward: 40.14 | BC Weight: 1.0000
+2025-12-18 12:27:59,952 [INFO] Step 441704 | Ep Reward: 346.50 | BC Weight: 1.0000
+2025-12-18 12:28:56,081 [INFO] Step 442389 | Ep Reward: 253.79 | BC Weight: 1.0000
+2025-12-18 12:32:31,474 [INFO] Step 445021 | Ep Reward: 480.85 | BC Weight: 1.0000
+2025-12-18 12:33:36,805 [INFO] Step 445819 | Ep Reward: 248.82 | BC Weight: 1.0000
+2025-12-18 12:34:43,910 [INFO] Step 446639 | Ep Reward: 221.81 | BC Weight: 1.0000
+2025-12-18 12:40:03,261 [INFO] [Stage 3 Validation] Reward: 374.74
+2025-12-18 12:40:03,271 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/best_policy_stage3.pth
+2025-12-18 12:40:03,351 [INFO] Step 450001 | Ep Reward: 352.69 | BC Weight: 1.0000
+2025-12-18 12:42:26,770 [INFO] Step 451802 | Ep Reward: 261.21 | BC Weight: 1.0000
+2025-12-18 12:44:54,367 [INFO] Step 453652 | Ep Reward: 206.12 | BC Weight: 1.0000
+2025-12-18 12:47:07,055 [INFO] Step 455313 | Ep Reward: 315.34 | BC Weight: 1.0000
+2025-12-18 12:49:17,307 [INFO] Step 456901 | Ep Reward: 314.72 | BC Weight: 1.0000
+2025-12-18 12:50:48,340 [INFO] Step 458011 | Ep Reward: 238.00 | BC Weight: 1.0000
+2025-12-18 12:53:11,930 [INFO] Step 459764 | Ep Reward: 315.84 | BC Weight: 1.0000
+2025-12-18 12:53:44,889 [INFO] [Stage 3 Validation] Reward: 171.32
+2025-12-18 12:53:44,971 [INFO] Step 460001 | Ep Reward: 108.51 | BC Weight: 1.0000
+2025-12-18 12:55:44,187 [INFO] Step 461457 | Ep Reward: 211.78 | BC Weight: 1.0000
+2025-12-18 12:57:56,256 [INFO] Step 463064 | Ep Reward: 238.16 | BC Weight: 1.0000
+2025-12-18 12:58:53,461 [INFO] Step 463760 | Ep Reward: 146.96 | BC Weight: 1.0000
+2025-12-18 12:59:49,526 [INFO] Step 464434 | Ep Reward: 163.81 | BC Weight: 1.0000
+2025-12-18 13:00:06,762 [INFO] Step 464651 | Ep Reward: 52.61 | BC Weight: 1.0000
+2025-12-18 13:00:43,847 [INFO] Step 465119 | Ep Reward: 80.56 | BC Weight: 1.0000
+2025-12-18 13:01:18,220 [INFO] Step 465552 | Ep Reward: 77.28 | BC Weight: 1.0000
+2025-12-18 13:01:29,529 [INFO] Step 465694 | Ep Reward: 54.18 | BC Weight: 1.0000
+2025-12-18 13:01:45,982 [INFO] Step 465901 | Ep Reward: 44.33 | BC Weight: 1.0000
+2025-12-18 13:02:15,924 [INFO] Step 466278 | Ep Reward: 115.67 | BC Weight: 1.0000
+2025-12-18 13:04:06,264 [INFO] Step 467625 | Ep Reward: 215.86 | BC Weight: 1.0000
+2025-12-18 13:04:50,439 [INFO] Step 468167 | Ep Reward: 120.93 | BC Weight: 1.0000
+2025-12-18 13:05:06,538 [WARNING] Training interrupted by user.
+2025-12-18 13:05:06,547 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/interrupted_model.pth
+2025-12-18 13:05:06,556 [INFO] Saved: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_figure_8_20251218_090052/final_model.pth
+2025-12-18 13:05:06,566 [INFO] Training Finished.
