@@ -74,7 +74,6 @@ class Figure8TrajectoryGenerator(TrajectoryGenerator):
         dz = self._params.scale[2] * np.sin(phase)
         return self._params.center + np.array([dx, dy, dz], dtype=np.float64)
 
-
 class SquareTrajectoryGenerator(TrajectoryGenerator):
     def compute_position(self, t: float) -> np.ndarray:
         period = 8.0

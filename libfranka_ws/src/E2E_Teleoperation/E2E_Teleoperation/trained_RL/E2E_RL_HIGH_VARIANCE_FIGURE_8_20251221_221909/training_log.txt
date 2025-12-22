@@ -1,0 +1,176 @@
+Training started in: /home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_FIGURE_8_20251221_221909
+============================================================
+
+>>> STAGE 3: SAC FINE TUNING
+    Reward Scale: 1.0
+    BC Decay Steps: 50000
+    Initial BC Weight: 5.0
+    Target Tau: 0.001
+    Policy Delay: 2
+>> LSTM Encoder is now FROZEN.
+>> Policy initialized with low variance.
+>> Starting Critic Warmup (10000 steps)...
+>> Critic warmup complete.
+>> Starting Main SAC Training Loop...
+[S3(BC=5.00) Step 0] R: 0.0 | AvgR: 0.0 | C_Loss: 9339.90 | A_Loss: -188.69 | BC: 0.174 | Alpha: 0.0100 | Q_mean: 7.4 | Trk: 0.000
+[S3(BC=5.00) Step 50] R: 0.0 | AvgR: 0.0 | C_Loss: 28231.80 | A_Loss: -2706.92 | BC: 0.558 | Alpha: 0.0101 | Q_mean: 18.1 | Trk: 0.463
+ >>> EPISODE 1 | REWARD: 63.00 | AVG(20): 0.00 <<<
+[S3(BC=4.99) Step 100] R: 63.0 | AvgR: 63.0 | C_Loss: 63359.66 | A_Loss: -3163.30 | BC: 0.894 | Alpha: 0.0101 | Q_mean: 31.1 | Trk: 0.177
+ >>> EPISODE 2 | REWARD: 52.83 | AVG(20): 63.00 <<<
+[S3(BC=4.99) Step 150] R: 52.8 | AvgR: 57.9 | C_Loss: 116987.20 | A_Loss: -3150.83 | BC: 0.992 | Alpha: 0.0102 | Q_mean: 44.0 | Trk: 0.028
+ >>> EPISODE 3 | REWARD: 30.42 | AVG(20): 57.92 <<<
+[S3(BC=4.98) Step 200] R: 30.4 | AvgR: 48.8 | C_Loss: 212624.53 | A_Loss: -3095.23 | BC: 1.012 | Alpha: 0.0103 | Q_mean: 73.6 | Trk: 0.115
+ >>> EPISODE 4 | REWARD: 29.00 | AVG(20): 48.75 <<<
+[S3(BC=4.98) Step 250] R: 29.0 | AvgR: 43.8 | C_Loss: 300478.19 | A_Loss: -3025.20 | BC: 1.026 | Alpha: 0.0104 | Q_mean: 74.8 | Trk: 0.498
+ >>> EPISODE 5 | REWARD: 24.90 | AVG(20): 43.81 <<<
+[S3(BC=4.97) Step 300] R: 24.9 | AvgR: 40.0 | C_Loss: 501798.06 | A_Loss: -2967.93 | BC: 1.057 | Alpha: 0.0105 | Q_mean: 117.8 | Trk: 1.556
+ >>> EPISODE 6 | REWARD: 25.46 | AVG(20): 40.03 <<<
+ >>> EPISODE 7 | REWARD: 25.78 | AVG(20): 37.60 <<<
+[S3(BC=4.97) Step 350] R: 25.8 | AvgR: 35.9 | C_Loss: 319014.94 | A_Loss: -2903.44 | BC: 1.047 | Alpha: 0.0105 | Q_mean: 78.7 | Trk: 0.117
+ >>> EPISODE 8 | REWARD: 25.39 | AVG(20): 35.91 <<<
+[S3(BC=4.96) Step 400] R: 25.4 | AvgR: 34.6 | C_Loss: 318168.31 | A_Loss: -2850.16 | BC: 1.040 | Alpha: 0.0106 | Q_mean: 73.1 | Trk: 0.700
+ >>> EPISODE 9 | REWARD: 25.38 | AVG(20): 34.60 <<<
+[S3(BC=4.96) Step 450] R: 25.4 | AvgR: 33.6 | C_Loss: 466816.38 | A_Loss: -2792.82 | BC: 1.063 | Alpha: 0.0107 | Q_mean: 116.7 | Trk: 1.839
+ >>> EPISODE 10 | REWARD: 25.66 | AVG(20): 33.57 <<<
+>> New best model! Avg Reward: 32.78
+ >>> EPISODE 11 | REWARD: 25.38 | AVG(20): 32.78 <<<
+[S3(BC=4.95) Step 500] R: 25.4 | AvgR: 32.1 | C_Loss: 566363.88 | A_Loss: -2738.65 | BC: 1.081 | Alpha: 0.0107 | Q_mean: 134.7 | Trk: 0.175
+ >>> EPISODE 12 | REWARD: 25.38 | AVG(20): 32.11 <<<
+[S3(BC=4.95) Step 550] R: 25.4 | AvgR: 31.5 | C_Loss: 647463.75 | A_Loss: -2681.72 | BC: 1.086 | Alpha: 0.0108 | Q_mean: 157.8 | Trk: 0.831
+ >>> EPISODE 13 | REWARD: 25.39 | AVG(20): 31.55 <<<
+ >>> EPISODE 14 | REWARD: 25.37 | AVG(20): 31.07 <<<
+[S3(BC=4.94) Step 600] R: 25.4 | AvgR: 30.7 | C_Loss: 384217.44 | A_Loss: -2629.67 | BC: 1.057 | Alpha: 0.0108 | Q_mean: 102.8 | Trk: 0.000
+ >>> EPISODE 15 | REWARD: 25.38 | AVG(20): 30.67 <<<
+[S3(BC=4.94) Step 650] R: 25.4 | AvgR: 30.3 | C_Loss: 654630.38 | A_Loss: -2580.55 | BC: 1.099 | Alpha: 0.0109 | Q_mean: 155.4 | Trk: 0.245
+ >>> EPISODE 16 | REWARD: 25.30 | AVG(20): 30.31 <<<
+[S3(BC=4.93) Step 700] R: 25.3 | AvgR: 30.0 | C_Loss: 667250.25 | A_Loss: -2524.62 | BC: 1.108 | Alpha: 0.0109 | Q_mean: 157.9 | Trk: 0.989
+ >>> EPISODE 17 | REWARD: 25.38 | AVG(20): 30.00 <<<
+ >>> EPISODE 18 | REWARD: 25.38 | AVG(20): 29.73 <<<
+[S3(BC=4.93) Step 750] R: 25.4 | AvgR: 29.5 | C_Loss: 651270.50 | A_Loss: -2474.11 | BC: 1.116 | Alpha: 0.0110 | Q_mean: 154.4 | Trk: 0.006
+ >>> EPISODE 19 | REWARD: 25.38 | AVG(20): 29.49 <<<
+[S3(BC=4.92) Step 800] R: 25.4 | AvgR: 29.3 | C_Loss: 723704.12 | A_Loss: -2425.75 | BC: 1.120 | Alpha: 0.0111 | Q_mean: 184.2 | Trk: 0.323
+ >>> EPISODE 20 | REWARD: 25.38 | AVG(20): 29.27 <<<
+[S3(BC=4.92) Step 850] R: 25.4 | AvgR: 29.1 | C_Loss: 662001.25 | A_Loss: -2377.97 | BC: 1.120 | Alpha: 0.0111 | Q_mean: 168.9 | Trk: 1.153
+ >>> EPISODE 21 | REWARD: 25.39 | AVG(20): 29.08 <<<
+ >>> EPISODE 22 | REWARD: 25.39 | AVG(20): 27.20 <<<
+[S3(BC=4.91) Step 900] R: 25.4 | AvgR: 25.8 | C_Loss: 556123.94 | A_Loss: -2328.90 | BC: 1.061 | Alpha: 0.0112 | Q_mean: 142.9 | Trk: 0.023
+ >>> EPISODE 23 | REWARD: 25.45 | AVG(20): 25.82 <<<
+[S3(BC=4.91) Step 950] R: 25.4 | AvgR: 25.6 | C_Loss: 548829.50 | A_Loss: -2284.16 | BC: 0.993 | Alpha: 0.0112 | Q_mean: 150.3 | Trk: 0.402
+ >>> EPISODE 24 | REWARD: 25.61 | AVG(20): 25.57 <<<
+[S3(BC=4.90) Step 1000] R: 25.6 | AvgR: 25.4 | C_Loss: 595624.00 | A_Loss: -2236.49 | BC: 1.019 | Alpha: 0.0113 | Q_mean: 164.1 | Trk: 1.297
+ >>> EPISODE 25 | REWARD: 25.81 | AVG(20): 25.41 <<<
+ >>> EPISODE 26 | REWARD: 26.48 | AVG(20): 25.45 <<<
+[S3(BC=4.90) Step 1050] R: 26.5 | AvgR: 25.5 | C_Loss: 648638.00 | A_Loss: -2189.93 | BC: 1.088 | Alpha: 0.0113 | Q_mean: 179.1 | Trk: 0.044
+ >>> EPISODE 27 | REWARD: 27.58 | AVG(20): 25.50 <<<
+[S3(BC=4.89) Step 1100] R: 27.6 | AvgR: 25.6 | C_Loss: 571797.88 | A_Loss: -2145.72 | BC: 1.132 | Alpha: 0.0114 | Q_mean: 159.0 | Trk: 0.365
+ >>> EPISODE 28 | REWARD: 26.53 | AVG(20): 25.59 <<<
+[S3(BC=4.89) Step 1150] R: 26.5 | AvgR: 25.6 | C_Loss: 624755.88 | A_Loss: -2099.94 | BC: 1.182 | Alpha: 0.0114 | Q_mean: 180.9 | Trk: 1.131
+ >>> EPISODE 29 | REWARD: 26.42 | AVG(20): 25.65 <<<
+ >>> EPISODE 30 | REWARD: 25.96 | AVG(20): 25.70 <<<
+[S3(BC=4.88) Step 1200] R: 26.0 | AvgR: 25.7 | C_Loss: 562113.94 | A_Loss: -2059.62 | BC: 1.158 | Alpha: 0.0115 | Q_mean: 162.7 | Trk: 0.022
+ >>> EPISODE 31 | REWARD: 25.94 | AVG(20): 25.72 <<<
+[S3(BC=4.88) Step 1250] R: 25.9 | AvgR: 25.7 | C_Loss: 600957.25 | A_Loss: -2012.16 | BC: 1.194 | Alpha: 0.0115 | Q_mean: 184.3 | Trk: 0.379
+ >>> EPISODE 32 | REWARD: 26.06 | AVG(20): 25.74 <<<
+[S3(BC=4.87) Step 1300] R: 26.1 | AvgR: 25.8 | C_Loss: 640501.25 | A_Loss: -1969.04 | BC: 1.205 | Alpha: 0.0116 | Q_mean: 189.6 | Trk: 1.227
+ >>> EPISODE 33 | REWARD: 26.61 | AVG(20): 25.78 <<<
+ >>> EPISODE 34 | REWARD: 26.24 | AVG(20): 25.84 <<<
+[S3(BC=4.87) Step 1350] R: 26.2 | AvgR: 25.9 | C_Loss: 665619.12 | A_Loss: -1925.00 | BC: 1.227 | Alpha: 0.0117 | Q_mean: 211.5 | Trk: 0.022
+ >>> EPISODE 35 | REWARD: 25.93 | AVG(20): 25.88 <<<
+[S3(BC=4.86) Step 1400] R: 25.9 | AvgR: 25.9 | C_Loss: 654732.19 | A_Loss: -1881.54 | BC: 1.233 | Alpha: 0.0117 | Q_mean: 210.8 | Trk: 0.365
+ >>> EPISODE 36 | REWARD: 26.52 | AVG(20): 25.91 <<<
+[S3(BC=4.86) Step 1450] R: 26.5 | AvgR: 26.0 | C_Loss: 538201.81 | A_Loss: -1845.67 | BC: 1.204 | Alpha: 0.0118 | Q_mean: 171.6 | Trk: 1.168
+ >>> EPISODE 37 | REWARD: 25.92 | AVG(20): 25.97 <<<
+ >>> EPISODE 38 | REWARD: 25.92 | AVG(20): 26.00 <<<
+[S3(BC=4.85) Step 1500] R: 25.9 | AvgR: 26.0 | C_Loss: 513071.75 | A_Loss: -1805.04 | BC: 1.209 | Alpha: 0.0118 | Q_mean: 164.8 | Trk: 0.034
+ >>> EPISODE 39 | REWARD: 26.55 | AVG(20): 26.03 <<<
+[S3(BC=4.85) Step 1550] R: 26.5 | AvgR: 26.1 | C_Loss: 463032.00 | A_Loss: -1764.43 | BC: 1.203 | Alpha: 0.0119 | Q_mean: 159.2 | Trk: 0.386
+ >>> EPISODE 40 | REWARD: 25.92 | AVG(20): 26.08 <<<
+[S3(BC=4.84) Step 1600] R: 25.9 | AvgR: 26.1 | C_Loss: 608938.12 | A_Loss: -1713.17 | BC: 1.295 | Alpha: 0.0120 | Q_mean: 211.0 | Trk: 1.258
+ >>> EPISODE 41 | REWARD: 25.92 | AVG(20): 26.11 <<<
+ >>> EPISODE 42 | REWARD: 25.92 | AVG(20): 26.14 <<<
+[S3(BC=4.84) Step 1650] R: 25.9 | AvgR: 26.2 | C_Loss: 546744.12 | A_Loss: -1676.28 | BC: 1.264 | Alpha: 0.0120 | Q_mean: 197.3 | Trk: 0.049
+ >>> EPISODE 43 | REWARD: 25.92 | AVG(20): 26.17 <<<
+[S3(BC=4.83) Step 1700] R: 25.9 | AvgR: 26.2 | C_Loss: 493965.81 | A_Loss: -1643.65 | BC: 1.235 | Alpha: 0.0121 | Q_mean: 180.5 | Trk: 0.484
+ >>> EPISODE 44 | REWARD: 25.92 | AVG(20): 26.19 <<<
+[S3(BC=4.83) Step 1750] R: 25.9 | AvgR: 26.2 | C_Loss: 455059.12 | A_Loss: -1600.99 | BC: 1.256 | Alpha: 0.0121 | Q_mean: 171.0 | Trk: 1.451
+ >>> EPISODE 45 | REWARD: 25.92 | AVG(20): 26.20 <<<
+ >>> EPISODE 46 | REWARD: 25.92 | AVG(20): 26.21 <<<
+[S3(BC=4.82) Step 1800] R: 25.9 | AvgR: 26.2 | C_Loss: 427356.44 | A_Loss: -1558.73 | BC: 1.274 | Alpha: 0.0122 | Q_mean: 161.5 | Trk: 0.086
+ >>> EPISODE 47 | REWARD: 25.92 | AVG(20): 26.18 <<<
+[S3(BC=4.82) Step 1850] R: 25.9 | AvgR: 26.1 | C_Loss: 449138.97 | A_Loss: -1524.00 | BC: 1.268 | Alpha: 0.0123 | Q_mean: 181.8 | Trk: 0.594
+ >>> EPISODE 48 | REWARD: 25.92 | AVG(20): 26.10 <<<
+[S3(BC=4.81) Step 1900] R: 25.9 | AvgR: 26.1 | C_Loss: 467358.69 | A_Loss: -1476.00 | BC: 1.322 | Alpha: 0.0123 | Q_mean: 189.7 | Trk: 1.663
+ >>> EPISODE 49 | REWARD: 25.92 | AVG(20): 26.07 <<<
+ >>> EPISODE 50 | REWARD: 25.92 | AVG(20): 26.04 <<<
+[S3(BC=4.81) Step 1950] R: 25.9 | AvgR: 26.0 | C_Loss: 305407.78 | A_Loss: -1455.06 | BC: 1.226 | Alpha: 0.0124 | Q_mean: 116.9 | Trk: 0.134
+ >>> EPISODE 51 | REWARD: 25.92 | AVG(20): 26.04 <<<
+[S3(BC=4.80) Step 2000] R: 25.9 | AvgR: 26.0 | C_Loss: 370481.81 | A_Loss: -1403.98 | BC: 1.283 | Alpha: 0.0124 | Q_mean: 158.6 | Trk: 0.717
+ >>> EPISODE 52 | REWARD: 25.93 | AVG(20): 26.04 <<<
+[S3(BC=4.80) Step 2050] R: 25.9 | AvgR: 26.0 | C_Loss: 384685.81 | A_Loss: -1368.76 | BC: 1.305 | Alpha: 0.0125 | Q_mean: 161.8 | Trk: 1.895
+ >>> EPISODE 53 | REWARD: 25.92 | AVG(20): 26.03 <<<
+ >>> EPISODE 54 | REWARD: 25.92 | AVG(20): 26.00 <<<
+[S3(BC=4.79) Step 2100] R: 25.9 | AvgR: 26.0 | C_Loss: 343753.44 | A_Loss: -1330.00 | BC: 1.311 | Alpha: 0.0126 | Q_mean: 152.7 | Trk: 0.193
+ >>> EPISODE 55 | REWARD: 25.92 | AVG(20): 25.98 <<<
+[S3(BC=4.79) Step 2150] R: 25.9 | AvgR: 26.0 | C_Loss: 312708.06 | A_Loss: -1296.21 | BC: 1.291 | Alpha: 0.0126 | Q_mean: 138.2 | Trk: 0.853
+ >>> EPISODE 56 | REWARD: 25.92 | AVG(20): 25.98 <<<
+ >>> EPISODE 57 | REWARD: 25.92 | AVG(20): 25.95 <<<
+[S3(BC=4.78) Step 2200] R: 25.9 | AvgR: 26.0 | C_Loss: 285639.12 | A_Loss: -1259.68 | BC: 1.300 | Alpha: 0.0127 | Q_mean: 134.8 | Trk: 0.002
+ >>> EPISODE 58 | REWARD: 25.92 | AVG(20): 25.95 <<<
+[S3(BC=4.78) Step 2250] R: 25.9 | AvgR: 26.0 | C_Loss: 301808.78 | A_Loss: -1216.99 | BC: 1.326 | Alpha: 0.0128 | Q_mean: 143.1 | Trk: 0.262
+ >>> EPISODE 59 | REWARD: 25.92 | AVG(20): 25.95 <<<
+[S3(BC=4.77) Step 2300] R: 25.9 | AvgR: 25.9 | C_Loss: 285428.31 | A_Loss: -1181.68 | BC: 1.355 | Alpha: 0.0128 | Q_mean: 137.9 | Trk: 1.003
+ >>> EPISODE 60 | REWARD: 25.93 | AVG(20): 25.92 <<<
+ >>> EPISODE 61 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.77) Step 2350] R: 25.9 | AvgR: 25.9 | C_Loss: 246471.94 | A_Loss: -1144.95 | BC: 1.329 | Alpha: 0.0129 | Q_mean: 124.6 | Trk: 0.013
+ >>> EPISODE 62 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.76) Step 2400] R: 25.9 | AvgR: 25.9 | C_Loss: 274314.25 | A_Loss: -1104.85 | BC: 1.366 | Alpha: 0.0129 | Q_mean: 142.2 | Trk: 0.342
+ >>> EPISODE 63 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.76) Step 2450] R: 25.9 | AvgR: 25.9 | C_Loss: 242122.47 | A_Loss: -1078.51 | BC: 1.344 | Alpha: 0.0130 | Q_mean: 121.6 | Trk: 1.169
+ >>> EPISODE 64 | REWARD: 25.92 | AVG(20): 25.92 <<<
+ >>> EPISODE 65 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.75) Step 2500] R: 25.9 | AvgR: 25.9 | C_Loss: 214721.86 | A_Loss: -1037.65 | BC: 1.362 | Alpha: 0.0131 | Q_mean: 121.1 | Trk: 0.034
+ >>> EPISODE 66 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.75) Step 2550] R: 25.9 | AvgR: 25.9 | C_Loss: 204292.16 | A_Loss: -1009.23 | BC: 1.355 | Alpha: 0.0131 | Q_mean: 114.4 | Trk: 0.434
+ >>> EPISODE 67 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.75) Step 2600] R: 25.9 | AvgR: 25.9 | C_Loss: 166602.53 | A_Loss: -962.60 | BC: 1.379 | Alpha: 0.0132 | Q_mean: 102.3 | Trk: 1.352
+ >>> EPISODE 68 | REWARD: 25.92 | AVG(20): 25.92 <<<
+ >>> EPISODE 69 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.74) Step 2650] R: 25.9 | AvgR: 25.9 | C_Loss: 167146.88 | A_Loss: -928.72 | BC: 1.392 | Alpha: 0.0133 | Q_mean: 103.2 | Trk: 0.066
+ >>> EPISODE 70 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.74) Step 2700] R: 25.9 | AvgR: 25.9 | C_Loss: 160303.00 | A_Loss: -883.37 | BC: 1.448 | Alpha: 0.0133 | Q_mean: 110.2 | Trk: 0.538
+ >>> EPISODE 71 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.73) Step 2750] R: 25.9 | AvgR: 25.9 | C_Loss: 150747.38 | A_Loss: -865.39 | BC: 1.381 | Alpha: 0.0134 | Q_mean: 87.3 | Trk: 1.554
+ >>> EPISODE 72 | REWARD: 25.92 | AVG(20): 25.92 <<<
+ >>> EPISODE 73 | REWARD: 25.94 | AVG(20): 25.92 <<<
+[S3(BC=4.73) Step 2800] R: 25.9 | AvgR: 25.9 | C_Loss: 130209.83 | A_Loss: -838.42 | BC: 1.359 | Alpha: 0.0134 | Q_mean: 76.2 | Trk: 0.109
+ >>> EPISODE 74 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.72) Step 2850] R: 25.9 | AvgR: 25.9 | C_Loss: 137262.64 | A_Loss: -799.42 | BC: 1.439 | Alpha: 0.0135 | Q_mean: 100.4 | Trk: 0.654
+ >>> EPISODE 75 | REWARD: 25.92 | AVG(20): 25.92 <<<
+[S3(BC=4.72) Step 2900] R: 25.9 | AvgR: 25.9 | C_Loss: 102035.95 | A_Loss: -764.06 | BC: 1.396 | Alpha: 0.0136 | Q_mean: 65.0 | Trk: 1.776
+ >>> EPISODE 76 | REWARD: 25.93 | AVG(20): 25.92 <<<
+ >>> EPISODE 77 | REWARD: 25.93 | AVG(20): 25.92 <<<
+[S3(BC=4.71) Step 2950] R: 25.9 | AvgR: 25.9 | C_Loss: 98424.58 | A_Loss: -749.25 | BC: 1.348 | Alpha: 0.0136 | Q_mean: 62.3 | Trk: 0.162
+ >>> EPISODE 78 | REWARD: 25.95 | AVG(20): 25.92 <<<
+[S3(BC=4.71) Step 3000] R: 25.9 | AvgR: 25.9 | C_Loss: 91960.30 | A_Loss: -718.70 | BC: 1.303 | Alpha: 0.0137 | Q_mean: 49.5 | Trk: 0.781
+ >>> EPISODE 79 | REWARD: 25.95 | AVG(20): 25.93 <<<
+ >>> EPISODE 80 | REWARD: 26.03 | AVG(20): 25.93 <<<
+[S3(BC=4.70) Step 3050] R: 26.0 | AvgR: 25.9 | C_Loss: 82781.26 | A_Loss: -669.38 | BC: 1.322 | Alpha: 0.0138 | Q_mean: 59.3 | Trk: 0.000
+ >>> EPISODE 81 | REWARD: 26.13 | AVG(20): 25.93 <<<
+[S3(BC=4.70) Step 3100] R: 26.1 | AvgR: 25.9 | C_Loss: 79121.33 | A_Loss: -636.06 | BC: 1.271 | Alpha: 0.0138 | Q_mean: 58.5 | Trk: 0.218
+ >>> EPISODE 82 | REWARD: 26.49 | AVG(20): 25.94 <<<
+[S3(BC=4.69) Step 3150] R: 26.5 | AvgR: 26.0 | C_Loss: 73228.87 | A_Loss: -619.74 | BC: 1.254 | Alpha: 0.0139 | Q_mean: 54.1 | Trk: 0.821
+ >>> EPISODE 83 | REWARD: 26.80 | AVG(20): 25.97 <<<
+[S3(BC=4.69) Step 3200] R: 26.8 | AvgR: 26.0 | C_Loss: 80969.30 | A_Loss: -599.10 | BC: 1.307 | Alpha: 0.0139 | Q_mean: 48.6 | Trk: 1.944
+ >>> EPISODE 84 | REWARD: 27.04 | AVG(20): 26.01 <<<
+ >>> EPISODE 85 | REWARD: 27.25 | AVG(20): 26.07 <<<
+[S3(BC=4.68) Step 3250] R: 27.2 | AvgR: 26.1 | C_Loss: 73252.46 | A_Loss: -580.47 | BC: 1.243 | Alpha: 0.0140 | Q_mean: 55.5 | Trk: 0.190
+ >>> EPISODE 86 | REWARD: 23.67 | AVG(20): 26.14 <<<
+[S3(BC=4.68) Step 3300] R: 23.7 | AvgR: 26.0 | C_Loss: 58154.66 | A_Loss: -557.97 | BC: 1.226 | Alpha: 0.0141 | Q_mean: 56.1 | Trk: 1.130
+ >>> EPISODE 87 | REWARD: 23.47 | AVG(20): 26.02 <<<
+ >>> EPISODE 88 | REWARD: 22.41 | AVG(20): 25.90 <<<
+[S3(BC=4.67) Step 3350] R: 22.4 | AvgR: 25.7 | C_Loss: 52299.34 | A_Loss: -521.86 | BC: 1.294 | Alpha: 0.0141 | Q_mean: 67.7 | Trk: 0.127
+ >>> EPISODE 89 | REWARD: 21.26 | AVG(20): 25.73 <<<
+[S3(BC=4.67) Step 3400] R: 21.3 | AvgR: 25.5 | C_Loss: 49814.48 | A_Loss: -505.29 | BC: 1.270 | Alpha: 0.0142 | Q_mean: 54.9 | Trk: 1.184
+ >>> EPISODE 90 | REWARD: 21.50 | AVG(20): 25.49 <<<
+ >>> EPISODE 91 | REWARD: 21.25 | AVG(20): 25.27 <<<
+[S3(BC=4.66) Step 3450] R: 21.3 | AvgR: 25.0 | C_Loss: 42920.11 | A_Loss: -489.70 | BC: 1.281 | Alpha: 0.0143 | Q_mean: 52.0 | Trk: 0.154

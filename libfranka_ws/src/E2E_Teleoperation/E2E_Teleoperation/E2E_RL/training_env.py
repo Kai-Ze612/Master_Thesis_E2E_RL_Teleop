@@ -2,13 +2,14 @@
 Create RL Training Environment with Delays
 """
 
+
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import torch
 import mujoco
 from collections import deque
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple, Dict, Any
 
 from E2E_Teleoperation.E2E_RL.local_robot_simulator import LocalRobotSimulator, TrajectoryType
 from E2E_Teleoperation.E2E_RL.remote_robot_simulator import RemoteRobotSimulator
@@ -17,15 +18,6 @@ import E2E_Teleoperation.config.robot_config as cfg
 
 
 class TeleoperationEnv(gym.Env):
-    """
-    Teleoperation environment with realistic observation timing.
-    
-    Key Features:
-    1. Simulates sporadic observation arrivals based on network delay
-    2. Returns `has_new_obs` flag in info dict
-    3. Tracks observation arrival timing for proper LSTM training
-    """
-    
     metadata = {'render_modes': ["human", "rgb_array"], 'render_fps': cfg.CONTROL_FREQ}
     
     def __init__(
@@ -35,29 +27,18 @@ class TeleoperationEnv(gym.Env):
         randomize_trajectory=False,
         seed=None,
         render_mode=None,
-        simulate_obs_timing: bool = True  # NEW: Enable realistic obs timing
+        simulate_obs_timing: bool = True
     ):
         super().__init__()
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.render_mode = render_mode
         self.max_episode_steps = cfg.MAX_EPISODE_STEPS
-        self.simulate_obs_timing = simulate_obs_timing
         
         # 1. Simulators
         self.delay_simulator = DelaySimulator(cfg.CONTROL_FREQ, config=delay_config, seed=seed)
-        self.leader = LocalRobotSimulator(
-            trajectory_type=trajectory_type,
-            randomize_params=randomize_trajectory
-        )
-        should_render = (self.render_mode == "human")
-        self.remote = RemoteRobotSimulator(
-            delay_config=delay_config,
-            seed=seed,
-            render=should_render,
-            verbose=False
-        )
+        self.leader = LocalRobotSimulator(trajectory_type=trajectory_type, randomize_params=randomize_trajectory)
+        self.remote = RemoteRobotSimulator(delay_config=delay_config, seed=seed, render=(render_mode=="human"), verbose=False)
         
-        # 2. Teacher (Inverse Dynamics) Setup
+        # 2. Teacher Setup
         self._teacher_model = self.remote.model
         self._teacher_data = mujoco.MjData(self._teacher_model)
         self._prev_total_torque = np.zeros(cfg.N_JOINTS)
@@ -67,54 +48,48 @@ class TeleoperationEnv(gym.Env):
         self.remote_hist_q = deque(maxlen=cfg.RNN_SEQUENCE_LENGTH)
         self.remote_hist_qd = deque(maxlen=cfg.RNN_SEQUENCE_LENGTH)
         
-        # 4. Observation Timing State (NEW)
-        self._obs_send_queue = []      # Queue of (send_time, obs_data)
-        self._last_received_obs = None  # Last received delayed observation
-        self._steps_since_obs = 0       # Counter for AR steps
-        self._current_delay_steps = 0   # Current delay in steps
-        
-        # 5. Action & Observation Spaces
+        # 4. Spaces
         self.action_space = spaces.Box(
-            low=-cfg.MAX_ACTION_TORQUE,
-            high=cfg.MAX_ACTION_TORQUE,
-            shape=(cfg.N_JOINTS,),
+            low=-cfg.MAX_ACTION_TORQUE, 
+            high=cfg.MAX_ACTION_TORQUE, 
+            shape=(cfg.N_JOINTS,), 
             dtype=np.float32
         )
         self.observation_space = spaces.Box(
-            low=-np.inf,
-            high=np.inf,
-            shape=(cfg.OBS_DIM,),
+            low=-np.inf, 
+            high=np.inf, 
+            shape=(cfg.OBS_DIM,), 
             dtype=np.float32
         )
         
         # State
-        self._predicted_state = None
         self.step_count = 0
         self.initial_qpos = cfg.INITIAL_JOINT_CONFIG.copy()
         
-        # Statistics
-        self._total_obs_arrivals = 0
-        self._total_ar_steps = 0
+        # Previous action for smoothness penalty
+        self._prev_action = np.zeros(cfg.N_JOINTS)
+        
+        # Cumulative error for early termination
+        self._cumulative_error = 0.0
+        self._error_window = deque(maxlen=50)
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         self.step_count = 0
-        self._predicted_state = None
         self._prev_total_torque = np.zeros(cfg.N_JOINTS)
+        self._prev_action = np.zeros(cfg.N_JOINTS)
+        self._cumulative_error = 0.0
+        self._error_window.clear()
         
-        # Reset observation timing
-        self._obs_send_queue = []
-        self._last_received_obs = None
-        self._steps_since_obs = 0
-        self._current_delay_steps = self.delay_simulator.get_state_delay_steps(100)
-        self._total_obs_arrivals = 0
-        self._total_ar_steps = 0
-        
-        # Reset robots
+        # 1. Reset Robots
         l_q, _ = self.leader.reset(seed=seed)
-        self.remote.reset(initial_qpos=self.initial_qpos)
+        l_qd = np.zeros(cfg.N_JOINTS) 
         
-        # Clear & Fill history
+        self.remote.reset(initial_qpos=self.initial_qpos)
+        r_q = self.initial_qpos.copy()
+        r_qd = np.zeros(cfg.N_JOINTS)
+        
+        # 2. Clear & Fill history
         self.leader_hist.clear()
         self.remote_hist_q.clear()
         self.remote_hist_qd.clear()
@@ -124,139 +99,134 @@ class TeleoperationEnv(gym.Env):
             self.leader_hist.append(init_state)
             self.remote_hist_q.append(self.initial_qpos.copy())
             self.remote_hist_qd.append(np.zeros(cfg.N_JOINTS))
-        
-        # Initialize observation queue with initial observations
-        # Simulate that observations were sent in the past
-        for i in range(cfg.RNN_SEQUENCE_LENGTH):
-            arrival_time = i  # They arrive at the start
-            obs_data = (l_q.copy(), np.zeros(cfg.N_JOINTS))
-            self._obs_send_queue.append((arrival_time, obs_data))
-        
-        # First step always has observation
-        self._last_received_obs = self._get_obs_sequence()
-        
-        return self._get_obs(), {'has_new_obs': True, 'steps_since_obs': 0}
+            
+        # 3. Calculate Initial Teacher Action
+        teacher_torque = self._compute_teacher_torque(r_q, r_qd, l_q, l_qd)
+        dist = np.linalg.norm(l_q - r_q)
 
-    def set_predicted_state(self, predicted_state):
-        """Allows the agent to inject its state prediction for logging."""
-        self._predicted_state = predicted_state
+        info = {
+            'teacher_action': teacher_torque,
+            'true_q': l_q.copy(),
+            'true_qd': l_qd.copy(),
+            'remote_q': r_q.copy(),
+            'remote_qd': r_qd.copy(),
+            'tracking_error': dist,
+            'true_state_vector': np.concatenate([l_q, l_qd]),
+            'has_new_obs': True
+        }
+            
+        return self._get_obs(), info
 
     def step(self, action):
         self.step_count += 1
         
-        # 1. Step Leader (Local Robot)
+        # 1. Step Leader
         l_q, l_qd, _, _, _, _ = self.leader.step()
         self.leader_hist.append((l_q.copy(), l_qd.copy()))
         
-        # 2. Get Remote State
+        # 2. Step Remote (Apply Action)
+        self.remote.step(target_q=l_q, target_qd=l_qd, torque_input=action)
         r_q, r_qd = self.remote.get_joint_state()
+        
+        # Update History
         self.remote_hist_q.append(r_q)
         self.remote_hist_qd.append(r_qd)
         
-        # 3. Simulate Observation Timing (NEW)
-        has_new_obs = self._simulate_observation_arrival()
-        
-        if has_new_obs:
-            self._steps_since_obs = 0
-            self._total_obs_arrivals += 1
-        else:
-            self._steps_since_obs += 1
-            self._total_ar_steps += 1
-        
-        # 4. Calculate Teacher Action
+        # 3. Calculate Teacher (for Loss/Reference)
         target_q, target_qd = self.leader_hist[-1]
-        teacher_total_torque = self._compute_teacher_torque(r_q, r_qd, target_q, target_qd)
+        teacher_torque = self._compute_teacher_torque(r_q, r_qd, target_q, target_qd)
         
-        # 5. Apply Action
-        applied_torque = np.clip(action, -cfg.TORQUE_LIMITS, cfg.TORQUE_LIMITS)
-        
-        self.remote.step(
-            target_q=target_q,
-            target_qd=target_qd,
-            torque_input=applied_torque,
-            true_local_q=target_q,
-            predicted_q=self._predicted_state
+        # 4. IMPROVED REWARD CALCULATION
+        reward, reward_info = self._compute_reward(
+            target_q, target_qd, r_q, r_qd, action, teacher_torque
         )
         
-        # 6. Reward
-        r_q_new, _ = self.remote.get_joint_state()
-        dist = np.linalg.norm(target_q - r_q_new)
-        reward = np.exp(-5.0 * dist)
+        # 5. Termination Conditions
+        pos_error = np.linalg.norm(target_q - r_q)
+        self._error_window.append(pos_error)
         
-        terminated = dist > cfg.MAX_JOINT_ERROR_TERMINATION
+        # Terminate if: single large error OR sustained high error
+        single_error_term = pos_error > cfg.MAX_JOINT_ERROR_TERMINATION
+        sustained_error_term = (
+            len(self._error_window) >= 50 and 
+            np.mean(self._error_window) > cfg.MAX_JOINT_ERROR_TERMINATION * 0.7
+        )
+        
+        terminated = single_error_term or sustained_error_term
         truncated = self.step_count >= self.max_episode_steps
         
+        # 6. Update previous action
+        self._prev_action = action.copy()
+        
+        # 7. INFO DICT
         info = {
-            'teacher_action': teacher_total_torque,
-            'true_state': np.concatenate([target_q, target_qd]),
-            'tracking_error': dist,
-            'has_new_obs': has_new_obs,           # NEW
-            'steps_since_obs': self._steps_since_obs,  # NEW
-            'current_delay_steps': self._current_delay_steps,  # NEW
+            'teacher_action': teacher_torque,
+            'true_q': target_q.copy(),
+            'true_qd': target_qd.copy(),
+            'remote_q': r_q.copy(),
+            'remote_qd': r_qd.copy(),
+            'tracking_error': pos_error,
+            'true_state_vector': np.concatenate([target_q, target_qd]),
+            'has_new_obs': True,
+            'reward_info': reward_info
         }
         
         return self._get_obs(), reward, terminated, truncated, info
 
-    def _simulate_observation_arrival(self) -> bool:
+    def _compute_reward(self, target_q, target_qd, r_q, r_qd, action, teacher_action):
         """
-        Simulate realistic observation arrival based on network delay.
+        Multi-component reward for stable learning.
         
-        In real deployment:
-        - Local robot sends observation at time t
-        - Observation arrives at remote at time t + delay
-        - Delay varies between 90-290ms (23-73 steps at 250Hz)
-        
-        Returns:
-            has_new_obs: True if a new observation arrived this step
+        Components:
+        1. Position tracking (primary)
+        2. Velocity tracking (secondary)
+        3. Action magnitude penalty
+        4. Action smoothness penalty
+        5. Teacher imitation bonus
         """
-        if not self.simulate_obs_timing:
-            # Training mode without timing simulation: always have observation
-            return True
         
-        # Send current observation (will arrive after delay)
-        current_obs = (
-            self.leader_hist[-1][0].copy(),  # q
-            self.leader_hist[-1][1].copy()   # qd
-        )
+        # Normalize by joint limits for scale-invariance
+        pos_error = np.abs(target_q - r_q)
+        vel_error = np.abs(target_qd - r_qd)
         
-        # Sample new delay
-        delay_steps = self.delay_simulator.get_state_delay_steps(len(self.leader_hist))
-        arrival_time = self.step_count + delay_steps
+        # 1. Position Reward (exponential, bounded)
+        pos_error_norm = np.mean(pos_error)
+        r_position = np.exp(-3.0 * pos_error_norm)  # Softer than -5.0
         
-        self._obs_send_queue.append((arrival_time, current_obs))
+        # 2. Velocity Reward
+        vel_error_norm = np.mean(vel_error) / 2.0  # Velocity is typically larger
+        r_velocity = np.exp(-1.0 * vel_error_norm) * 0.3  # Lower weight
         
-        # Check if any observation has arrived
-        has_new_obs = False
-        arrived_obs = []
+        # 3. Action Penalty (encourage smaller torques)
+        action_norm = np.linalg.norm(action) / np.linalg.norm(cfg.TORQUE_LIMITS)
+        r_action = -0.01 * action_norm  # Small penalty
         
-        remaining_queue = []
-        for arrival_time, obs_data in self._obs_send_queue:
-            if arrival_time <= self.step_count:
-                arrived_obs.append((arrival_time, obs_data))
-                has_new_obs = True
-            else:
-                remaining_queue.append((arrival_time, obs_data))
+        # 4. Smoothness Penalty (penalize jerky actions)
+        action_diff = np.linalg.norm(action - self._prev_action)
+        action_diff_norm = action_diff / (2 * np.linalg.norm(cfg.TORQUE_LIMITS))
+        r_smooth = -0.02 * action_diff_norm
         
-        self._obs_send_queue = remaining_queue
+        # 5. Teacher Imitation Bonus (encourage following teacher)
+        teacher_diff = np.linalg.norm(action - teacher_action)
+        teacher_diff_norm = teacher_diff / (2 * np.linalg.norm(cfg.TORQUE_LIMITS))
+        r_teacher = 0.1 * np.exp(-2.0 * teacher_diff_norm)
         
-        # Update last received observation
-        if arrived_obs:
-            # Take the most recent arrival
-            arrived_obs.sort(key=lambda x: x[0])
-            _, latest_obs = arrived_obs[-1]
-            self._last_received_obs = self._build_obs_sequence_from_arrival(latest_obs)
-            self._current_delay_steps = delay_steps
+        # Total reward (weighted sum)
+        total_reward = r_position + r_velocity + r_action + r_smooth + r_teacher
         
-        return has_new_obs
-
-    def _build_obs_sequence_from_arrival(self, latest_obs: Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
-        """Build observation sequence from arrived observation."""
-        # For simplicity, use the delayed history buffer
-        # In a more sophisticated implementation, you'd track the full sequence
-        return self._get_obs_sequence()
+        # Reward info for debugging
+        reward_info = {
+            'r_position': r_position,
+            'r_velocity': r_velocity,
+            'r_action': r_action,
+            'r_smooth': r_smooth,
+            'r_teacher': r_teacher,
+            'total': total_reward
+        }
+        
+        return total_reward, reward_info
 
     def _compute_teacher_torque(self, curr_q, curr_qd, des_q, des_qd):
-        """Compute ideal torque using inverse dynamics."""
         kp, kd = cfg.TEACHER_KP, cfg.TEACHER_KD
         qdd_des = kp * (des_q - curr_q) + kd * (des_qd - curr_qd)
         
@@ -264,17 +234,18 @@ class TeleoperationEnv(gym.Env):
         self._teacher_data.qvel[:7] = curr_qd
         self._teacher_data.qacc[:7] = qdd_des
         mujoco.mj_inverse(self._teacher_model, self._teacher_data)
-        
         raw_torque = self._teacher_data.qfrc_inverse[:7].copy()
         
+        # Smoothing
         alpha = cfg.TEACHER_SMOOTHING
         smoothed_torque = (1 - alpha) * raw_torque + alpha * self._prev_total_torque
         self._prev_total_torque = smoothed_torque
         
-        return smoothed_torque
+        # Clip to physical limits
+        return np.clip(smoothed_torque, -cfg.TORQUE_LIMITS, cfg.TORQUE_LIMITS)
 
     def _get_obs_sequence(self) -> np.ndarray:
-        """Get the delayed observation sequence for LSTM input."""
+        # Simplified delay for training
         delay_steps = self.delay_simulator.get_state_delay_steps(len(self.leader_hist))
         norm_delay = delay_steps / cfg.DELAY_INPUT_NORM_FACTOR
         
@@ -292,45 +263,28 @@ class TeleoperationEnv(gym.Env):
             q_norm = (q - cfg.Q_MEAN) / cfg.Q_STD
             qd_norm = (qd - cfg.QD_MEAN) / cfg.QD_STD
             target_seq.extend(np.concatenate([q_norm, qd_norm, [norm_delay]]))
-        
+            
         return np.array(target_seq, dtype=np.float32)
 
     def _get_obs(self) -> np.ndarray:
-        """Construct full observation vector."""
-        # 1. Remote State (Normalized)
+        # 1. Remote State
         r_q, r_qd = self.remote_hist_q[-1], self.remote_hist_qd[-1]
         state_norm = np.concatenate([
-            (r_q - cfg.Q_MEAN) / cfg.Q_STD,
+            (r_q - cfg.Q_MEAN) / cfg.Q_STD, 
             (r_qd - cfg.QD_MEAN) / cfg.QD_STD
         ])
         
-        # 2. Remote History (Normalized)
+        # 2. Remote History
         hist_seq = []
         for i in range(cfg.RNN_SEQUENCE_LENGTH):
             q = (self.remote_hist_q[i] - cfg.Q_MEAN) / cfg.Q_STD
             qd = (self.remote_hist_qd[i] - cfg.QD_MEAN) / cfg.QD_STD
             hist_seq.extend(np.concatenate([q, qd]))
-        
-        # 3. Target History (Delayed, Normalized)
+            
+        # 3. Target History
         target_seq = self._get_obs_sequence()
         
         return np.concatenate([state_norm, hist_seq, target_seq], dtype=np.float32)
-
-    def get_obs_timing_stats(self) -> Dict[str, float]:
-        """Get statistics about observation timing."""
-        total = self._total_obs_arrivals + self._total_ar_steps
-        if total == 0:
-            return {'ar_ratio': 0.0, 'obs_arrivals': 0, 'ar_steps': 0}
-        
-        return {
-            'ar_ratio': self._total_ar_steps / total,
-            'obs_arrivals': self._total_obs_arrivals,
-            'ar_steps': self._total_ar_steps,
-            'avg_obs_interval': total / max(1, self._total_obs_arrivals)
-        }
-
-    def render(self):
-        pass
 
     def close(self):
         self.remote.close()

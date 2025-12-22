@@ -19,9 +19,8 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray
 from pathlib import Path
 
-# Custom imports matching your structure
 from E2E_Teleoperation.utils.delay_simulator import DelaySimulator, ExperimentConfig
-from E2E_Teleoperation.E2E_RL.sac_policy_network import JointActor, SharedLSTMEncoder
+from E2E_Teleoperation.E2E_RL.sac_policy_network import JointActor, ContinuousLSTMEncoder
 import E2E_Teleoperation.config.robot_config as cfg
 
 class AgentNode(Node):
@@ -39,12 +38,9 @@ class AgentNode(Node):
         self.delay_config = ExperimentConfig(exp_config_val)
         
         # --- 2. Load Model ---
-        # We must initialize the architecture exactly as in training
-        self.shared_encoder = SharedLSTMEncoder().to(self.device)
-        self.actor = JointActor(
-            shared_encoder=self.shared_encoder, 
-            action_dim=cfg.N_JOINTS
-        ).to(self.device)
+        # [FIX] Correct initialization - JointActor takes encoder as positional argument
+        self.encoder = ContinuousLSTMEncoder().to(self.device)
+        self.actor = JointActor(self.encoder).to(self.device)
         
         model_path = cfg.DEFAULT_RL_MODEL_PATH
         self._load_checkpoint(model_path)
@@ -53,12 +49,9 @@ class AgentNode(Node):
         # Delay Simulator
         self.delay_sim = DelaySimulator(self.control_freq, self.delay_config, seed=42)
         
-        # Buffers (Deque handles sliding window automatically)
-        # Leader Buffer: Large enough to simulate max delay
-        self.leader_hist_q = deque(maxlen=cfg.BUFFER_SIZE) # Reusing BUFFER_SIZE or specific large number
+        # Buffers
+        self.leader_hist_q = deque(maxlen=cfg.BUFFER_SIZE)
         self.leader_hist_qd = deque(maxlen=cfg.BUFFER_SIZE)
-        
-        # Remote Buffer: Exactly RNN sequence length for observation
         self.remote_hist_q = deque(maxlen=cfg.RNN_SEQUENCE_LENGTH)
         self.remote_hist_qd = deque(maxlen=cfg.RNN_SEQUENCE_LENGTH)
         
@@ -66,11 +59,8 @@ class AgentNode(Node):
         self.curr_remote_q = np.zeros(cfg.N_JOINTS, dtype=np.float32)
         self.curr_remote_qd = np.zeros(cfg.N_JOINTS, dtype=np.float32)
         
-        # Normalization Stats (loaded from config)
-        self.q_mean = torch.tensor(cfg.Q_MEAN, device=self.device, dtype=torch.float32)
-        self.q_std = torch.tensor(cfg.Q_STD, device=self.device, dtype=torch.float32)
-        self.qd_mean = torch.tensor(cfg.QD_MEAN, device=self.device, dtype=torch.float32)
-        self.qd_std = torch.tensor(cfg.QD_STD, device=self.device, dtype=torch.float32)
+        # Hidden State for LSTM (initialized to None, will be set on first forward pass)
+        self.hidden_state = None
         
         # State Flags
         self.is_leader_ready = False
@@ -78,11 +68,9 @@ class AgentNode(Node):
         self.joint_names = [f'panda_joint{i+1}' for i in range(cfg.N_JOINTS)]
 
         # --- 4. ROS Interfaces ---
-        # Publishers
         self.tau_pub = self.create_publisher(Float64MultiArray, 'agent/tau_rl', 10)
         self.pred_pub = self.create_publisher(JointState, 'agent/predict_target', 10)
 
-        # Subscribers
         self.sub_leader = self.create_subscription(
             JointState, 'local_robot/joint_states', self.leader_callback, 10
         )
@@ -90,7 +78,6 @@ class AgentNode(Node):
             JointState, 'remote_robot/joint_states', self.remote_callback, 10
         )
         
-        # Timer
         self.timer = self.create_timer(self.dt, self.control_step)
         
         self.get_logger().info(f"Agent Node Initialized | Device: {self.device}")
@@ -98,14 +85,21 @@ class AgentNode(Node):
 
     def _load_checkpoint(self, path):
         path = Path(path)
-        
         if not path.exists():
             self.get_logger().error(f"Model checkpoint not found: {path}")
             return
-            
         try:
-            checkpoint = torch.load(path, map_location=self.device)
-            self.actor.load_state_dict(checkpoint['actor'])
+            checkpoint = torch.load(path, map_location=self.device, weights_only=False)
+            
+            # Handle different checkpoint formats
+            if 'actor' in checkpoint:
+                self.actor.load_state_dict(checkpoint['actor'])
+            elif 'actor_state_dict' in checkpoint:
+                self.actor.load_state_dict(checkpoint['actor_state_dict'])
+            else:
+                # Assume the checkpoint IS the state dict
+                self.actor.load_state_dict(checkpoint)
+                
             self.actor.eval()
             self.get_logger().info(f"Loaded model from {path}")
         except Exception as e:
@@ -147,10 +141,7 @@ class AgentNode(Node):
             pass
 
     def _get_observation(self):
-        """
-        Constructs the observation vector exactly matching 'TeleoperationEnv._get_obs'.
-        Returns: Torch tensor of shape (1, OBS_DIM)
-        """
+        """Constructs the observation vector (must match training_env._get_obs())."""
         # 1. Normalize Current Remote State
         curr_q_norm = (self.curr_remote_q - cfg.Q_MEAN) / cfg.Q_STD
         curr_qd_norm = (self.curr_remote_qd - cfg.QD_MEAN) / cfg.QD_STD
@@ -159,7 +150,6 @@ class AgentNode(Node):
         # 2. Normalize Remote History
         hist_seq = []
         for i in range(cfg.RNN_SEQUENCE_LENGTH):
-            # Handle case where buffer might not be full (though check ensures it is)
             if i < len(self.remote_hist_q):
                 q = (self.remote_hist_q[i] - cfg.Q_MEAN) / cfg.Q_STD
                 qd = (self.remote_hist_qd[i] - cfg.QD_MEAN) / cfg.QD_STD
@@ -168,17 +158,13 @@ class AgentNode(Node):
                 hist_seq.extend(np.zeros(cfg.ROBOT_STATE_DIM))
 
         # 3. Process Delayed Target History
-        # Get delay steps
         history_len = len(self.leader_hist_q)
         delay_steps = self.delay_sim.get_state_delay_steps(history_len)
         norm_delay = delay_steps / cfg.DELAY_INPUT_NORM_FACTOR
         
         target_seq = []
-        # Calculate indices
         end_idx = history_len - 1 - delay_steps
         start_idx = end_idx - cfg.RNN_SEQUENCE_LENGTH + 1
-        
-        # Clamp start index
         start_idx = max(0, start_idx)
         
         for i in range(cfg.RNN_SEQUENCE_LENGTH):
@@ -187,20 +173,15 @@ class AgentNode(Node):
                 q = self.leader_hist_q[curr_idx]
                 qd = self.leader_hist_qd[curr_idx]
             else:
-                # Fallback to oldest if index invalid
                 q = self.leader_hist_q[0]
                 qd = self.leader_hist_qd[0]
             
             q_norm = (q - cfg.Q_MEAN) / cfg.Q_STD
             qd_norm = (qd - cfg.QD_MEAN) / cfg.QD_STD
-            
-            # Concatenate [q, qd, delay]
-            step_vec = np.concatenate([q_norm, qd_norm, [norm_delay]])
-            target_seq.extend(step_vec)
+            target_seq.extend(np.concatenate([q_norm, qd_norm, [norm_delay]]))
 
-        # 4. Combine
         obs_np = np.concatenate([state_norm, hist_seq, target_seq], dtype=np.float32)
-        return torch.tensor(obs_np, device=self.device).unsqueeze(0) # Batch dim
+        return torch.tensor(obs_np, device=self.device).unsqueeze(0)
 
     def control_step(self):
         if not self.is_leader_ready or not self.is_remote_ready:
@@ -210,20 +191,25 @@ class AgentNode(Node):
             # 1. Get Observation
             obs_tensor = self._get_observation()
             
-            # 2. Run JointActor (Policy + Encoder)
-            # deterministic=True for deployment/evaluation
-            action_scaled, _, _, pred_state_norm = self.actor.sample(obs_tensor, deterministic=True)
+            # 2. Run JointActor
+            # [FIX] sample() returns 4 values: action, log_prob, pred, next_hidden
+            action, log_prob, pred_state, next_hidden = self.actor.sample(
+                obs_tensor, 
+                hidden=self.hidden_state,
+                has_new_obs=True
+            )
+            
+            # Update hidden state for next step
+            self.hidden_state = next_hidden
             
             # 3. Process Outputs
-            # A. Torque (Action)
-            tau_rl = action_scaled.cpu().numpy().flatten()
+            tau_rl = action.cpu().numpy().flatten()
             
-            # B. Prediction (Visualization)
-            pred_state_np = pred_state_norm.cpu().numpy().flatten()
+            # Denormalize prediction (pred_state is normalized)
+            pred_state_np = pred_state.cpu().numpy().flatten()
             pred_q_norm = pred_state_np[:7]
-            pred_qd_norm = pred_state_np[7:]
+            pred_qd_norm = pred_state_np[7:] if len(pred_state_np) > 7 else np.zeros(7)
             
-            # Denormalize Prediction
             pred_q = pred_q_norm * cfg.Q_STD + cfg.Q_MEAN
             pred_qd = pred_qd_norm * cfg.QD_STD + cfg.QD_MEAN
 
