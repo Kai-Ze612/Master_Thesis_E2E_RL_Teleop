@@ -19,7 +19,6 @@ from enum import Enum
 import numpy as np
 import gymnasium as gym
 import mujoco
-from pathlib import Path
 
 from E2E_Teleoperation.utils.inverse_kinematics import IKSolver
 import E2E_Teleoperation.config.robot_config as cfg
@@ -33,6 +32,10 @@ class TrajectoryType(Enum):
 
 @dataclass(frozen=True) 
 class TrajectoryParams:
+    """
+    Holds parameters for trajectory generation. 
+    Defaults are now strictly pulled from robot_config.py.
+    """
     center: np.ndarray = field(default_factory=lambda: cfg.TRAJECTORY_CENTER.copy())
     scale: np.ndarray = field(default_factory=lambda: cfg.TRAJECTORY_SCALE.copy())
     frequency: float = cfg.TRAJECTORY_FREQUENCY
@@ -40,17 +43,22 @@ class TrajectoryParams:
 
     @classmethod
     def randomized(cls, actual_start_pos: np.ndarray) -> TrajectoryParams:
-        center_x = np.random.uniform(0.3, 0.4)
-        center_y = np.random.uniform(-0.1, 0.1)
-        center_z = actual_start_pos[2]
+        """
+        Generates random trajectory parameters within bounds defined in config.
+        """
+        #
+        center_x = np.random.uniform(*cfg.TRAJ_RANDOM_CENTER_X)
+        center_y = np.random.uniform(*cfg.TRAJ_RANDOM_CENTER_Y)
+        center_z = actual_start_pos[2] # Keep Z height consistent with actual robot
         center = np.array([center_x, center_y, center_z], dtype=np.float64)
         
-        scale_x = np.random.uniform(0.1, 0.1)
-        scale_y = np.random.uniform(0.1, 0.3)
-        scale_z = 0.02
+        scale_x = np.random.uniform(*cfg.TRAJ_RANDOM_SCALE_X)
+        scale_y = np.random.uniform(*cfg.TRAJ_RANDOM_SCALE_Y)
+        scale_z = cfg.TRAJECTORY_SCALE[2] # Keep Z scale fixed usually
         scale = np.array([scale_x, scale_y, scale_z], dtype=np.float64)
         
-        frequency = np.random.uniform(0.05, 0.15)
+        frequency = np.random.uniform(*cfg.TRAJ_RANDOM_FREQ)
+        
         return cls(center=center, scale=scale, frequency=frequency, initial_phase=0.0)
 
 
@@ -76,9 +84,11 @@ class Figure8TrajectoryGenerator(TrajectoryGenerator):
 
 class SquareTrajectoryGenerator(TrajectoryGenerator):
     def compute_position(self, t: float) -> np.ndarray:
-        period = 8.0
+        period = 8.0 # This could also be moved to config if strictly needed
         phase = (t % period) / period * 4
         size = self._params.scale[0]
+        
+        # Calculate square path logic
         if phase < 1:
             pos = [size, size * (phase), 0]
         elif phase < 2:
@@ -87,6 +97,7 @@ class SquareTrajectoryGenerator(TrajectoryGenerator):
             pos = [-size, -size * (phase - 2), 0]
         else:
             pos = [-size * (4 - phase), size, 0]
+            
         return self._params.center + np.array(pos)
 
 
@@ -125,10 +136,12 @@ class LocalRobotSimulator(gym.Env):
         ee_site_id = self.model.site('panda_ee_site').id
         self.actual_spawn_pos = self.data.site_xpos[ee_site_id].copy()
         
+        # Determine Params (Config or Randomized Config)
         if self._randomize_params:
             self._params = TrajectoryParams.randomized(self.actual_spawn_pos)
         else:
             self._params = TrajectoryParams()
+            
         self._trajectory_type = trajectory_type
        
         generators = {
@@ -173,10 +186,9 @@ class LocalRobotSimulator(gym.Env):
             
         if not ik_success or q_target_raw is None:
             # If IK fails, we hold position. 
-            # In unconstrained mode, we trust the IK solver to handle jumps if it wants to.
             q_target_raw = self._q_current.copy()
         
-        # 2. Calculate Raw Velocity (Unconstrained)
+        # 2. Calculate Raw Velocity
         qd_raw = (q_target_raw - self._q_previous) / self._dt
         
         # 3. Update State
@@ -185,7 +197,7 @@ class LocalRobotSimulator(gym.Env):
         
         return (
             self._q_current.astype(np.float32),   
-            qd_raw.astype(np.float32),  # Return RAW velocity
+            qd_raw.astype(np.float32),
             0.0, 
             False,
             False,

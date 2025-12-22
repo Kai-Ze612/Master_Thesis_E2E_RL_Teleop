@@ -38,9 +38,19 @@ class AgentNode(Node):
         self.delay_config = ExperimentConfig(exp_config_val)
         
         # --- 2. Load Model ---
+<<<<<<< HEAD
         # [FIX] Correct initialization - JointActor takes encoder as positional argument
         self.encoder = ContinuousLSTMEncoder().to(self.device)
         self.actor = JointActor(self.encoder).to(self.device)
+=======
+        # We must initialize the architecture exactly as in training
+        # [Correction 1] Correct Class Name
+        self.shared_encoder = ContinuousLSTMEncoder().to(self.device)
+        self.actor = JointActor(
+            shared_encoder=self.shared_encoder, 
+            action_dim=cfg.N_JOINTS
+        ).to(self.device)
+>>>>>>> 8eed1054bf496d83b0505b42e253c39917e304bd
         
         model_path = cfg.DEFAULT_RL_MODEL_PATH
         self._load_checkpoint(model_path)
@@ -59,8 +69,13 @@ class AgentNode(Node):
         self.curr_remote_q = np.zeros(cfg.N_JOINTS, dtype=np.float32)
         self.curr_remote_qd = np.zeros(cfg.N_JOINTS, dtype=np.float32)
         
+<<<<<<< HEAD
         # Hidden State for LSTM (initialized to None, will be set on first forward pass)
         self.hidden_state = None
+=======
+        # [Correction 2] Initialize Hidden State for LSTM
+        self.hidden_state = None  # Will be initialized on first forward pass
+>>>>>>> 8eed1054bf496d83b0505b42e253c39917e304bd
         
         # State Flags
         self.is_leader_ready = False
@@ -141,7 +156,11 @@ class AgentNode(Node):
             pass
 
     def _get_observation(self):
+<<<<<<< HEAD
         """Constructs the observation vector (must match training_env._get_obs())."""
+=======
+        """Constructs the observation vector."""
+>>>>>>> 8eed1054bf496d83b0505b42e253c39917e304bd
         # 1. Normalize Current Remote State
         curr_q_norm = (self.curr_remote_q - cfg.Q_MEAN) / cfg.Q_STD
         curr_qd_norm = (self.curr_remote_qd - cfg.QD_MEAN) / cfg.QD_STD
@@ -191,6 +210,7 @@ class AgentNode(Node):
             # 1. Get Observation
             obs_tensor = self._get_observation()
             
+<<<<<<< HEAD
             # 2. Run JointActor
             # [FIX] sample() returns 4 values: action, log_prob, pred, next_hidden
             action, log_prob, pred_state, next_hidden = self.actor.sample(
@@ -207,6 +227,21 @@ class AgentNode(Node):
             
             # Denormalize prediction (pred_state is normalized)
             pred_state_np = pred_state.cpu().numpy().flatten()
+=======
+            # 2. Run JointActor (Policy + Encoder)
+            # [Correction 2] Handle 5 return values
+            # [Correction 3] Pass and update hidden_state
+            action_scaled, _, _, pred_state_norm, self.hidden_state = self.actor.sample(
+                obs_tensor, 
+                hidden=self.hidden_state, # Pass previous hidden state
+                deterministic=True
+            )
+            
+            # 3. Process Outputs
+            tau_rl = action_scaled.cpu().numpy().flatten()
+            
+            pred_state_np = pred_state_norm.cpu().numpy().flatten()
+>>>>>>> 8eed1054bf496d83b0505b42e253c39917e304bd
             pred_q_norm = pred_state_np[:7]
             pred_qd_norm = pred_state_np[7:] if len(pred_state_np) > 7 else np.zeros(7)
             

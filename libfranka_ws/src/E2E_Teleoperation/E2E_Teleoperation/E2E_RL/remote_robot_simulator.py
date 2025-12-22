@@ -32,14 +32,14 @@ class RemoteRobotSimulator:
         seed: Optional[int] = None,
         render: bool = False,
         render_fps: int = 60,
-        verbose: bool = True # [UPDATED] Default to True to see prints
+        verbose: bool = True
     ):
         
         self._verbose = verbose
         self._render_enabled = render
         self._render_fps = render_fps
         
-        # 1. Load MuJoCo Model
+        # 1. Load MuJoCo Model (Centralized Path)
         self.model_path = str(cfg.DEFAULT_MUJOCO_MODEL_PATH)
         if not Path(self.model_path).exists():
             raise FileNotFoundError(f"MuJoCo model not found at: {self.model_path}")
@@ -53,12 +53,12 @@ class RemoteRobotSimulator:
         self.data = mujoco.MjData(self.model)
         self._data_control = mujoco.MjData(self.model)
 
-        # 3. Setup Simulation Parameters
+        # 3. Setup Simulation Parameters (Centralized Config)
         self.control_freq = cfg.CONTROL_FREQ
         sim_timestep = self.model.opt.timestep
         self._n_substeps = int(1.0 / (sim_timestep * self.control_freq))
 
-        # 4. Robot Parameters
+        # 4. Robot Parameters (Centralized Config)
         self.torque_limits = cfg.TORQUE_LIMITS.copy()
         self.n_joints = cfg.N_JOINTS
 
@@ -106,11 +106,6 @@ class RemoteRobotSimulator:
     def _stabilize_robot(self, q_pos: NDArray[np.float64], steps: int = 100) -> None:
         """
         Transitions the robot from a mathematical initial state to a stable physical state.
-        
-        Pipeline:
-        1. Apply Gravity Compensation to hold robot state
-        2. Set joint velocities and accelerations to zero.
-        3. Step the simulation for a number of steps to allow it to settle.
         """
         self._data_control.qpos[:self.n_joints] = q_pos
         self._data_control.qvel[:self.n_joints] = 0.0
@@ -126,7 +121,7 @@ class RemoteRobotSimulator:
 
     def _normalize_angle(self, angle: NDArray) -> NDArray:
         """
-        trun angle into [-pi, pi]
+        Turn angle into [-pi, pi]
         """
         return (angle + np.pi) % (2 * np.pi) - np.pi
 
@@ -171,12 +166,9 @@ class RemoteRobotSimulator:
             # Ground Truth is the Local Robot State (Leader)
             ground_truth_q = true_local_q if true_local_q is not None else target_q
             
-            # Tracking Error (Remote vs. Local)
-            tracking_error = np.linalg.norm(self._normalize_angle(ground_truth_q - q_current))
-            
-            # Prediction Error (Predicted vs. Local)
-            pred_error = 0.0
+            # Prediction processing (handle if prediction includes velocity)
             pred_q_eval = None
+            pred_error = 0.0
             
             if predicted_q is not None:
                 # If prediction includes velocities (14 dims), take only positions (7 dims)
@@ -184,12 +176,14 @@ class RemoteRobotSimulator:
                     pred_q_eval = predicted_q[:self.n_joints]
                 else:
                     pred_q_eval = predicted_q
-                    
+                
                 pred_error = np.linalg.norm(self._normalize_angle(ground_truth_q - pred_q_eval))
 
-            # 6. Logging [UPDATED]
+            # Tracking Error (Remote vs. Local)
+            tracking_error = np.linalg.norm(self._normalize_angle(ground_truth_q - q_current))
+
+            # 6. Logging [UPDATED to match requested 4 items]
             if self._verbose:
-                # Pass the processed (sliced) prediction to the logger to avoid crashes there too
                 self._log_step_info(ground_truth_q, q_current, pred_q_eval, self._last_executed_torque)
 
             return {
@@ -199,39 +193,23 @@ class RemoteRobotSimulator:
                 "tau_total": self._last_executed_torque
             }
 
-    def _log_step_info(self, local_true_q, remote_true_q, predicted_q, rl_tau):
+    def _log_step_info(self, local_true_q, remote_q, predicted_q, rl_tau):
         """
-        Prints the 3 key comparison metrics requested.
+        Prints the 4 key metrics requested:
+        1. True q (Local)
+        2. Predicted q
+        3. RL Torque
+        4. Remote q
         """
-        np.set_printoptions(precision=3, suppress=True, linewidth=150)
+        np.set_printoptions(precision=3, suppress=True, linewidth=120)
         
-        print(f"\n[Step {self._internal_tick}]")
-        
-        # 1. Prediction Comparison
-        if predicted_q is not None:
-            diff_pred = local_true_q - predicted_q
-            err_pred = np.linalg.norm(diff_pred)
-            print(f"1. PREDICTION (Local True vs Pred):")
-            print(f"   True Local: {local_true_q}")
-            print(f"   Predicted:  {predicted_q}")
-            print(f"   Diff:       {diff_pred}")
-            print(f"   Error Norm: {err_pred:.4f}")
-        else:
-            print(f"1. PREDICTION: N/A (Warmup)")
-
-        # 2. Tracking Comparison
-        diff_track = local_true_q - remote_true_q
-        err_track = np.linalg.norm(diff_track)
-        print(f"2. TRACKING (Local True vs Remote True):")
-        print(f"   True Local: {local_true_q}")
-        print(f"   True Remote:{remote_true_q}")
-        print(f"   Diff:       {diff_track}")
-        print(f"   Error Norm: {err_track:.4f}")
-
-        # 3. RL Output
-        print(f"3. CONTROL (RL Output Tau):")
-        print(f"   Tau:        {rl_tau}")
-        print("-" * 60)
+        print(f"\n[Step {self._internal_tick}] Simulation Status")
+        print("=" * 60)
+        print(f"1. True q (Local):   {local_true_q}")
+        print(f"2. Predicted q:      {predicted_q if predicted_q is not None else 'N/A (Warmup)'}")
+        print(f"3. RL Output Torque: {rl_tau}")
+        print(f"4. Remote q:         {remote_q}")
+        print("=" * 60)
 
     def render(self) -> bool:
         if not self._render_enabled or self._viewer is None:

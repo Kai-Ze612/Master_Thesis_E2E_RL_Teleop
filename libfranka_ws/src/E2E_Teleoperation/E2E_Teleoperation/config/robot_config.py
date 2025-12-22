@@ -72,6 +72,10 @@ RNN_NUM_LAYERS = 3
 RNN_SEQUENCE_LENGTH = 80
 ESTIMATOR_STATE_DIM = 15
 ESTIMATOR_OUTPUT_DIM = 14
+LSTM_PRED_HEAD_DIM = 128     # Hidden layer for prediction head
+LSTM_AR_PROJ_DIM = 64        # Hidden layer for AR projection
+
+# Actor/Critic MLP
 MLP_HIDDEN_DIMS = [512, 256]
 LOG_STD_MIN = -20
 LOG_STD_MAX = 2
