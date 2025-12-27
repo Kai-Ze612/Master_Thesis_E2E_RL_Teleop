@@ -1,0 +1,25 @@
+>>> STAGE 1: Encoder Pre-training
+>> Collecting 10000 steps of data...
+Stage 1 | Step 0 | Loss: 0.77953 | Best: 0.77953
+Stage 1 | Step 1000 | Loss: 0.00022 | Best: 0.00022
+Stage 1 | Step 2000 | Loss: 0.00032 | Best: 0.00022
+Stage 1 | Step 3000 | Loss: 0.00043 | Best: 0.00022
+Stage 1 | Step 4000 | Loss: 0.00037 | Best: 0.00022
+Stage 1 | Step 5000 | Loss: 0.00046 | Best: 0.00022
+Stage 1 | Step 6000 | Loss: 0.00034 | Best: 0.00022
+Stage 1 | Step 7000 | Loss: 0.00023 | Best: 0.00022
+Stage 1 | Step 8000 | Loss: 0.00038 | Best: 0.00022
+Stage 1 | Step 9000 | Loss: 0.00039 | Best: 0.00022
+>>> STAGE 2: BC Pre-training
+Stage 2 | Step 0 | BC Loss: 0.00346 | Best: 0.00346
+Stage 2 | Step 1000 | BC Loss: 0.00009 | Best: 0.00009
+Stage 2 | Step 2000 | BC Loss: 0.00009 | Best: 0.00009
+Stage 2 | Step 3000 | BC Loss: 0.00007 | Best: 0.00007
+Stage 2 | Step 4000 | BC Loss: 0.00008 | Best: 0.00007
+Stage 2 | Step 5000 | BC Loss: 0.00007 | Best: 0.00007
+Stage 2 | Step 6000 | BC Loss: 0.00008 | Best: 0.00007
+Stage 2 | Step 7000 | BC Loss: 0.00008 | Best: 0.00007
+Stage 2 | Step 8000 | BC Loss: 0.00009 | Best: 0.00007
+Stage 2 | Step 9000 | BC Loss: 0.00009 | Best: 0.00007
+
+>>> STAGE 3: End-to-End SAC Fine-tuning

@@ -133,7 +133,7 @@ TAU = 0.005
 
 # --- Schedule & Logging ---
 STAGE1_STEPS = 10_000
-STAGE2_TOTAL_STEPS = 30_000
+STAGE2_TOTAL_STEPS = 10_000
 STAGE3_TOTAL_STEPS = 500_000
 LOG_FREQ = 500
 VAL_FREQ = 5000
@@ -233,7 +233,7 @@ class SACConfig:
     GRAD_CLIP_ACTOR: float = 1.0
     
     # Entropy Tuning
-    TARGET_ENTROPY_RATIO: float = 0.5
+    TARGET_ENTROPY_RATIO: float = 0.05
     ALPHA_LR: float = 1e-4  # Specific LR for Alpha tuning in SAC
 
 ######################################

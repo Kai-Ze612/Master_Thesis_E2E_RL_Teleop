@@ -51,7 +51,8 @@ class ReplayBuffer:
             'rewards': torch.FloatTensor(self.rewards[idxs]).to(self.device),
             'dones': torch.FloatTensor(self.dones[idxs]).to(self.device),
             'teacher_actions': torch.FloatTensor(self.teacher_actions[idxs]).to(self.device),
-            'true_states': torch.FloatTensor(self.true_states[idxs]).to(self.device)
+            # FIX: Changed key from 'true_states' to 'true_state_vector' to match SACAlgorithm
+            'true_state_vector': torch.FloatTensor(self.true_states[idxs]).to(self.device)
         }
 
 class UnifiedTrainer:
@@ -59,7 +60,7 @@ class UnifiedTrainer:
         self.env = env
         self.output_dir = Path(output_dir)
         self.log_file = self.output_dir / "training_log.txt"
-        self.is_vector_env = is_vector_env  # Store the flag
+        self.is_vector_env = is_vector_env
         
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
@@ -81,11 +82,9 @@ class UnifiedTrainer:
         with open(self.log_file, "a") as f: f.write(msg + "\n")
 
     def _log_debug_info(self, step, obs, action, info, metrics=None):
-        # Handle Vector Env for Logging (Just take the first env)
         if self.is_vector_env:
             obs_single = obs[0]
             action_single = action[0]
-            # Info in vector env is a dictionary of arrays
             true_q = info['true_q'][0]
             remote_q = info['remote_q'][0]
         else:
@@ -118,7 +117,6 @@ class UnifiedTrainer:
         self._log(log_str)
 
     def _add_to_buffer(self, obs, action, reward, next_obs, terminated, truncated, info):
-        """Helper to handle both single and vector env data adding"""
         if self.is_vector_env:
             num_envs = len(obs)
             for i in range(num_envs):
@@ -140,7 +138,7 @@ class UnifiedTrainer:
         for _ in range(steps):
             if random: 
                 if self.is_vector_env:
-                    action = self.env.action_space.sample() # This samples batch in vector env
+                    action = self.env.action_space.sample()
                 else:
                     action = self.env.action_space.sample()
             else: 
@@ -152,7 +150,6 @@ class UnifiedTrainer:
             obs = next_obs
             info = next_info
             
-            # Reset handling for single env (Vector env auto-resets)
             if not self.is_vector_env and (terminated or truncated):
                 obs, info = self.env.reset()
 
@@ -165,11 +162,14 @@ class UnifiedTrainer:
 
         for step in range(cfg.TRAIN.STAGE1_STEPS):
             batch = self.buffer.sample(cfg.TRAIN.BATCH_SIZE)
+            # FIX: Unpack 3rd element
             _, _, pred_state, _, _ = self.actor.forward(batch['obs'])
-            loss = F.mse_loss(pred_state, batch['true_states'])
+            
+            # FIX: Use 'true_state_vector' key here too
+            loss = F.mse_loss(pred_state, batch['true_state_vector'])
             
             optimizer.zero_grad(); loss.backward(); optimizer.step()
-            
+           
             if step % 1000 == 0:
                 cur_loss = loss.item()
                 if cur_loss < best_loss:
@@ -195,12 +195,11 @@ class UnifiedTrainer:
             mu, _, _, _, _ = self.actor.forward(batch['obs'])
             pred_action = torch.tanh(mu) * self.actor.scale.to(self.device)
             
-            # Normalized BC Loss
             scale = self.actor.scale.to(self.device)
             loss = F.mse_loss(pred_action/scale, batch['teacher_actions']/scale)
             
             optimizer.zero_grad(); loss.backward(); optimizer.step()
-            
+           
             if step % 1000 == 0:
                 cur_loss = loss.item()
                 if cur_loss < best_loss:
@@ -227,14 +226,11 @@ class UnifiedTrainer:
         
         obs, info = self.env.reset()
         ep_reward = 0
-        
-        # Track best reward for saving best model
         best_avg_reward = -float('inf')
         recent_rewards = []
         
         for step in range(cfg.TRAIN.STAGE3_STEPS):
             with torch.no_grad():
-                # Handle Vector Obs dimensions
                 if self.is_vector_env:
                     obs_t = torch.FloatTensor(obs).to(self.device)
                 else:
@@ -247,10 +243,7 @@ class UnifiedTrainer:
 
             next_obs, reward, terminated, truncated, next_info = self.env.step(action)
             
-            # For logging reward, we sum up if vectorized (just to have a number) 
-            # or average. Usually we log when an episode terminates.
             if self.is_vector_env:
-                # Add mean reward of the batch to tracker (approximate)
                 ep_reward += np.mean(reward)
             else:
                 ep_reward += reward
@@ -265,15 +258,9 @@ class UnifiedTrainer:
                 if step % 1000 == 0: 
                     self._log_debug_info(step, obs, action, info, metrics)
 
-            # Check termination
-            # In VectorEnv, 'terminated' is an array. We log if ANY env terminates.
             if self.is_vector_env:
                 if np.any(terminated) or np.any(truncated):
-                    # For vector env, accurately tracking episode reward requires an array tracker.
-                    # Simplified logging here:
                     self._log(f"Step {step} | Vector Batch Terminated")
-                    
-                    # NOTE: VectorEnv Auto-resets specific environments, no manual reset needed.
             else:
                 if terminated or truncated:
                     stop_reason = "Max Steps" if truncated else "EARLY STOP"
