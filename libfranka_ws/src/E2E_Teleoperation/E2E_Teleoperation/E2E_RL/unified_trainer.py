@@ -201,7 +201,7 @@ class UnifiedTrainer:
             
             optimizer.zero_grad(); loss.backward(); optimizer.step()
             
-            if step % 100 == 0:
+            if step % 1000 == 0:
                 cur_loss = loss.item()
                 if cur_loss < best_loss:
                     best_loss = cur_loss
@@ -262,7 +262,7 @@ class UnifiedTrainer:
             
             if self.buffer.size > cfg.TRAIN.BATCH_SIZE:
                 metrics = sac.update(self.buffer.sample(cfg.TRAIN.BATCH_SIZE))
-                if step % 100 == 0: 
+                if step % 1000 == 0: 
                     self._log_debug_info(step, obs, action, info, metrics)
 
             # Check termination
