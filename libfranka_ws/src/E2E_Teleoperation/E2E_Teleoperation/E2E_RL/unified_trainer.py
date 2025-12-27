@@ -11,7 +11,6 @@ from pathlib import Path
 
 import E2E_Teleoperation.config.robot_config as cfg
 from E2E_Teleoperation.E2E_RL.sac_policy_network import LSTM, JointActor, JointCritic
-# NOTE: Removed RecoveryBuffer from import, only importing Algorithm logic
 from E2E_Teleoperation.E2E_RL.sac_training_algorithm import SACAlgorithm
 
 class ReplayBuffer:
@@ -70,12 +69,12 @@ class UnifiedTrainer:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # 1. Initialize Networks
-        self.encoder = LSTM().to(self.device)
+        self.encoder = ContinuousLSTMEncoder().to(self.device)
         self.actor = JointActor(self.encoder).to(self.device)
         self.critic = JointCritic(self.encoder).to(self.device)
         self.critic_target = copy.deepcopy(self.critic)
         
-        # 2. Buffer (Defined locally now)
+        # 2. Buffer
         self.buffer = ReplayBuffer(cfg.TRAIN.BUFFER_SIZE, cfg.ROBOT.OBS_DIM, 7, self.device)
         
         # 3. Alpha (Entropy)
@@ -96,7 +95,8 @@ class UnifiedTrainer:
         # Get Predicted State for logging (Forward pass without gradients)
         with torch.no_grad():
             obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
-            _, pred_state, _, _, _ = self.actor.forward(obs_t)
+            # FIX: Unpack the 3rd element (pred_state), not the 2nd
+            _, _, pred_state, _, _ = self.actor.forward(obs_t)
             pred_q = pred_state[0, :7].cpu().numpy()
         
         true_q = info['true_q']
@@ -159,10 +159,11 @@ class UnifiedTrainer:
         for step in range(cfg.TRAIN.STAGE1_STEPS):
             batch = self.buffer.sample(cfg.TRAIN.BATCH_SIZE)
             
-            # Forward pass via actor (gets prediction from encoder)
-            _, pred_state, _, _, _ = self.actor.forward(batch['obs'])
+            # FIX: Correct unpacking (pred_state is 3rd return value)
+            # Returns: mu, log_std, pred_state, next_hidden, feat
+            _, _, pred_state, _, _ = self.actor.forward(batch['obs'])
             
-            # Loss: MSE between Predicted State and True State
+            # Loss: MSE between Predicted State (14) and True State (14)
             loss = F.mse_loss(pred_state, batch['true_states'])
             
             optimizer.zero_grad(); loss.backward(); optimizer.step()
@@ -187,7 +188,7 @@ class UnifiedTrainer:
         for step in range(cfg.TRAIN.STAGE2_STEPS):
             batch = self.buffer.sample(cfg.TRAIN.BATCH_SIZE)
             
-            # Forward Actor
+            # Forward Actor (mu is 1st return value)
             mu, _, _, _, _ = self.actor.forward(batch['obs'])
             pred_action = torch.tanh(mu) * self.actor.scale.to(self.device)
             
