@@ -10,8 +10,56 @@ import sys
 from pathlib import Path
 
 import E2E_Teleoperation.config.robot_config as cfg
-from E2E_Teleoperation.E2E_RL.sac_policy_network import ContinuousLSTMEncoder, JointActor, JointCritic
-from E2E_Teleoperation.E2E_RL.sac_training_algorithm import RecoveryBuffer, SACAlgorithm
+from E2E_Teleoperation.E2E_RL.sac_policy_network import LSTM, JointActor, JointCritic
+# NOTE: Removed RecoveryBuffer from import, only importing Algorithm logic
+from E2E_Teleoperation.E2E_RL.sac_training_algorithm import SACAlgorithm
+
+class ReplayBuffer:
+    """
+    Standard Replay Buffer that also stores 'teacher_action' and 'true_state'
+    needed for the specific auxiliary losses in Stage 1 & 2.
+    """
+    def __init__(self, capacity, obs_dim, action_dim, device):
+        self.capacity = capacity
+        self.device = device
+        self.ptr = 0
+        self.size = 0
+        
+        # Standard RL
+        self.obs = np.zeros((capacity, obs_dim), dtype=np.float32)
+        self.actions = np.zeros((capacity, action_dim), dtype=np.float32)
+        self.rewards = np.zeros((capacity, 1), dtype=np.float32)
+        self.next_obs = np.zeros((capacity, obs_dim), dtype=np.float32)
+        self.dones = np.zeros((capacity, 1), dtype=np.float32)
+        
+        # Aux Data (for BC and Encoder training)
+        self.teacher_actions = np.zeros((capacity, action_dim), dtype=np.float32)
+        self.true_states = np.zeros((capacity, 14), dtype=np.float32) # 7 pos + 7 vel
+
+    def add(self, obs, action, reward, next_obs, done, teacher_action, true_state):
+        self.obs[self.ptr] = obs
+        self.actions[self.ptr] = action
+        self.rewards[self.ptr] = reward
+        self.next_obs[self.ptr] = next_obs
+        self.dones[self.ptr] = float(done)
+        
+        self.teacher_actions[self.ptr] = teacher_action
+        self.true_states[self.ptr] = true_state
+        
+        self.ptr = (self.ptr + 1) % self.capacity
+        self.size = min(self.size + 1, self.capacity)
+
+    def sample(self, batch_size):
+        idxs = np.random.randint(0, self.size, size=batch_size)
+        return {
+            'obs': torch.FloatTensor(self.obs[idxs]).to(self.device),
+            'next_obs': torch.FloatTensor(self.next_obs[idxs]).to(self.device),
+            'actions': torch.FloatTensor(self.actions[idxs]).to(self.device),
+            'rewards': torch.FloatTensor(self.rewards[idxs]).to(self.device),
+            'dones': torch.FloatTensor(self.dones[idxs]).to(self.device),
+            'teacher_actions': torch.FloatTensor(self.teacher_actions[idxs]).to(self.device),
+            'true_states': torch.FloatTensor(self.true_states[idxs]).to(self.device)
+        }
 
 class UnifiedTrainer:
     def __init__(self, env, output_dir):
@@ -21,16 +69,16 @@ class UnifiedTrainer:
         
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
-        # Initialize Networks
+        # 1. Initialize Networks
         self.encoder = ContinuousLSTMEncoder().to(self.device)
         self.actor = JointActor(self.encoder).to(self.device)
         self.critic = JointCritic(self.encoder).to(self.device)
         self.critic_target = copy.deepcopy(self.critic)
         
-        # Buffer
-        self.buffer = RecoveryBuffer(cfg.TRAIN.BUFFER_SIZE, cfg.ROBOT.OBS_DIM, 7, self.device)
+        # 2. Buffer (Defined locally now)
+        self.buffer = ReplayBuffer(cfg.TRAIN.BUFFER_SIZE, cfg.ROBOT.OBS_DIM, 7, self.device)
         
-        # Alpha (Entropy)
+        # 3. Alpha (Entropy)
         self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
         self.opt_alpha = torch.optim.Adam([self.log_alpha], lr=cfg.TRAIN.ALPHA_LR)
 
@@ -44,16 +92,11 @@ class UnifiedTrainer:
     def _log_debug_info(self, step, obs, action, info, metrics=None):
         """
         Specific detailed logging for debugging every 100 steps
-        1. True q (Leader)
-        2. Predicted q (Internal State)
-        3. Remote q (Follower)
-        4. RL Output Tau
-        5. Losses
         """
         # Get Predicted State for logging (Forward pass without gradients)
         with torch.no_grad():
             obs_t = torch.FloatTensor(obs).unsqueeze(0).to(self.device)
-            _, _, pred_state, _, _ = self.actor.forward(obs_t)
+            _, pred_state, _, _, _ = self.actor.forward(obs_t)
             pred_q = pred_state[0, :7].cpu().numpy()
         
         true_q = info['true_q']
@@ -79,14 +122,98 @@ class UnifiedTrainer:
         log_str += "--------------------------------------------------"
         self._log(log_str)
 
+    def _collect_data(self, steps, random=False):
+        """Helper to fill buffer before training starts"""
+        self._log(f">> Collecting {steps} steps of data...")
+        obs, info = self.env.reset()
+        for _ in range(steps):
+            if random:
+                action = self.env.action_space.sample()
+            else:
+                action = info['teacher_action']
+            
+            next_obs, reward, terminated, truncated, next_info = self.env.step(action)
+            
+            # Store teacher action and true state for supervised losses
+            self.buffer.add(obs, action, reward, next_obs, terminated, 
+                          next_info['teacher_action'], next_info['true_state_vector'])
+            
+            obs = next_obs
+            info = next_info
+            if terminated or truncated:
+                obs, info = self.env.reset()
+
+    # =========================================================
+    # STAGE 1: ENCODER PRE-TRAINING
+    # =========================================================
+    def train_stage1(self):
+        """Train Encoder Only using True State Labels"""
+        self._log(">>> STAGE 1: Encoder Pre-training")
+        
+        # 1. Collect Data (Teacher Policy)
+        self._collect_data(10000, random=False)
+        
+        # 2. Train
+        optimizer = torch.optim.Adam(self.encoder.parameters(), lr=1e-3)
+        
+        for step in range(cfg.TRAIN.STAGE1_STEPS):
+            batch = self.buffer.sample(cfg.TRAIN.BATCH_SIZE)
+            
+            # Forward pass via actor (gets prediction from encoder)
+            _, pred_state, _, _, _ = self.actor.forward(batch['obs'])
+            
+            # Loss: MSE between Predicted State and True State
+            loss = F.mse_loss(pred_state, batch['true_states'])
+            
+            optimizer.zero_grad(); loss.backward(); optimizer.step()
+            
+            if step % 1000 == 0:
+                self._log(f"Stage 1 | Step {step} | Pred Loss: {loss.item():.5f}")
+        
+        torch.save(self.encoder.state_dict(), self.output_dir / "stage1_final.pth")
+
+    # =========================================================
+    # STAGE 2: POLICY BC PRE-TRAINING
+    # =========================================================
+    def train_stage2_bc(self):
+        """Train Policy Only (Behavioral Cloning)"""
+        self._log(">>> STAGE 2: BC Pre-training")
+        
+        # Freeze Encoder (Assume it's good from Stage 1)
+        for p in self.encoder.parameters(): p.requires_grad = False
+        
+        optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-4)
+        
+        for step in range(cfg.TRAIN.STAGE2_STEPS):
+            batch = self.buffer.sample(cfg.TRAIN.BATCH_SIZE)
+            
+            # Forward Actor
+            mu, _, _, _, _ = self.actor.forward(batch['obs'])
+            pred_action = torch.tanh(mu) * self.actor.scale.to(self.device)
+            
+            # Loss: MSE between Actor Action and Teacher Action
+            loss = F.mse_loss(pred_action, batch['teacher_actions'])
+            
+            optimizer.zero_grad(); loss.backward(); optimizer.step()
+            
+            if step % 1000 == 0:
+                self._log(f"Stage 2 | Step {step} | BC Loss: {loss.item():.5f}")
+        
+        # Unfreeze for Stage 3
+        for p in self.encoder.parameters(): p.requires_grad = True
+        torch.save(self.actor.state_dict(), self.output_dir / "stage2_final.pth")
+
+    # =========================================================
+    # STAGE 3: END-TO-END SAC
+    # =========================================================
     def train_stage3_sac(self):
         self._log("\n>>> STAGE 3: End-to-End SAC Fine-tuning")
         
-        # Optimizers
+        # Optimizers (Differentiated LRs)
         opt_actor = torch.optim.Adam([
             {'params': self.actor.net.parameters(), 'lr': 1e-4}, 
             {'params': self.encoder.parameters(), 'lr': 1e-5}
-        ], weight_decay=1e-5) # Added weight decay for stability
+        ], weight_decay=1e-5)
         
         opt_critic = torch.optim.Adam(self.critic.parameters(), lr=3e-4)
         
@@ -139,43 +266,3 @@ class UnifiedTrainer:
             # 6. Checkpointing
             if step % 10000 == 0:
                 torch.save(self.actor.state_dict(), self.output_dir / f"stage3_ckpt_{step}.pth")
-
-    def train_stage1(self):
-        """Train Encoder Only"""
-        self._log(">>> STAGE 1: Encoder Pre-training")
-        # (Simplified for brevity, but follows same logging pattern)
-        # ... logic to fill buffer ...
-        optimizer = torch.optim.Adam(self.encoder.parameters(), lr=1e-3)
-        for step in range(cfg.TRAIN.STAGE1_STEPS):
-            batch = self.buffer.sample(cfg.TRAIN.BATCH_SIZE)
-            with torch.no_grad():
-                # We extract true state from batch
-                true_state = batch['true_states']
-            
-            # Forward only encoder part via actor wrapper or direct
-            _, _, pred_state, _, _ = self.actor.forward(batch['obs'])
-            loss = F.mse_loss(pred_state, true_state)
-            
-            optimizer.zero_grad(); loss.backward(); optimizer.step()
-            
-            if step % 1000 == 0:
-                self._log(f"Stage 1 | Step {step} | Pred Loss: {loss.item():.5f}")
-        
-        torch.save(self.encoder.state_dict(), self.output_dir / "stage1_final.pth")
-
-    def train_stage2_bc(self):
-        """Train Policy Only (BC)"""
-        self._log(">>> STAGE 2: BC Pre-training")
-        optimizer = torch.optim.Adam(self.actor.parameters(), lr=1e-4)
-        for step in range(cfg.TRAIN.STAGE2_STEPS):
-            batch = self.buffer.sample(cfg.TRAIN.BATCH_SIZE)
-            mu, _, _, _, _ = self.actor.forward(batch['obs'])
-            pred_action = torch.tanh(mu) * self.actor.scale.to(self.device)
-            loss = F.mse_loss(pred_action, batch['teacher_actions'])
-            
-            optimizer.zero_grad(); loss.backward(); optimizer.step()
-            
-            if step % 1000 == 0:
-                self._log(f"Stage 2 | Step {step} | BC Loss: {loss.item():.5f}")
-                
-        torch.save(self.actor.state_dict(), self.output_dir / "stage2_final.pth")

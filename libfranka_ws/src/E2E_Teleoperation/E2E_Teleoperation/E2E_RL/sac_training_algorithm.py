@@ -1,132 +1,98 @@
 """
-E2E_Teleoperation/E2E_RL/sac_policy_network.py
+E2E_Teleoperation/E2E_RL/sac_training_algorithm.py
 """
-
+import numpy as np
 import torch
-import torch.nn as nn
-from torch.distributions import Normal
+import torch.nn.functional as F
 import E2E_Teleoperation.config.robot_config as cfg
 
-class ContinuousLSTMEncoder(nn.Module):
-    """
-    Stage 1 Component: Temporal Encoder
-    Input: Delayed History (Seq, 15)
-    Output: Predicted State (14)
-    """
-    def __init__(self):
-        super().__init__()
-        self.lstm = nn.LSTM(
-            input_size=cfg.ROBOT.ESTIMATOR_INPUT_DIM,
-            hidden_size=cfg.ROBOT.RNN_HIDDEN_DIM,
-            num_layers=cfg.ROBOT.RNN_NUM_LAYERS,
-            batch_first=True
-        )
-        
-        # State Predictor MLP (256 -> 256 -> 14)
-        # As requested in verification report
-        self.predictor = nn.Sequential(
-            nn.Linear(cfg.ROBOT.RNN_HIDDEN_DIM, 256),
-            nn.ReLU(),
-            nn.Linear(256, cfg.ROBOT.ROBOT_STATE_DIM) # Output: 14 [q, qd]
-        )
+class SACAlgorithm:
+    def __init__(self, actor, critic, critic_target, actor_opt, critic_opt, alpha_opt, log_alpha):
+        self.actor = actor
+        self.critic = critic
+        self.critic_target = critic_target
+        self.actor_optimizer = actor_opt
+        self.critic_optimizer = critic_opt
+        self.alpha_optimizer = alpha_opt
+        self.log_alpha = log_alpha
+        self.target_entropy = -float(cfg.ROBOT.N_JOINTS) * cfg.SAC.TARGET_ENTROPY_RATIO
+        self.gamma = cfg.TRAIN.GAMMA
+        self.tau = cfg.SAC.TARGET_TAU
+        self.device = actor.scale.device
 
-    def forward(self, history, hidden=None):
-        """
-        Returns: 
-        - feat: Latent features (256) (Used for Critic)
-        - pred_state: Predicted State (14) (Used for Actor/ID)
-        """
-        out, hidden = self.lstm(history, hidden)
-        feat = out[:, -1, :] # Last hidden state
-        pred_state = self.predictor(feat)
-        return feat, pred_state, hidden
-
-
-class JointActor(nn.Module):
-    """
-    Stage 2 & 3 Component: Inverse Dynamics Policy
-    Input: [Predicted_State (14), Desired_State (14)] = 28 dims
-    Output: Torque (7)
-    """
-    LOG_STD_MIN = -10.0
-    LOG_STD_MAX = 2.0
-    
-    def __init__(self, encoder):
-        super().__init__()
-        self.encoder = encoder
+    def update(self, batch):
+        obs = batch['obs']
+        action = batch['actions']
+        reward = batch['rewards']
+        next_obs = batch['next_obs']
+        not_done = 1.0 - batch['dones']
         
-        # ID Network Input: 28 dimensions
-        self.input_dim = cfg.ROBOT.ROBOT_STATE_DIM * 2 
-        
-        # MLP Architecture matches proposal (Input -> 256 -> 256 -> 7)
-        self.net = nn.Sequential(
-            nn.Linear(self.input_dim, 256), nn.ReLU(),
-            nn.Linear(256, 256), nn.ReLU(),
-        )
-        
-        self.mu = nn.Linear(256, cfg.ROBOT.N_JOINTS)
-        self.log_std = nn.Linear(256, cfg.ROBOT.N_JOINTS)
-        self.scale = torch.tensor(cfg.ROBOT.TORQUE_LIMITS)
+        # Ground Truths for Aux Losses
+        true_state = batch['true_states']     # For Encoder Loss
+        teacher_action = batch['teacher_actions'] # For BC Loss
 
-    def forward(self, obs, hidden=None):
-        # 1. Parse Observation to get Desired State (Target)
-        # Obs: [Remote(14) | Remote_Hist(...) | Target_Hist(...)]
-        idx_rem = cfg.ROBOT.ROBOT_STATE_DIM
-        idx_hist = idx_rem + cfg.ROBOT.ROBOT_HISTORY_DIM
-        target_hist = obs[:, idx_hist:]
-        
-        # Reshape to (Batch, Seq, Feats)
-        target_seq = target_hist.view(-1, cfg.ROBOT.RNN_SEQ_LEN, cfg.ROBOT.ESTIMATOR_INPUT_DIM)
-        
-        # Extract "Desired State" from the end of the history buffer
-        # (This represents the most recent command received from the leader)
-        desired_state = target_seq[:, -1, :cfg.ROBOT.ROBOT_STATE_DIM]
+        # -------------------------
+        # 1. Critic Update
+        # -------------------------
+        with torch.no_grad():
+            next_action, next_log_prob, _, _, next_feat = self.actor.sample(next_obs)
+            target_q1, target_q2 = self.critic_target(next_feat, next_action)
+            target_q = torch.min(target_q1, target_q2)
+            alpha = self.log_alpha.exp()
+            target_value = reward + not_done * self.gamma * (target_q - alpha * next_log_prob)
 
-        # 2. Get Predicted State from Encoder
-        # The encoder uses the *entire* history sequence
-        feat, pred_state, next_hidden = self.encoder(target_seq, hidden)
-
-        # 3. ID Network Input: Concatenate [Predicted, Desired]
-        x = torch.cat([pred_state, desired_state], dim=1)
+        # Get current features (gradients flow to encoder here)
+        _, _, _, _, curr_feat = self.actor.forward(obs)
+        current_q1, current_q2 = self.critic(curr_feat, action)
         
-        x = self.net(x)
-        mu = self.mu(x)
-        log_std = torch.clamp(self.log_std(x), self.LOG_STD_MIN, self.LOG_STD_MAX)
+        critic_loss = F.mse_loss(current_q1, target_value) + F.mse_loss(current_q2, target_value)
+
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward()
+        self.critic_optimizer.step()
+
+        # -------------------------
+        # 2. Actor & Encoder Update
+        # -------------------------
+        new_action, log_prob, pred_state, _, feat = self.actor.sample(obs)
+        q1_new, q2_new = self.critic(feat, new_action)
+        q_new = torch.min(q1_new, q2_new)
         
-        return mu, log_std, pred_state, next_hidden, feat
-
-    def sample(self, obs, hidden=None):
-        mu, log_std, pred_state, next_hidden, feat = self.forward(obs, hidden)
-        std = log_std.exp()
-        dist = Normal(mu, std)
-        x_t = dist.rsample() # Reparameterization trick
-        y_t = torch.tanh(x_t)
-        action = y_t * self.scale.to(obs.device)
+        alpha = self.log_alpha.exp()
+        sac_loss = (alpha * log_prob - q_new).mean()
         
-        log_prob = dist.log_prob(x_t) - torch.log(1.0 - y_t.pow(2) + 1e-6)
-        log_prob = log_prob.sum(dim=1, keepdim=True)
+        # Aux 1: Prediction Loss (MSE between Predicted State and True State)
+        pred_loss = F.mse_loss(pred_state, true_state)
         
-        return action, log_prob, pred_state, next_hidden, feat
-
-    def get_action_deterministic(self, obs):
-        mu, _, _, _, _ = self.forward(obs)
-        return torch.tanh(mu) * self.scale.to(obs.device)
-
-
-class JointCritic(nn.Module):
-    """
-    Stage 3 Component: SAC Critic
-    Input: Latent Features (256) + Action (7) = 263 dims
-    (Critic operates on latent space, as proposed)
-    """
-    def __init__(self, encoder):
-        super().__init__()
-        self.encoder = encoder
-        self.input_dim = cfg.ROBOT.RNN_HIDDEN_DIM + cfg.ROBOT.N_JOINTS
+        # Aux 2: BC Regularization (MSE between Actor and Teacher)
+        scale = self.actor.scale
+        bc_loss = F.mse_loss(new_action/scale, teacher_action/scale)
         
-        self.q1 = nn.Sequential(nn.Linear(self.input_dim, 256), nn.ReLU(), nn.Linear(256, 1))
-        self.q2 = nn.Sequential(nn.Linear(self.input_dim, 256), nn.ReLU(), nn.Linear(256, 1))
+        total_actor_loss = sac_loss + 1.0 * pred_loss + cfg.SAC.BC_MIN_WEIGHT * bc_loss
+        
+        self.actor_optimizer.zero_grad()
+        total_actor_loss.backward()
+        self.actor_optimizer.step()
 
-    def forward(self, feat, action):
-        xu = torch.cat([feat, action], dim=1)
-        return self.q1(xu), self.q2(xu)
+        # -------------------------
+        # 3. Alpha Update
+        # -------------------------
+        alpha_loss = -(self.log_alpha * (log_prob + self.target_entropy).detach()).mean()
+        
+        self.alpha_optimizer.zero_grad()
+        alpha_loss.backward()
+        self.alpha_optimizer.step()
+
+        # -------------------------
+        # 4. Soft Update
+        # -------------------------
+        for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+            target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+            
+        return {
+            "critic_loss": critic_loss.item(),
+            "actor_loss": sac_loss.item(),
+            "pred_loss": pred_loss.item(),
+            "bc_loss": bc_loss.item(),
+            "alpha": alpha.item()
+        }
