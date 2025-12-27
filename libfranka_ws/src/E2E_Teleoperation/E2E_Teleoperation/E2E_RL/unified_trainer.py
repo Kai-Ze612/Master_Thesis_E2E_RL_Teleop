@@ -170,7 +170,7 @@ class UnifiedTrainer:
             
             optimizer.zero_grad(); loss.backward(); optimizer.step()
             
-            if step % 100 == 0:
+            if step % 1000 == 0:
                 cur_loss = loss.item()
                 if cur_loss < best_loss:
                     best_loss = cur_loss
