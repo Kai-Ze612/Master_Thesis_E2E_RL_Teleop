@@ -1,4 +1,4 @@
 import sys
 if sys.prefix == '/usr':
     sys.real_prefix = sys.prefix
-    sys.prefix = sys.exec_prefix = '/media/kai/Kai_Backup/Master_Study/Master_Thesis/Implementation/libfranka_ws/install/Model_Based_RL_Teleoperation'
+    sys.prefix = sys.exec_prefix = '/media/kai/NewDisk/Kai_thesis/Master_Thesis_E2E_RL_Teleop/libfranka_ws/install/Model_Based_RL_Teleoperation'
