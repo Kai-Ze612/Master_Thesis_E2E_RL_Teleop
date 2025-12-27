@@ -118,45 +118,81 @@ class UnifiedTrainer:
             if terminated or truncated: obs, info = self.env.reset()
 
     def train_stage1(self):
-        """Train Encoder Only"""
+        """Train Encoder Only using True State Labels"""
         self._log(">>> STAGE 1: Encoder Pre-training")
+        
+        # 1. Collect Data
         self._collect_data(10000, random=False)
+        
+        # 2. Train
         optimizer = torch.optim.Adam(self.encoder.parameters(), lr=1e-3)
+        best_loss = float('inf') # Track best loss
         
         for step in range(cfg.TRAIN.STAGE1_STEPS):
             batch = self.buffer.sample(cfg.TRAIN.BATCH_SIZE)
-            # FIX: Unpack 3rd element
+            
+            # Forward
             _, _, pred_state, _, _ = self.actor.forward(batch['obs'])
+            
+            # Loss
             loss = F.mse_loss(pred_state, batch['true_states'])
             
             optimizer.zero_grad(); loss.backward(); optimizer.step()
-            if step % 1000 == 0:
-                self._log(f"Stage 1 | Step {step} | Pred Loss: {loss.item():.5f}")
+            
+            # --- NEW: Save Best Model Logic ---
+            # Check every 100 steps to avoid disk thrashing
+            if step % 100 == 0:
+                current_loss = loss.item()
+                if current_loss < best_loss:
+                    best_loss = current_loss
+                    # Save "Best" Model
+                    torch.save(self.encoder.state_dict(), self.output_dir / "stage1_best.pth")
+                    
+                self._log(f"Stage 1 | Step {step} | Loss: {current_loss:.5f} | Best: {best_loss:.5f}")
         
+        # Save "Final" Model (Last Step)
         torch.save(self.encoder.state_dict(), self.output_dir / "stage1_final.pth")
 
+    # =========================================================
+    # STAGE 2: POLICY BC PRE-TRAINING (With Best Save)
+    # =========================================================
     def train_stage2_bc(self):
         """Train Policy Only (BC)"""
         self._log(">>> STAGE 2: BC Pre-training")
+        
         for p in self.encoder.parameters(): p.requires_grad = False
         
-        # FIX: Only optimize params that require grad
         optimizer = torch.optim.Adam(
             [p for p in self.actor.parameters() if p.requires_grad], 
             lr=1e-4
         )
         
+        best_loss = float('inf') # Track best loss
+        
         for step in range(cfg.TRAIN.STAGE2_STEPS):
             batch = self.buffer.sample(cfg.TRAIN.BATCH_SIZE)
+            
             mu, _, _, _, _ = self.actor.forward(batch['obs'])
             pred_action = torch.tanh(mu) * self.actor.scale.to(self.device)
-            loss = F.mse_loss(pred_action, batch['teacher_actions'])
+            
+            # Use Normalized Loss for tracking "Best" (fairer comparison)
+            scale = self.actor.scale.to(self.device)
+            loss = F.mse_loss(pred_action/scale, batch['teacher_actions']/scale)
             
             optimizer.zero_grad(); loss.backward(); optimizer.step()
-            if step % 1000 == 0:
-                self._log(f"Stage 2 | Step {step} | BC Loss: {loss.item():.5f}")
+            
+            # --- NEW: Save Best Model Logic ---
+            if step % 100 == 0:
+                current_loss = loss.item()
+                if current_loss < best_loss:
+                    best_loss = current_loss
+                    # Save "Best" Model
+                    torch.save(self.actor.state_dict(), self.output_dir / "stage2_best.pth")
+                    
+                self._log(f"Stage 2 | Step {step} | BC Loss: {current_loss:.5f} | Best: {best_loss:.5f}")
         
         for p in self.encoder.parameters(): p.requires_grad = True
+        # Save "Final" Model
         torch.save(self.actor.state_dict(), self.output_dir / "stage2_final.pth")
 
     def train_stage3_sac(self):
