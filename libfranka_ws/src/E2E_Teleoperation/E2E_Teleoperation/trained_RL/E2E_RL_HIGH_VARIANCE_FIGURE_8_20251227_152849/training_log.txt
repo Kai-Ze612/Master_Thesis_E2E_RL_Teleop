@@ -1,0 +1,19 @@
+>>> STAGE 1: Encoder Pre-training
+>> Collecting 10000 steps of data...
+Stage 1 | Step 0 | Pred Loss: 0.73358
+Stage 1 | Step 1000 | Pred Loss: 0.00037
+Stage 1 | Step 2000 | Pred Loss: 0.00040
+Stage 1 | Step 3000 | Pred Loss: 0.00041
+Stage 1 | Step 4000 | Pred Loss: 0.00019
+Stage 1 | Step 5000 | Pred Loss: 0.00024
+Stage 1 | Step 6000 | Pred Loss: 0.00026
+Stage 1 | Step 7000 | Pred Loss: 0.00025
+Stage 1 | Step 8000 | Pred Loss: 0.00015
+Stage 1 | Step 9000 | Pred Loss: 0.00028
+Stage 1 | Step 10000 | Pred Loss: 0.00029
+Stage 1 | Step 11000 | Pred Loss: 0.00030
+Stage 1 | Step 12000 | Pred Loss: 0.00037
+Stage 1 | Step 13000 | Pred Loss: 0.00029
+Stage 1 | Step 14000 | Pred Loss: 0.00025
+Stage 1 | Step 15000 | Pred Loss: 0.00025
+Stage 1 | Step 16000 | Pred Loss: 0.00025

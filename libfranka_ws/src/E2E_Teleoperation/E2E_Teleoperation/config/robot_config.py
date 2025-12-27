@@ -56,15 +56,15 @@ NO_DELAY_DURATION = 0.1
 
 # --- Termination ---
 MAX_EPISODE_STEPS = 5500
-MAX_JOINT_ERROR_TERMINATION = 2.0
+MAX_JOINT_ERROR_TERMINATION = 1.0
 
 ######################################
 # 4. CONTROL & TEACHER EXPERT
 ######################################
 
 # --- Teacher Gains (Tuned for Delay Stability) ---
-TEACHER_KP = np.array([144.0, 144.0, 144.0, 144.0, 144.0, 144.0, 20.0], dtype=np.float64)
-TEACHER_KD = np.array([24.0,  24.0,  24.0,  24.0,  24.0,  24.0,  4.0], dtype=np.float64)
+TEACHER_KP = np.array([144.0, 144.0, 144.0, 144.0, 100.0, 100.0, 20.0], dtype=np.float64)
+TEACHER_KD = np.array([24.0,  24.0,  24.0,  24.0,  20.0,  20.0,  4.0], dtype=np.float64)
 TEACHER_SMOOTHING = 0.5
 
 # --- Inverse Kinematics (IK) Solver ---
