@@ -5,3 +5,5 @@ Stage 1 | Step 1000 | Pred Loss: 0.00043
 Stage 1 | Step 2000 | Pred Loss: 0.00038
 Stage 1 | Step 3000 | Pred Loss: 0.00055
 Stage 1 | Step 4000 | Pred Loss: 0.00026
+Stage 1 | Step 5000 | Pred Loss: 0.00064
+Stage 1 | Step 6000 | Pred Loss: 0.00044
