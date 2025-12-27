@@ -20,7 +20,10 @@ class SACAlgorithm:
         self.target_entropy = -float(cfg.ROBOT.N_JOINTS) * cfg.SAC.TARGET_ENTROPY_RATIO
         self.gamma = cfg.TRAIN.GAMMA
         self.tau = cfg.SAC.TARGET_TAU
-        self.device = actor.scale.device
+        
+        # FIX: Determine device reliably from network parameters (which surely moved to GPU)
+        # instead of 'actor.scale' (which might be stuck on CPU).
+        self.device = next(actor.parameters()).device
 
     def update(self, batch):
         obs = batch['obs']
@@ -29,7 +32,7 @@ class SACAlgorithm:
         next_obs = batch['next_obs']
         not_done = 1.0 - batch['dones']
         
-        true_state = batch['true_states']     
+        true_state = batch['true_state_vector']
         teacher_action = batch['teacher_actions']
 
         # -------------------------
@@ -42,31 +45,22 @@ class SACAlgorithm:
             alpha = self.log_alpha.exp()
             target_value = reward + not_done * self.gamma * (target_q - alpha * next_log_prob)
 
-        # CRITICAL FIX: Detach features here! 
-        # We do NOT want the Critic (LR 3e-4) to update the Encoder.
-        # The Encoder should only be updated by the Actor optimizer (LR 1e-5).
+        # Detach features to stop critic from updating encoder
         _, _, _, _, curr_feat = self.actor.forward(obs)
-        curr_feat = curr_feat.detach() 
+        curr_feat = curr_feat.detach()
         
         current_q1, current_q2 = self.critic(curr_feat, action)
         critic_loss = F.mse_loss(current_q1, target_value) + F.mse_loss(current_q2, target_value)
 
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
-        # FIX: Gradient Clipping
         torch.nn.utils.clip_grad_norm_(self.critic.parameters(), cfg.SAC.GRAD_CLIP_CRITIC)
         self.critic_optimizer.step()
 
         # -------------------------
         # 2. Actor & Encoder Update
         # -------------------------
-        # Here we re-run forward WITHOUT detach, so gradients flow to Encoder
         new_action, log_prob, pred_state, _, feat = self.actor.sample(obs)
-        
-        # We reuse the critic (which is now just a metric for the actor)
-        # Note: We detach 'feat' here only for the Q-value gradient (standard SAC trick), 
-        # but since we want encoder to learn from Q, we usually keep it attached.
-        # Given stability concerns, we typically let Q-loss shape the encoder too.
         q1_new, q2_new = self.critic(feat, new_action)
         q_new = torch.min(q1_new, q2_new)
         
@@ -77,17 +71,15 @@ class SACAlgorithm:
         pred_loss = F.mse_loss(pred_state, true_state)
         
         # Aux 2: BC Regularization
-        # FIX: Move scale to correct device
-        scale = self.actor.scale.to(self.device)
+        # FIX: Explicitly move scale to the same device as the action (GPU)
+        scale = self.actor.scale.to(new_action.device)
         bc_loss = F.mse_loss(new_action/scale, teacher_action/scale)
         
         total_actor_loss = sac_loss + (1.0 * pred_loss) + (cfg.SAC.BC_MIN_WEIGHT * bc_loss)
         
         self.actor_optimizer.zero_grad()
         total_actor_loss.backward()
-        # FIX: Gradient Clipping
         torch.nn.utils.clip_grad_norm_(self.actor.parameters(), cfg.SAC.GRAD_CLIP_ACTOR)
-        # FIX: Also clip encoder explicitly if needed, but actor params includes encoder
         self.actor_optimizer.step()
 
         # -------------------------
