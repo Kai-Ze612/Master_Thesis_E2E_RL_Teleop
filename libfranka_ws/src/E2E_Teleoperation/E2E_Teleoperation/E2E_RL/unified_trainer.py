@@ -70,7 +70,7 @@ class UnifiedTrainer:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # 1. Initialize Networks
-        self.encoder = ContinuousLSTMEncoder().to(self.device)
+        self.encoder = LSTM().to(self.device)
         self.actor = JointActor(self.encoder).to(self.device)
         self.critic = JointCritic(self.encoder).to(self.device)
         self.critic_target = copy.deepcopy(self.critic)
