@@ -1,4 +1,0 @@
-Defaulting to user installation because normal site-packages is not writeable
-Collecting torch
-  Downloading torch-2.9.1-cp310-cp310-manylinux_2_28_x86_64.whl (899.8 MB)
-     ━━━━━━━━━━━━━━━━━╸                     426.2/899.8 MB 11.7 MB/s eta 0:00:41
