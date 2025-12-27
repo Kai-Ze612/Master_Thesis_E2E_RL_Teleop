@@ -1,80 +1,132 @@
 """
-E2E_Teleoperation/E2E_RL/sac_training_algorithm.py
+E2E_Teleoperation/E2E_RL/sac_policy_network.py
 """
 
-import numpy as np
 import torch
+import torch.nn as nn
+from torch.distributions import Normal
+import E2E_Teleoperation.config.robot_config as cfg
 
-class RecoveryBuffer:
+class ContinuousLSTMEncoder(nn.Module):
     """
-    Professional Replay Buffer.
-    Stores:
-    1. Standard RL transitions (obs, action, reward, next_obs, done)
-    2. Teacher Actions (for Behavioral Cloning)
-    3. True State Vectors (for Encoder Training)
+    Stage 1 Component: Temporal Encoder
+    Input: Delayed History (Seq, 15)
+    Output: Predicted State (14)
     """
-    def __init__(self, capacity, obs_dim, action_dim, device):
-        self.capacity = capacity
-        self.device = device
-        self.ptr = 0
-        self.size = 0
+    def __init__(self):
+        super().__init__()
+        self.lstm = nn.LSTM(
+            input_size=cfg.ROBOT.ESTIMATOR_INPUT_DIM,
+            hidden_size=cfg.ROBOT.RNN_HIDDEN_DIM,
+            num_layers=cfg.ROBOT.RNN_NUM_LAYERS,
+            batch_first=True
+        )
         
-        # 1. Standard RL Buffers
-        self.obs = np.zeros((capacity, obs_dim), dtype=np.float32)
-        self.actions = np.zeros((capacity, action_dim), dtype=np.float32)
-        self.rewards = np.zeros((capacity, 1), dtype=np.float32)
-        self.next_obs = np.zeros((capacity, obs_dim), dtype=np.float32)
-        self.dones = np.zeros((capacity, 1), dtype=np.float32)
-        
-        # 2. Specialized Buffers
-        self.teacher_actions = np.zeros((capacity, action_dim), dtype=np.float32)
-        self.true_states = np.zeros((capacity, 14), dtype=np.float32) # 7pos + 7vel
-        self.is_recovery = np.zeros((capacity, 1), dtype=np.float32)
+        # State Predictor MLP (256 -> 256 -> 14)
+        # As requested in verification report
+        self.predictor = nn.Sequential(
+            nn.Linear(cfg.ROBOT.RNN_HIDDEN_DIM, 256),
+            nn.ReLU(),
+            nn.Linear(256, cfg.ROBOT.ROBOT_STATE_DIM) # Output: 14 [q, qd]
+        )
 
-    def add(self, obs, action, reward, next_obs, done, teacher_action, true_state, is_recovery):
-        # Insert data at current pointer
-        self.obs[self.ptr] = obs
-        self.actions[self.ptr] = action
-        self.rewards[self.ptr] = reward
-        self.next_obs[self.ptr] = next_obs
-        self.dones[self.ptr] = float(done)
-        
-        self.teacher_actions[self.ptr] = teacher_action
-        self.true_states[self.ptr] = true_state
-        self.is_recovery[self.ptr] = float(is_recovery)
-        
-        # Advance pointer
-        self.ptr = (self.ptr + 1) % self.capacity
-        self.size = min(self.size + 1, self.capacity)
+    def forward(self, history, hidden=None):
+        """
+        Returns: 
+        - feat: Latent features (256) (Used for Critic)
+        - pred_state: Predicted State (14) (Used for Actor/ID)
+        """
+        out, hidden = self.lstm(history, hidden)
+        feat = out[:, -1, :] # Last hidden state
+        pred_state = self.predictor(feat)
+        return feat, pred_state, hidden
 
-    def sample_with_recovery_weight(self, batch_size, recovery_weight=2.0):
-        """
-        Samples a batch. Prioritizes 'Recovery' steps (where robot was failing)
-        if recovery_weight > 1.0.
-        """
-        # Calculate sampling weights
-        weights = np.ones(self.size)
-        # Identify recovery indices (where is_recovery is True)
-        recovery_mask = self.is_recovery[:self.size, 0] > 0.5
-        weights[recovery_mask] = recovery_weight
+
+class JointActor(nn.Module):
+    """
+    Stage 2 & 3 Component: Inverse Dynamics Policy
+    Input: [Predicted_State (14), Desired_State (14)] = 28 dims
+    Output: Torque (7)
+    """
+    LOG_STD_MIN = -10.0
+    LOG_STD_MAX = 2.0
+    
+    def __init__(self, encoder):
+        super().__init__()
+        self.encoder = encoder
         
-        # Normalize to probability distribution
-        p_weights = weights / weights.sum()
+        # ID Network Input: 28 dimensions
+        self.input_dim = cfg.ROBOT.ROBOT_STATE_DIM * 2 
         
-        # Sample indices
-        idxs = np.random.choice(self.size, size=batch_size, p=p_weights)
+        # MLP Architecture matches proposal (Input -> 256 -> 256 -> 7)
+        self.net = nn.Sequential(
+            nn.Linear(self.input_dim, 256), nn.ReLU(),
+            nn.Linear(256, 256), nn.ReLU(),
+        )
         
-        # Return Tensors on GPU
-        return {
-            'obs': torch.FloatTensor(self.obs[idxs]).to(self.device),
-            'next_obs': torch.FloatTensor(self.next_obs[idxs]).to(self.device),
-            'actions': torch.FloatTensor(self.actions[idxs]).to(self.device),
-            'rewards': torch.FloatTensor(self.rewards[idxs]).to(self.device),
-            'dones': torch.FloatTensor(self.dones[idxs]).to(self.device),
-            'teacher_actions': torch.FloatTensor(self.teacher_actions[idxs]).to(self.device),
-            'true_state_vector': torch.FloatTensor(self.true_states[idxs]).to(self.device)
-        }
+        self.mu = nn.Linear(256, cfg.ROBOT.N_JOINTS)
+        self.log_std = nn.Linear(256, cfg.ROBOT.N_JOINTS)
+        self.scale = torch.tensor(cfg.ROBOT.TORQUE_LIMITS)
+
+    def forward(self, obs, hidden=None):
+        # 1. Parse Observation to get Desired State (Target)
+        # Obs: [Remote(14) | Remote_Hist(...) | Target_Hist(...)]
+        idx_rem = cfg.ROBOT.ROBOT_STATE_DIM
+        idx_hist = idx_rem + cfg.ROBOT.ROBOT_HISTORY_DIM
+        target_hist = obs[:, idx_hist:]
         
-    @property
-    def current_size(self):
-        return self.size
+        # Reshape to (Batch, Seq, Feats)
+        target_seq = target_hist.view(-1, cfg.ROBOT.RNN_SEQ_LEN, cfg.ROBOT.ESTIMATOR_INPUT_DIM)
+        
+        # Extract "Desired State" from the end of the history buffer
+        # (This represents the most recent command received from the leader)
+        desired_state = target_seq[:, -1, :cfg.ROBOT.ROBOT_STATE_DIM]
+
+        # 2. Get Predicted State from Encoder
+        # The encoder uses the *entire* history sequence
+        feat, pred_state, next_hidden = self.encoder(target_seq, hidden)
+
+        # 3. ID Network Input: Concatenate [Predicted, Desired]
+        x = torch.cat([pred_state, desired_state], dim=1)
+        
+        x = self.net(x)
+        mu = self.mu(x)
+        log_std = torch.clamp(self.log_std(x), self.LOG_STD_MIN, self.LOG_STD_MAX)
+        
+        return mu, log_std, pred_state, next_hidden, feat
+
+    def sample(self, obs, hidden=None):
+        mu, log_std, pred_state, next_hidden, feat = self.forward(obs, hidden)
+        std = log_std.exp()
+        dist = Normal(mu, std)
+        x_t = dist.rsample() # Reparameterization trick
+        y_t = torch.tanh(x_t)
+        action = y_t * self.scale.to(obs.device)
+        
+        log_prob = dist.log_prob(x_t) - torch.log(1.0 - y_t.pow(2) + 1e-6)
+        log_prob = log_prob.sum(dim=1, keepdim=True)
+        
+        return action, log_prob, pred_state, next_hidden, feat
+
+    def get_action_deterministic(self, obs):
+        mu, _, _, _, _ = self.forward(obs)
+        return torch.tanh(mu) * self.scale.to(obs.device)
+
+
+class JointCritic(nn.Module):
+    """
+    Stage 3 Component: SAC Critic
+    Input: Latent Features (256) + Action (7) = 263 dims
+    (Critic operates on latent space, as proposed)
+    """
+    def __init__(self, encoder):
+        super().__init__()
+        self.encoder = encoder
+        self.input_dim = cfg.ROBOT.RNN_HIDDEN_DIM + cfg.ROBOT.N_JOINTS
+        
+        self.q1 = nn.Sequential(nn.Linear(self.input_dim, 256), nn.ReLU(), nn.Linear(256, 1))
+        self.q2 = nn.Sequential(nn.Linear(self.input_dim, 256), nn.ReLU(), nn.Linear(256, 1))
+
+    def forward(self, feat, action):
+        xu = torch.cat([feat, action], dim=1)
+        return self.q1(xu), self.q2(xu)

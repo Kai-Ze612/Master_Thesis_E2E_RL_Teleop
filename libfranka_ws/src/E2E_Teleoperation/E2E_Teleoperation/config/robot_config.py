@@ -1,13 +1,11 @@
-
 import numpy as np
 from pathlib import Path
 from dataclasses import dataclass, field
 
 ######################################
-# 1. GLOBAL CONSTANTS
+# 1. SYSTEM & PATHS
 ######################################
 
-# --- File Paths ---
 CONFIG_FILE_PATH = Path(__file__).resolve()
 CONFIG_DIR = CONFIG_FILE_PATH.parent
 PACKAGE_ROOT = CONFIG_DIR.parent
@@ -22,13 +20,20 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 DEFAULT_MUJOCO_MODEL_PATH = (
     WORKSPACE_SRC / "multipanda_ros2" / "franka_description" / "mujoco" / "franka" / "scene.xml"
 )
-DEFAULT_RL_MODEL_PATH = "/home/kaize/Downloads/Master_Study_Master_Thesis/libfranka_ws/src/E2E_Teleoperation/E2E_Teleoperation/trained_RL/E2E_RL_HIGH_VARIANCE_FIGURE_8_20251221_224820/best_policy_stage3.pth"
+DEFAULT_RL_MODEL_PATH = (
+    PROJECT_ROOT / "trained_RL" / "E2E_RL_HIGH_VARIANCE_FIGURE_8_20251221_224820" / "best_policy_stage3.pth"
+)
 
-# --- Franka Panda Parameters ---
+######################################
+# 2. ROBOT PHYSICAL PARAMETERS
+######################################
+
+# --- Dimensions & Bodies ---
 N_JOINTS = 7
 EE_BODY_NAME = "panda_hand"
 TCP_OFFSET = np.array([0.0, 0.0, 0.1034], dtype=np.float32)
 
+# --- Limits ---
 JOINT_LIMITS_LOWER = np.array([-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, 0.5445, -3.0159], dtype=np.float32)
 JOINT_LIMITS_UPPER = np.array([2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 4.5169, 3.0159], dtype=np.float32)
 JOINT_LIMIT_MARGIN = 0.05
@@ -36,24 +41,33 @@ JOINT_LIMIT_MARGIN = 0.05
 TORQUE_LIMITS = np.array([87.0, 87.0, 87.0, 87.0, 12.0, 12.0, 12.0], dtype=np.float32)
 MAX_ACTION_TORQUE = TORQUE_LIMITS.copy()
 
+# --- Initialization ---
 INITIAL_JOINT_CONFIG = np.array([0.0, -0.785, 0.0, -2.356, 0.0, 1.5708, 0.785], dtype=np.float32)
 
-# --- Normalization ---
-Q_MEAN = np.array([0.0, -0.78, 0.0, -2.35, 0.0, 1.57, 0.78], dtype=np.float32)
-Q_STD  = np.array([1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0], dtype=np.float32) 
-QD_MEAN = np.zeros(7, dtype=np.float32)
-QD_STD  = np.ones(7, dtype=np.float32) * 2.0
-DELAY_INPUT_NORM_FACTOR = 100.0
+######################################
+# 3. SIMULATION & ENVIRONMENT
+######################################
 
-# --- Simulation & Control ---
+# --- Timing ---
 CONTROL_FREQ = 250
 DT = 1.0 / CONTROL_FREQ
 WARM_UP_DURATION = 0.1
 NO_DELAY_DURATION = 0.1
+
+# --- Termination ---
 MAX_EPISODE_STEPS = 5500
 MAX_JOINT_ERROR_TERMINATION = 2.0
 
-# --- IK Solver Parameters ---
+######################################
+# 4. CONTROL & TEACHER EXPERT
+######################################
+
+# --- Teacher Gains (Tuned for Delay Stability) ---
+TEACHER_KP = np.array([144.0, 144.0, 144.0, 144.0, 144.0, 144.0, 20.0], dtype=np.float64)
+TEACHER_KD = np.array([24.0,  24.0,  24.0,  24.0,  24.0,  24.0,  4.0], dtype=np.float64)
+TEACHER_SMOOTHING = 0.5
+
+# --- Inverse Kinematics (IK) Solver ---
 IK_POSITION_TOLERANCE = 0.01
 IK_JACOBIAN_MAX_ITER = 300
 IK_OPTIMIZATION_MAX_ITER = 100
@@ -61,57 +75,82 @@ IK_JACOBIAN_STEP_SIZE = 0.01
 IK_JACOBIAN_DAMPING = 0.1
 IK_NULL_SPACE_GAIN = 0.5
 
-# --- Trajectory Generation ---
+######################################
+# 5. TRAJECTORY GENERATION
+######################################
+
 TRAJECTORY_CENTER = np.array([0.3, 0, 0.5], dtype=np.float32)
 TRAJECTORY_SCALE = np.array([0.2, 0.2, 0.02], dtype=np.float32)
 TRAJECTORY_FREQUENCY = 0.1
 
-# --- Network Architecture ---
+######################################
+# 6. DATA PROCESSING & NORMALIZATION
+######################################
+
+# --- State Normalization ---
+Q_MEAN = np.array([0.0, -0.78, 0.0, -2.35, 0.0, 1.57, 0.78], dtype=np.float32)
+Q_STD  = np.array([1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0], dtype=np.float32) 
+QD_MEAN = np.zeros(7, dtype=np.float32)
+QD_STD  = np.ones(7, dtype=np.float32) * 2.0
+
+# --- Input Scaling ---
+DELAY_INPUT_NORM_FACTOR = 100.0
+
+######################################
+# 7. NETWORK ARCHITECTURE
+######################################
+
+# --- RNN / LSTM Estimator ---
 RNN_HIDDEN_DIM = 256
 RNN_NUM_LAYERS = 3
 RNN_SEQUENCE_LENGTH = 80
-ESTIMATOR_STATE_DIM = 15
-ESTIMATOR_OUTPUT_DIM = 14
 LSTM_PRED_HEAD_DIM = 128     # Hidden layer for prediction head
 LSTM_AR_PROJ_DIM = 64        # Hidden layer for AR projection
 
-# Actor/Critic MLP
+# --- MLP Actor/Critic ---
 MLP_HIDDEN_DIMS = [512, 256]
 LOG_STD_MIN = -20
 LOG_STD_MAX = 2
 
-ROBOT_STATE_DIM = 14
+# --- Dimensions ---
+ROBOT_STATE_DIM = 14         # 7 Pos + 7 Vel
+ESTIMATOR_STATE_DIM = 15     # 7 Pos + 7 Vel + 1 Delay
+ESTIMATOR_OUTPUT_DIM = 14
 ROBOT_HISTORY_DIM = RNN_SEQUENCE_LENGTH * ROBOT_STATE_DIM
 TARGET_HISTORY_DIM = RNN_SEQUENCE_LENGTH * ESTIMATOR_STATE_DIM
 OBS_DIM = ROBOT_STATE_DIM + ROBOT_HISTORY_DIM + TARGET_HISTORY_DIM
 
-# --- Training Hyperparameters ---
+######################################
+# 8. TRAINING HYPERPARAMETERS
+######################################
+
+# --- General ---
 SEED = 42
 BATCH_SIZE = 1024
 BUFFER_SIZE = 1_000_000
-STAGE1_STEPS = 20_000
-ENCODER_LR = 1e-4
-STAGE2_TOTAL_STEPS = 200_000
-STAGE3_TOTAL_STEPS = 1_000_000
-ACTOR_LR = 3e-4
-CRITIC_LR = 3e-4
-ALPHA_LR = 3e-4
 GAMMA = 0.99
 TAU = 0.005
+
+# --- Schedule & Logging ---
+STAGE1_STEPS = 20_000
+STAGE2_TOTAL_STEPS = 200_000
+STAGE3_TOTAL_STEPS = 1_000_000
 LOG_FREQ = 50
 VAL_FREQ = 5000
 
-# --- Teacher Gains (TUNED FOR DELAY STABILITY) ---
-TEACHER_KP = np.array([144.0, 144.0, 144.0, 144.0, 144.0, 144.0, 20.0], dtype=np.float64)
-TEACHER_KD = np.array([24.0,  24.0,  24.0,  24.0,  24.0,  24.0,  4.0], dtype=np.float64)
-TEACHER_SMOOTHING = 0.5
+# --- Learning Rates ---
+ENCODER_LR = 1e-4
+ACTOR_LR = 3e-4
+CRITIC_LR = 3e-4
+ALPHA_LR = 3e-4  # Global default
 
 ######################################
-# 2. DATACLASSES
+# 9. DATACLASSES
 ######################################
 
 @dataclass(frozen=True)
 class RobotConfig:
+    """Encapsulates Robot, Simulation, and Network Constants"""
     N_JOINTS: int = N_JOINTS
     CONTROL_FREQ: int = CONTROL_FREQ
     DT: float = DT
@@ -149,6 +188,7 @@ class RobotConfig:
 
 @dataclass
 class TrainConfig:
+    """Encapsulates General Training Hyperparameters"""
     SEED: int = SEED
     BATCH_SIZE: int = BATCH_SIZE
     BUFFER_SIZE: int = BUFFER_SIZE
@@ -168,42 +208,36 @@ class TrainConfig:
 class SACConfig:
     """
     Stage 3 SAC Fine-tuning Hyperparameters
-    
-    UPDATED: Stronger BC to prevent policy collapse
+    Specific to the SAC algorithm logic and stability.
     """
-    
     # Warmup
     WARMUP_STEPS: int = 10000
     
-    # Reward (NO scaling to prevent Q explosion)
+    # Reward
     REWARD_SCALE: float = 1.0
     
-    # Behavioral Cloning Regularization
-    # KEY CHANGES: Much slower decay, higher minimum
-    BC_DECAY_STEPS: int = 200000      # Was 50000 - now 4x slower
-    BC_INITIAL_WEIGHT: float = 5.0    # Same
-    BC_MIN_WEIGHT: float = 2.0        # Was 0.1 - now keeps strong BC throughout
+    # Behavioral Cloning (BC) Regularization
+    BC_DECAY_STEPS: int = 200000      
+    BC_INITIAL_WEIGHT: float = 5.0    
+    BC_MIN_WEIGHT: float = 2.0        
     
-    # Target Network (slower update for stability)
+    # Target Network
     TARGET_TAU: float = 0.001
     
-    # TD3-style Delayed Policy Updates (disabled for simplicity)
-    POLICY_DELAY: int = 1  # Update every step
+    # Policy Updates
+    POLICY_DELAY: int = 1 
     
-    # Q-value Clipping (prevents explosion)
+    # Stability / Clipping
     Q_CLIP_MAX: float = 100.0
-    
-    # Gradient Clipping (tighter for stability)
     GRAD_CLIP_CRITIC: float = 1.0
     GRAD_CLIP_ACTOR: float = 1.0
     
     # Entropy Tuning
     TARGET_ENTROPY_RATIO: float = 0.5
-    ALPHA_LR: float = 1e-4
-
+    ALPHA_LR: float = 1e-4  # Specific LR for Alpha tuning in SAC
 
 ######################################
-# 3. INSTANTIATE CONFIGS
+# 10. INSTANTIATE CONFIGS
 ######################################
 
 ROBOT = RobotConfig()
